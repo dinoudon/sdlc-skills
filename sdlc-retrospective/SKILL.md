@@ -1,13 +1,13 @@
 ---
 name: sdlc-retrospective
-description: "Retrospective formats: Start/Stop/Continue, 4Ls, Mad/Sad/Glad, Sailboat, Kaizen PDCA cycle, blameless postmortems, continuous improvement patterns. DORA metrics integration, Team Topologies awareness, Value Stream Mapping, anti-patterns, remote retro patterns, psychological safety measurement, action item tracking."
-version: 3.0.0
+description: "Retrospective formats: Start/Stop/Continue, 4Ls, Mad/Sad/Glad, Sailboat, Kaizen PDCA cycle, Toyota Kata (Mike Rother), blameless postmortems, incident deep-dive (Swiss cheese model), continuous improvement patterns. DORA metrics integration, DORA capability assessment, SPACE framework productivity metrics, Team Topologies awareness, team cognitive load measurement, Value Stream Mapping, flow metrics (lead time, cycle time, flow efficiency, WIP limits), anti-patterns, remote retro patterns, psychological safety measurement, action item tracking."
+version: 3.1.0
 author: Hermes Agent
 license: MIT
 platforms: [linux, macos, windows]
 metadata:
   hermes:
-    tags: [sdlc, retrospective, kaizen, continuous-improvement, postmortem, agile, dora-metrics, team-topologies, value-stream-mapping, psychological-safety]
+    tags: [sdlc, retrospective, kaizen, continuous-improvement, postmortem, agile, dora-metrics, team-topologies, value-stream-mapping, psychological-safety, space-framework, toyota-kata, flow-metrics, cognitive-load, incident-deepdive, dora-capabilities]
     related_skills: [sdlc-prd-to-production, sdlc-requirements-engineering]
 ---
 
@@ -159,12 +159,114 @@ Japanese "change for better." Philosophy of ongoing incremental improvement.
 ```
 
 ### Kata Pattern (Mike Rother)
-Source: https://miketherother.com/
+Source: https://miketherother.com/ | Book: "Toyota Kata" (Mike Rother, 2009)
 
-1. Understand direction (challenge)
-2. Grasp current condition
-3. Establish next target condition
-4. PDCA toward target
+Toyota Kata = structured scientific-thinking routines that make continuous improvement a daily habit, not a quarterly event.
+
+#### Two Kata
+
+**Improvement Kata** — systematic method for moving from current state toward target condition.
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│  1. UNDERSTAND THE DIRECTION                               │
+│     Long-term vision, challenge, or goal                   │
+│     "Where are we trying to get to?"                       │
+│                          │                                  │
+│                          ▼                                  │
+│  2. GRASP THE CURRENT CONDITION                            │
+│     Map actual state: facts, data, process observation     │
+│     "Where are we now? What is actually happening?"        │
+│                          │                                  │
+│                          ▼                                  │
+│  3. ESTABLISH NEXT TARGET CONDITION                        │
+│     Next achievable step (not end state)                   │
+│     Specific, measurable, just beyond current ability      │
+│     "Where do we want to be next?"                         │
+│                          │                                  │
+│                          ▼                                  │
+│  4. EXPERIMENT TOWARD TARGET (PDCA)                        │
+│     Run rapid experiments, encounter obstacles             │
+│     "What obstacles are in the way? What did we learn?"    │
+│     → Loop back to Step 3 with new knowledge               │
+└─────────────────────────────────────────────────────────────┘
+```
+
+**Coaching Kata** — five questions leaders ask daily to develop scientific thinking in others.
+
+#### The Five Coaching Questions
+
+```
+1. What is the target condition?
+   (Specific, measurable next step)
+
+2. What is the actual condition now?
+   (Facts, data, observation — not opinion)
+
+3. What obstacles are preventing you from reaching the target?
+   (List them, prioritize, pick one to address)
+
+4. What is your next step? (next experiment / PDCA cycle)
+   (Concrete action, expected outcome, prediction)
+
+5. When can we see what we've learned from taking that step?
+   (Timebox: hours, days — not weeks)
+```
+
+#### Applying Kata to Software Retrospectives
+
+| Kata Step | Retrospective Application |
+|-----------|--------------------------|
+| Understand direction | OKRs, team mission, DORA elite targets |
+| Grasp current condition | Current DORA metrics, flow metrics, incident data, team health scores |
+| Next target condition | One specific metric improvement: "Lead time from 5 days to 3 days" |
+| Experiment toward target | Sprint-level experiments: "Add automated staging deploy" |
+| Coaching questions | Manager asks 5 questions in 1-on-1s, not just in retro |
+
+#### Kata vs. Standard Retro
+
+| Aspect | Standard Retro | Kata-Infused Retro |
+|--------|---------------|-------------------|
+| Frequency | End of sprint | Daily coaching + sprint retro |
+| Focus | What happened | What did we learn from experiments |
+| Data | Sprint-level | Daily observable conditions |
+| Improvement | Ad-hoc actions | Systematic target conditions |
+| Coaching | Facilitator-driven | Leader-led with 5 questions |
+| Outcome | Action items | Scientific thinking habit |
+
+#### Kata Board (Visual Management)
+
+```
+┌────────────────────┬────────────────────┬────────────────────┐
+│   TARGET CONDITION │    CURRENT STATE   │    OBSTACLES       │
+│                    │                    │                    │
+│ Lead time < 3 days│ Lead time = 5 days │ Slow env provision │
+│                    │                    │ Manual QA gates    │
+│                    │                    │ Long PR reviews    │
+├────────────────────┴────────────────────┴────────────────────┤
+│ EXPERIMENT LOG                                               │
+│ ┌──────────────┬──────────────┬────────────┬───────────────┐ │
+│ │  Experiment   │  Prediction  │  Result    │  What Learned │ │
+│ ├──────────────┼──────────────┼────────────┼───────────────┤ │
+│ │ Auto staging │ Lead time -1d│ Lead time  │ Env issue     │ │
+│ │ deploy       │              │ -0.5d only │ = bottleneck  │ │
+│ │              │              │            │               │ │
+│ │ PR review    │ Lead time -1d│ [pending]  │ [pending]     │ │
+│ │ pair syst.   │              │            │               │ │
+│ └──────────────┴──────────────┴────────────┴───────────────┘ │
+└──────────────────────────────────────────────────────────────┘
+```
+
+#### Integrating Kata into Sprint Rhythm
+
+| When | Activity | Duration |
+|------|----------|----------|
+| Daily standup | Coaching question #2-3 (current condition, obstacles) | 2 min/person |
+| Mid-sprint | Check experiment results, adjust | 15 min |
+| Sprint retro | Review target condition progress, update obstacle list, plan next experiments | 30 min |
+| Quarterly | Review direction (challenge), set new target conditions | 1-2 hours |
+
+Source: https://www-personal.umich.edu/~mrother/Kata_Explained.html
 
 ### In Software Context
 - Sprint retros = kaizen events
@@ -608,3 +710,537 @@ Track retro health metrics over time:
 | Team satisfaction with retro | > 4/5 | End-of-retro rating |
 | Psychological safety score | > 5.0 | Quarterly survey (Step 11) |
 | DORA metrics trend | Improving | Dashboard overlay |
+
+## Step 13: SPACE Framework
+
+Source: Forsgren et al., "The SPACE of Developer Productivity" (2021)
+Paper: https://queue.acm.org/detail.cfm?id=3454124
+
+SPACE = Satisfaction, Performance, Activity, Communication, Efficiency. Multi-dimensional productivity measurement that avoids single-metric traps. Use in retro "Gather Data" phase alongside DORA.
+
+### The Five Dimensions
+
+| Dimension | What It Measures | Example Metrics | Data Source |
+|-----------|-----------------|-----------------|-------------|
+| **Satisfaction** | Well-being, fulfillment, happiness | Developer satisfaction survey, eNPS, burnout indicators, tool satisfaction | Surveys, 1-on-1s |
+| **Performance** | Quality and correctness of work | Code review thoroughness, test pass rate, defect escape rate, uptime/SLO adherence | CI/CD, monitoring |
+| **Activity** | Volume of outputs and actions | Commits, PRs merged, deploys, tickets closed, builds triggered | Git, CI/CD, Jira |
+| **Communication** | Collaboration effectiveness | PR review response time, knowledge sharing frequency, documentation updates, async sync ratio | Git, Slack, Confluence |
+| **Efficiency** | Ability to complete work with minimal interruptions | Flow efficiency, interruption count, context-switch frequency, time in meetings vs. deep work | Calendar, flow tools |
+
+### Anti-Pattern: Single-Metric Fixation
+
+> Measuring only Activity (commits, PRs) rewards volume over quality.
+> Measuring only Performance (zero defects) rewards risk-aversion.
+> SPACE requires balance across dimensions. No single metric captures productivity.
+
+### SPACE Survey Template (Quarterly)
+
+Rate 1 (Strongly Disagree) to 7 (Strongly Agree):
+
+| # | Statement | Dimension |
+|---|-----------|-----------|
+| 1 | I am satisfied with my ability to get work done efficiently | Satisfaction |
+| 2 | I have the tools and resources I need | Satisfaction |
+| 3 | I am able to do my best work | Performance |
+| 4 | The code I produce is high quality | Performance |
+| 5 | I make meaningful contributions regularly | Activity |
+| 6 | My work output is valued by the team | Activity |
+| 7 | I can easily get help when needed | Communication |
+| 8 | Information flows effectively on my team | Communication |
+| 9 | I have enough uninterrupted time for deep work | Efficiency |
+| 10 | I can complete tasks without excessive context switching | Efficiency |
+
+### Integrating SPACE into Retros
+
+1. Administer SPACE survey quarterly (separate from psychological safety survey)
+2. In retro "Gather Data," present SPACE radar chart alongside DORA metrics
+3. Identify lowest-scoring dimension → root cause analysis in "Generate Insights"
+4. Create action items targeting weakest dimension
+5. Track dimension trends over time (radar chart shifts indicate improvement)
+
+### SPACE Radar Chart Example
+
+```
+        Satisfaction (4.5)
+             ★
+            /|\
+           / | \
+  Efficiency/  |  \Performance
+    (3.2) ★   |   ★ (5.1)
+         / \  |  / \
+        /   \ | /   \
+       /     \|/     \
+      ★-------+-------★
+Communication  Activity
+   (4.0)       (5.8)
+```
+
+Interpretation: Activity high (team busy), Efficiency low (lots of interruptions/waiting). Retro focus: reduce blockers, protect deep work time.
+
+### Combining SPACE + DORA
+
+| Insight | SPACE Signal | DORA Signal | Retro Action |
+|---------|-------------|-------------|--------------|
+| "Busy but slow" | High Activity, Low Efficiency | Low deploy frequency, long lead time | Reduce WIP, automate pipelines |
+| "Fast but fragile" | High Activity, Low Performance | High change failure rate | Better testing, smaller batches |
+| "Careful but demoralized" | High Performance, Low Satisfaction | Low change failure rate, slow MTTR | Celebrate wins, reduce toil |
+| "Quiet quitting" | Low Activity, Low Satisfaction | Declining metrics across board | Address burnout, workload, purpose |
+
+## Step 14: DORA Capability Assessment Checklist
+
+Source: https://dora.dev/capabilities/
+
+DORA's research identifies 30+ capabilities that predict elite performance. Use this checklist in retro to assess team maturity and identify capability gaps.
+
+### How to Use
+
+1. In retro "Gather Data" phase, rate each capability: **Not Started / Emerging / Growing / Mastered**
+2. Focus discussion on capabilities rated "Emerging" that correlate with weakest DORA metric
+3. Select 1-2 capabilities to advance one level as sprint improvement experiments (align with Kata target conditions)
+4. Re-assess quarterly
+
+### Software Delivery & Operational Performance Capabilities
+
+#### Continuous Delivery
+
+| Capability | Description | Level |
+|-----------|-------------|-------|
+| Version control | All artifacts in version control (code, config, infra-as-code) | |
+| Trunk-based development | Short-lived branches, frequent merges to main | |
+| CI/CD pipeline | Automated build, test, deploy pipeline | |
+| Test automation | Comprehensive automated test suite (unit, integration, e2e) | |
+| Trunk-based deploys | Deploy on merge, feature flags for incomplete work | |
+| Deployment automation | One-click, fully automated deployments | |
+| Shift-left security | Security integrated into pipeline (SAST, DAST, SCA) | |
+| Database change management | Automated, version-controlled database migrations | |
+
+#### Architecture
+
+| Capability | Description | Level |
+|-----------|-------------|-------|
+| Loosely coupled architecture | Teams can deploy independently | |
+| Architecture enables scaling | Can scale components independently | |
+| Empowered team chooses tools | Teams select own tools (not mandated from above) | |
+| Cloud infrastructure | Elastic, on-demand compute/storage | |
+
+#### Product & Process
+
+| Capability | Description | Level |
+|-----------|-------------|-------|
+| Working in small batches | Small PRs, incremental releases, MVP approach | |
+| Limiting WIP | Explicit WIP limits on work items | |
+| Customer feedback loops | Regular user feedback integrated into planning | |
+| Team experimentation | Team can A/B test, prototype, experiment without approval | |
+| Visibility of work | Work in progress visible to all (Kanban board) | |
+
+#### Management & Culture
+
+| Capability | Description | Level |
+|-----------|-------------|-------|
+| Lean management | WIP limits, batch size reduction, flow visualization | |
+| Culture of psychological safety | See Step 11 measurement | |
+| Cross-functional collaboration | Dev, QA, Ops, Product work together daily | |
+| Generative culture (Westrum) | Information flows freely, messengers not punished | |
+| Transformational leadership | Leaders set vision, provide tools, remove obstacles | |
+| Investment in developer experience | Internal tooling, platform teams, documentation | |
+
+#### Monitoring & Observability
+
+| Capability | Description | Level |
+|-----------|-------------|-------|
+| Proactive monitoring | Systems monitored for anomalies, not just failures | |
+| Observability | Distributed tracing, structured logging, metrics | |
+| A/B testing capability | Can deploy variants and measure impact | |
+
+### Capability Maturity Levels
+
+```
+Not Started (0)  →  No capability present, not planned
+Emerging  (1)    →  Awareness, some ad-hoc practice
+Growing   (2)    →  Defined process, team follows it consistently
+Mastered  (3)    →  Optimizing, measuring, continuously improving
+```
+
+### Capability-to-Metric Mapping
+
+| If DORA Metric Is Weak... | Focus On These Capabilities |
+|--------------------------|----------------------------|
+| Low Deployment Frequency | Trunk-based dev, deployment automation, CI/CD pipeline, small batches |
+| Long Lead Time for Changes | CI/CD pipeline, test automation, database change management, small batches |
+| High Change Failure Rate | Test automation, shift-left security, trunk-based dev, architecture |
+| Slow MTTR | Proactive monitoring, observability, loosely coupled architecture, generative culture |
+
+## Step 15: Incident Retrospective Deep-Dive
+
+For P1/P2 incidents requiring deeper analysis than standard postmortem template (Step 4).
+
+### Timeline Analysis Protocol
+
+Reconstruct detailed incident timeline using multiple data sources.
+
+#### Data Sources for Timeline
+
+| Source | What It Provides | Tool Examples |
+|--------|-----------------|---------------|
+| Monitoring dashboards | Metric anomalies, timestamps | Datadog, Grafana, New Relic |
+| Log aggregation | Error patterns, stack traces | ELK, Splunk, Loki |
+| Chat logs | Human communication timeline | Slack, Teams (search by keyword + time) |
+| Deployment records | Code/config changes | CI/CD logs, ArgoCD, Spinnaker |
+| Incident channel | Command, decisions, coordination | Slack/Teams incident channel |
+| PagerDuty/on-call records | Alert timeline, escalation | PagerDuty, OpsGenie |
+| Customer reports | External impact detection | Zendesk, Statuspage |
+
+#### Timeline Construction
+
+```
+T+0:00  [TRIGGER]     What changed? Deploy, config, traffic spike, dependency failure?
+T+0:XX  [ONSET]       First customer/system impact begins
+T+0:XX  [DETECTION]   Who/what detected? Monitoring alert? Customer report?
+T+0:XX  [DIAGNOSIS]   Team begins investigating
+T+0:XX  [COMMUNICATE] Internal: incident channel opened
+T+0:XX  [ESCALATION]  Escalated to: who? Why?
+T+0:XX  [MITIGATE]    First mitigation action: rollback, feature flag, scale up
+T+0:XX  [COMMUNICATE] External: status page updated
+T+0:XX  [ROOT CAUSE]  Root cause identified
+T+0:XX  [RESOLVE]     Service restored, metrics normal
+T+0:XX  [POST-REVIEW] Verify, monitoring confirms stability
+```
+
+#### Key Time Intervals to Measure
+
+| Interval | Definition | Target | Elite |
+|----------|-----------|--------|-------|
+| Time to Detect (TTD) | Onset → Detection | < 5 min | < 1 min |
+| Time to Diagnose (TTDx) | Detection → Root cause identified | < 30 min | < 10 min |
+| Time to Mitigate (TTM) | Detection → First mitigation | < 15 min | < 5 min |
+| Time to Resolve (TTR) | Detection → Full resolution | < 1 hr | < 15 min |
+| Time to Communicate (TTC) | Onset → External communication | < 15 min | < 5 min |
+
+### Contributing Factors Analysis
+
+Incidents have multiple contributing factors, never single root cause. Use structured analysis to find all factors.
+
+#### Fishbone Diagram (Ishikawa)
+
+```
+    People        Process       Technology       Environment
+      │              │              │                │
+      ├─ Training    ├─ Procedure   ├─ Monitoring    ├─ Traffic
+      ├─ Fatigue     ├─ Review      ├─ Testing       ├─ Dependency
+      ├─ Handoff     ├─ Deploy      ├─ Config        ├─ Seasonal
+      ├─ Expertise   ├─ Rollback    ├─ Capacity      ├─ External
+      │              │              │                │
+      └──────────────┴──────────────┴────────────────┘
+                         │
+                    [INCIDENT]
+```
+
+#### 5 Whys (Iterative)
+
+```
+Why did the service go down?    →  Database connection pool exhausted
+Why was pool exhausted?         →  New feature made N+1 queries
+Why did N+1 queries get merged?  →  PR review didn't catch it
+Why didn't review catch it?     →  No integration test for that endpoint
+Why no integration test?        →  Team lacks testing convention for DB queries
+
+Root cause: Missing testing convention (process gap)
+Contributing: Code review checklist (didn't include DB query pattern)
+```
+
+### Swiss Cheese Model (James Reason)
+
+Source: Reason, J. (1990). "Human Error." Cambridge University Press.
+
+Multiple defense layers exist in any system. Each layer has holes (like Swiss cheese). Incident occurs when holes in all layers align.
+
+```
+┌─────────┐  ┌─────────┐  ┌─────────┐  ┌─────────┐  ┌─────────┐
+│ Layer 1 │  │ Layer 2 │  │ Layer 3 │  │ Layer 4 │  │ Layer 5 │
+│         │  │         │  │         │  │         │  │         │
+│  Code   │  │  Review │  │  Test   │  │ Canary  │  │Monitor/ │
+│ Quality │  │  Process │  │  Suite  │  │ Deploy  │  │ Alert   │
+│         │  │    ○     │  │         │  │    ○    │  │         │
+│    ○────│──│─────────│──│────○────│──│─────────│──│────○────│──→ INCIDENT
+│         │  │         │  │         │  │         │  │         │
+│         │  │         │  │    ○    │  │         │  │    ○    │
+└─────────┘  └─────────┘  └─────────┘  └─────────┘  └─────────┘
+  ○ = hole in defense layer
+  ─→ = path of incident through aligned holes
+```
+
+#### Defense Layers in Software Systems
+
+| Layer | Purpose | Holes (Vulnerabilities) |
+|-------|---------|------------------------|
+| **Code quality** | Prevent defects at source | Linting gaps, no type safety, missing input validation |
+| **Code review** | Catch defects before merge | Rubber-stamp reviews, large PRs, fatigue |
+| **Automated testing** | Catch regression/defects | Missing test coverage, flaky tests, slow suites |
+| **Deployment controls** | Limit blast radius | No canary, no feature flags, full-rollout deploys |
+| **Monitoring & alerting** | Detect issues quickly | Missing alerts, alert fatigue, no SLO alerts |
+| **Incident response** | Rapid mitigation | No runbooks, unclear ownership, missing escalation |
+| **Architecture** | Contain failures | Tightly coupled services, shared databases, single points of failure |
+
+#### Applying Swiss Cheese to Incident Retro
+
+For each incident, map which holes aligned:
+
+```markdown
+## Swiss Cheese Analysis — [Incident Name]
+
+| Layer | Did it hold? | What was the hole? | Improvement |
+|-------|-------------|-------------------|-------------|
+| Code quality | ✓ Held | N/A | N/A |
+| Code review | ✗ Failed | 400-line PR, reviewer rubber-stamped | Smaller PRs, review checklist |
+| Automated testing | ✗ Failed | No integration test for DB path | Add DB integration test |
+| Deployment controls | ✓ Held | Canary detected anomaly | N/A |
+| Monitoring | ✗ Delayed | Alert fired 15 min after onset | Tighten alert threshold |
+| Incident response | ✓ Held | Team mobilized in 5 min | N/A |
+
+Holes aligned: Code review + Testing + Monitoring delay = path to incident
+```
+
+### Deep-Dive Retro Agenda (90 min)
+
+| Phase | Time | Activity |
+|-------|------|----------|
+| Timeline review | 15 min | Walk through reconstructed timeline, verify timestamps |
+| Contributing factors | 20 min | Fishbone or 5 Whys exercise |
+| Swiss cheese mapping | 15 min | Map defense layers, identify which holes aligned |
+| Detection analysis | 10 min | Why did we detect at X time? How to detect sooner? |
+| Mitigation analysis | 10 min | Was mitigation effective? How to mitigate faster? |
+| Action items | 15 min | 1-3 actions: close specific holes in specific layers |
+| Close | 5 min | Appreciation, rate the retro |
+
+## Step 16: Team Cognitive Load Measurement
+
+Source: Skelton & Pais, "Team Topologies" (2019) | https://teamtopologies.com/
+
+Cognitive load = total mental effort required for a team to do its work. Excessive cognitive load → mistakes, slow delivery, burnout.
+
+### Three Types of Cognitive Load (Sweller)
+
+| Type | Definition | Can Reduce? | Example |
+|------|-----------|-------------|---------|
+| **Intrinsic** | Core domain complexity | No — inherent to problem | Understanding financial trading rules |
+| **Extraneous** | Unnecessary complexity from environment | Yes — remove it | Poor documentation, unclear APIs, manual processes |
+| **Germane** | Learning/domain understanding worth investing in | Increase it | Understanding business domain, system architecture |
+
+### Cognitive Load Assessment Survey
+
+Rate 1 (No load) to 7 (Extreme load):
+
+| # | Statement | Load Type |
+|---|-----------|----------|
+| 1 | I understand all the domains I need to work in | Intrinsic |
+| 2 | The systems I work on are well-documented | Extraneous |
+| 3 | I can easily find information when I need it | Extraneous |
+| 4 | Our tooling helps rather than hinders me | Extraneous |
+| 5 | I understand why our systems are designed the way they are | Germane |
+| 6 | I have time to learn new things relevant to my work | Germane |
+| 7 | I am learning valuable domain knowledge | Germane |
+| 8 | I work on too many different domains/services at once | Intrinsic |
+| 9 | I spend significant time on tasks unrelated to my core mission | Extraneous |
+| 10 | Our APIs and interfaces are easy to understand | Extraneous |
+
+### Scoring
+
+```
+Intrinsic Load  = avg(items 1R, 8)  — reverse-score item 1
+Extraneous Load = avg(items 2R, 3R, 4R, 9, 10R)  — reverse-score items 2,3,4,10
+Germane Load    = avg(items 5, 6, 7)  — higher = better investment
+
+Total Cognitive Load = Intrinsic + Extraneous (lower = better)
+Germane Investment   = Germane (higher = better)
+
+Interpretation:
+  Total Load < 3.0  →  Manageable — team has capacity
+  Total Load 3.0–4.5 → Moderate — watch for overload indicators
+  Total Load > 4.5  →  Overloaded — reduce scope, split domain, or add help
+  Germane < 3.0     →  Under-investing in learning — schedule learning time
+```
+
+### Applying Cognitive Load to Team Design
+
+| Signal | Problem | Topologies Remedy |
+|--------|---------|-------------------|
+| High intrinsic load | Team owns too many domains | Split stream-aligned team by domain boundary |
+| High extraneous load | Poor tooling/docs/process | Platform team provides self-service; enabling team helps |
+| Low germane load | No learning time | Protect learning time; pair programming; mob programming |
+| Team does everything | "Full-stack" overload | Identify 1-2 core domains, externalize rest via platform teams |
+
+### Cognitive Load Reduction Patterns
+
+| Pattern | What It Does | Applied By |
+|---------|-------------|------------|
+| Self-service platform | Eliminates need to understand infrastructure | Platform team |
+| Clear team APIs | Reduces inter-team coordination cost | Stream-aligned + platform teams |
+| Documentation-as-code | Makes docs findable, versioned | Any team |
+| Domain-driven team boundaries | Aligns teams to bounded contexts | Architecture + org design |
+| WIP limits | Reduces context-switching cognitive load | Team itself |
+| On-call rotation limits | Prevents burnout from dual cognitive load | Team itself |
+
+### Integration with Retros
+
+1. Measure cognitive load quarterly (alongside SPACE survey and psychological safety)
+2. In retro, present cognitive load scores alongside team health check
+3. If total load > 4.5: immediate retro focus on reducing scope or improving tooling
+4. If germane < 3.0: schedule dedicated learning/review time in next sprint
+5. Track load trends — increasing load = warning sign even if metrics look OK
+
+## Step 17: Flow Metrics
+
+Source: Kanban, Lean Software Development, Accelerate (Forsgren et al.)
+
+Flow metrics measure how work moves through the system. Use alongside DORA for complete delivery picture.
+
+### Core Flow Metrics
+
+#### Lead Time
+
+```
+Definition: Clock time from request created to value delivered to customer.
+             Includes all wait time.
+
+  [Customer Request] ──────────────────────────────→ [Value Delivered]
+                    |←         Lead Time           →|
+
+Measurement: Track from issue creation (or commit) to production deploy.
+Sources: Jira (created → done), Git (first commit → merge to prod).
+```
+
+#### Cycle Time
+
+```
+Definition: Clock time from work started to work completed.
+             Excludes backlog wait time.
+
+                    [Work Started] ─────────────→ [Work Done]
+                                  |← Cycle Time →|
+
+Measurement: Track from "In Progress" to "Done" on Kanban board.
+Sources: Jira (status change), Git (branch created → merge).
+```
+
+#### Lead Time vs. Cycle Time
+
+```
+Lead Time = Wait Time + Cycle Time
+
+  [Request] ~~~~wait~~~~ [Start] ~~~~work~~~~ [Done] ~~~~wait~~~~ [Deploy]
+            |←  Wait  →|       |← Cycle →|              |← Wait →|
+            |←                    Lead Time                    →|
+
+Typical software team:
+  Lead time:  5-30 days
+  Cycle time: 2-10 days
+  Wait time:  3-20 days (often the biggest waste)
+```
+
+#### Flow Efficiency
+
+```
+Definition: Percentage of lead time spent on value-adding work.
+
+Flow Efficiency = (Active Work Time / Lead Time) × 100
+
+Active Work Time = time item is being actively worked on (not waiting in queue)
+
+Typical values:
+  Software industry average:  5-15%
+  Good:                       25-40%
+  Excellent:                  40%+
+  Manufacturing benchmark:    25-40%
+
+If flow efficiency < 15%, focus on reducing wait times and handoffs.
+```
+
+#### Work In Progress (WIP) Limits
+
+```
+Definition: Maximum number of items allowed in a workflow stage simultaneously.
+
+Purpose: Prevent context-switching, surface bottlenecks, improve flow.
+
+WIP Limit Formula (starting point):
+  WIP limit per person = 1-2 items
+  Team WIP limit = (Team size × 1.5) for Kanban
+  Adjust based on flow efficiency data
+```
+
+### WIP Limit Patterns
+
+| Pattern | Description | When to Use |
+|---------|-------------|-------------|
+| **Per-person WIP** | Each person max 2 items | Small teams (< 6), new to WIP limits |
+| **Per-column WIP** | Max items per Kanban column | Kanban boards, larger teams |
+| **Per-class WIP** | Different limits per work type (bug vs. feature) | Mixed workload teams |
+| **Expedite lane** | 1 item allowed to bypass WIP limit | Emergency/production fixes only |
+
+#### WIP Limit Effects
+
+```
+Before WIP limits:
+  Person A: Item 1, Item 2, Item 3, Item 4  → context switch every 30 min
+  Cycle time: 8 days
+  Quality: moderate
+
+After WIP limits (max 2):
+  Person A: Item 1 (focus), Item 2 (blocked/waiting)  → deep work
+  Cycle time: 3 days
+  Quality: high
+  Blocked items surface immediately → team swarms to unblock
+```
+
+### Flow Metrics Dashboard
+
+| Metric | How to Measure | Target | Elite |
+|--------|---------------|--------|-------|
+| Lead time P50 | Median request-to-delivery | < 5 days | < 2 days |
+| Lead time P85 | 85th percentile (captures outliers) | < 10 days | < 5 days |
+| Cycle time P50 | Median start-to-done | < 3 days | < 1 day |
+| Cycle time P85 | 85th percentile | < 5 days | < 2 days |
+| Flow efficiency | Active time / lead time | > 25% | > 40% |
+| WIP (current) | Items in progress now | ≤ WIP limit | ≤ WIP limit |
+| Throughput | Items completed per week | Stable or increasing | Increasing |
+| Aging WIP | Items in progress > cycle time P85 | 0 | 0 |
+
+### Little's Law
+
+```
+L = λ × W
+
+Where:
+  L = Average WIP (items in system)
+  λ = Throughput (items completed per unit time)
+  W = Average cycle time
+
+Rearranged: Cycle Time = WIP / Throughput
+
+Implication: Reducing WIP directly reduces cycle time (if throughput stays constant).
+To reduce cycle time from 5 days to 3 days:
+  - Reduce WIP from 10 to 6 items (if throughput = 2 items/day)
+  - Or increase throughput from 2 to 3.3 items/day (harder)
+
+Reducing WIP is usually the faster lever.
+```
+
+### Integrating Flow Metrics into Retros
+
+1. Display flow metrics dashboard in retro "Gather Data" phase (alongside DORA)
+2. Calculate flow efficiency — if < 15%, investigate where time is lost
+3. Review aging WIP — items stuck in progress are highest priority
+4. If cycle time increasing: tighten WIP limits by 1-2 items
+5. Map flow metrics to value stream map (Step 8) for visual root cause analysis
+
+### Flow Anti-Patterns
+
+| Anti-Pattern | Symptom | Fix |
+|-------------|---------|-----|
+| No WIP limits | Items pile up in "In Progress" | Set WIP limit = team size × 1.5, adjust down |
+| Large batch sizes | PRs > 200 lines, features > 2 weeks | Break down, enforce small batch culture |
+| Handoff queues | Items wait days in "Ready for QA" | Cross-functional team, automate testing |
+| Multi-tasking | Every person has 4+ items | Enforce per-person WIP = 2 max |
+| No aging tracking | Old items invisible | Add age indicator to Kanban board |
+| Ignoring wait time | Only measuring "work time" | Track lead time and cycle time separately |

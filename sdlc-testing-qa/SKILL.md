@@ -1,13 +1,13 @@
 ---
 name: sdlc-testing-qa
-description: "Test pyramid (unit/integration/e2e), TDD/BDD, property-based testing, mutation testing, contract testing, chaos engineering, performance testing (k6/Locust), security testing (SAST/DAST), accessibility testing, AI-assisted test generation, serverless testing patterns. Includes Google testing culture and test architecture patterns."
-version: 3.1.0
+description: "Test pyramid (unit/integration/e2e), TDD/BDD, property-based testing, mutation testing, contract testing, chaos engineering, performance testing (k6/Locust), security testing (SAST/DAST), accessibility testing, AI-assisted test generation, serverless testing patterns, ML model testing, API contract testing, database testing, concurrency testing, observability-driven testing. Includes Google testing culture and test architecture patterns."
+version: 3.2.0
 author: Hermes Agent
 license: MIT
 platforms: [linux, macos, windows]
 metadata:
   hermes:
-    tags: [sdlc, testing, tdd, bdd, playwright, pytest, k6, security, sast, dast, accessibility, google, contract-testing, chaos-engineering, mutation-testing, property-based, ai-test-generation, serverless-testing]
+    tags: [sdlc, testing, tdd, bdd, playwright, pytest, k6, security, sast, dast, accessibility, google, contract-testing, chaos-engineering, mutation-testing, property-based, ai-test-generation, serverless-testing, ml-testing, api-contract, database-testing, concurrency-testing, observability-testing]
     related_skills: [sdlc-cicd-pipeline, sdlc-deployment, test-driven-development, security-review-owasp]
 ---
 
@@ -1385,3 +1385,890 @@ sam local generate-event apigateway aws-proxy > events/api-gateway.json
 - Don't skip cold start testing — first invocation is 10-100x slower
 - Don't ignore timeout limits — test what happens at 29s (Lambda max)
 - Don't assume local == cloud — DynamoDB Local behaves differently than real DynamoDB
+
+## Step 24: ML Model Testing Patterns
+
+ML models require specialized testing beyond traditional software testing. Models degrade silently, encode bias, and depend on data quality. Test at every stage: data ingestion, training, serving, and monitoring.
+
+### Data Validation
+
+Validate training and inference data before it reaches the model. Schema drift and distribution shifts are the #1 cause of silent model failure.
+
+```python
+# Great Expectations — data validation
+import great_expectations as gx
+
+context = gx.get_context()
+validator = context.sources.pandas_default.read_csv("train.csv")
+
+validator.expect_column_values_to_not_be_null("feature_1")
+validator.expect_column_values_to_be_between("age", min_value=0, max_value=150")
+validator.expect_column_values_to_be_in_set("label", ["cat", "dog", "bird"])
+validator.expect_column_mean_to_be_between("income", min_value=20000, max_value=200000)
+
+results = validator.validate()
+assert results.success, f"Data validation failed: {results.results}"
+```
+
+```python
+# Pandera — DataFrame schema validation (type-safe)
+import pandera as pa
+from pandera import Column, Check
+
+schema = pa.DataFrameSchema({
+    "feature_1": Column(float, Check.in_range(0, 1)),
+    "feature_2": Column(float, Check(lambda s: s.std() > 0)),
+    "label": Column(str, Check.isin(["positive", "negative"])),
+    "timestamp": Column(pa.DateTime, Check.le(pd.Timestamp.now())),
+})
+
+@pa.check_types
+def train(df: pa.typing.DataFrame[schema]):
+    ...  # guaranteed clean input
+```
+
+**Data validation checklist:**
+- Schema matches expected columns, types, nullable constraints
+- No distribution shift between train/test/production (KS test, PSI)
+- No data leakage (features that encode the target)
+- Label distribution balanced or intentionally skewed
+- Missing value rates within acceptable bounds
+
+### Model Performance Testing
+
+Test model accuracy, latency, and resource consumption as first-class test concerns.
+
+```python
+# pytest — model performance regression tests
+import pytest
+from sklearn.metrics import accuracy_score, f1_score, precision_score, recall_score
+
+@pytest.fixture(scope="session")
+def model():
+    return load_model("models/latest.pkl")
+
+@pytest.fixture(scope="session")
+def test_data():
+    return load_test_set("data/test.parquet")
+
+def test_accuracy_above_threshold(model, test_data):
+    preds = model.predict(test_data.X)
+    acc = accuracy_score(test_data.y, preds)
+    assert acc >= 0.92, f"Accuracy {acc:.3f} below threshold 0.92"
+
+def test_f1_per_class(model, test_data):
+    preds = model.predict(test_data.X)
+    f1 = f1_score(test_data.y, preds, average=None)
+    for cls, score in zip(test_data.classes, f1):
+        assert score >= 0.85, f"Class {cls} F1={score:.3f} below 0.85"
+
+def test_inference_latency(model, test_data):
+    import time
+    sample = test_data.X[:1]
+    start = time.perf_counter()
+    for _ in range(100):
+        model.predict(sample)
+    avg_ms = (time.perf_counter() - start) / 100 * 1000
+    assert avg_ms < 50, f"Avg inference {avg_ms:.1f}ms exceeds 50ms"
+
+def test_model_size(model):
+    import os
+    size_mb = os.path.getsize("models/latest.pkl") / (1024 * 1024)
+    assert size_mb < 500, f"Model size {size_mb:.0f}MB exceeds 500MB limit"
+```
+
+### Bias Testing
+
+Test for demographic parity, equalized odds, and disparate impact across protected groups.
+
+```python
+# Fairlearn — bias testing
+from fairlearn.metrics import MetricFrame, demographic_parity_difference
+from sklearn.metrics import accuracy_score
+
+def test_demographic_parity(model, test_data):
+    preds = model.predict(test_data.X)
+    metric_frame = MetricFrame(
+        metrics=accuracy_score,
+        y_true=test_data.y,
+        y_pred=preds,
+        sensitive_features=test_data.demographics["gender"]
+    )
+    # Max accuracy difference between groups < 5%
+    diff = metric_frame.difference(method="between_groups")
+    assert diff < 0.05, f"Gender accuracy gap: {diff:.3f}"
+
+def test_no_disparate_impact(model, test_data):
+    preds = model.predict(test_data.X)
+    dp_diff = demographic_parity_difference(
+        test_data.y, preds,
+        sensitive_features=test_data.demographics["race"]
+    )
+    # Disparate impact ratio should be 0.8-1.2 (80% rule)
+    assert abs(dp_diff) < 0.2, f"Disparate impact: {dp_diff:.3f}"
+```
+
+```python
+# Aequitas — bias audit framework
+from aequitas.group import Group
+from aequitas.bias import Bias
+from aequitas.fairness import Fairness
+
+g = Group()
+bias_df = g.get_crosstabs(df[["score", "label", "race", "gender"]])
+b = Bias()
+disparities = b.get_disparity_predefined_groups(bias_df, ref_group_dict={"race": "white"})
+# Check: Statistical Parity, Equal Opportunity, Predictive Parity
+```
+
+**Bias testing checklist:**
+- Test accuracy/F1/recall across each protected attribute
+- Check for proxy features that encode protected attributes
+- Validate fairness metrics: demographic parity, equalized odds, calibration
+- Test intersectional groups (e.g., gender x race)
+- Document acceptable trade-offs between fairness metrics
+
+### Drift Detection
+
+Models degrade as data distributions shift. Detect drift early with statistical tests and monitoring.
+
+```python
+# Alibi Detect — drift detection
+from alibi_detect.cd import KSDrift, ChiSquareDrift, TabularDrift
+import numpy as np
+
+# Reference data = training set
+cd = KSDrift(test_data.X_train, p_val=0.05)
+
+# Test on new batch
+result = cd.predict(test_data.X_new)
+assert not result["data"]["is_drift"], f"Data drift detected: {result['data']['p_val']}"
+```
+
+```python
+# Evidently AI — comprehensive drift reports
+from evidently.report import Report
+from evidently.metric_preset import DataDriftPreset, DataQualityPreset
+
+report = Report(metrics=[DataDriftPreset(), DataQualityPreset()])
+report.run(reference_data=train_df, current_data=prod_df)
+report.save_html("drift_report.html")
+
+# Programmatic check
+result = report.as_dict()
+drift_share = result["metrics"][0]["result"]["drift_share"]
+assert drift_share < 0.3, f"Drift share {drift_share:.2f} exceeds 30%"
+```
+
+```python
+# Custom drift detection in CI pipeline
+from scipy.stats import ks_2samp
+
+def test_feature_drift(train_df, prod_sample_df):
+    """Run in CI weekly — compare prod sample to training data."""
+    drifted_features = []
+    for col in train_df.select_dtypes(include=[float, int]).columns:
+        stat, p_val = ks_2samp(train_df[col].dropna(), prod_sample_df[col].dropna())
+        if p_val < 0.01:
+            drifted_features.append((col, p_val))
+    assert not drifted_features, f"Drifted features: {drifted_features}"
+```
+
+**Drift detection strategy:**
+| Type | Method | When |
+|------|--------|------|
+| Data drift | KS test, PSI, Chi-square | Continuous monitoring |
+| Concept drift | Performance decay over time | Weekly model eval |
+| Prediction drift | Output distribution shift | Per-batch monitoring |
+| Feature drift | Per-feature statistical tests | CI pipeline + monitoring |
+
+## Step 25: API Contract Testing — Advanced
+
+### Schema Validation
+
+Validate API requests/responses against OpenAPI/JSON Schema specs automatically.
+
+```python
+# Schemathesis — property-based API testing from OpenAPI spec
+import schemathesis
+from schemathesis.checks import not_a_server_error, status_code_conformance
+
+schema = schemathesis.from_url("http://localhost:8080/openapi.json")
+
+@schema.parametrize()
+def test_api_conformance(case):
+    response = case.call()
+    case.validate_response(response)
+    # Auto-tests: status codes match spec, response body matches schema,
+    # no 500s, content-type headers correct
+
+# Run with coverage reporting
+# st run http://localhost:8080/openapi.json --checks all --dry-run
+```
+
+```typescript
+# OpenAPI schema validation with Ajv
+import Ajv from 'ajv';
+import addFormats from 'ajv-formats';
+
+const ajv = new Ajv({ allErrors: true });
+addFormats(ajv);
+
+function validateAgainstSchema(data: unknown, schema: object): boolean {
+  const validate = ajv.compile(schema);
+  const valid = validate(data);
+  if (!valid) {
+    console.error('Schema violations:', validate.errors);
+  }
+  return valid;
+}
+
+// In tests
+test('GET /users response matches schema', async () => {
+  const res = await fetch('/api/users');
+  const data = await res.json();
+  expect(validateAgainstSchema(data, userSchema)).toBe(true);
+});
+```
+
+### Backward Compatibility Testing
+
+Detect breaking changes before they reach consumers.
+
+```bash
+# oasdiff — OpenAPI diff tool
+oasdiff breaking openapi-v1.yaml openapi-v2.yaml
+# Outputs: BREAKING CHANGE: removed endpoint GET /users/{id}
+# Outputs: BREAKING CHANGE: required field 'email' added to POST /users
+
+# CI gate: fail if breaking changes detected
+oasdiff breaking openapi-v1.yaml openapi-v2.yaml --fail-on ERR
+```
+
+```bash
+# optic — API governance
+optic diff openapi-v1.yaml openapi-v2.yaml
+# Visual diff of API changes with impact analysis
+```
+
+**Backward compatibility rules:**
+1. Never remove a field from a response (consumers depend on it)
+2. Never add a required field to a request (breaks existing callers)
+3. Never change a field type (string → int breaks parsers)
+4. Never change a URL path or HTTP method
+5. Always add optional fields with defaults
+6. Deprecate first, remove after N versions
+
+### Breaking Change Detection in CI
+
+```yaml
+# GitHub Actions: block PRs with breaking API changes
+name: API Compatibility Check
+on:
+  pull_request:
+    paths: ['openapi/**', 'api/**']
+
+jobs:
+  check-breaking:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Compare OpenAPI specs
+        run: |
+          # Get base spec from main branch
+          git show origin/main:openapi/spec.yaml > /tmp/base.yaml
+          # Check for breaking changes
+          oasdiff breaking /tmp/base.yaml openapi/spec.yaml --fail-on ERR \
+            --format json > breaking-report.json || true
+          if [ -s breaking-report.json ]; then
+            echo "::error::Breaking API changes detected"
+            cat breaking-report.json
+            exit 1
+          fi
+```
+
+**Breaking change detection tools:**
+| Tool | Language | Method |
+|------|----------|--------|
+| oasdiff | Go/CLI | Static OpenAPI diff |
+| optic | Node/CLI | API governance rules |
+| openapi-diff | Java | Semantic diff |
+| swagger-diff | Node | Breaking change detection |
+| bump-cli | Python | Version-aware diff |
+
+## Step 26: Database Testing Patterns
+
+### Migration Testing
+
+Test migrations forward and backward, against real databases, with production-like data volumes.
+
+```python
+# pytest + Alembic migration testing
+import pytest
+from alembic.config import Config
+from alembic import command
+from sqlalchemy import create_engine, inspect, text
+
+@pytest.fixture(scope="module")
+def db_engine():
+    with PostgresContainer("postgres:16") as pg:
+        engine = create_engine(pg.get_connection_url())
+        yield engine
+
+def test_migrations_up(db_engine):
+    """All migrations apply cleanly."""
+    alembic_cfg = Config("alembic.ini")
+    alembic_cfg.set_main_option("sqlalchemy.url", str(db_engine.url))
+    command.upgrade(alembic_cfg, "head")
+    inspector = inspect(db_engine)
+    assert "users" in inspector.get_table_names()
+    assert "orders" in inspector.get_table_names()
+
+def test_migrations_down(db_engine):
+    """All migrations revert cleanly."""
+    alembic_cfg = Config("alembic.ini")
+    alembic_cfg.set_main_option("sqlalchemy.url", str(db_engine.url))
+    command.downgrade(alembic_cfg, "base")
+    inspector = inspect(db_engine)
+    assert "users" not in inspector.get_table_names()
+
+def test_migration_preserves_data(db_engine):
+    """Migrate with data — verify no data loss."""
+    alembic_cfg = Config("alembic.ini")
+    alembic_cfg.set_main_option("sqlalchemy.url", str(db_engine.url))
+
+    # Apply previous version, insert data
+    command.upgrade(alembic_cfg, "abc123")
+    with db_engine.connect() as conn:
+        conn.execute(text("INSERT INTO users (email) VALUES ('test@example.com')"))
+        conn.commit()
+
+    # Apply new migration
+    command.upgrade(alembic_cfg, "head")
+
+    # Verify data survived
+    with db_engine.connect() as conn:
+        result = conn.execute(text("SELECT email FROM users")).fetchall()
+        assert any("test@example.com" in r[0] for r in result)
+```
+
+```bash
+# Flyway migration testing
+flyway -url=jdbc:postgresql://localhost:5432/test migrate
+flyway validate  # check migration scripts are consistent
+flyway info      # show applied vs pending migrations
+```
+
+### Seed Data
+
+Manage test data with factories and version-controlled seed scripts.
+
+```python
+# pytest — database seeding with factories
+import factory
+from sqlalchemy.orm import Session
+
+class UserFactory(factory.alchemy.SQLAlchemyModelFactory):
+    class Meta:
+        model = User
+        sqlalchemy_session = Session
+
+    id = factory.Sequence(lambda n: n + 1)
+    email = factory.LazyAttribute(lambda o: f"user{o.id}@test.com")
+    name = factory.Faker("name")
+    role = "member"
+
+    class Params:
+        admin = factory.Trait(role="admin", email=factory.LazyAttribute(lambda o: f"admin{o.id}@test.com"))
+
+# Usage
+user = UserFactory()                      # basic user
+admin = UserFactory(admin=True)           # admin user
+users = UserFactory.create_batch(10)      # batch
+
+# Reset sequences between tests for deterministic IDs
+@pytest.fixture(autouse=True)
+def reset_factories():
+    UserFactory.reset_sequence()
+```
+
+```python
+# SQL seed scripts — version-controlled
+# seeds/001_base_data.sql
+# INSERT INTO roles (name, permissions) VALUES
+#     ('admin', '["read","write","delete","admin"]'),
+#     ('member', '["read","write"]'),
+#     ('viewer', '["read"]')
+# ON CONFLICT (name) DO NOTHING;
+
+# In tests — load seed files
+def load_seeds(engine, seed_dir="seeds"):
+    for sql_file in sorted(Path(seed_dir).glob("*.sql")):
+        with engine.connect() as conn:
+            conn.execute(text(sql_file.read_text()))
+            conn.commit()
+```
+
+### Transaction Rollback Isolation
+
+Wrap each test in a transaction that rolls back — fastest isolation pattern.
+
+```python
+# pytest — transaction rollback per test
+import pytest
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker, Session
+from sqlalchemy import event
+
+@pytest.fixture
+def db_session(postgres):
+    """Each test gets a session that rolls back after test completes."""
+    engine = create_engine(postgres.get_connection_url())
+    connection = engine.connect()
+    transaction = connection.begin()
+    session = Session(bind=connection)
+
+    yield session
+
+    session.close()
+    transaction.rollback()
+    connection.close()
+
+# Alternative: nested transactions (savepoints)
+@pytest.fixture
+def nested_session(postgres):
+    engine = create_engine(postgres.get_connection_url())
+    SessionLocal = sessionmaker(bind=engine)
+    session = SessionLocal()
+    session.begin_nested()  # savepoint
+
+    @event.listens_for(session, "after_transaction_end")
+    def restart_savepoint(sess, trans):
+        if trans.nested and not trans._parent.nested:
+            sess.begin_nested()
+
+    yield session
+    session.rollback()
+    session.close()
+```
+
+**Database testing patterns:**
+| Pattern | Speed | Isolation | Best For |
+|---------|-------|-----------|----------|
+| Transaction rollback | Fastest | Per-test | Unit/integration tests |
+| Truncate between tests | Fast | Per-test | Tests that need committed data |
+| Fresh database per test | Slow | Perfect | Migration tests, schema changes |
+| Shared database + cleanup | Medium | Fragile | Only when other patterns fail |
+
+## Step 27: Concurrency Testing
+
+### Race Condition Detection
+
+```python
+# Thread sanitizer pattern — detect data races
+import threading
+import time
+from concurrent.futures import ThreadPoolExecutor
+
+def test_concurrent_counter_increment():
+    """Detect race condition in shared counter."""
+    counter = UnsafeCounter()  # Replace with your implementation
+    iterations = 10000
+
+    with ThreadPoolExecutor(max_workers=10) as pool:
+        futures = [pool.submit(counter.increment) for _ in range(iterations)]
+        for f in futures:
+            f.result()
+
+    # If this fails, there's a race condition
+    assert counter.value == iterations, f"Expected {iterations}, got {counter.value}"
+
+def test_concurrent_dict_access():
+    """Detect race in shared dictionary."""
+    shared = {}
+    errors = []
+
+    def writer(key, value):
+        try:
+            shared[key] = value
+            time.sleep(0.001)  # amplify timing window
+            assert shared[key] == value
+        except (KeyError, AssertionError) as e:
+            errors.append(e)
+
+    with ThreadPoolExecutor(max_workers=20) as pool:
+        for i in range(100):
+            pool.submit(writer, f"key_{i}", f"value_{i}")
+
+    assert not errors, f"Race conditions detected: {len(errors)}"
+```
+
+```go
+// Go — race detector (built-in)
+// go test -race ./...
+// Catches data races at runtime using happens-before analysis
+
+func TestConcurrentMapAccess(t *testing.T) {
+    m := make(map[string]int)
+    var wg sync.WaitGroup
+
+    for i := 0; i < 100; i++ {
+        wg.Add(1)
+        go func(n int) {
+            defer wg.Done()
+            key := fmt.Sprintf("key_%d", n)
+            m[key] = n           // DATA RACE without sync
+            _ = m[key]
+        }(i)
+    }
+    wg.Wait()
+    // -race flag will report: "WARNING: DATA RACE"
+}
+```
+
+```java
+// Java — JCStress for concurrency tests
+// http://openjdk.java.net/projects/code-tools/jcstress/
+
+@JCStressTest
+@Outcome(id = "1, 1", expect = ACCEPTABLE, desc = "Both updates visible")
+@Outcome(expect = FORBIDDEN, desc = "Race condition")
+@State
+public class UnsafeDCL {
+    int v;
+    @Actor
+    void writer() { v = 1; }
+    @Actor
+    void reader(I_Result r) { r.r1 = v; }
+}
+```
+
+### Load Testing Patterns
+
+```javascript
+// k6 — ramping VUs pattern
+import http from 'k6/http';
+import { check, sleep } from 'k6';
+import { Rate, Trend } from 'k6/metrics';
+
+const errorRate = new Rate('errors');
+const latency = new Trend('api_latency');
+
+export const options = {
+  scenarios: {
+    ramp_up: {
+      executor: 'ramping-vus',
+      startVUs: 0,
+      stages: [
+        { duration: '2m', target: 50 },
+        { duration: '5m', target: 50 },
+        { duration: '2m', target: 200 },
+        { duration: '5m', target: 200 },
+        { duration: '2m', target: 0 },
+      ],
+    },
+  },
+  thresholds: {
+    errors: ['rate<0.05'],
+    api_latency: ['p(95)<500', 'p(99)<1500'],
+    http_req_duration: ['p(95)<500'],
+  },
+};
+
+export default function () {
+  const res = http.get('https://api.example.com/endpoint');
+  errorRate.add(res.status !== 200);
+  latency.add(res.timings.duration);
+  check(res, { 'status 200': (r) => r.status === 200 });
+  sleep(1);
+}
+```
+
+```python
+# Locust — weighted tasks with wait times
+from locust import HttpUser, task, between, tag, events
+
+class APIUser(HttpUser):
+    wait_time = between(0.5, 2)
+
+    @tag('read')
+    @task(5)  # 5x weight = more frequent
+    def get_users(self):
+        with self.client.get('/users', catch_response=True) as res:
+            if res.status_code != 200:
+                res.failure(f"Got {res.status_code}")
+
+    @tag('write')
+    @task(1)
+    def create_user(self):
+        self.client.post('/users', json={"name": "test", "email": "test@test.com"})
+
+    def on_start(self):
+        """Login once per virtual user."""
+        self.client.post('/login', json={"email": "load@test.com", "password": "test"})
+```
+
+### Deadlock Detection
+
+```python
+# Python — detect deadlocks with timeout + threading
+import threading
+import time
+
+def test_deadlock_detection():
+    """Verify no deadlock occurs with concurrent lock acquisition."""
+    lock_a = threading.Lock()
+    lock_b = threading.Lock()
+    deadlock_detected = threading.Event()
+
+    def worker_1():
+        with lock_a:
+            time.sleep(0.01)  # amplify timing
+            if not lock_b.acquire(timeout=2.0):
+                deadlock_detected.set()
+                return
+            lock_b.release()
+
+    def worker_2():
+        with lock_b:
+            time.sleep(0.01)
+            if not lock_a.acquire(timeout=2.0):
+                deadlock_detected.set()
+                return
+            lock_a.release()
+
+    t1 = threading.Thread(target=worker_1)
+    t2 = threading.Thread(target=worker_2)
+    t1.start()
+    t2.start()
+    t1.join(timeout=5)
+    t2.join(timeout=5)
+
+    assert not deadlock_detected.is_set(), "Deadlock detected"
+```
+
+```java
+// Java — detect deadlocks with ThreadMXBean
+import java.lang.management.ManagementFactory;
+import java.lang.management.ThreadMXBean;
+
+@Test
+void detectDeadlocks() {
+    ThreadMXBean bean = ManagementFactory.getThreadMXBean();
+    long[] threadIds = bean.findDeadlockedThreads();
+    assertNull(threadIds, "Deadlock detected among threads: " +
+        Arrays.toString(threadIds));
+}
+```
+
+```go
+// Go — detect deadlocks with go-deadlock
+// import "github.com/sasha-s/go-deadlock"
+// Replaces sync.Mutex globally, detects lock ordering violations at runtime
+
+var mu1, mu2 deadlock.Mutex
+
+func TestNoDeadlock(t *testing.T) {
+    go func() {
+        mu1.Lock()
+        defer mu1.Unlock()
+        mu2.Lock()
+        defer mu2.Unlock()
+    }()
+    // go-deadlock panics with stack trace if deadlock detected
+}
+```
+
+**Concurrency testing checklist:**
+- Run Go tests with `-race` flag in CI
+- Use thread sanitizers for C/C++ (`-fsanitize=thread`)
+- Test with multiple thread counts (1, 2, N, N*2)
+- Add timeouts to all lock acquisitions in tests
+- Test lock ordering consistency
+- Verify idempotency of operations under concurrent access
+
+## Step 28: Observability-Driven Testing
+
+### Testing with Traces
+
+Use distributed traces to validate request flows across services.
+
+```typescript
+// OpenTelemetry trace assertions in integration tests
+import { trace, SpanStatusCode } from '@opentelemetry/api';
+import { NodeTracerProvider } from '@opentelemetry/sdk-trace-node';
+import { InMemorySpanExporter, SimpleSpanProcessor } from '@opentelemetry/sdk-trace-base';
+
+const exporter = new InMemorySpanExporter();
+const provider = new NodeTracerProvider();
+provider.addSpanProcessor(new SimpleSpanProcessor(exporter));
+provider.register();
+
+afterEach(() => exporter.reset());
+
+test('order flow creates correct spans', async () => {
+  await createOrder({ item: 'widget', qty: 2 });
+
+  const spans = exporter.getFinishedSpans();
+  const spanNames = spans.map(s => s.name);
+
+  expect(spanNames).toContain('order.create');
+  expect(spanNames).toContain('inventory.check');
+  expect(spanNames).toContain('payment.charge');
+  expect(spanNames).toContain('email.send');
+
+  // Verify span relationships (parent-child)
+  const orderSpan = spans.find(s => s.name === 'order.create');
+  const paymentSpan = spans.find(s => s.name === 'payment.charge');
+  expect(paymentSpan.parentSpanId).toBe(orderSpan.spanContext().spanId);
+
+  // Verify no errors in trace
+  for (const span of spans) {
+    expect(span.status.code).not.toBe(SpanStatusCode.ERROR);
+  }
+});
+
+test('failed payment marks span as error', async () => {
+  await expect(createOrder({ item: 'widget', qty: 2, forcePayFail: true }))
+    .rejects.toThrow();
+
+  const spans = exporter.getFinishedSpans();
+  const paymentSpan = spans.find(s => s.name === 'payment.charge');
+  expect(paymentSpan.status.code).toBe(SpanStatusCode.ERROR);
+  expect(paymentSpan.attributes['error.type']).toBe('PaymentDeclined');
+});
+```
+
+```python
+# Python — trace assertions with OpenTelemetry test exporter
+from opentelemetry import trace
+from opentelemetry.sdk.trace import TracerProvider
+from opentelemetry.sdk.trace.export.in_memory import InMemorySpanExporter
+
+exporter = InMemorySpanExporter()
+provider = TracerProvider()
+provider.add_span_processor(SimpleSpanProcessor(exporter))
+trace.set_tracer_provider(provider)
+
+def test_api_tracing():
+    call_api_endpoint()
+    spans = exporter.get_finished_spans()
+
+    # Verify span structure
+    span_names = [s.name for s in spans]
+    assert "HTTP GET /users" in span_names
+    assert "db.query" in span_names
+
+    # Verify attributes
+    db_span = next(s for s in spans if s.name == "db.query")
+    assert db_span.attributes["db.statement"].startswith("SELECT")
+    assert db_span.attributes["db.system"] == "postgresql"
+
+    # Verify duration (no span > 500ms)
+    for span in spans:
+        duration_ms = (span.end_time - span.start_time) / 1_000_000
+        assert duration_ms < 500, f"Span {span.name} took {duration_ms:.0f}ms"
+
+    exporter.clear()
+```
+
+### Using Production Data for Test Scenarios
+
+Derive test cases from real production behavior — traces, logs, and metrics become test inputs.
+
+```python
+# Replay production traces as test scenarios
+import json
+from datetime import datetime, timedelta
+
+def load_prod_traces(trace_file="prod_traces.json"):
+    """Load sampled production traces for replay testing."""
+    with open(trace_file) as f:
+        return json.load(f)
+
+def test_replay_production_scenarios():
+    """Replay real production request patterns."""
+    traces = load_prod_traces()
+
+    for trace_data in traces[:100]:  # sample 100 traces
+        request = {
+            "method": trace_data["http.method"],
+            "path": trace_data["http.target"],
+            "headers": trace_data.get("http.request.headers", {}),
+            "body": trace_data.get("http.request.body"),
+        }
+
+        response = app.test_client().open(**request)
+
+        # Verify same status code as production
+        prod_status = trace_data["http.status_code"]
+        assert response.status_code == prod_status, \
+            f"Prod returned {prod_status}, test returned {response.status_code} for {request['path']}"
+```
+
+```python
+# Generate load test scenarios from production traffic patterns
+def generate_k6_script_from_traces(trace_file="prod_traces.json"):
+    """Convert production traces to k6 load test script."""
+    traces = load_prod_traces(trace_file)
+
+    # Analyze traffic patterns
+    endpoint_weights = {}
+    for t in traces:
+        path = t["http.target"]
+        endpoint_weights[path] = endpoint_weights.get(path, 0) + 1
+
+    total = sum(endpoint_weights.values())
+    scenarios = []
+    for path, count in sorted(endpoint_weights.items(), key=lambda x: -x[1]):
+        weight = count / total
+        scenarios.append({
+            "path": path,
+            "weight": round(weight * 100),
+            "p95_ms": t.get("http.duration_p95", 500),
+        })
+
+    return scenarios
+
+# Use in k6: weighted scenarios matching production traffic distribution
+```
+
+```yaml
+# Chaos experiments derived from production incidents
+chaos_scenarios:
+  - name: "Database connection pool exhaustion"
+    source_incident: "INC-2024-0412"
+    description: "Connection pool hit limit during Black Friday traffic"
+    experiment:
+      type: network_chaos
+      target: database
+      action: connection_limit
+      limit: 5
+      duration: 5m
+    expected_behavior: "Graceful degradation, queue requests, alert fires"
+
+  - name: "Cache stampede after Redis failover"
+    source_incident: "INC-2024-0315"
+    experiment:
+      type: pod_chaos
+      target: redis
+      action: pod_delete
+    expected_behavior: "Circuit breaker opens, fallback to DB, no thundering herd"
+```
+
+**Observability-driven testing patterns:**
+| Pattern | Source | Use Case |
+|---------|--------|----------|
+| Trace replay | Production traces | Validate request flows match expected behavior |
+| Traffic shadowing | Prod traffic copy | Test new code with real traffic patterns |
+| Log-driven tests | Error logs | Reproduce production bugs as regression tests |
+| Metric assertions | Prometheus/Grafana | Validate SLOs in integration tests |
+| Incident replay | Incident timelines | Chaos experiments from past incidents |
+
+**Key practices:**
+- Sample production traces weekly, use as regression test suite
+- Convert production 5xx responses into test cases automatically
+- Derive load test weights from actual traffic distribution
+- Build chaos experiments from post-incident reviews
+- Assert on trace structure (spans, attributes, relationships) not just response codes
+- Use OpenTelemetry test exporters to capture and verify instrumentation
