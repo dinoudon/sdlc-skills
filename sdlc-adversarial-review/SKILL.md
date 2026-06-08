@@ -1,13 +1,13 @@
 ---
 name: sdlc-adversarial-review
-description: "Multi-agent PR review: 3 specialized reviewers (architecture, security, quality) run in parallel, orchestrator synthesizes findings and applies fixes. Includes Google/Stripe/Meta code review culture, DORA velocity metrics (5 metrics incl. reliability), SLSA supply chain verification, AI-assisted review guardrails, automated tooling integration, advanced threat modeling (attack trees, kill chain, MITRE ATT&CK), secure code review patterns, compliance-aware review (SOC2/GDPR/HIPAA), AI/ML model review, performance review patterns, OWASP API Security Top 10 2023, supply chain security (SLSA levels/SolarWinds/npm/PyPI), LLM/AI security (OWASP LLM Top 10), container security scanning, IaC security scanning, secret detection, SOC2 Trust Services Criteria (5 categories/9 control families), GDPR technical implementation (6 data subject rights/CMP/DPIA), HIPAA technical safeguards (AES-256/audit logging/break-glass), ISO 27001 for engineering (ISMS/Annex A 93 controls), and policy as code (OPA/Kyverno/Sentinel/Cloud Custodian)."
-version: 4.2.0
+description: "Multi-agent PR review: 3 specialized reviewers (architecture, security, quality) run in parallel, orchestrator synthesizes findings and applies fixes. Includes Google/Stripe/Meta code review culture, DORA velocity metrics (5 metrics incl. reliability), SLSA supply chain verification, AI-assisted review guardrails, automated tooling integration, advanced threat modeling (attack trees, kill chain, MITRE ATT&CK), secure code review patterns, compliance-aware review (SOC2/GDPR/HIPAA), AI/ML model review, performance review patterns, OWASP API Security Top 10 2023, supply chain security (SLSA levels/SolarWinds/npm/PyPI), LLM/AI security (OWASP LLM Top 10), container security scanning, IaC security scanning, secret detection, SOC2 Trust Services Criteria (5 categories/9 control families), GDPR technical implementation (6 data subject rights/CMP/DPIA), HIPAA technical safeguards (AES-256/audit logging/break-glass), ISO 27001 for engineering (ISMS/Annex A 93 controls), policy as code (OPA/Kyverno/Sentinel/Cloud Custodian), zero trust architecture (NIST SP 800-207/BeyondCorp), service identity (SPIFFE/SPIRE/SVIDs), mTLS (Istio/Linkerd/Cilium), secret management (Vault/Sealed Secrets/External Secrets), and container runtime security (Falco/Sysdig/KubeArmor)."
+version: 4.4.0
 author: Hermes Agent
 license: MIT
 platforms: [linux, macos, windows]
 metadata:
   hermes:
-    tags: [sdlc, code-review, pr-review, adversarial, multi-agent, security, architecture, google, stripe, dora, semgrep, codeql, slsa, supply-chain, sbom, sigstore, ai-review, threat-modeling, mitre-attack, kill-chain, attack-trees, crypto-review, compliance, soc2, gdpr, hipaa, iso27001, policy-as-code, ai-ml-review, performance-review, concurrency, owasp-api, api-security, llm-security, container-security, iac-security, secret-detection, trivy, grype, snyk, checkov, tfsec, kics, trufflehog, detect-secrets, opa, rego, kyverno, sentinel, cloud-custodian, vanta, drata, cmp, tcfs]
+    tags: [sdlc, code-review, pr-review, adversarial, multi-agent, security, architecture, google, stripe, dora, semgrep, codeql, slsa, supply-chain, sbom, sigstore, ai-review, threat-modeling, mitre-attack, kill-chain, attack-trees, crypto-review, compliance, soc2, gdpr, hipaa, iso27001, policy-as-code, ai-ml-review, performance-review, concurrency, owasp-api, api-security, llm-security, container-security, iac-security, secret-detection, trivy, grype, snyk, checkov, tfsec, kics, trufflehog, detect-secrets, opa, rego, kyverno, sentinel, cloud-custodian, vanta, drata, cmp, tcfs, zero-trust, nist-800-207, beyondcorp, spiffe, spire, mtls, istio, linkerd, cilium, vault, sealed-secrets, external-secrets, falco, sysdig, kubearmor]
     related_skills: [sdlc-architecture-design, sdlc-testing-qa, github-code-review, github-pr-workflow]
 ---
 
@@ -3344,4 +3344,763 @@ jobs:
 - [ ] Breaking-glass procedure: how to temporarily bypass policy (with audit trail)
 - [ ] Policy-as-code included in threat model (what if policies are bypassed?)
 - [ ] Compliance mapping: each policy mapped to regulatory control (SOC2/ISO/GDPR)
+```
+
+## Step 36: Zero Trust Architecture
+
+### NIST SP 800-207 Core Tenets
+
+Zero Trust (ZT) is a security paradigm that eliminates implicit trust in any element within or outside the network perimeter.
+
+**NIST SP 800-207 Tenets:**
+
+1. **All data sources and computing services are resources** — every service, data store, API endpoint treated as discrete resource
+2. **All communication is secured regardless of network location** — no trust granted based on network segment; LAN same risk as Internet
+3. **Access to resources is granted per-session** — no persistent trust; each request authenticated, authorized, encrypted
+4. **Access is determined by dynamic policy** — includes identity, application/service, requesting asset, environment (location, time, behavior)
+5. **Enterprise monitors and measures integrity/security posture of all assets** — continuous assessment, no asset trusted by default
+6. **Authentication and authorization are dynamic and strictly enforced before access** — continuous re-evaluation, MFA mandatory
+7. **Enterprise collects maximum info about assets, network infrastructure, communications** — feeds into trust algorithm decisions
+
+### Three Pillars of Zero Trust
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                     ZERO TRUST ARCHITECTURE                 │
+│                                                             │
+│  ┌──────────────┐  ┌──────────────┐  ┌──────────────────┐  │
+│  │ Control Plane │  │  Data Plane   │  │  Trust Algorithm │  │
+│  │              │  │              │  │                  │  │
+│  │ Policy       │  │ Subject      │  │ Input:           │  │
+│  │ Engine       │  │ (requester)  │  │ - User identity  │  │
+│  │ Policy       │  │ → Policy     │  │ - Device health  │  │
+│  │ Admin        │  │   Enforcement│  │ - Location       │  │
+│  │ Policy       │  │   Point      │  │ - Time/behavior  │  │
+│  │ Decision     │  │ → Resource   │  │ - Threat intel   │  │
+│  │ Point (PDP)  │  │              │  │                  │  │
+│  │              │  │              │  │ Output:          │  │
+│  │              │  │              │  │ - Allow/Deny     │  │
+│  │              │  │              │  │ - Step-up auth   │  │
+│  └──────────────┘  └──────────────┘  └──────────────────┘  │
+└─────────────────────────────────────────────────────────────┘
+```
+
+**Control Plane:** Policy Decision Point (PDP) — evaluates requests against policy. Components:
+- **Policy Engine (PE):** Computes trust decisions using identity, device state, threat intel
+- **Policy Administrator (PA):** Executes PDP decisions — creates/destroys sessions, configures PEPs
+- **Policy Information Points (PIPs):** Feed context to PE (CMDB, SIEM, identity provider, threat feeds)
+
+**Data Plane:** Policy Enforcement Points (PEPs) — gate access to every resource. Mediates between subject and resource. Single logical component, may be distributed (sidecar, gateway, agent).
+
+**Trust Algorithm:** Scoring function combining:
+- User identity and role (IdP assertion strength)
+- Device posture (EDR status, patch level, disk encryption)
+- Request context (network location, time of day, behavioral anomaly)
+- Resource sensitivity level
+- Threat intelligence signals
+
+### Zero Trust Deployment Models
+
+| Model | Description | Use Case | Complexity |
+|-------|-------------|----------|------------|
+| **Network-centric ZT** | Micro-segmentation at network layer; SDN/SDP gateways | Legacy apps, data center migration | Medium |
+| **Identity-centric ZT** | Strong identity + MFA + device trust; access via IdP policies | Cloud-native, SaaS-heavy orgs | Medium |
+| **Application-centric ZT** | Per-app access proxy; no network-level access | BeyondCorp model, high security | High |
+| **Data-centric ZT** | Classification-driven; DLP + encryption + access policy | Regulated industries, IP protection | High |
+| **Hybrid** | Combine models per segment | Most enterprises | Varies |
+
+### Zero Trust Review Checklist
+
+```
+- [ ] No implicit trust based on network location (VPN ≠ trusted)
+- [ ] All service-to-service communication authenticated and encrypted (mTLS or equivalent)
+- [ ] Access decisions logged with full context (who, what, when, where, why)
+- [ ] Policy engine evaluated at every access decision (no stale sessions)
+- [ ] Device posture checked before granting access (EDR, patch level, encryption)
+- [ ] MFA enforced for all human access (phishing-resistant preferred: FIDO2/WebAuthn)
+- [ ] Micro-segmentation limits blast radius of compromised workload
+- [ ] Lateral movement detection: anomalous east-west traffic triggers alert
+- [ ] Trust algorithm inputs auditable and tamper-resistant
+- [ ] Graceful degradation: if policy engine unavailable, deny by default (fail closed)
+```
+
+---
+
+## Step 37: BeyondCorp — Google's Zero Trust Model
+
+BeyondCorp is Google's implementation of zero trust, built after Operation Aurora (2009). Shifts access controls from perimeter to individual users and devices.
+
+### BeyondCorp Architecture Components
+
+```
+                        ┌───────────────────────┐
+                        │   Access Control Engine │
+                        │   (Policy + Trust      │
+                        │    Scoring)             │
+                        └──────────┬──────────────┘
+                                   │
+          ┌────────────────────────┼────────────────────────┐
+          │                        │                        │
+  ┌───────▼────────┐   ┌──────────▼──────────┐   ┌────────▼─────────┐
+  │ Device          │   │ Access              │   │ Access Policy    │
+  │ Inventory       │   │ Proxy               │   │ List             │
+  │ Service         │   │ (Frontend)          │   │ (Rules DB)       │
+  │                 │   │                     │   │                  │
+  │ - Device ID     │   │ Terminates TLS      │   │ Per-app policies │
+  │ - Owner         │   │ Authenticates user  │   │ Trust tiers      │
+  │ - Trust tier    │   │ Enforces policy     │   │ Device require-  │
+  │ - Patch level   │   │ Proxies to backend  │   │ ments per app    │
+  └─────────────────┘   └─────────────────────┘   └──────────────────┘
+```
+
+**1. Device Inventory Service:**
+- Tracks every managed device (laptop, phone, VM)
+- Attributes: serial, asset tag, owner, OS, patch level, EDR status, encryption state
+- Feeds trust tier computation
+- Sources: MDM (Jamf, Intune), CMDB, agent-based discovery
+
+**2. Access Proxy:**
+- Single entry point for all internal applications
+- Terminates TLS, authenticates user (via IdP), evaluates device trust
+- Reverse proxies to backend services
+- No VPN required — user accesses apps from any network
+- Implementation: Google's own, or open-source equivalents (Pomerium, OAuth2 Proxy + Envoy)
+
+**3. Access Control Engine:**
+- Central policy evaluation point
+- Inputs: user identity (from IdP), device trust tier (from inventory), application requirements (from policy list), contextual signals
+- Trust tiers: `Full Trust` → `Partial Trust` → `Untrusted`
+- Policy: "App X requires Trust Tier >= Partial, MFA in last 8h"
+
+**4. Continuous Evaluation:**
+- Session not static — re-evaluated periodically and on signal change
+- Device falls out of compliance → session terminated or step-up auth required
+- User behavior anomaly → trust score drops → access narrowed
+- Signals: impossible travel, device lost/stolen, certificate revoked, EDR alert
+
+### BeyondCorp Trust Tiers
+
+| Tier | Device Status | User Auth | Access Level |
+|------|--------------|-----------|--------------|
+| **Full Trust** | Managed, patched, encrypted, EDR active, corporate network | MFA recent (<8h), normal behavior | All apps including sensitive |
+| **Partial Trust** | Managed, some drift (late patch) or off-network | MFA older (>8h) or unusual location | Most apps, not crown jewels |
+| **Untrusted** | Unmanaged or non-compliant | Basic auth only | Public apps only, read-only |
+
+### BeyondCorp Review Checklist
+
+```
+- [ ] Device inventory service covers all endpoints (managed + BYOD tracked)
+- [ ] Access proxy is single entry point (no bypass paths)
+- [ ] Trust tier computed dynamically, not cached indefinitely
+- [ ] Continuous re-evaluation during active sessions (not just at login)
+- [ ] Sensitive applications require highest trust tier
+- [ ] No VPN dependency for internal app access
+- [ ] Device compliance signals integrated (MDM, EDR, patch management)
+- [ ] Session termination on trust tier drop (device non-compliant, user anomaly)
+- [ ] Access proxy hardened (rate limiting, DDoS protection, WAF)
+- [ ] Audit log: every access decision logged with trust score and inputs
+```
+
+---
+
+## Step 38: SPIFFE/SPIRE — Service Identity Framework
+
+SPIFFE (Secure Production Identity Framework for Everyone) provides a standard for service identity. SPIRE is its production implementation.
+
+### SPIFFE Identity Model
+
+**SPIFFE ID:** Uniform Resource Identifier for workload identity.
+```
+spiffe://trust-domain/workload-identifier
+
+Examples:
+spiffe://example.com/payment-service
+spiffe://example.com/region/us-east/db-primary
+spiffe://k8s.example.com/ns/default/sa/web-app
+```
+
+**Trust Domain:** Top-level namespace (usually cluster or org). Workloads in different trust domains authenticate via federation.
+
+**SVID (SPIFFE Verifiable Identity Document):** Credential proving SPIFFE ID. Two types:
+
+| SVID Type | Format | Lifetime | Use Case |
+|-----------|--------|----------|----------|
+| **X.509 SVID** | X.509 certificate with SPIFFE ID in SAN URI field | Short (hours) | mTLS between services |
+| **JWT SVID** | JWT with `sub` claim = SPIFFE ID | Short (minutes) | API auth, user delegation, OIDC |
+
+**X.509 SVID structure:**
+```
+Subject Alternative Name:
+  URI: spiffe://example.com/payment-service
+Key Usage: Digital Signature, Key Encipherment
+Extended Key Usage: Server Authentication, Client Authentication
+```
+
+### Workload API
+
+Unix domain socket provided by SPIRE agent. Workloads call it to obtain SVIDs. No secrets on disk, no config files with certs.
+
+```go
+// Workload API client (Go)
+conn, _ := grpc.Dial("unix:///run/spire/sockets/agent.sock", ...)
+client := workload.NewSpiffeWorkloadAPIClient(conn)
+stream, _ := client.FetchX509SVID(ctx, &workload.X509SVIDRequest{})
+svid := stream.Recv() // Returns cert + key + bundle
+```
+
+### SPIRE Server and Agent
+
+```
+┌─────────────────────────────────────────────────┐
+│                  SPIRE Server                     │
+│                                                  │
+│  ┌──────────┐ ┌───────────┐ ┌────────────────┐  │
+│  │ Node     │ │ Workload  │ │ Attestation    │  │
+│  │ Attester │ │ Attester  │ │ Result Store   │  │
+│          │ │           │ │                │  │
+│  └──────────┘ └───────────┘ └────────────────┘  │
+│  ┌──────────┐ ┌───────────┐ ┌────────────────┐  │
+│  │ CA       │ │ SVID      │ │ Node Resolver  │  │
+│  │ Manager  │ │ Store     │ │ Plugin         │  │
+│  └──────────┘ └───────────┘ └────────────────┘  │
+│  ┌──────────────────────────────────────────────┐│
+│  │  Upstream CA (optional — Vault, AWS ACM PCA) ││
+│  └──────────────────────────────────────────────┘│
+└──────────────────────────┬───────────────────────┘
+                           │ gRPC (Node API)
+┌──────────────────────────▼───────────────────────┐
+│                  SPIRE Agent                       │
+│  ┌──────────────┐  ┌───────────────────────────┐  │
+│  │ Node         │  │ Workload Attestor         │  │
+│  │ Attestor     │  │ (pid→pod→sa mapping)      │  │
+│  └──────────────┘  └───────────────────────────┘  │
+│  ┌──────────────────────────────────────────────┐ │
+│  │         Workload API (UDS socket)             │ │
+│  │    /run/spire/sockets/agent.sock              │ │
+│  └──────────────────────────────────────────────┘ │
+└───────────────────────────────────────────────────┘
+```
+
+**SPIRE Server:**
+- Issues SVIDs, manages CA, stores registration entries
+- Backed by SQL (Postgres/MySQL) or SQLite
+- Pluggable: upstream CA, key storage (disk, KMS), data store
+
+**SPIRE Agent:**
+- Runs on every node (DaemonSet)
+- Performs node attestation (proves node identity to server)
+- Performs workload attestation (proves workload identity on node)
+- Caches SVIDs locally, serves Workload API
+
+### Attestation
+
+**Node Attestation:** Agent proves to server which node it runs on.
+| Plugin | Mechanism | Cloud |
+|--------|-----------|-------|
+| `aws_iid` | EC2 instance identity document | AWS |
+| `gcp_iit` | GCE instance identity token | GCP |
+| `azure_msi` | Managed Service Identity token | Azure |
+| `k8s_psat` | Kubernetes projected service account token | Any K8s |
+| `join_token` | One-time bootstrap token | Any (manual) |
+| `tpm` | TPM 2.0 attestation | Bare metal |
+
+**Workload Attestation:** Agent verifies which workload is calling.
+| Plugin | Mechanism |
+|--------|-----------|
+| `k8s` | PID → pod UID → namespace, service account, labels |
+| `unix` | PID → UID, GID, path |
+| `docker` | PID → container ID, labels |
+| `systemd` | PID → systemd unit |
+
+### Trust Bundle Federation
+
+Cross-domain authentication between SPIFFE trust domains.
+
+```hcl
+# SPIRE server federation config
+FederatesWith "partner.example.com" {
+  bundle_endpoint_url = "https://spire.partner.example.com/bundle"
+  bundle_endpoint_profile "https_web" {}
+}
+
+# Automatic: SPIRE refreshes trust bundles periodically
+# Manual: Export/import bundles via SPIRE CLI
+# spire-server bundle show -format pem > bundle.pem
+```
+
+**Federation flow:**
+1. Domain A configured to federate with Domain B
+2. SPIRE server fetches Domain B's trust bundle (public CAs)
+3. Workload in Domain A validates JWT SVID issued by Domain B
+4. X.509 SVID validation uses federated bundle for mTLS
+
+### SPIFFE/SPIRE Review Checklist
+
+```
+- [ ] SPIFFE IDs follow naming convention (hierarchical, stable, non-leaking)
+- [ ] Short SVID lifetimes (X.509: 1h, JWT: 15min) — automatic rotation
+- [ ] No static credentials alongside SPIFFE (full migration path)
+- [ ] Node attestation uses cloud-native mechanism (not join tokens in prod)
+- [ ] Workload attestation restricts SVID issuance to correct workloads
+- [ ] Registration entries use selectors (not per-PID registration)
+- [ ] Trust bundle federation configured for cross-cluster/cross-org comms
+- [ ] SPIRE server HA (3 replicas, shared DB backend)
+- [ ] Upstream CA in place (Vault, AWS ACM PCA) — SPIRE is intermediate
+- [ ] Audit logging enabled on SPIRE server (who requested what SVID when)
+```
+
+---
+
+## Step 39: mTLS Patterns — Service Mesh Comparison
+
+Mutual TLS (mTLS) ensures both client and server authenticate each other. Service meshes automate mTLS lifecycle.
+
+### mTLS Handshake Flow
+
+```
+Client                    Server
+  │                          │
+  │──── ClientHello ────────>│
+  │<─── ServerHello + Cert ──│
+  │──── Client Cert ────────>│
+  │<─── Verify & Finished ───│
+  │                          │
+  │  Both parties validated  │
+  │  Encrypted session ready │
+```
+
+### Service Mesh mTLS Comparison
+
+| Feature | Istio | Linkerd | Cilium |
+|---------|-------|---------|--------|
+| **Data Plane Proxy** | Envoy (C++) | linkerd2-proxy (Rust) | eBPF kernel + Envoy (L7) |
+| **Control Plane** | istiod | linkerd-control-plane | cilium-operator + Hubble |
+| **Certificate Authority** | Built-in (istiod CA) or plug external | Built-in (linkerd-identity) | Built-in (cilium CA) or cert-manager |
+| **Cert Format** | X.509, SPIFFE ID in SAN | X.509, identity in SAN | X.509 |
+| **Cert Lifetime** | 24h default, configurable | 24h default, configurable | Configurable via cert-manager |
+| **Auto-Rotation** | Yes (istiod pushes new certs) | Yes (identity component) | Yes (cert-manager or built-in) |
+| **Auto-mTLS** | `PeerAuthentication: STRICT` namespace/global | On by default (transparent) | `encryption.enabled: true` |
+| **Policy Enforcement** | AuthorizationPolicy CRD (L4/L7) | ServerAuthorization + HTTPRoute | CiliumNetworkPolicy (L3/L4/L7) |
+| **PERMISSIVE mode** | Yes (mTLS optional, plain + mTLS coexist) | No (strict by default) | Yes (per-interface) |
+| **mTLS bypass** | Exclude ports/destinations | Not supported (strict) | Per-endpoint config |
+| **External CA** | Vault, cert-manager, custom CA | cert-manager, custom CA | cert-manager, Vault |
+| **Resource Overhead** | High (Envoy per pod: ~50MB) | Low (linkerd2-proxy: ~10MB) | Lowest (eBPF, no per-pod proxy for L3/L4) |
+| **Startup Complexity** | High | Low | Medium |
+| **Multi-cluster** | Yes (shared trust, multi-network) | Yes (gateway + shared trust) | Yes (ClusterMesh) |
+
+### Auto-mTLS Patterns
+
+**Istio:**
+```yaml
+# Namespace-wide STRICT mTLS
+apiVersion: security.istio.io/v1beta1
+kind: PeerAuthentication
+metadata:
+  name: default
+  namespace: production
+spec:
+  mtls:
+    mode: STRICT
+
+# Mesh-wide
+apiVersion: security.istio.io/v1beta1
+kind: PeerAuthentication
+metadata:
+  name: default
+  namespace: istio-system
+spec:
+  mtls:
+    mode: STRICT
+
+# Allow specific port to skip mTLS (external ingress)
+spec:
+  mtls:
+    mode: STRICT
+  portLevelMtls:
+    8080:
+      mode: DISABLE
+```
+
+**Linkerd:**
+```bash
+# mTLS on by default after install
+linkerd install | kubectl apply -f -
+
+# Verify mTLS active
+linkerd viz edges deploy -n production
+# TLS column shows "mTLS" for all edges
+
+# No config needed — transparent mTLS
+```
+
+**Cilium:**
+```yaml
+# Enable WireGuard encryption (node-to-node)
+apiVersion: cilium.io/v1alpha1
+kind: CiliumNodeConfig
+metadata:
+  name: enable-wireguard
+spec:
+  defaults:
+    enable-wireguard: "true"
+
+# For L7 mTLS (mutual TLS with identity)
+# Requires Envoy integration or cert-manager
+```
+
+### mTLS Review Checklist
+
+```
+- [ ] mTLS mode STRICT in production (no PERMISSIVE except migration)
+- [ ] Certificate lifetime ≤ 24h (short-lived, auto-rotated)
+- [ ] No plaintext traffic between services in mesh (verify with tcpdump or viz)
+- [ ] External traffic terminates TLS at ingress (not inside mesh boundary)
+- [ ] Certificate rotation tested: kill cert manager, verify graceful rotation
+- [ ] AuthorizationPolicy applied (mTLS alone ≠ authorization)
+- [ ] mTLS coverage monitored: % of edges with active mTLS
+- [ ] Fallback behavior defined: what if CA unavailable? (deny by default)
+- [ ] Cert chain validated: no self-signed, no expired intermediate
+- [ ] Performance impact measured: p99 latency delta with mTLS on vs off
+```
+
+---
+
+## Step 40: Secret Management
+
+### HashiCorp Vault
+
+**Dynamic Secrets:** Credentials generated on-demand, with TTL, auto-revoked.
+
+```
+┌───────────────┐    lease    ┌──────────────┐    creates    ┌──────────────┐
+│  Application  │◄───────────│    Vault      │──────────────►│  Database    │
+│               │  (user:pw)  │              │  temp user    │              │
+│  TTL: 1h     │───────────►│  Revokes on  │◄──────────────│  Revokes on  │
+│  lease expire│             │  TTL expire  │               │  TTL expire  │
+└───────────────┘             └──────────────┘               └──────────────┘
+```
+
+**Secret Engines:**
+
+| Engine | Purpose | Dynamic? |
+|--------|---------|----------|
+| `kv` (v2) | Static key-value secrets | No (versioned) |
+| `database` | DB credentials (MySQL, Postgres, MongoDB, MSSQL) | Yes |
+| `pki` | X.509 certificates, private CA | Yes |
+| `transit` | Encryption as a service (no key exposure) | N/A |
+| `aws` | AWS IAM keys, STS tokens | Yes |
+| `ssh` | SSH OTP, signed SSH keys | Yes |
+| `consul` | Consul ACL tokens | Yes |
+| `ldap` | LDAP credentials | Yes |
+| `ad` | Active Directory passwords | Yes |
+
+**Auth Methods:**
+
+| Method | Use Case |
+|--------|----------|
+| `kubernetes` | K8s service account token → Vault token |
+| `aws` | EC2 instance identity or IAM role |
+| `approle` | Machine-to-machine (App ID + Secret ID) |
+| `oidc` | Human users via SSO (Google, Okta, Azure AD) |
+| `ldap` | Human users via LDAP/AD |
+| `token` | Direct token (break-glass) |
+| `userpass` | Username/password (dev/test) |
+| `cert` | Mutual TLS certificate |
+
+**Kubernetes Integration:**
+```yaml
+# Vault Agent Injector (sidecar injection)
+# Pod annotation triggers sidecar that fetches secrets
+annotations:
+  vault.hashicorp.com/agent-inject: "true"
+  vault.hashicorp.com/role: "my-app"
+  vault.hashicorp.com/agent-inject-secret-db-creds: "database/creds/my-role"
+  vault.hashicorp.com/agent-inject-template-db-creds: |
+    {{- with secret "database/creds/my-role" -}}
+    DB_USER={{ .Data.username }}
+    DB_PASS={{ .Data.password }}
+    {{- end }}
+
+# CSI Provider (volume-based secret injection)
+apiVersion: secrets-store.csi.x-k8s.io/v1
+kind: SecretProviderClass
+metadata:
+  name: vault-db-creds
+spec:
+  provider: vault
+  parameters:
+    roleName: "my-app"
+    objects: |
+      - objectName: "db-password"
+        secretPath: "secret/data/my-app"
+        secretKey: "password"
+```
+
+### AWS Secrets Manager
+
+```python
+import boto3
+
+client = boto3.client('secretsmanager')
+
+# Retrieve secret
+response = client.get_secret_value(SecretId='prod/myapp/db')
+
+# Rotate (Lambda function)
+client.rotate_secret(SecretId='prod/myapp/db')
+
+# Resource policy for cross-account
+client.put_resource_policy(
+    SecretId='prod/myapp/db',
+    ResourcePolicy='{"Version":"2012-10-17",...}'
+)
+```
+
+**Key features:** Auto-rotation via Lambda, KMS encryption at rest, cross-account access, versioning, audit via CloudTrail.
+
+### Sealed Secrets
+
+Kubernetes-native. Encrypts K8s Secrets so they're safe in Git. Controller in cluster decrypts.
+
+```bash
+# Encrypt
+kubeseal --format yaml < secret.yaml > sealed-secret.yaml
+
+# SealedSecret CRD (safe to commit)
+apiVersion: bitnami.com/v1alpha1
+kind: SealedSecret
+metadata:
+  name: my-secret
+spec:
+  encryptedData:
+    password: AgBy3i4OJSWK+...  # Cluster-specific encryption
+```
+
+**Limitations:** Cluster-bound (can't move sealed secret between clusters without re-sealing), no dynamic secrets, no rotation.
+
+### External Secrets Operator (ESO)
+
+Syncs secrets from external providers into K8s Secrets. Provider-agnostic.
+
+```yaml
+# SecretStore — provider config
+apiVersion: external-secrets.io/v1beta1
+kind: SecretStore
+metadata:
+  name: vault-backend
+spec:
+  provider:
+    vault:
+      server: "https://vault.example.com"
+      path: "secret"
+      version: "v2"
+      auth:
+        kubernetes:
+          mountPath: "kubernetes"
+          role: "my-app"
+          serviceAccountRef:
+            name: "my-app-sa"
+
+# ExternalSecret — declares desired secret
+apiVersion: external-secrets.io/v1beta1
+kind: ExternalSecret
+metadata:
+  name: app-secrets
+spec:
+  refreshInterval: 1h  # Sync interval
+  secretStoreRef:
+    name: vault-backend
+    kind: SecretStore
+  target:
+    name: my-app-secret  # K8s Secret name
+    creationPolicy: Owner
+  data:
+    - secretKey: password
+      remoteRef:
+        key: secret/data/my-app
+        property: password
+```
+
+### Secret Management Comparison
+
+| Feature | Vault | AWS Secrets Manager | Sealed Secrets | External Secrets Operator |
+|---------|-------|--------------------|----|----|
+| **Dynamic Secrets** | Yes (DB, PKI, AWS, SSH) | No (rotation only) | No | No (syncs from providers) |
+| **Encryption** | Transit engine, auto-unseal | KMS | NaCl (cluster-specific) | Delegates to provider |
+| **Multi-cloud** | Yes | AWS only | Any K8s | Any K8s + any provider |
+| **Rotation** | Dynamic lease renewal | Lambda-based rotation | Manual re-seal | refreshInterval sync |
+| **GitOps Safe** | No (secrets in Vault) | No (secrets in AWS) | Yes (encrypted in Git) | Yes (ExternalSecret CRD) |
+| **Audit** | Full audit log | CloudTrail | K8s audit log | K8s audit log |
+| **HA** | Raft/Consul backend | AWS-managed | Single controller | Operator replicas |
+| **Complexity** | High | Low (AWS-native) | Low | Medium |
+| **Best For** | Dynamic creds, PKI, transit encryption | AWS-native workloads | Simple GitOps secret storage | Multi-provider secret sync |
+
+### Secret Management Review Checklist
+
+```
+- [ ] No secrets in code, config files, or container images
+- [ ] No secrets in environment variables visible in pod spec (use volume mount)
+- [ ] Dynamic secrets preferred over static (Vault database engine)
+- [ ] Secret TTL ≤ 24h for dynamic creds (shorter for sensitive)
+- [ ] Secret rotation automated (not manual)
+- [ ] Secrets encrypted at rest (K8s encryption at rest, Vault transit, KMS)
+- [ ] Access to secrets scoped per service (least privilege)
+- [ ] Secret access audited (who read what, when)
+- [ ] .gitignore includes all secret file patterns
+- [ ] CI/CD pipeline scans for leaked secrets (trufflehog, detect-secrets)
+- [ ] Break-glass: emergency access procedure documented with approval
+- [ ] Secret deletion tested: how to rotate all secrets if compromise suspected
+```
+
+---
+
+## Step 41: Container Runtime Security
+
+### Falco — Runtime Threat Detection
+
+Open-source CNCF project. Detects anomalous behavior at runtime using kernel events.
+
+**Detection approaches:**
+- **eBPF (preferred):** Hooks kernel syscalls via eBPF programs. No kernel module. Works on modern kernels (≥5.8 optimal, ≥4.14 supported).
+- **Kernel module:** Legacy approach. Higher perf, but requires module compilation per kernel.
+- **Userspace:** gVisor / ptrace. Lower perf. For sandboxed environments.
+
+**Rule syntax:**
+```yaml
+# Detect shell spawned in container
+- rule: Shell in Container
+  desc: Detect shell started in a container
+  condition: >
+    spawned_process and container and
+    proc.name in (bash, sh, zsh, dash, ksh)
+  output: >
+    Shell spawned in container
+    (user=%user.name container=%container.name
+     shell=%proc.name parent=%proc.pname
+     cmdline=%proc.cmdline image=%container.image.repository)
+  priority: WARNING
+  tags: [container, shell, mitre_execution]
+
+# Detect sensitive file read
+- rule: Read sensitive file in container
+  desc: Detect read of sensitive files (/etc/shadow, /etc/passwd, SSH keys)
+  condition: >
+    open_read and container and
+    (fd.name startswith /etc/shadow or
+     fd.name startswith /etc/passwd or
+     fd.name contains id_rsa or
+     fd.name contains .pem)
+  output: >
+    Sensitive file read in container
+    (file=%fd.name user=%user.name container=%container.name
+     image=%container.image.repository)
+  priority: WARNING
+  tags: [container, filesystem, mitre_credential_access]
+
+# Detect outbound connection to crypto miner
+- rule: Detect Crypto Miners
+  desc: Detect known crypto miner processes
+  condition: >
+    spawned_process and container and
+    (proc.name contains xmrig or
+     proc.name contains minerd or
+     proc.name contains cpuminer or
+     proc.cmdline contains stratum+tcp)
+  output: >
+    Crypto miner detected
+    (process=%proc.name cmdline=%proc.cmdline
+     container=%container.name image=%container.image.repository)
+  priority: CRITICAL
+  tags: [container, crypto, mitre_impact]
+```
+
+### Sysdig — Enterprise Falco
+
+Sysdig Secure builds on Falco with enterprise features:
+
+| Feature | Falco (OSS) | Sysdig Secure |
+|---------|-------------|---------------|
+| **Runtime detection** | Yes (rules-based) | Yes + ML-based anomaly detection |
+| **Response actions** | Alert only (webhook/gRPC) | Kill container, pause, capture, isolate |
+| **Image scanning** | No (separate tool) | Integrated (registry + runtime) |
+| **Compliance** | Manual rule mapping | Built-in CIS, NIST, PCI-DSS, SOC2 |
+| **Network visibility** | No | Yes (K8s network topology) |
+| **Forensics** | Logs only | Capture (strace-like), process tree |
+| **Policy UI** | YAML files | Visual policy builder |
+| **Multi-tenant** | No | Yes (teams, RBAC) |
+
+### KubeArmor — Runtime Enforcement
+
+KubeArmor uses Linux Security Modules (LSM) for enforcement at kernel level. Complements Falco's detection with active blocking.
+
+**Supported LSMs:**
+| LSM | Kernel | Capability |
+|-----|--------|------------|
+| **AppArmor** | Default on Ubuntu/Debian | File/network/process restrictions per container |
+| **BPF-LSM** | ≥5.10 (modern kernels) | Fine-grained policy via eBPF |
+| **SELinux** | Default on RHEL/CentOS | MAC-based access control |
+
+**Policy example:**
+```yaml
+apiVersion: security.kubearmor.com/v1
+kind: KubeArmorPolicy
+metadata:
+  name: block-shell-in-webapp
+  namespace: production
+spec:
+  selector:
+    matchLabels:
+      app: webapp
+  process:
+    matchPaths:
+      - path: /bin/sh
+        action: Block
+      - path: /bin/bash
+        action: Block
+  file:
+    matchPaths:
+      - path: /etc/shadow
+        action: Block
+      - path: /proc/self/cgroup
+        readOnly: true
+  network:
+    matchProtocols:
+      - protocol: TCP
+        fromCIDR: 0.0.0.0/0  # Block all outbound TCP
+        action: Block
+  action: Block
+```
+
+### Runtime Security Comparison
+
+| Feature | Falco | Sysdig Secure | KubeArmor |
+|---------|-------|---------------|-----------|
+| **Primary Function** | Detection (alert) | Detection + Response | Enforcement (block) |
+| **Kernel Integration** | eBPF / kernel module | eBPF (extends Falco) | AppArmor / BPF-LSM / SELinux |
+| **Detection Method** | Syscall rules (YAML) | Syscall rules + ML | N/A (enforcement only) |
+| **Enforcement** | No (alert only) | Yes (kill, pause, isolate) | Yes (block at kernel) |
+| **Policy Language** | Falco rules (condition/output) | Visual + YAML | KubeArmorPolicy CRD |
+| **File Monitoring** | Yes (read/write) | Yes | Yes (read-only enforcement) |
+| **Network Monitoring** | Limited | Yes (full topology) | Yes (L3/L4 blocking) |
+| **Process Monitoring** | Yes | Yes | Yes (execution blocking) |
+| **Image Scanning** | No | Yes (integrated) | No |
+| **Compliance Reports** | Manual | Built-in (CIS, PCI, SOC2) | Manual |
+| **Overhead** | Low (2-5% CPU) | Medium (3-7% CPU) | Low (1-3% CPU with BPF-LSM) |
+| **K8s Native** | DaemonSet + Helm | DaemonSet + Agent | DaemonSet + CRDs |
+| **License** | Apache 2.0 | Commercial | Apache 2.0 |
+| **Best For** | Detection + audit | Full platform (detect + respond + scan) | Active blocking + hardening |
+
+### Runtime Security Review Checklist
+
+```
+- [ ] Runtime detection deployed (Falco or equivalent) — no blind spots
+- [ ] Custom rules for org-specific threats (not just defaults)
+- [ ] Alert routing: CRITICAL → PagerDuty, WARNING → SIEM
+- [ ] Container drift detection: unexpected binaries, libraries
+- [ ] Enforcement policies for sensitive workloads (KubeArmor or Sysdig)
+- [ ] No privileged containers in production (runtime confirms)
+- [ ] Syscall monitoring covers: process exec, file access, network connect
+- [ ] Alert noise tuning: false positive rate < 5%
+- [ ] Forensic capture on critical alerts (process tree, file diffs)
+- [ ] Runtime security in CI/CD: test policies against known-bad containers
 ```

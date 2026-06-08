@@ -1,13 +1,13 @@
 ---
 name: sdlc-architecture-design
-description: "System design, C4 diagrams, API design (REST/GraphQL/gRPC), database schema, code architecture (Clean/Hexagonal/DDD), ADRs, branching strategies, code review, dependency management, DDIA patterns. Includes architecture fitness functions, DDD context mapping, platform engineering, Gateway API, green software, API governance, serverless architecture, edge computing, multi-cloud patterns, resilience patterns, distributed consensus, eventual consistency, idempotency, OAuth2/OIDC, JWT, authorization (RBAC/ABAC/ReBAC), rate limiting, API versioning, GraphQL Federation, Kafka patterns, database sharding, caching strategies, data pipelines, message queue comparison, 12-Factor App extended, microservices decomposition (Strangler Fig, DDD), service mesh comparison, API gateway comparison, serverless patterns, edge computing patterns."
-version: 4.2.0
+description: "System design, C4 diagrams, API design (REST/GraphQL/gRPC), database schema, code architecture (Clean/Hexagonal/DDD), ADRs, branching strategies, code review, dependency management, DDIA patterns. Includes architecture fitness functions, DDD context mapping, platform engineering, Gateway API, green software, API governance, serverless architecture, edge computing, multi-cloud patterns, resilience patterns, distributed consensus, eventual consistency, idempotency, OAuth2/OIDC, JWT, authorization (RBAC/ABAC/ReBAC), rate limiting, API versioning, GraphQL Federation, Kafka patterns, database sharding, caching strategies, data pipelines, message queue comparison, 12-Factor App extended, microservices decomposition (Strangler Fig, DDD), service mesh comparison, API gateway comparison, serverless patterns, edge computing patterns, database migration tools, polyglot persistence, event sourcing war stories, CQRS implementation, CDC production patterns, data mesh, distributed monolith detection, service coupling anti-patterns, saga pattern deep dive, service discovery."
+version: 4.4.0
 author: Hermes Agent
 license: MIT
 platforms: [linux, macos, windows]
 metadata:
   hermes:
-    tags: [sdlc, architecture, c4, api-design, database, clean-architecture, ddd, code-review, branching, adr, ddia, fitness-functions, context-mapping, platform-engineering, gateway-api, green-software, api-governance, service-mesh, serverless, edge-computing, multi-cloud, faas, 12-factor, microservices-decomposition, strangler-fig, api-gateway, serverless-patterns, edge-patterns]
+    tags: [sdlc, architecture, c4, api-design, database, clean-architecture, ddd, code-review, branching, adr, ddia, fitness-functions, context-mapping, platform-engineering, gateway-api, green-software, api-governance, service-mesh, serverless, edge-computing, multi-cloud, faas, 12-factor, microservices-decomposition, strangler-fig, api-gateway, serverless-patterns, edge-patterns, db-migration, polyglot-persistence, event-sourcing, cqrs, cdc, data-mesh, distributed-monolith, service-coupling, saga, service-discovery]
     related_skills: [sdlc-requirements-engineering, sdlc-cicd-pipeline, architecture-blueprint, api-design, sdlc-deployment]
 ---
 
@@ -2782,3 +2782,1054 @@ Client → Edge PoP → cache HIT? → return cached
 28. **Don't mix ETL and ELT in same pipeline** — choose one pattern per data flow
 29. **Don't ignore circuit breaker composition order** — retry wraps circuit breaker, not reverse
 30. **Don't allow unbounded retries** — use retry budget (max 20% of calls retried)
+
+## Step 46: Database Migration Tools
+
+### Tool Comparison
+
+| Feature | Flyway | Liquibase | Alembic | Atlas | Prisma Migrate |
+|---------|--------|-----------|---------|-------|----------------|
+| **Language** | Java | Java | Python | Go | TypeScript/Node |
+| **Approach** | Imperative (SQL/Java) | Declarative (XML/YAML/SQL) | Imperative (Python) | Declarative (HCL/SQL) | Declarative (Prisma schema) |
+| **Rollback** | Manual (paid tier or custom) | Built-in (changeset rollback) | Manual (`downgrade()`) | Manual (env-aware) | Manual (migration squash) |
+| **Autogenerate** | No | No (diff for Liquibase Pro) | Yes (`--autogenerate`) | Yes (`schema diff`) | Yes (`prisma migrate dev`) |
+| **Multi-DB** | Yes (20+ dialects) | Yes (50+ dialects) | SQLite, Postgres, MySQL, etc. | MySQL, Postgres, SQLite, MariaDB | Postgres, MySQL, SQLite, SQL Server, MongoDB, CockroachDB |
+| **CI/Linting** | `flyway validate`, `flyway check` | `liquibase checks`, policy checks | Custom scripts via Alembic env | `atlas schema lint` | `prisma validate`, `migrate dev --create-only` |
+| **Schema-as-Code** | Partial (versioned SQL) | Full (changelog DSL) | Partial (Python models) | Full (HCL schema) | Full (Prisma schema) |
+| **Dry Run** | `flyway info` | `liquibase updateSQL` | Manual SQL preview | `atlas schema apply --dry-run` | `migrate dev --create-only` |
+| **State tracking** | `flyway_schema_history` table | `databasechangelog` table | `alembic_version` table | `atlas_schema_revisions` table | `_prisma_migrations` table |
+| **Best for** | Java shops, SQL-first teams | Enterprise, compliance-heavy | Python/SQLAlchemy projects | Modern infra-as-code teams | TypeScript/Prisma ORM projects |
+
+### Migration Patterns
+
+**Expand-and-contract (zero-downtime):**
+```
+Phase 1 (expand):  Add new column (nullable), backfill, deploy code writing both
+Phase 2 (migrate): Switch reads to new column, deploy
+Phase 3 (contract): Remove old column, clean up
+```
+
+**Blue-green migration strategy:**
+- Forward-compatible migrations: new schema works with old code
+- Backward-compatible migrations: old schema works with new code
+- Never: breaking migration + code change in same deploy
+
+**CI pipeline integration:**
+```yaml
+# GitHub Actions example
+- run: flyway validate           # check migration order integrity
+- run: flyway check -changes     # PR-level drift detection
+- run: atlas schema lint --dev-url docker://postgres/15  # policy checks
+```
+
+### Pitfalls
+- **Don't use `flyway clean` in production** — drops all objects
+- **Don't mix autogenerate and hand-written migrations** — pick one strategy per project
+- **Don't skip migration testing in CI** — always run against ephemeral DB
+- **Don't store migration state in VCS only** — DB is source of truth for applied migrations
+
+## Step 47: Polyglot Persistence
+
+### When to Use What
+
+| Store Type | Use When | Examples | Anti-Pattern (Don't Use For) |
+|-----------|----------|----------|------------------------------|
+| **Relational (RDBMS)** | Strong consistency, complex joins, ACID transactions, structured data | PostgreSQL, MySQL, SQL Server | High-write append-only logs, schemaless documents |
+| **Document** | Flexible schema, nested data, rapid iteration, content management | MongoDB, CouchDB, DynamoDB | Complex multi-entity joins, cross-document transactions |
+| **Key-Value** | Simple lookups, caching, session storage, high-throughput low-latency | Redis, DynamoDB (KV mode), etcd | Range queries, complex filtering, relationships |
+| **Columnar** | Analytics, time-series, high write throughput, column-oriented queries | Cassandra, ScyllaDB, HBase, ClickHouse | OLTP workloads, frequent updates, small datasets |
+| **Search** | Full-text search, fuzzy matching, faceted navigation, log analytics | Elasticsearch, OpenSearch, Meilisearch | Primary data store, ACID transactions, heavy writes |
+| **Graph** | Relationship-heavy queries, recommendations, fraud detection, knowledge graphs | Neo4j, Amazon Neptune, ArangoDB | Simple CRUD, flat data, high-throughput writes |
+
+### Polyglot Architecture
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                        API Gateway / BFF                        │
+├──────────┬──────────┬──────────┬──────────┬──────────┬─────────┤
+│ Order    │ Catalog  │ Search   │ User     │ Analytics│ Social  │
+│ Service  │ Service  │ Service  │ Service  │ Service  │ Service │
+├──────────┼──────────┼──────────┼──────────┼──────────┼─────────┤
+│ Postgres │ MongoDB  │ Elastic  │ Postgres │ Click    │ Neo4j   │
+│ (ACID)   │(document)│ (search) │ (rel.)   │ House    │ (graph) │
+│          │          │          │          │(columnar)│         │
+└──────────┴──────────┴──────────┴──────────┴──────────┴─────────┘
+       │                         │                    │
+       └──── CDC (Debezium) ─────┘                    │
+                      │                               │
+              Kafka / Event Bus ──────────────────────┘
+```
+
+### Polyglot Challenges
+
+**Consistency management:**
+- No cross-store ACID — use Sagas or eventual consistency
+- CDC for syncing data between stores (Debezium → Kafka → consumers)
+- Dual-write problem: app writes to two stores → use outbox pattern
+
+**Operational complexity:**
+- Each store = separate backup, monitoring, scaling, upgrade cycle
+- Team must learn N query languages, N tuning strategies
+- Limit to 2-3 stores initially; add only with clear justification
+
+**Data duplication:**
+- Same entity in multiple stores → consistency burden
+- Use event-driven sync with idempotent consumers
+- Designate one store as "source of truth" per entity
+
+### Decision Framework
+```
+1. Start with PostgreSQL (handles 80% of workloads)
+2. Add Elasticsearch only if full-text search is core requirement
+3. Add Redis only if sub-ms latency or pub/sub needed
+4. Add graph DB only if >30% of queries traverse relationships
+5. Justify each addition with measured bottleneck, not theoretical
+```
+
+## Step 48: Event Sourcing War Stories
+
+### Projection Lag
+
+**Problem:** Read model lags behind write model. Users write data, immediately query, get stale results.
+
+**Solutions:**
+- **Causal consistency token:** Return event position with write response; query side waits until projection reaches that position
+- **Read-your-writes fallback:** On write, cache result in session; serve from cache on immediate read
+- **Projection catch-up subscription:** Use persistent subscriptions (EventStoreDB) or consumer groups (Kafka) with backpressure
+
+```python
+# Causal consistency token pattern
+async def create_order(cmd):
+    event = OrderCreated(...)
+    position = await event_store.append(event)  # returns stream position
+    return {"order_id": event.id, "consistency_token": position}
+
+async def get_order(order_id, consistency_token=None):
+    if consistency_token:
+        await projection_store.wait_for_position(consistency_token, timeout=5s)
+    return await projection_store.get(order_id)
+```
+
+### Stream Design Mistakes
+
+**Mistake 1: One big stream (global ordering)**
+- Single `events` stream → hot partition, no parallelism
+- Fix: Stream per aggregate instance (`order-{id}`), category streams for subscriptions
+
+**Mistake 2: Too fine-grained streams**
+- Stream per field change → `order-price-changed-{id}`, `order-status-changed-{id}`
+- Fix: Stream per aggregate, events reflect business-meaningful state changes
+
+**Mistake 3: Leaking internal events**
+- Publishing domain internals (e.g., `IndexRebuilt`) as integration events
+- Fix: Separate domain events (internal) from integration events (published to bus)
+
+**Mistake 4: Missing stream compaction strategy**
+- Unbounded event growth → slow replay, expensive snapshots
+- Fix: Snapshot every N events (100-1000), archive cold streams
+
+### Schema Evolution & Upcasters
+
+**Problem:** Event schema changes over time. Old events in store use v1 format, code expects v2.
+
+**Strategies:**
+
+**1. Upcasters (transform on read):**
+```java
+// Axon upcaster example
+public class OrderCreatedUpcaster extends SingleEventUpcaster {
+    @Override
+    protected boolean canUpcast(IntermediateEventRepresentation ir) {
+        return "OrderCreated".equals(ir.getType().getName())
+            && ir.getType().getVersion() == 1;
+    }
+    @Override
+    protected IntermediateEventRepresentation doUpcast(IntermediateEventRepresentation ir) {
+        return ir.upcast(SerializedType.of("OrderCreated", 2),
+            ObjectNode.class,
+            node -> { node.put("currency", "USD"); return node; }  // add default
+        );
+    }
+}
+```
+
+**2. Weak schema (flexible deserialization):**
+- Use JSON/Avro with default values for new fields
+- Consumer handles missing fields gracefully
+
+**3. Event versioning (parallel versions):**
+- Publish v2 events, keep v1 handler until all old events expired
+- Requires dual projection logic during transition
+
+**4. Copy-and-transform migration:**
+- Replay old events into new store with transformed schemas
+- Expensive but clean; run during maintenance window
+
+### Snapshot Strategy
+
+**When to snapshot:**
+- Aggregate with >100 events: snapshot every 100 events
+- Aggregates loaded frequently: snapshot more aggressively
+- Cold aggregates: snapshot less often
+
+**Snapshot storage:**
+```
+Stream: order-123
+Events:  [E1, E2, ..., E100] → Snapshot(position=100, state={...})
+Events:  [E101, E102, ..., E150] → Snapshot(position=150, state={...})
+# Load: read latest snapshot + events after snapshot position
+```
+
+**Pitfalls:**
+- Snapshot too often: write amplification, storage cost
+- Snapshot too rarely: slow load times
+- Corrupt snapshot: always keep ability to rebuild from events
+- Snapshot in wrong store: keep snapshots close to event store (same DB)
+
+### Axon Framework Pitfalls
+
+**XStream serializer (legacy):**
+- Axon historically used XStream for event serialization
+- XStream has known security vulnerabilities (remote code execution)
+- **Fix:** Switch to Jackson serializer (Axon 4.x+)
+```java
+// axonserver.properties or configuration
+axon.serializer.general=jackson
+axon.serializer.events=jackson
+axon.serializer.messages=jackson
+```
+
+**Saga complexity explosion:**
+- Sagas coordinating 10+ steps become unmaintainable state machines
+- Compensating transactions for partial failures multiply complexity
+- **Fix:** Keep sagas to 3-5 steps max; break into chained sagas
+- **Fix:** Use saga state machine (Spring Statemachine or custom)
+- **Fix:** Prefer choreography for <5 services, orchestration for >5
+
+**Aggregate design:**
+- Don't make aggregate too large (Order + OrderItems + Payments + Shipping)
+- Keep aggregate boundary small; use eventual consistency between aggregates
+- Reference other aggregates by ID, not direct reference
+
+**Event upcasting not tested:**
+- Upcasters break silently if not tested against real stored events
+- **Fix:** Integration tests with frozen event samples from production
+
+## Step 49: CQRS Implementation
+
+### Architecture Overview
+
+```
+┌─────────────┐     ┌──────────────┐     ┌──────────────┐     ┌─────────────┐
+│   Command    │────▶│   Aggregate  │────▶│    Event     │────▶│  Projection │
+│   Handler    │     │   (Domain)   │     │    Store     │     │   Handler   │
+└─────────────┘     └──────────────┘     └──────────────┘     └──────┬──────┘
+                                                                      │
+Command Side                                                    ┌─────▼──────┐
+────────────                                                    │  Read DB / │
+                                                                │  Read Model│
+┌─────────────┐                                                 └─────┬──────┘
+│   Query     │◀──────────────────────────────────────────────────────┘
+│   Handler   │
+└─────────────┘
+Query Side
+```
+
+### Command Side
+
+**Aggregate (write model):**
+```java
+public class OrderAggregate {
+    @AggregateIdentifier
+    private String orderId;
+    private OrderStatus status;
+    private List<OrderItem> items;
+
+    @CommandHandler
+    public OrderAggregate(CreateOrderCommand cmd) {
+        if (cmd.getItems().isEmpty()) throw new IllegalArgumentException("Empty order");
+        apply(new OrderCreatedEvent(cmd.getOrderId(), cmd.getItems(), cmd.getCustomerId()));
+    }
+
+    @CommandHandler
+    public void handle(AddItemCommand cmd) {
+        if (status != OrderStatus.DRAFT) throw new IllegalStateException("Order not draft");
+        apply(new ItemAddedEvent(orderId, cmd.getItem()));
+    }
+
+    @CommandHandler
+    public void handle(CancelOrderCommand cmd) {
+        if (status == OrderStatus.SHIPPED) throw new IllegalStateException("Cannot cancel shipped order");
+        apply(new OrderCancelledEvent(orderId, cmd.getReason()));
+    }
+
+    @EventSourcingHandler
+    public void on(OrderCreatedEvent event) {
+        this.orderId = event.getOrderId();
+        this.status = OrderStatus.DRAFT;
+        this.items = new ArrayList<>(event.getItems());
+    }
+
+    @EventSourcingHandler
+    public void on(ItemAddedEvent event) {
+        this.items.add(event.getItem());
+    }
+}
+```
+
+**Event handler (side effects):**
+```java
+@Component
+public class OrderEventHandler {
+    @EventHandler
+    public void on(OrderCreatedEvent event) {
+        notificationService.notifyOrderCreated(event.getCustomerId(), event.getOrderId());
+        inventoryService.reserveItems(event.getItems());
+    }
+}
+```
+
+### Query Side
+
+**Projection (read model builder):**
+```java
+@Component
+public class OrderProjection {
+    private final JdbcTemplate jdbc;
+
+    @EventHandler
+    public void on(OrderCreatedEvent event) {
+        jdbc.update("INSERT INTO order_read_model (id, customer_id, status, total) VALUES (?,?,?,?)",
+            event.getOrderId(), event.getCustomerId(), "DRAFT", calculateTotal(event.getItems()));
+    }
+
+    @EventHandler
+    public void on(ItemAddedEvent event) {
+        jdbc.update("UPDATE order_read_model SET total = total + ? WHERE id = ?",
+            event.getItem().getPrice(), event.getOrderId());
+    }
+}
+```
+
+**Query handler:**
+```java
+@QueryHandler
+public OrderSummary handle(FindOrderQuery query) {
+    return jdbc.queryForObject(
+        "SELECT * FROM order_read_model WHERE id = ?",
+        OrderSummary.class, query.getOrderId());
+}
+```
+
+### 3 CQRS Patterns
+
+| Pattern | Write Side | Read Side | Sync Mechanism | Best For |
+|---------|-----------|-----------|----------------|----------|
+| **Event-Sourced CQRS** | Events only (no state table) | Projections from events | Event store subscription | Full audit trail, temporal queries, complex domains |
+| **State-Based CQRS** | Traditional CRUD + domain model | Separate read DB | CDC or domain events | Simpler domains, team familiarity, gradual adoption |
+| **Hybrid** | State table + event log | Projections from events | Event log after commit | Balance of simplicity and event benefits |
+
+**Event-Sourced:**
+- Write side: aggregate rebuilt from events on every command
+- Read side: projections subscribe to event stream
+- Tradeoff: complexity, but full history and replay capability
+
+**State-Based:**
+- Write side: traditional ORM, emits domain events after commit
+- Read side: consumes domain events, updates read models
+- Tradeoff: simpler, but no event history (unless using CDC)
+
+**Hybrid:**
+- Write side: persists state AND publishes events from transactional outbox
+- Read side: builds projections from published events
+- Tradeoff: best of both; state recovery without replay
+
+### Anti-Patterns
+- **Don't query write side** — defeats purpose of separation
+- **Don't share DB between read and write models** — tight coupling
+- **Don't use CQRS for simple CRUD** — added complexity not justified
+- **Don't ignore eventual consistency UX** — show "saving..." states, optimistic updates
+- **Don't create one read model per query** — start with 2-3, split when needed
+
+## Step 50: CDC Production Patterns
+
+### Debezium at Scale
+
+**Snapshot strategies:**
+
+| Strategy | How It Works | When to Use | Tradeoff |
+----------|-------------|-------------|----------|
+| **Initial (full)** | Lock table, read all rows, then stream WAL | First-time setup, small tables (<10M rows) | Table lock during snapshot |
+| **Initial + no data** | Capture schema only, stream from current LSN | Large tables, accept missing historical data | No historical events |
+| **Never** | Stream only new changes | Recovery from failure, snapshot already done | Missing events before start |
+| **Schema only** | Capture schema, no data | Schema tracking, no data migration | No data captured |
+| **Incremental (exported)** | Per-table watermark, resume from last position | Large tables, resume interrupted snapshots | Complex, Debezium 2.0+ |
+
+**Production snapshot config (large tables):**
+```json
+{
+  "snapshot.mode": "initial",
+  "snapshot.fetch.size": 10000,
+  "snapshot.lock.timeout.ms": 300000,
+  "snapshot.select.statement.overrides": "inventory",
+  "snapshot.select.statement.overrides.inventory": "SELECT * FROM inventory WHERE id > 10000000",
+  "incremental.snapshot.chunk.size": 10240
+}
+```
+
+**Schema Registry integration:**
+- Confluent Schema Registry: Avro/Protobuf/JSON schemas
+- Automatic schema registration on first change
+- Schema compatibility modes: BACKWARD (default), FORWARD, FULL
+- Production: use `BACKWARD` or `FULL` — consumers can always read
+
+**Throughput tuning:**
+```json
+{
+  "max.batch.size": 2048,
+  "max.queue.size": 8192,
+  "poll.interval.ms": 500,
+  "producer.batch.size": 65536,
+  "producer.linger.ms": 20,
+  "producer.compression.type": "lz4"
+}
+```
+
+**Single Message Transforms (SMTs):**
+```json
+{
+  "transforms": "route,unwrap",
+  "transforms.route.type": "org.apache.kafka.connect.transforms.RegexRouter",
+  "transforms.route.regex": "mydb\\.public\\.(.*)",
+  "transforms.route.replacement": "cdc.$1",
+  "transforms.unwrap.type": "io.debezium.transforms.ExtractNewRecordState",
+  "transforms.unwrap.drop.tombstones": false,
+  "transforms.unwrap.delete.handling.mode": "rewrite",
+  "transforms.unwrap.add.fields": "op,ts_ms,source.ts_ms"
+}
+```
+
+### Kafka Connect Production
+
+**Exactly-once semantics (EOS):**
+```properties
+isolation.level=read_committed
+processing.guarantee=exactly_once_v2
+# On connector config:
+errors.tolerance=all
+errors.deadletterqueue.topic.name=dlq-cdc
+errors.deadletterqueue.context.headers.enable=true
+```
+
+**Dead Letter Queue (DLQ):**
+```json
+{
+  "errors.tolerance": "all",
+  "errors.deadletterqueue.topic.name": "dlq-debezium-orders",
+  "errors.deadletterqueue.context.headers.enable": true,
+  "errors.deadletterqueue.topic.replication.factor": 3,
+  "errors.retry.delay.max.ms": 60000,
+  "errors.log.enable": true,
+  "errors.log.include.messages": true
+}
+```
+
+**Multi-DC CDC:**
+- MirrorMaker 2 for cross-DC Kafka replication
+- Debezium in each DC captures local DB changes
+- Use `source.ts_ms` for causal ordering across DCs
+- Conflict resolution: last-writer-wins, merge, or manual resolution
+
+### Production Scale Numbers
+
+| Metric | Typical | High-Performance |
+--------|---------|-----------------|
+| **Events/sec (single connector)** | 5K-20K | 50K-100K |
+| **Latency (commit → Kafka)** | 100-500ms | 10-50ms |
+| **Batch size** | 512-2048 | 4096+ |
+| **Snapshot throughput** | 50K rows/sec | 200K+ rows/sec |
+| **Partition count** | 1 per table (default) | Per-shard or round-robin |
+| **Schema changes/min** | 1-5 | 10+ (with Schema Registry) |
+| **Connector restart time** | 30s-5min | <10s (with incremental snapshot) |
+
+### Pitfalls
+- **Don't use `schema.history.internal` file in production** — use Kafka topic (survives restarts)
+- **Don't skip monitoring consumer lag** — projection lag = stale read models
+- **Don't use default partition count** — match Kafka topic partitions to connector throughput
+- **Don't enable tombstone events without consumer handling** — causes NPEs in downstream
+- **Don't run Debezium on same node as DB** — resource contention
+
+## Step 51: Data Mesh
+
+### 4 Principles
+
+**1. Domain Ownership:**
+- Domain teams own their data pipelines end-to-end
+- No central data team bottleneck
+- Domain experts produce highest-quality data
+- Teams responsible for SLAs, quality, documentation
+
+**2. Data as a Product:**
+- Each domain exposes data as discoverable, addressable, trustworthy, self-describing product
+- Product thinking: who are consumers? what SLAs? what quality guarantees?
+- Data product = data + metadata + code + infrastructure
+
+**3. Self-Serve Data Platform:**
+- Platform team provides infrastructure-as-code for data products
+- Low cognitive load: teams deploy data products without deep infra knowledge
+- Storage, compute, cataloging, access control as self-serve APIs
+
+**4. Federated Computational Governance:**
+- Global policies (security, compliance, interoperability) enforced computationally
+- Not centralized decision-making — centralized standards
+- Automated policy checks in CI/CD for data products
+
+### Data Product Structure
+
+```
+┌──────────────────────────────────────────────────┐
+│                 Data Product                      │
+├──────────────────────────────────────────────────┤
+│  ┌─────────────┐  ┌─────────────┐  ┌──────────┐ │
+│  │ Input Ports │  │Output Ports │  │ Control  │ │
+│  │ (consume)   │  │ (expose)    │  │ Port     │ │
+│  └─────────────┘  └─────────────┘  └──────────┘ │
+├──────────────────────────────────────────────────┤
+│  ┌─────────────┐  ┌─────────────┐  ┌──────────┐ │
+│  │ Data        │  │ Metadata    │  │ SLA      │ │
+│  │ Pipeline    │  │ (schema,    │  │ Contract │ │
+│  │             │  │  lineage)   │  │          │ │
+│  └─────────────┘  └─────────────┘  └──────────┘ │
+├──────────────────────────────────────────────────┤
+│  Infrastructure (storage, compute, networking)   │
+└──────────────────────────────────────────────────┘
+```
+
+**Output port example:**
+```yaml
+apiVersion: datacontract/v1
+kind: DataProduct
+metadata:
+  name: customer-360
+  domain: marketing
+  owner: marketing-team@company.com
+spec:
+  ports:
+    - name: customer-profiles
+      type: bigquery
+      description: "Enriched customer profiles with segmentation"
+      schema:
+        fields:
+          - name: customer_id
+            type: STRING
+            pii: true
+          - name: segment
+            type: STRING
+      sla:
+        freshness: 1h
+        availability: 99.9%
+      access: self-serve via platform
+```
+
+### Anti-Patterns
+
+**1. "Data Mesh = New Central Team":**
+- Creating a new central "data mesh team" that owns everything
+- Fix: Central platform team only, domain teams own data products
+
+**2. "All Data Must Be Mesh":**
+- Forcing every dataset into data product format
+- Fix: Keep internal scratch data internal; only expose products
+
+**3. "No Platform Investment":**
+- Expecting domain teams to build infra from scratch
+- Fix: Invest in self-serve platform first; data mesh fails without it
+
+**4. "Skip Governance":**
+- No global standards → every product different format, no interoperability
+- Fix: Federated governance council, automated policy enforcement
+
+**5. "Premature Mesh":**
+- Org with 3 teams doesn't need data mesh
+- Fix: Data mesh for 10+ domain teams; simpler for smaller orgs
+
+## Step 52: Distributed Monolith Detection
+
+### Detection Signals
+
+| Signal | Measurement | Threshold |
+--------|-----------|-----------|
+| **Shared database** | Multiple services write to same DB/schema | Any shared tables = critical |
+| **Synchronous chains** | Service A → B → C → D (sequential HTTP) | >3 hops = warning |
+| **Shared libraries** | Domain logic in shared lib, deployed together | Core domain lib = critical |
+| **Lock-step deployments** | Services must deploy together | Any = critical |
+| **Distributed transactions** | 2PC or pseudo-2PC across services | Any = critical |
+| **Shared DTOs** | Request/response objects in shared module | Pervasive = warning |
+| **Cross-service joins** | Query spanning multiple service DBs | Any = critical |
+| **Temporal coupling** | Service A fails if Service B is down | Deep chains = critical |
+
+### Coupling Score Metric
+
+```
+Coupling Score = Σ (weight × count) for each coupling type
+
+Weights:
+  Shared database table     = 10
+  Synchronous chain (each)  = 5
+  Shared domain library     = 8
+  Lock-step deployment      = 10
+  Shared DTO                = 2
+  Cross-service DB join     = 10
+  Temporal coupling         = 6
+
+Interpretation:
+  0-15   = Healthy microservices
+  16-40  = Moderate coupling, address incrementally
+  41-70  = Distributed monolith, prioritize decomposition
+  71+    = Monolith, consider consolidation or major refactor
+```
+
+**Automated detection (Service Dependency Analyzer):**
+```python
+def analyze_coupling(services):
+    score = 0
+    findings = []
+    for svc_a, svc_b in combinations(services, 2):
+        shared_tables = find_shared_db_tables(svc_a, svc_b)
+        if shared_tables:
+            score += 10 * len(shared_tables)
+            findings.append(f"SHARED_DB: {svc_a} and {svc_b} share {shared_tables}")
+
+        sync_chain = find_sync_call_chain(svc_a, svc_b, max_depth=5)
+        if len(sync_chain) > 3:
+            score += 5 * len(sync_chain)
+            findings.append(f"SYNC_CHAIN: {' -> '.join(sync_chain)} ({len(sync_chain)} hops)")
+
+        shared_libs = find_shared_domain_libs(svc_a, svc_b)
+        if shared_libs:
+            score += 8 * len(shared_libs)
+            findings.append(f"SHARED_LIB: {shared_libs}")
+
+    return {"score": score, "findings": findings, "grade": classify(score)}
+```
+
+### Remediation Strategies
+
+**1. Async messaging (break sync chains):**
+```
+Before: OrderService →(sync)→ InventoryService →(sync)→ PaymentService
+After:  OrderService → Kafka → InventoryService
+                  → Kafka → PaymentService
+        (with correlation IDs for tracing)
+```
+
+**2. Database split (break shared DB):**
+```
+Phase 1: Identify table ownership per service
+Phase 2: Create service-specific views/schemas
+Phase 3: Move tables to service-owned DBs
+Phase 4: Replace cross-service queries with API calls or events
+Phase 5: Add CDC for data sync where needed
+```
+
+**3. Strangler Fig (incremental extraction):**
+```
+1. Identify bounded context boundary
+2. Build new service with its own DB
+3. Route traffic gradually (feature flag)
+4. Keep old code path as fallback
+5. Remove old code when new service stable
+6. Repeat for next bounded context
+```
+
+**4. Anti-corruption layer:**
+- When service must call legacy monolith, wrap in adapter
+- Translates between legacy model and clean domain model
+- Gradually shrink legacy dependency
+
+## Step 53: Service Coupling Anti-Patterns
+
+### 1. Shared Database Anti-Pattern
+
+**Symptom:**
+```
+ServiceA ──┐
+            ├──▶ Shared PostgreSQL (orders, inventory, payments tables)
+ServiceB ──┘
+```
+
+**Problems:**
+- Schema changes require coordinated deploys
+- One service's slow query degrades all services
+- Can't scale services independently
+- No service owns the data → unclear responsibility
+
+**Fix: Database per service + CDC sync:**
+```
+ServiceA ──▶ Orders DB ──(CDC)──▶ Kafka ──▶ ServiceB's Inventory DB
+ServiceB ──▶ Inventory DB ──(CDC)──▶ Kafka ──▶ ServiceA's Orders DB
+```
+```java
+// Transactional outbox pattern (no dual-write)
+@Transactional
+public void placeOrder(Order order) {
+    orderRepo.save(order);
+    outboxRepo.save(new OutboxEvent("OrderPlaced", order.toJson()));  // same DB transaction
+}
+// Separate publisher reads outbox, publishes to Kafka, marks as published
+```
+
+### 2. Sync Chain Anti-Pattern
+
+**Symptom:**
+```
+Client → API Gateway → OrderService → InventoryService → PricingService → UserService → DB
+```
+
+**Problems:**
+- Latency: 5 services × 50ms = 250ms minimum
+- Availability: 99.9%^5 = 99.5% (5 nines → 2.5 nines)
+- One slow service blocks entire chain
+- Cascade failures
+
+**Fix 1: Parallel async calls (where possible):**
+```java
+// Before (sequential)
+InventoryResult inv = inventoryService.check(order);  // 50ms
+PricingResult price = pricingService.calculate(order); // 50ms
+UserResult user = userService.getProfile(userId);      // 50ms
+// Total: 150ms
+
+// After (parallel)
+CompletableFuture<InventoryResult> inv = supplyAsync(() -> inventoryService.check(order));
+CompletableFuture<PricingResult> price = supplyAsync(() -> pricingService.calculate(order));
+CompletableFuture<UserResult> user = supplyAsync(() -> userService.getProfile(userId));
+CompletableFuture.allOf(inv, price, user).join();
+// Total: ~50ms
+```
+
+**Fix 2: Event-driven decomposition:**
+```
+OrderService → Kafka [OrderPlaced] → InventoryService (async)
+                                   → PricingService (async)
+                                   → UserService (async)
+// Response: return 202 Accepted + polling/webhook for result
+```
+
+**Fix 3: API composition at gateway:**
+```
+Client → BFF/Gateway ──┬──▶ InventoryService
+                       ├──▶ PricingService
+                       └──▶ UserService
+                       (parallel fan-out)
+```
+
+### 3. God Service Anti-Pattern
+
+**Symptom:**
+```
+GodService: 100+ endpoints, 50+ database tables, 200K+ LOC
+Every other service depends on GodService
+```
+
+**Problems:**
+- Single point of failure
+- Team bottleneck (everyone changes GodService)
+- Deployment risk: any change affects entire system
+- Impossible to scale independently
+
+**Fix: Domain decomposition:**
+```
+GodService
+  ├── Customer domain → CustomerService (own DB)
+  ├── Order domain → OrderService (own DB)
+  ├── Inventory domain → InventoryService (own DB)
+  ├── Pricing domain → PricingService (own DB)
+  └── Notification domain → NotificationService
+
+Migration: Strangler Fig pattern (extract one domain at a time)
+```
+
+**Fix: Identify domain boundaries:**
+```sql
+-- Analyze table co-occurrence in transactions
+SELECT t1.table_name, t2.table_name, COUNT(*) as co_access
+FROM query_log ql
+JOIN tables_accessed t1 ON ql.id = t1.query_id
+JOIN tables_accessed t2 ON ql.id = t2.query_id
+WHERE t1.table_name < t2.table_name
+GROUP BY t1.table_name, t2.table_name
+ORDER BY co_access DESC;
+-- Tables with high co-access belong in same service
+```
+
+### Coupling Heat Map
+
+```
+Service        | Shared DB | Sync Chain | Shared Lib | Lock-step
+---------------|-----------|------------|------------|----------
+OrderService   | 🔴        | 🟡         | 🟡         | 🔴
+InventorySvc   | 🔴        | 🟢         | 🟢         | 🟡
+PaymentSvc     | 🟡        | 🟡         | 🔴         | 🟡
+UserSvc        | 🟢        | 🟢         | 🟢         | 🟢
+
+🔴 = critical, 🟡 = warning, 🟢 = healthy
+Priority: fix 🔴 first, then 🟡
+```
+
+## Step 54: Saga Pattern Deep Dive
+
+### Choreography vs Orchestration
+
+| Aspect | Choreography | Orchestration |
+--------|-------------|---------------|
+| **Coordination** | Events, no central coordinator | Central orchestrator |
+| **Coupling** | Low (services know events only) | Medium (orchestrator knows services) |
+| **Complexity** | Hard to track flow | Easy to see flow in one place |
+| **Debugging** | Distributed tracing needed | Single point of inspection |
+| **Best for** | 2-4 services, simple flows | 5+ services, complex flows |
+| **Failure handling** | Each service handles own compensation | Orchestrator triggers compensations |
+| **Adding steps** | Add event listener in new service | Add step in orchestrator |
+
+### Choreography Example (Order Saga)
+
+```
+OrderService ──[OrderPlaced]──▶ InventoryService
+                                      │
+                                      ├──[ItemsReserved]──▶ PaymentService
+                                      │                          │
+                                      │                          ├──[PaymentProcessed]──▶ ShippingService
+                                      │                          │
+                                      │                          └──[PaymentFailed]──▶ InventoryService [ReserveFailed]
+                                      │
+                                      └──[ReservationFailed]──▶ OrderService [OrderCancelled]
+```
+
+```java
+// OrderService
+@Component
+class OrderEventListener {
+    @KafkaListener(topics = "payment-events")
+    void onPaymentProcessed(PaymentProcessedEvent event) {
+        orderService.confirmOrder(event.getOrderId());
+    }
+
+    @KafkaListener(topics = "payment-events")
+    void onPaymentFailed(PaymentFailedEvent event) {
+        orderService.cancelOrder(event.getOrderId(), "payment_failed");
+    }
+}
+
+// InventoryService
+@Component
+class OrderPlacedListener {
+    @KafkaListener(topics = "order-events")
+    void onOrderPlaced(OrderPlacedEvent event) {
+        try {
+            inventoryService.reserveItems(event.getItems());
+            kafkaTemplate.send("inventory-events", new ItemsReservedEvent(event.getOrderId()));
+        } catch (InsufficientStockException e) {
+            kafkaTemplate.send("inventory-events", new ReservationFailedEvent(event.getOrderId()));
+        }
+    }
+}
+```
+
+### Orchestration Example (Spring-based)
+
+```java
+@Component
+public class OrderSagaOrchestrator {
+    private final SagaDefinition<OrderSagaData> sagaDefinition;
+
+    public OrderSagaOrchestrator() {
+        this.sagaDefinition = step()
+            .invoke(orderService::reserveOrder)
+            .compensate(orderService::cancelOrder)
+        .step()
+            .invoke(inventoryService::reserveItems)
+            .compensate(inventoryService::releaseItems)
+        .step()
+            .invoke(paymentService::processPayment)
+            .compensate(paymentService::refundPayment)
+        .step()
+            .invoke(shippingService::createShipment)
+            .compensate(shippingService::cancelShipment)
+        .build();
+    }
+
+    public void execute(Order order) {
+        OrderSagaData data = new OrderSagaData(order);
+        sagaDefinition.compensate(data);  // auto-compensates on failure
+    }
+}
+```
+
+### Compensating Transactions
+
+**Key principles:**
+- Compensating action undoes effect, not state (can't "un-send email", but can "send cancellation email")
+- Idempotent: compensation may be retried
+- Compensatable: can always be executed (check state before compensating)
+- Pivot action: first non-compensatable action (e.g., charging payment) — after this, must succeed or compensate
+
+**Compensation patterns:**
+```java
+// Pattern 1: Direct undo
+compensate: () -> inventoryService.releaseItems(orderId)
+
+// Pattern 2: Semantic compensation (not state undo)
+compensate: () -> notificationService.sendCancellationEmail(orderId, reason)
+
+// Pattern 3: Record compensation intent, execute later
+compensate: () -> compensationLog.record(orderId, "REFUND", amount)
+// Separate job processes pending compensations
+```
+
+**Timeout-based compensation:**
+```java
+@Saga
+public class OrderSaga {
+    @StartSaga
+    @SagaEventHandler(associationProperty = "orderId")
+    public void handle(OrderPlacedEvent event) {
+        // Set saga deadline
+        setDeadline(Duration.ofMinutes(30));
+    }
+
+    @SagaEventHandler(associationProperty = "orderId")
+    public void handle(PaymentProcessedEvent event) {
+        // Clear deadline, saga progressing
+        killDeadline();
+    }
+
+    @EndSaga
+    @DeadlineHandler
+    public void handleTimeout() {
+        // Compensation: refund, release inventory, cancel order
+        compensateAll();
+    }
+}
+```
+
+### Saga State Machine
+
+```
+                    ┌──────────┐
+                    │ STARTED  │
+                    └────┬─────┘
+                         │ OrderPlaced
+                    ┌────▼─────┐
+            ┌──────│RESERVING │──────┐
+            │      └────┬─────┘      │
+     ReservationFailed   │    ItemsReserved
+            │       ┌────▼─────┐      │
+     ┌──────▼───┐   │ PAYING   │◄─────┘
+     │CANCELLED │   └────┬─────┘
+     └──────────┘        │ PaymentProcessed
+                    ┌────▼─────┐
+               ┌────│SHIPPING  │
+               │    └────┬─────┘
+        ShipFailed       │ Shipped
+               │    ┌────▼─────┐
+               └───▶│COMPLETED │
+                    └──────────┘
+
+At any state: Timeout → COMPENSATE → CANCELLED
+```
+
+### Pitfalls
+- **Don't use saga for single-service transactions** — local ACID is simpler
+- **Don't forget idempotency on every step** — retries will happen
+- **Don't mix saga state with domain state** — separate tables
+- **Don't implement saga without monitoring** — need visibility into in-flight sagas
+- **Don't use choreography for >5 steps** — impossible to reason about flow
+
+## Step 55: Service Discovery
+
+### Comparison
+
+| Feature | Client-Side | Server-Side | DNS-Based |
+---------|------------|-------------|-----------|
+| **How it works** | Client queries registry, picks instance | Load balancer queries registry, routes | Client resolves DNS name to IP |
+| **Examples** | Eureka, Consul client, Nacos | AWS ALB/NLB, GCP LB, Nginx+Consul template | Kubernetes CoreDNS, Consul DNS, Route53 |
+| **Load balancing** | Client-side (Ribbon, custom) | Server-side (LB algorithm) | DNS round-robin (limited) |
+| **Health checking** | Client or registry-based | LB health checks | TTL-based (stale possible) |
+| **Latency** | Cached locally, no extra hop | Extra hop through LB | Cached by TTL, no extra hop |
+| **Failover speed** | Fast (cached list, immediate retry) | Medium (LB health check interval) | Slow (DNS TTL, typically 30-60s) |
+| **Protocol support** | Any (app-level) | L4 (TCP) or L7 (HTTP/gRPC) | L3 (IP only) |
+| **Sticky sessions** | Client-managed | LB-managed (cookie/IP) | Not supported |
+| **Weighted routing** | Client logic needed | Built-in LB feature | Limited (weighted DNS, e.g., Route53) |
+| **Multi-DC** | Registry federation | Global LB (Anycast, GeoDNS) | GeoDNS |
+| **Complexity** | High (client lib required) | Medium (LB config) | Low (standard DNS) |
+| **Best for** | Microservices, polyglot, high failover needs | Most production workloads | Simple setups, K8s native |
+
+### Kubernetes Service Discovery
+
+**Built-in (DNS-based):**
+```yaml
+# Service creates DNS: <service>.<namespace>.svc.cluster.local
+apiVersion: v1
+kind: Service
+metadata:
+  name: order-service
+spec:
+  selector:
+    app: order
+  ports:
+    - port: 8080
+      targetPort: 8080
+---
+# Client code resolves: http://order-service.default.svc.cluster.local:8080
+# Or short form: http://order-service:8080 (same namespace)
+```
+
+**Headless service (for stateful apps, direct pod discovery):**
+```yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: kafka-brokers
+spec:
+  clusterIP: None  # headless
+  selector:
+    app: kafka
+  ports:
+    - port: 9092
+# DNS: kafka-brokers-0.kafka-brokers.default.svc.cluster.local
+```
+
+### Consul Service Discovery
+
+```hcl
+# Service registration
+service {
+  name = "order-service"
+  port = 8080
+  tags = ["v2", "canary"]
+  check {
+    http     = "http://localhost:8080/health"
+    interval = "10s"
+    timeout  = "3s"
+  }
+}
+```
+
+**Consul vs etcd vs ZooKeeper:**
+
+| Feature | Consul | etcd | ZooKeeper |
+---------|--------|------|-----------|
+| **Primary use** | Service discovery + KV | KV store, K8s backing | Coordination, legacy |
+| **Health checks** | Built-in (HTTP/TCP/gRPC/Script) | Client-side (leases) | Session-based (ephemeral nodes) |
+| **DNS interface** | Yes (built-in) | No (external SkyDNS) | No |
+| **Multi-DC** | Native (WAN gossip) | Manual federation | Manual |
+| **Consensus** | Raft | Raft | ZAB |
+| **Language** | Go | Go | Java |
+| **K8s native** | Adapter available | Native (K8s etcd) | Adapter (deprecated) |
+
+### Pitfalls
+- **Don't use DNS for rapid failover** — TTL caching causes stale records
+- **Don't hardcode service addresses** — breaks in dynamic environments
+- **Don't skip health checks** — stale instances in registry cause 500s
+- **Don't mix discovery methods** — pick one per environment (Consul OR K8s DNS)
+- **Don't forget deregistration** — graceful shutdown must deregister (SIGTERM handler)
