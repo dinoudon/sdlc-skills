@@ -1,7 +1,7 @@
 ---
 name: sdlc-developer-tooling
 description: "Modern dev tooling: Python (uv, Ruff, pytest, mypy), JS/TS (pnpm, Bun, Vitest, Biome, Playwright), Go (golangci-lint, go test -race), Rust (cargo). Cross-cutting: just, mise, direnv, Docker Compose, Dev Containers, Nix. Includes LSP/DAP patterns, AI-assisted dev, green software tooling."
-version: 3.2.0
+version: 4.0.0
 author: Hermes Agent
 license: MIT
 platforms: [linux, macos, windows]
@@ -586,12 +586,529 @@ Editor-agnostic debugging. Same pattern as LSP.
 
 ### Neovim LSP Config
 ```lua
--- init.lua
-require('lspconfig').pyright.setup{}
-require('lspconfig').gopls.setup{}
-require('lspconfig').ts_ls.setup{}
-require('lspconfig').rust_analyzer.setup{}
+-- init.lua (expanded with keymaps, capabilities, on_attach)
+local lspconfig = require('lspconfig')
+local capabilities = require('cmp_nvim_lsp').default_capabilities()
+
+local on_attach = function(_, bufnr)
+  local map = function(keys, func, desc)
+    vim.keymap.set('n', keys, func, { buffer = bufnr, desc = 'LSP: ' .. desc })
+  end
+  map('gd', vim.lsp.buf.definition, 'Go to definition')
+  map('gr', vim.lsp.buf.references, 'References')
+  map('K', vim.lsp.buf.hover, 'Hover')
+  map('<leader>ca', vim.lsp.buf.code_action, 'Code action')
+  map('<leader>rn', vim.lsp.buf.rename, 'Rename')
+  map('[d', vim.diagnostic.goto_prev, 'Prev diagnostic')
+  map(']d', vim.diagnostic.goto_next, 'Next diagnostic')
+end
+
+local servers = { 'pyright', 'gopls', 'ts_ls', 'rust_analyzer', 'ruff' }
+for _, server in ipairs(servers) do
+  lspconfig[server].setup({ on_attach = on_attach, capabilities = capabilities })
+end
+
+-- Diagnostic display
+vim.diagnostic.config({ virtual_text = true, signs = true, float = { border = 'rounded' } })
 ```
+
+**Lazy.nvim plugin spec (LSP stack):**
+```lua
+-- lua/plugins/lsp.lua
+return {
+  { 'neovim/nvim-lspconfig' },
+  { 'hrsh7th/nvim-cmp', dependencies = { 'hrsh7th/cmp-nvim-lsp', 'hrsh7th/cmp-buffer' } },
+  { 'L3MON4D3/LuaSnip' },
+  { 'williamboman/mason.nvim', config = true },
+  { 'williamboman/mason-lspconfig.nvim', ensure_installed = { 'pyright', 'gopls', 'ts_ls', 'rust_analyzer', 'ruff' } },
+}
+```
+
+## Monorepo Tooling (Expanded)
+
+### Turborepo Caching
+Source: https://turbo.build/repo/docs
+
+```json
+// turbo.json
+{
+  "tasks": {
+    "build": { "dependsOn": ["^build"], "outputs": ["dist/**", ".next/**"] },
+    "test": { "dependsOn": ["build"], "outputs": [] },
+    "lint": { "outputs": [] }
+  },
+  "remoteCache": {
+    "enabled": true
+  }
+}
+```
+```bash
+turbo run build test lint          # Build graph-aware pipeline
+turbo run build --filter=web       # Scope to package
+turbo run build --dry-run          # Preview task graph
+turbo login                        # Enable remote cache (Vercel)
+turbo run build --summarize        # Generate run summary JSON
+```
+**Remote cache:** `TURBO_TOKEN` env var + Vercel Remote Cache or self-hosted (turborepo-remote-cache, S3).
+
+### Nx Affected
+Source: https://nx.dev/
+
+```bash
+nx affected -t test                # Only test projects changed since last commit
+nx affected -t build --base=main   # Compare against main branch
+nx affected --graph                # Visualize affected dependency graph
+nx show projects --affected        # List affected projects
+```
+```json
+// nx.json
+{
+  "namedInputs": {
+    "default": ["{projectRoot}/**/*", "sharedGlobals"],
+    "production": ["default", "!{projectRoot}/**/*.spec.ts"]
+  },
+  "targetDefaults": {
+    "test": { "inputs": ["default", "^production"], "cache": true },
+    "build": { "inputs": ["production"], "cache": true }
+  }
+}
+```
+**Nx Cloud:** distributed caching + CI distribution. `nx connect`.
+
+### Bazel Remote Cache
+Source: https://bazel.build/
+
+```bash
+# .bazelrc -- remote cache with gRPC
+build --remote_cache=grpcs://cache.example.com:443
+build --remote_header=x-api-key=SECRET
+build --remote_timeout=60
+build --remote_download_minimal     # Don't download outputs not needed locally
+```
+**Self-hosted options:** buildbarn, buildfarm, buildgrid, EngFlow, BuildBuddy.
+**Key principle:** Content-addressable storage. Same inputs → same hash → cache hit. Reproducibility is mandatory.
+
+### Turborepo vs Nx vs Bazel
+| Feature | Turborepo | Nx | Bazel |
+|---------|-----------|-----|-------|
+| Best for | JS/TS monorepos | JS/TS + polyglot | Large polyglot, enterprise |
+| Remote cache | Vercel (built-in) | Nx Cloud | Self-hosted / BuildBuddy |
+| Affected detection | `--filter=...[HEAD^]` | `nx affected` | Manual (tag filtering) |
+| Learning curve | Low | Medium | High |
+
+## Container Development
+
+### Docker Compose Watch Mode
+Source: https://docs.docker.com/compose/how-tos/file-watch/
+
+```yaml
+# compose.yaml
+services:
+  web:
+    build: .
+    develop:
+      watch:
+        - action: sync
+          path: ./src
+          target: /app/src
+        - action: rebuild
+          path: package.json
+```
+```bash
+docker compose watch            # Start + live-reload on file changes
+docker compose up --build       # Rebuild when Dockerfile changes
+```
+**Watch actions:** `sync` (copy file), `rebuild` (rebuild image), `sync+restart` (copy + restart process).
+
+### Testcontainers for Development
+Source: https://testcontainers.com/
+
+Throwaway Docker containers for integration tests. No shared state, no mock DBs.
+
+```python
+# Python
+import pytest
+from testcontainers.postgres import PostgresContainer
+
+@pytest.fixture(scope="session")
+def postgres():
+    with PostgresContainer("postgres:16") as pg:
+        yield pg
+
+def test_user_query(postgres):
+    engine = create_engine(postgres.get_connection_url())
+    # Real DB, real queries, real constraints
+```
+```typescript
+// TypeScript (Node)
+import { PostgreSqlContainer } from '@testcontainers/postgresql';
+
+const container = await new PostgreSqlContainer('postgres:16').start();
+const pool = new Pool({ connectionString: container.getConnectionUri() });
+// ... run tests
+await container.stop();
+```
+```go
+// Go
+func TestMain(m *testing.M) {
+    pg, _ := postgres.Run(ctx, "postgres:16",
+        postgres.WithDatabase("testdb"),
+        postgres.WithUsername("user"),
+        postgres.WithPassword("pass"),
+    )
+    defer pg.Terminate(ctx)
+    os.Exit(m.Run())
+}
+```
+**Languages:** Java, .NET, Go, Node.js, Python, Rust. **Containers:** databases, message queues, search engines, web servers.
+
+## Git Worktrees for Parallel Development
+
+Work on multiple branches simultaneously without stashing or cloning multiple repos.
+
+```bash
+git worktree add ../myproject-feature-x feature/x    # New worktree for branch
+git worktree add ../myproject-hotfix hotfix/critical   # Another branch
+git worktree list                                      # List all worktrees
+git worktree remove ../myproject-feature-x             # Remove worktree
+git worktree prune                                     # Clean up stale worktrees
+```
+**Use cases:**
+- Review PR while working on feature branch
+- Test code on `main` without losing feature work
+- Run CI-like checks on one branch while editing another
+
+**With Neovim/tmux:**
+```bash
+# tmux session: one window per worktree
+tmux new-session -s dev -n feature 'cd ../myproject-feature && nvim'
+tmux new-window -t dev -n main 'cd ../myproject-main && nvim'
+```
+**git-wt helper:** `git-wt add <branch> --open` opens worktree + editor in one command.
+
+## Editor/IDE Patterns
+
+### VS Code Dev Containers (Expanded)
+
+```jsonc
+// .devcontainer/devcontainer.json
+{
+  "name": "fullstack",
+  "dockerComposeFile": "docker-compose.devcontainer.yml",
+  "service": "app",
+  "workspaceFolder": "/workspace",
+  "features": {
+    "ghcr.io/devcontainers/features/docker-in-docker:2": {},
+    "ghcr.io/devcontainers/features/github-cli:1": {},
+    "ghcr.io/devcontainers/features/node:1": { "version": "20" }
+  },
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ms-python.python",
+        "charliermarsh.ruff",
+        "ms-vscode.live-server",
+        "eamodio.gitlens",
+        "ms-azuretools.vscode-docker"
+      ],
+      "settings": {
+        "python.defaultInterpreterPath": "/usr/local/bin/python",
+        "editor.formatOnSave": true
+      }
+    }
+  },
+  "postCreateCommand": "uv sync && pnpm install",
+  "forwardPorts": [3000, 5432],
+  "remoteEnv": { "DATABASE_URL": "postgres://postgres:password@db:5432/myapp" }
+}
+```
+**Remote SSH:** `code --remote ssh-remote+user@host /path` — edit on remote machine with full VS Code.
+
+### JetBrains Gateway
+Source: https://www.jetbrains.com/remote-development/gateway/
+
+Remote dev backend runs on server; thin client on local machine. Code/indexing on server, rendering locally.
+
+```bash
+# Install Gateway, connect via SSH
+# Or: JetBrains Space dev environments
+# Or: JetBrains Toolbox → Remote → SSH → Enter host
+```
+**Project config (.idea/):** commit `codeStyleConfig.xml`, `inspectionProfiles/`. Gitignore workspace files.
+**Gateway with Dev Containers:** Open devcontainer.json in Gateway → container builds, IDE runs inside.
+
+## Documentation Tooling
+
+### MkDocs Material
+Source: https://squidfunk.github.io/mkdocs-material/
+
+```yaml
+# mkdocs.yml
+site_name: My Project
+theme:
+  name: material
+  features:
+    - content.code.copy
+    - navigation.tabs
+    - search.suggest
+    - toc.follow
+  palette:
+    scheme: slate
+    primary: indigo
+plugins:
+  - search
+  - tags
+  - git-revision-date-localized
+markdown_extensions:
+  - pymdownx.superfences
+  - pymdownx.tabbed:
+      alternate_style: true
+  - admonition
+  - pymdownx.details
+```
+```bash
+pip install mkdocs-material
+mkdocs serve              # Live preview
+mkdocs build --strict     # Build + fail on warnings
+mkdocs gh-deploy          # Deploy to GitHub Pages
+```
+**Best for:** Technical docs, internal wikis, API references. Python ecosystem.
+
+### Docusaurus
+Source: https://docusaurus.io/
+
+```bash
+npx create-docusaurus@latest website classic
+cd website && npm start
+```
+```js
+// docusaurus.config.js
+module.exports = {
+  title: 'My Project',
+  url: 'https://example.com',
+  presets: [
+    ['classic', {
+      docs: { sidebarPath: './sidebars.js', editUrl: 'https://github.com/org/repo/edit/main/website/' },
+      blog: { showReadingTime: true },
+      theme: { customCss: './src/css/custom.css' },
+    }],
+  ],
+};
+```
+**Best for:** React-based docs with blogs, versioning, i18n. OSS project sites.
+
+### Astro Starlight
+Source: https://starlight.astro.build/
+
+```bash
+npx create-astro@latest --template starlight
+```
+```yaml
+# astro.config.mjs
+import starlight from '@astrojs/starlight';
+export default {
+  integrations: [starlight({
+    title: 'My Docs',
+    social: { github: 'https://github.com/org/repo' },
+    sidebar: [
+      { label: 'Start', items: ['intro', 'install'] },
+      { label: 'Guides', autogenerate: { directory: 'guides' } },
+    ],
+  })],
+};
+```
+**Best for:** Fast, Astro-native docs. Islands architecture — zero JS by default.
+
+### TypeDoc
+Source: https://typedoc.org/
+
+```bash
+npx typedoc --out docs src/index.ts
+npx typedoc --plugin typedoc-plugin-markdown --out docs src/index.ts  # Markdown output
+```
+```json
+// tsconfig.json
+{
+  "typedocOptions": {
+    "entryPoints": ["src/index.ts"],
+    "out": "docs",
+    "excludePrivate": true,
+    "excludeInternal": true
+  }
+}
+```
+**Best for:** TypeScript API reference docs. Pair with MkDocs/Docusaurus for hosting.
+
+### Sphinx
+Source: https://www.sphinx-doc.org/
+
+```bash
+pip install sphinx sphinx-rtd-theme
+sphinx-quickstart docs
+cd docs && make html
+```
+```python
+# docs/conf.py
+extensions = [
+    'sphinx.ext.autodoc',      # Auto-generate from docstrings
+    'sphinx.ext.napoleon',     # Google/NumPy style docstrings
+    'sphinx.ext.viewcode',     # Source links
+    'myst_parser',             # Markdown support
+    'sphinx_autodoc_typehints',# Type hint rendering
+]
+html_theme = 'sphinx_rtd_theme'
+```
+**Best for:** Python projects with autodoc. Enterprise/traditional docs.
+
+### Docs Tooling Decision Matrix
+| Tool | Language | Output | Strength |
+|------|----------|--------|----------|
+| MkDocs Material | Python | Static site | Beautiful, fast setup |
+| Docusaurus | React | Static site | Versioning, i18n, blog |
+| Starlight | Astro | Static site | Zero JS, fast builds |
+| TypeDoc | TypeScript | HTML/MD | API reference from TS |
+| Sphinx | Python | HTML/PDF | Autodoc, enterprise |
+
+## Observability for Developers
+
+### Local Jaeger (Distributed Tracing)
+Source: https://www.jaegertracing.io/
+
+```yaml
+# docker-compose.observability.yml
+services:
+  jaeger:
+    image: jaegertracing/all-in-one:1.62
+    ports:
+      - "16686:16686"  # UI
+      - "4317:4317"    # OTLP gRPC
+      - "4318:4318"    # OTLP HTTP
+    environment:
+      COLLECTOR_OTLP_ENABLED: "true"
+```
+```python
+# Python — instrument with OpenTelemetry
+from opentelemetry import trace
+from opentelemetry.sdk.trace import TracerProvider
+from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import OTLPSpanExporter
+from opentelemetry.sdk.trace.export import BatchSpanProcessor
+
+provider = TracerProvider()
+provider.add_span_processor(BatchSpanProcessor(OTLPSpanExporter(endpoint="http://localhost:4317")))
+trace.set_tracer_provider(provider)
+tracer = trace.get_tracer("my-service")
+
+with tracer.start_as_current_span("handle_request"):
+    with tracer.start_as_current_span("db_query"):
+        # Your code — auto-correlated in Jaeger UI
+        pass
+```
+**View traces:** Open http://localhost:16686 → select service → find traces.
+
+### Grafana Tempo (Traces) + Loki (Logs)
+Source: https://grafana.com/docs/tempo/
+
+```yaml
+# docker-compose.observability.yml
+services:
+  tempo:
+    image: grafana/tempo:latest
+    command: ["-config.file=/etc/tempo.yaml"]
+    volumes: ["./tempo.yaml:/etc/tempo.yaml"]
+    ports: ["3200:3200", "4317:4317"]
+
+  loki:
+    image: grafana/loki:3.0.0
+    ports: ["3100:3100"]
+
+  grafana:
+    image:grafana/grafana:latest
+    ports: ["3000:3000"]
+    volumes: ["./grafana-datasources.yaml:/etc/grafana/provisioning/datasources/datasources.yaml"]
+```
+```yaml
+# grafana-datasources.yaml
+apiVersion: 1
+datasources:
+  - name: Tempo
+    type: tempo
+    url: http://tempo:3200
+  - name: Loki
+    type: loki
+    url: http://loki:3100
+```
+**Trace-to-logs:** Link traces to logs via TraceID. Loki queries `{trace_id="<TRACE_ID>"}`.
+
+### Structured Logging in Development
+
+```python
+# Python — structlog
+import structlog
+structlog.configure(
+    processors=[
+        structlog.contextvars.merge_contextvars,
+        structlog.processors.add_log_level,
+        structlog.processors.TimeStamper(fmt="iso"),
+        structlog.dev.ConsoleRenderer() if __debug__ else structlog.processors.JSONRenderer(),
+    ],
+)
+log = structlog.get_logger()
+log.info("user_login", user_id=123, method="oauth", latency_ms=42)
+# Dev output: [info] user_login  user_id=123 method=oauth latency_ms=42
+# Prod output: {"event":"user_login","user_id":123,"method":"oauth","latency_ms":42,"level":"info","timestamp":"2024-01-15T10:30:00Z"}
+```
+```typescript
+// TypeScript — pino
+import pino from 'pino';
+const logger = pino({ transport: { target: 'pino-pretty' } }); // Dev: pretty, Prod: JSON
+logger.info({ userId: 123, action: 'login' }, 'User logged in');
+```
+```go
+// Go — slog (stdlib)
+import "log/slog"
+logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
+logger.Info("user_login", "user_id", 123, "method", "oauth")
+```
+**Key:** Use JSON in production (machine-parseable), pretty-print in dev (human-readable). Single log library, two renderers via env var.
+
+### Dev Observability Stack (All-in-One)
+```yaml
+# docker-compose.observability.yml — full local stack
+services:
+  jaeger:
+    image: jaegertracing/all-in-one:1.62
+    ports: ["16686:16686", "4317:4317"]
+  tempo:
+    image: grafana/tempo:latest
+    ports: ["3200:3200"]
+  loki:
+    image: grafana/loki:3.0.0
+    ports: ["3100:3100"]
+  grafana:
+    image: grafana/grafana:latest
+    ports: ["3000:3000"]
+    environment:
+      GF_AUTH_ANONYMOUS_ENABLED: "true"
+      GF_AUTH_ANONYMOUS_ORG_ROLE: Admin
+```
+```bash
+docker compose -f docker-compose.observability.yml up -d
+# Traces: http://localhost:16686 (Jaeger) or http://localhost:3000 (Grafana + Tempo)
+# Logs: http://localhost:3000 (Grafana + Loki)
+```
+
+### OTel Auto-Instrumentation
+```bash
+# Python
+pip install opentelemetry-distro opentelemetry-exporter-otlp
+opentelemetry-bootstrap -a install  # Auto-detect + install instrumentors
+opentelemetry-instrument --service myapp --exporter_otlp_endpoint http://localhost:4317 python app.py
+
+# Node.js
+npx @opentelemetry/auto-instrumentations-node
+OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4317 node --require ./tracing.js app.js
+```
+
 
 ## Pitfalls
 

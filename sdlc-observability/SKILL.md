@@ -1,13 +1,13 @@
 ---
 name: sdlc-observability
-description: "Observability: OpenTelemetry 2024, GenAI semantic conventions, eBPF (Cilium/Hubble/Tetragon), sidecar-less mesh, profiling signal, structured logging, SLIs/SLOs/SLAs, error budgets, burn-rate alerting, Grafana LGTM, distributed tracing, cost optimization, serverless observability, LLM/AI observability, edge observability."
-version: 3.2.0
+description: "Observability: OpenTelemetry 2024, GenAI semantic conventions, eBPF (Cilium/Hubble/Tetragon), sidecar-less mesh, profiling signal, structured logging, SLIs/SLOs/SLAs, error budgets, burn-rate alerting, Grafana LGTM, distributed tracing, cost optimization, serverless observability, LLM/AI observability, edge observability, OTel Collector deployment patterns, microservices golden signals, log aggregation (ELK/Loki/ClickHouse), metrics aggregation, alert design patterns, observability maturity model."
+version: 4.0.0
 author: Hermes Agent
 license: MIT
 platforms: [linux, macos, windows]
 metadata:
   hermes:
-    tags: [sdlc, observability, opentelemetry, prometheus, grafana, loki, jaeger, sli, slo, error-budget, tracing, logging, sre, ebpf, cilium, genai, profiling, serverless, lambda, cloudwatch, emf, edge, llm, ai]
+    tags: [sdlc, observability, opentelemetry, prometheus, grafana, loki, jaeger, sli, slo, error-budget, tracing, logging, sre, ebpf, cilium, genai, profiling, serverless, lambda, cloudwatch, emf, edge, llm, ai, collector, daemonset, sidecar, gateway, golden-signals, elk, clickhouse, alerting, maturity-model]
     related_skills: [sdlc-deployment, sdlc-cicd-pipeline, sdlc-testing-qa]
 ---
 
@@ -27,6 +27,12 @@ Trigger when user:
 - Migrates from Envoy sidecars to sidecar-less mesh
 - Designs monitoring architecture
 - Defines error budgets
+|- Deploys OTel Collector (sidecar, daemonset, gateway)
+|- Designs observability for microservices (golden signals, dependency mapping)
+|- Chooses log aggregation stack (ELK, Loki, ClickHouse)
+|- Configures metrics aggregation (recording rules, federation, long-term storage)
+|- Designs alert routing and escalation policies
+|- Assesses observability maturity
 
 ## Step 1: OpenTelemetry (OTEL)
 
@@ -984,3 +990,651 @@ curl -X POST "https://api.cloudflare.com/client/v4/accounts/{account_id}/logpush
 **Key:** WAE for fast aggregates and alerting. Logpush for forensics and compliance. OTLP for trace-level debugging on sampled requests.
 
 Source: https://developers.cloudflare.com/workers/observability/
+
+## Step 20: OpenTelemetry Collector Deployment Patterns
+
+Three deployment patterns. Choice depends on scale, control, and operational model.
+
+### Pattern 1: Sidecar (per-pod)
+
+One Collector instance per application pod. Isolates telemetry per workload. Best for: fine-grained config per service, multi-tenant clusters, teams with different export backends.
+
+```yaml
+# Kubernetes sidecar container
+apiVersion: apps/v1
+kind: Deployment
+spec:
+  template:
+    spec:
+      containers:
+      - name: app
+        image: myapp:latest
+        env:
+        - name: OTEL_EXPORTER_OTLP_ENDPOINT
+          value: "http://localhost:4317"
+      - name: otel-collector
+        image: otel/opentelemetry-collector-contrib:latest
+        args: ["--config=/etc/otel/config.yaml"]
+        ports:
+        - containerPort: 4317
+```
+
+**Trade-offs:**
+- (+) Full config isolation per service, no noisy-neighbor
+- (-) High resource overhead (1 collector × N pods), operational complexity
+
+### Pattern 2: DaemonSet (per-node)
+
+One Collector per Kubernetes node. All pods on node send telemetry to node-local collector. Best for: moderate scale, node-level processing, eBPF integration.
+
+```yaml
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: otel-collector
+spec:
+  selector:
+    matchLabels:
+      app: otel-collector
+  template:
+    spec:
+      containers:
+      - name: otel-collector
+        image: otel/opentelemetry-collector-contrib:latest
+        ports:
+        - containerPort: 4317  # OTLP gRPC
+        - containerPort: 4318  # OTLP HTTP
+        resources:
+          requests:
+            cpu: 200m
+            memory: 256Mi
+          limits:
+            cpu: 500m
+            memory: 512Mi
+        volumeMounts:
+        - name: hostfs
+          mountPath: /hostfs
+          readOnly: true
+      volumes:
+      - name: hostfs
+        hostPath:
+          path: /
+```
+
+**Trade-offs:**
+- (+) Lower overhead than sidecar, shared across pods on node
+- (-) Config shared per node, hot-node bottleneck possible
+
+### Pattern 3: Gateway (centralized)
+
+Central Collector cluster sits between agents/sidecars and backends. Best for: tail-based sampling at scale, central routing, multi-backend fanout, cross-team policy enforcement.
+
+```
+[App Pods] → [OTLP] → [Agent Collector (sidecar/daemonset)] → [Gateway Collector Cluster] → [Backends]
+                                                  (centralized: tail sampling, routing, redaction)
+```
+
+```yaml
+# Gateway Collector config
+receivers:
+  otlp:
+    protocols:
+      grpc:
+        endpoint: 0.0.0.0:4317
+
+processors:
+  tail_sampling:
+    decision_wait: 10s
+    num_traces: 500000
+    policies:
+      - name: errors
+        type: status_code
+        status_code: { status_codes: [ERROR] }
+      - name: slow
+        type: latency
+        latency: { threshold_ms: 2000 }
+      - name: sample-rest
+        type: probabilistic
+        probabilistic: { sampling_percentage: 10 }
+  attributes:
+    actions:
+      - key: token
+        action: hash   # redact sensitive data
+
+exporters:
+  otlp/jaeger:
+    endpoint: jaeger:4317
+  prometheusremotewrite:
+    endpoint: https://mimir/api/v1/push
+  loki:
+    endpoint: https://loki/loki/api/v1/push
+
+service:
+  pipelines:
+    traces:
+      receivers: [otlp]
+      processors: [tail_sampling, attributes]
+      exporters: [otlp/jaeger]
+    metrics:
+      receivers: [otlp]
+      processors: [attributes]
+      exporters: [prometheusremotewrite]
+    logs:
+      receivers: [otlp]
+      processors: [attributes]
+      exporters: [loki]
+```
+
+### Decision Matrix
+
+| Pattern | Resource Cost | Config Flexibility | Tail Sampling | Recommended Scale |
+|---------|--------------|-------------------|---------------|-------------------|
+| Sidecar | High (N× pods) | Per-service | No (unless gateway) | < 50 services |
+| DaemonSet | Medium (N× nodes) | Per-node | No (unless gateway) | 50-500 services |
+| Gateway | Low overhead + gateway cost | Centralized | Yes | 100+ services |
+
+**Hybrid:** Agent (daemonset/sidecar) → Gateway for production. Agent handles protocol translation and initial buffering. Gateway does tail sampling, redaction, multi-backend export.
+
+Source: https://opentelemetry.io/docs/collector/deployment/
+
+## Step 21: Microservices Observability
+
+### Golden Signals (Google SRE)
+
+Four metrics that capture user-facing system health. Monitor all four per service:
+
+| Signal | What It Measures | Metric Type | Example |
+|--------|-----------------|-------------|---------|
+| **Latency** | Time to serve a request | Histogram | `http_request_duration_seconds` |
+| **Traffic** | Demand on the system | Counter | `http_requests_total` |
+| **Errors** | Rate of failed requests | Counter | `http_requests_total{code=~"5.."}` |
+| **Saturation** | How "full" the system is | Gauge/Histogram | `container_cpu_usage`, `process_resident_memory` |
+
+```promql
+# Latency: p99 request duration
+histogram_quantile(0.99, sum(rate(http_request_duration_seconds_bucket[5m])) by (le, service))
+
+# Traffic: requests per second by service
+sum(rate(http_requests_total[5m])) by (service)
+
+# Errors: error rate percentage
+sum(rate(http_requests_total{code=~"5.."}[5m])) by (service) / sum(rate(http_requests_total[5m])) by (service)
+
+# Saturation: CPU utilization
+sum(rate(container_cpu_usage_seconds_total[5m])) by (pod, namespace) / sum(container_cpu_cores) by (pod, namespace)
+```
+
+### RED Method (Tom Wilkie)
+
+RED = Rate + Errors + Duration. Subset of golden signals focused on request-driven services:
+
+```promql
+# Rate
+sum(rate(http_requests_total[5m])) by (service)
+# Errors
+sum(rate(http_requests_total{code=~"5.."}[5m])) by (service)
+# Duration
+histogram_quantile(0.99, sum(rate(http_request_duration_seconds_bucket[5m])) by (le, service))
+```
+
+### USE Method (Brendan Gregg)
+
+USE = Utilization + Saturation + Errors. For infrastructure resources:
+
+| Resource | Utilization | Saturation | Errors |
+|----------|-------------|------------|--------|
+| CPU | `container_cpu_usage / limit` | `container_cpu_cfs_throttled_periods` | `machine_cpu_cores - available` |
+| Memory | `container_memory_working_set / limit` | `container_memory_swap` (kswapd) | OOM kills |
+| Disk | `node_disk_io_time_seconds` | `node_disk_io_queue_length` | `node_disk_io_errors_total` |
+| Network | `container_network_transmit_bytes` | `node_netstat_TcpExt_TCPSynOverflow` | `node_network_receive_errs_total` |
+
+### Service Dependency Mapping
+
+Auto-discover service-to-service relationships from telemetry data.
+
+**Method 1: From traces (OTel)**
+```promql
+# Which services call which (from span names and service attributes)
+sum(rate(traces_spanmetrics_calls_total[5m])) by (service_name, span_name, status_code)
+```
+
+**Method 2: From network flows (Cilium Hubble)**
+```bash
+hubble observe --output json --type l7 | \
+  jq -r '[.flow.source.identity, .flow.destination.identity] | @tsv' | \
+  sort | uniq -c | sort -rn
+```
+
+**Method 3: Service mesh (Istio/Kiali)**
+```bash
+# Kiali auto-generates service graph from Envoy metrics
+# Prometheus query for service graph edges
+istio_requests_total{destination_service!="unknown"}
+```
+
+**Dependency visualization tools:**
+- Grafana Tempo service graph (auto-generated from traces)
+- Kiali for Istio
+- Hubble UI for Cilium
+- Datadog Service Map
+
+## Step 22: Log Aggregation Patterns
+
+### ELK Stack (Elasticsearch + Logstash + Kibana)
+
+Full-text indexing. Powerful search (Lucene). Heavy on resources.
+
+```yaml
+# Filebeat → Logstash → Elasticsearch → Kibana
+# docker-compose.yml (simplified)
+services:
+  elasticsearch:
+    image: elasticsearch:8.14.0
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=true
+    volumes:
+      - esdata:/usr/share/elasticsearch/data
+
+  logstash:
+    image: logstash:8.14.0
+    volumes:
+      - ./logstash.conf:/usr/share/logstash/pipeline/logstash.conf
+
+  kibana:
+    image: kibana:8.14.0
+    ports:
+      - "5601:5601"
+```
+
+```ruby
+# logstash.conf
+input {
+  beats { port => 5044 }
+}
+filter {
+  json { source => "message" }
+  date { match => ["timestamp", "ISO8601"] }
+  mutate { add_field => { "[@metadata][index]" => "logs-%{service}-%{+YYYY.MM.dd}" } }
+}
+output {
+  elasticsearch {
+    hosts => ["elasticsearch:9200"]
+    index => "%{[@metadata][index]}"
+  }
+}
+```
+
+**When to use:** Need full-text search across log content, compliance/safety logs requiring fast keyword search, team already familiar with Elasticsearch.
+
+**Scaling:** Index lifecycle management (ILM) — hot/warm/cold nodes. Shard sizing: 10-50GB per shard. Replica count: 1 for HA.
+
+### Grafana Loki
+
+Label-indexed only (like Prometheus for logs). Cheap storage. Query via LogQL.
+
+```yaml
+# Loki config
+auth_enabled: false
+server:
+  http_listen_port: 3100
+common:
+  path_prefix: /loki
+  storage:
+    filesystem:
+      chunks_directory: /loki/chunks
+      rules_directory: /loki/rules
+  replication_factor: 1
+  ring:
+    kvstore:
+      store: inmemory
+schema_config:
+  configs:
+    - from: 2024-01-01
+      store: tsdb
+      object_store: filesystem
+      schema: v13
+      index:
+        prefix: index_
+        period: 24h
+```
+
+```bash
+# LogQL examples
+# All error logs from api service
+{service="api"} |= "error" | logfmt | duration > 1s
+
+# Count errors per minute by service
+sum(count_over_time({namespace="production"} |= "error" [1m])) by (service)
+
+# Extract and filter structured fields
+{job="api"} | json | status >= 500 | line_format "{{.method}} {{.path}} {{.status}}"
+```
+
+**When to use:** Cost-sensitive, already using Prometheus/Grafana, label-based filtering sufficient, large log volumes.
+
+### ClickHouse for Logs
+
+Column-oriented OLAP database. Fast analytical queries on structured logs. Handles billions of rows.
+
+```sql
+-- Create logs table
+CREATE TABLE logs (
+    timestamp DateTime64(3),
+    service LowCardinality(String),
+    level LowCardinality(String),
+    message String,
+    trace_id String,
+    span_id String,
+    attributes Map(String, String)
+) ENGINE = MergeTree()
+PARTITION BY toYYYYMM(timestamp)
+ORDER BY (service, timestamp, level)
+TTL timestamp + INTERVAL 90 DAY;
+
+-- Query: error count by service, last hour
+SELECT service, count() as errors
+FROM logs
+WHERE timestamp > now() - INTERVAL 1 HOUR AND level = 'ERROR'
+GROUP BY service
+ORDER BY errors DESC;
+
+-- Query: full-text search with hasSubsequence
+SELECT *
+FROM logs
+WHERE service = 'api' AND hasSubsequence(message, ['connection', 'refused'])
+ORDER BY timestamp DESC
+LIMIT 100;
+```
+
+**When to use:** High-volume structured logs (>100GB/day), need SQL queries, analytics on log data (trends, aggregations), cost-sensitive at scale.
+
+### Comparison
+
+| Aspect | Elasticsearch | Loki | ClickHouse |
+|--------|--------------|------|------------|
+| Indexing | Full-text (Lucene) | Labels only | Column-oriented |
+| Storage cost | High | Low | Medium |
+| Query power | Full Lucene queries | LogQL (label filter) | Full SQL |
+| Ingestion speed | Fast | Fast | Very fast |
+| Resource usage | Heavy (JVM) | Light | Medium |
+| Best for | Full-text search | Prometheus-native teams | Analytics at scale |
+
+## Step 23: Metrics Aggregation
+
+### Recording Rules
+
+Pre-compute expensive queries. Reduce dashboard query time. Standardize SLI calculations.
+
+```yaml
+# prometheus.yml — recording rules
+rule_files:
+  - /etc/prometheus/recording_rules.yml
+```
+
+```yaml
+# recording_rules.yml
+groups:
+  - name: slo_recordings
+    interval: 1m
+    rules:
+      # Pre-compute error ratio per service
+      - record: service:error_rate:rate5m
+        expr: |
+          sum(rate(http_requests_total{code=~"5.."}[5m])) by (service)
+          /
+          sum(rate(http_requests_total[5m])) by (service)
+
+      # Pre-compute p99 latency
+      - record: service:latency_p99:histogram5m
+        expr: |
+          histogram_quantile(0.99,
+            sum(rate(http_request_duration_seconds_bucket[5m])) by (le, service)
+          )
+
+      # Pre-compute request rate
+      - record: service:request_rate:rate5m
+        expr: |
+          sum(rate(http_requests_total[5m])) by (service)
+
+  - name: burn_rate_recordings
+    rules:
+      # Fast burn (14.4x over 1h)
+      - record: service:error_burn_rate:1h
+        expr: |
+          service:error_rate:rate5m / (1 - 0.999)
+
+      # Slow burn (6x over 6d)
+      - record: service:error_burn_rate:6d
+        expr: |
+          sum(rate(http_requests_total{code=~"5.."}[6d])) by (service)
+          /
+          sum(rate(http_requests_total[6d])) by (service)
+          /
+          (1 - 0.999)
+```
+
+**Key rules:**
+- Record SLI computations (error rate, latency percentiles)
+- Record burn rates for SLO alerting
+- Use `_record` suffix convention for recordings
+- Group by service/team for organization
+
+### Federation
+
+Pull metrics from one Prometheus into another. Used for cross-cluster aggregation or hierarchical monitoring.
+
+```yaml
+# Global Prometheus scrapes per-cluster Prometheus
+scrape_configs:
+  - job_name: 'federate-cluster-us-east'
+    honor_labels: true
+    metrics_path: /federate
+    params:
+      'match[]':
+        - '{job="api"}'
+        - 'service:error_rate:rate5m'
+    static_configs:
+      - targets: ['prometheus-us-east:9090']
+
+  - job_name: 'federate-cluster-eu-west'
+    honor_labels: true
+    metrics_path: /federate
+    params:
+      'match[]':
+        - '{job="api"}'
+        - 'service:error_rate:rate5m'
+    static_configs:
+      - targets: ['prometheus-eu-west:9090']
+```
+
+**Limitation:** Federation pulls full metric sets. Doesn't scale well beyond ~10 clusters. Use Thanos or Mimir for large-scale.
+
+### Long-Term Storage
+
+Prometheus defaults to 15-day retention. Solutions for long-term:
+
+| Solution | Architecture | Best For |
+|----------|-------------|----------|
+| **Thanos** | Sidecar + object storage (S3/GCS). Global query view. Dedup across replicas. | Multi-cluster, existing Prometheus |
+| **Grafana Mimir** | Horizontally scalable TSDB. Native remote_write. Multi-tenant. | Large scale, Grafana-native |
+| **VictoriaMetrics** | Drop-in Prometheus replacement. 10x compression. Fast queries. | Cost-sensitive, single binary |
+| **Cortex** | Predecessor to Mimir. Microservices architecture. | Legacy, Mimir is preferred |
+
+```yaml
+# Mimir config (simplified)
+multitenancy_enabled: false
+blocks_storage:
+  backend: s3
+  s3:
+    bucket_name: mimir-blocks
+    endpoint: s3.us-east-1.amazonaws.com
+compactor:
+  block_ranges: [2h, 12h, 24h]
+limits:
+  max_global_series_per_user: 10000000
+
+# Prometheus remote_write to Mimir
+remote_write:
+  - url: https://mimir:9009/api/v1/push
+```
+
+## Step 24: Alert Design Patterns
+
+### Symptom-Based vs Cause-Based Alerts
+
+| Type | What | Example | When to Page |
+|------|------|---------|-------------|
+| **Symptom-based** | User-visible impact | Error rate > 1%, p99 > 500ms | Yes — always page |
+| **Cause-based** | Internal condition | CPU > 80%, disk 90% full | Maybe — only if no symptom alert exists |
+
+**Principle:** Alert on symptoms (what users see), not causes (what broke). Symptoms are actionable; causes may not require action if no user impact.
+
+```yaml
+# Symptom-based (preferred)
+- alert: HighErrorRate
+  expr: service:error_rate:rate5m > 0.01
+  for: 5m
+  labels:
+    severity: page
+  annotations:
+    summary: "{{ $labels.service }} error rate {{ $value | humanizePercentage }}"
+
+# Cause-based (supplementary, lower severity)
+- alert: HighCPU
+  expr: container_cpu_usage / container_cpu_limit > 0.9
+  for: 15m
+  labels:
+    severity: warn
+  annotations:
+    summary: "{{ $labels.pod }} CPU at {{ $value | humanizePercentage }}"
+```
+
+### Alert Routing
+
+Route alerts to the right team. Use labels for routing, not just severity.
+
+```yaml
+# Alertmanager routing
+route:
+  receiver: default-slack
+  group_by: ['service', 'namespace']
+  group_wait: 30s
+  group_interval: 5m
+  repeat_interval: 4h
+  routes:
+    # Critical SLA-breach alerts → PagerDuty
+    - match:
+        severity: page
+        slo_breach: true
+      receiver: pagerduty-oncall
+      repeat_interval: 15m
+
+    # Service-specific routing
+    - match:
+        team: payments
+      receiver: payments-slack
+      routes:
+        - match:
+            severity: page
+          receiver: payments-pagerduty
+
+    # Low severity → ticket system
+    - match:
+        severity: warn
+      receiver: jira-webhook
+      repeat_interval: 24h
+
+receivers:
+  - name: pagerduty-oncall
+    pagerduty_configs:
+      - service_key: '<key>'
+        severity: '{{ if eq .CommonLabels.severity "page" }}critical{{ else }}warning{{ end }}'
+  - name: payments-slack
+    slack_configs:
+      - channel: '#payments-alerts'
+  - name: jira-webhook
+    webhook_configs:
+      - url: 'http://jira-webhook:8080/create-ticket'
+```
+
+### Escalation
+
+| Level | Channel | Response Time | Example |
+|-------|---------|--------------|---------|
+| L1 (info) | Slack/email | Next business day | Disk trending up, non-critical |
+| L2 (warn) | Slack + ticket | Within 4h | SLO budget draining |
+| L3 (page) | PagerDuty | Within 15m | Error rate breach, p99 breach |
+| L4 (sev1) | PagerDuty + phone + bridge | Immediate | Full outage, data loss |
+
+**Alert lifecycle:**
+```
+firing → acknowledged → investigating → resolved
+        (auto-escalate if not ack'd within 15m)
+```
+
+**Anti-patterns to avoid:**
+- Alerting on causes without symptoms → false positives
+- No runbook → responder can't act
+- Repeat interval too short → fatigue
+- No grouping → 100 identical alerts for same root cause
+- Single threshold for all services → different services have different baselines
+
+## Step 25: Observability Maturity Model
+
+### Crawl (Level 1) — "We can see what's broken"
+
+| Capability | Status |
+|-----------|--------|
+| Metrics | Basic Prometheus/Grafana dashboards |
+| Logs | Structured logging, centralized in Loki or ELK |
+| Traces | Manual instrumentation on critical paths |
+| Alerts | CPU/memory/disk thresholds, page on outage |
+| SLOs | None — monitoring only, no SLI definitions |
+| Coverage | Core services only (5-10) |
+
+**Actions:** Set up Prometheus + Grafana. Structured JSON logs. Auto-instrument top 5 services with OTel. Define error rate as first SLI.
+
+### Walk (Level 2) — "We can predict and prevent"
+
+| Capability | Status |
+|-----------|--------|
+| Metrics | Recording rules, standard dashboards per service |
+| Logs | Trace correlation, log sampling, centralized search |
+| Traces | Auto-instrumented via OTel, tail-based sampling |
+| Alerts | SLO-based burn-rate alerts, alert routing by team |
+| SLOs | Defined per service (availability + latency) |
+| Coverage | All production services (50+) |
+
+**Actions:** Define SLIs/SLOs for top services. Implement burn-rate alerting. Set up OTel Collector (daemonset). Log-trace correlation everywhere. Service dependency map.
+
+### Run (Level 3) — "We understand system behavior"
+
+| Capability | Status |
+|-----------|--------|
+| Metrics | Long-term storage (Mimir/Thanos), cross-cluster federation |
+| Logs | Multi-surface (Loki + ClickHouse for analytics) |
+| Traces | 100% tail-sampled, continuous profiling correlated |
+| Alerts | Symptom-based, auto-escalation, runbook automation |
+| SLOs | Error budget policy enforced (deployment freeze on budget exhaustion) |
+| Coverage | All services + infrastructure + edge |
+| Advanced | AIOps anomaly detection, observability-driven development |
+
+**Actions:** Long-term storage. Continuous profiling (Pyroscope). Error budget policies drive deployment velocity. Observability-as-code (Terraform/GitOps). Anomaly detection baseline. Team-level SLO ownership.
+
+### Assessment Checklist
+
+```
+[ ] All services emit structured logs with trace_id
+[ ] >80% services auto-instrumented with OTel
+[ ] SLIs defined for all customer-facing services
+[ ] SLOs with burn-rate alerts (not threshold alerts)
+[ ] Alert routing by team (not broadcast)
+[ ] Runbooks attached to every page-level alert
+[ ] Dashboards generated as code (not hand-crafted)
+[ ] Log-trace-metric correlation working end-to-end
+[ ] Tail-based sampling deployed
+[ ] Long-term metrics storage (>30 days)
+[ ] Continuous profiling on critical services
+[ ] Error budget policy drives deployment decisions
+```
