@@ -1,7 +1,7 @@
 ---
 name: sdlc-adversarial-review
 description: "Multi-agent PR review: 3 specialized reviewers (architecture, security, quality) run in parallel, orchestrator synthesizes findings and applies fixes. Includes Google/Stripe/Meta code review culture, DORA velocity metrics (5 metrics incl. reliability), SLSA supply chain verification, AI-assisted review guardrails, and automated tooling integration."
-version: 3.0.0
+version: 3.1.0
 author: Hermes Agent
 license: MIT
 platforms: [linux, macos, windows]
@@ -413,3 +413,329 @@ Source: https://smartbear.com/learn/code-review/best-practices-for-peer-code-rev
 8. **Don't review for >60 minutes** — fatigue degrades quality
 9. **Don't skip automated checks** — machines handle mechanical, humans handle design
 10. **Don't mix abstraction levels** — architecture comments in arch review, security in security review
+
+## STRIDE Threat Modeling (Microsoft)
+
+Systematic threat enumeration using Data Flow Diagrams (DFDs). Source: Microsoft SDL, Adam Shostack.
+
+### Step 1: Create Data Flow Diagram (DFD)
+
+DFD elements and what each represents:
+
+| Element | Symbol | Description |
+|---------|--------|-------------|
+| External Entity | Rectangle | Users, external systems, APIs |
+| Process | Circle/rounded rect | Code that processes data |
+| Data Store | Two parallel lines | Databases, files, caches |
+| Data Flow | Arrow | Data movement between elements |
+| Trust Boundary | Dashed line | Where privilege levels change |
+
+### Step 2: STRIDE-per-Element Table
+
+Map each DFD element type to applicable threat categories:
+
+| DFD Element | S (Spoofing) | T (Tampering) | R (Repudiation) | I (Info Disclosure) | D (Denial of Service) | E (Elevation of Privilege) |
+|-------------|:---:|:---:|:---:|:---:|:---:|:---:|
+| External Entity | ✓ | | ✓ | | | |
+| Process | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
+| Data Store | | ✓ | ✓ | ✓ | ✓ | |
+| Data Flow | | ✓ | | ✓ | ✓ | |
+
+**Threat definitions:**
+- **Spoofing** — Impersonating a user/system. Mitigate with strong auth, MFA, certificate pinning.
+- **Tampering** — Unauthorized modification of data/code. Mitigate with MACs, signatures, integrity checks.
+- **Repudiation** — Denying actions performed. Mitigate with audit logs, digital signatures, non-repudiation.
+- **Information Disclosure** — Exposing data to unauthorized parties. Mitigate with encryption at rest/transit, access controls.
+- **Denial of Service** — Making system unavailable. Mitigate with rate limiting, redundancy, resource quotas.
+- **Elevation of Privilege** — Gaining unauthorized access levels. Mitigate with least privilege, input validation, sandboxing.
+
+### Step 3: DREAD Risk Rating
+
+Score each identified threat 1-10 on DREAD criteria:
+
+| Criterion | 1-3 (Low) | 4-6 (Medium) | 7-10 (High) |
+|-----------|-----------|--------------|-------------|
+| **D**amage | Minor data loss | Service degradation | Complete data loss/ransom |
+| **R**eproducibility | Hard, needs rare conditions | Sometimes reproducible | Always reproducible |
+| **E**xploitability | Expert required, custom tool | Advanced user, known tool | Any user, browser only |
+| **A**ffected users | Few/specific | Some users | All users |
+| **D**iscoverability | Hard to find, not obvious | Can be found with effort | Obvious in URL/API/UI |
+
+**Risk score** = (D + R + E + A + D) / 5
+
+| Score Range | Priority | Action |
+|-------------|----------|--------|
+| 7-10 | Critical | Fix before merge |
+| 4-7 | High | Fix within sprint |
+| 2-4 | Medium | Track in backlog |
+| 1-2 | Low | Accept risk with documentation |
+
+### STRIDE Review Checklist
+- [ ] DFD created for all new services/features
+- [ ] Trust boundaries identified and documented
+- [ ] Each DFD element analyzed against STRIDE categories
+- [ ] Threats scored using DREAD
+- [ ] Critical/High threats have mitigations before merge
+- [ ] Residual risks documented and accepted by security owner
+
+## OWASP Threat Modeling Process
+
+OWASP approach focuses on understanding what we're building, what can go wrong, and what we do about it. Source: https://owasp.org/www-community/Threat_Modeling
+
+### Step 1: Identify Assets
+
+Enumerate all assets that need protection:
+
+| Asset Type | Examples | Classification |
+------------|----------|----------------|
+| Data | PII, credentials, financial records, health data | Confidentiality + Integrity |
+| Services | Auth, payment, notification, search | Availability + Integrity |
+| Infrastructure | Databases, message queues, caches, CDNs | Availability |
+| Code | Source, build artifacts, configs | Integrity |
+| Secrets | API keys, encryption keys, certificates | Confidentiality |
+
+### Step 2: Identify Threat Agents
+
+Who/what can threaten each asset:
+
+| Agent Type | Motivation | Capability |
+------------|------------|------------|
+| External attacker | Financial gain, disruption | Varies — script kiddie to APT |
+| Malicious insider | Revenge, financial gain | High — has credentials/knowledge |
+| Compromised service | Lateral movement | Medium — has service permissions |
+| Automated bot | Scraping, credential stuffing | Low-medium — script-based |
+| Supply chain | Backdoor, data exfiltration | High — trusted position |
+
+### Step 3: Map Trust Boundaries
+
+Document every trust boundary crossing in the system:
+
+```
+[Internet] ──── FW ──── [DMZ]
+                           │
+                  ──── App Firewall ──── [App Tier]
+                                           │
+                                    ──── DB ACL ──── [Data Tier]
+```
+
+Trust boundary types:
+- Network boundaries (public → DMZ → internal → admin)
+- Process boundaries (OS process isolation, containers)
+- User/process boundaries (privileged vs unprivileged)
+- Third-party boundaries (SaaS, APIs, vendor integrations)
+- Service mesh boundaries (namespace isolation, mTLS zones)
+
+### Step 4: Enumerate Attack Surfaces
+
+For each trust boundary crossing, enumerate exposure points:
+
+| Surface | Example | Risk |
+---------|---------|------|
+| API endpoints | REST/GraphQL/gRPC interfaces | Injection, broken auth, SSRF |
+| Authentication flows | Login, token refresh, SSO | Credential stuffing, session fixation |
+| File uploads | User content, imports | Path traversal, malware upload |
+| Message queues | Async processing pipelines | Poison messages, replay attacks |
+| Admin interfaces | Dashboards, management APIs | Privilege escalation, default creds |
+| Webhooks | Incoming notifications | Forgery, SSRF |
+| CLI/SDK | Internal tools, scripts | Command injection |
+
+### OWASP Threat Modeling Deliverable
+- [ ] Asset inventory with classification labels
+- [ ] Threat agent profiles with capability assessments
+- [ ] Trust boundary diagram with all crossings marked
+- [ ] Attack surface register with mitigations
+- [ ] Gap analysis against OWASP ASVS (Application Security Verification Standard)
+
+## PASTA Methodology (Risk-Centric Threat Modeling)
+
+Process for Attack Simulation and Threat Analysis. 7-stage risk-centric methodology that aligns business objectives with technical security. Source: UcedaVelez & Morana, 2015.
+
+### 7 Stages
+
+| Stage | Name | Activity | Output |
+|-------|------|----------|--------|
+| **I** | Define Objectives | Map business goals to security requirements. What is the system protecting? What is business impact of compromise? | Business impact assessment, security objectives |
+| **II** | Define Technical Scope | Enumerate all tech components: frameworks, protocols, APIs, infrastructure, third-party deps. | Technical scope document, architecture inventory |
+| **III** | Application Decomposition | Create DFDs, identify entry points, data flows, trust zones. Map components to functions. | DFDs, use cases, entry point catalog |
+| **IV** | Threat Analysis | Identify threat sources, threat events, attack vectors. Use MITRE ATT&CK for TTP mapping. | Threat library, attack trees |
+| **V** | Vulnerability Analysis | Map CVEs, misconfigs, design flaws to components from Stage III. Cross-reference with threat catalog from Stage IV. | Vulnerability register, root cause analysis |
+| **VI** | Attack Modeling | Simulate attack paths using attack trees or attack graphs. Map attack chains across components. | Attack models, kill chain sequences |
+| **VII** | Risk & Impact Analysis | Calculate risk = likelihood × impact. Prioritize. Define countermeasures and residual risk acceptance. | Risk matrix, countermeasure roadmap, risk register |
+
+### PASTA Integration with Review
+
+When PASTA review is requested (complex/risky changes):
+1. **Pre-merge**: Stages I-III (scope + decomposition) — ensure DFD exists
+2. **During review**: Stages IV-VI (threat + vuln + attack modeling)
+3. **Post-merge**: Stage VII — finalize risk register, assign countermeasures
+
+### PASTA vs STRIDE vs OWASP Selection
+
+| Methodology | Best For | Effort | When |
+|-------------|----------|--------|------|
+| STRIDE | Component-level threat enumeration | Low-Medium | Every PR touching security boundaries |
+| OWASP TM | Full system threat modeling | Medium | New services, major features |
+| PASTA | Risk-centric, business-aligned | High | High-risk systems, regulatory requirements, financial/health/PII |
+
+## Microservices Security Architecture Review
+
+Security review for distributed systems. Covers zero trust principles, service mesh, identity propagation, secrets management, and network segmentation.
+
+### Zero Trust Architecture
+
+Principle: "Never trust, always verify." Every request is authenticated and authorized regardless of network location.
+
+| Principle | Implementation | Review Check |
+|-----------|---------------|--------------|
+| Verify explicitly | Auth every request with strong identity | No implicit trust based on network location |
+| Least privilege access | Just-in-time, just-enough-access (JIT/JEA) | Services have minimum required permissions |
+| Assume breach | Encrypt all traffic, segment networks, use threat detection | Blast radius minimized by design |
+
+**Zero trust checklist:**
+- [ ] No service trusts another based solely on network position
+- [ ] Every inter-service call authenticated (mTLS, JWT, API key)
+- [ ] Every inter-service call authorized (policy engine, RBAC, ABAC)
+- [ ] No shared secrets between services (use SPIFFE/SPIRE for identity)
+- [ ] Lateral movement prevented by network policies
+
+### Service Mesh mTLS
+
+Mutual TLS between all services. Enforced by service mesh (Istio, Linkerd, Consul Connect).
+
+| Aspect | Requirement | Review Check |
+|--------|-------------|--------------|
+| Certificate rotation | Auto-rotate with short-lived certs (<24h) | No long-lived mTLS certs |
+| Strict mTLS | No permissive mode (plaintext fallback disabled) | `PeerAuthentication: STRICT` |
+| Certificate authority | Internal CA, not public (use SPIRE, Vault PKI) | No self-signed or public CA for internal |
+| Identity verification | SPIFFE ID in SAN, not just certificate validity | Verify workload identity, not just cert chain |
+
+```yaml
+# Istio strict mTLS example
+apiVersion: security.istio.io/v1beta1
+kind: PeerAuthentication
+metadata:
+  name: default
+  namespace: istio-system
+spec:
+  mtls:
+    mode: STRICT
+```
+
+### Identity Propagation
+
+User/service identity must propagate through entire call chain.
+
+| Pattern | Mechanism | Trade-off |
+|---------|-----------|-----------|
+| JWT propagation | Pass JWT through service chain | Stateless but token size grows with claims |
+| OAuth2 token exchange | Exchange token at each hop (RFC 8693) | Secure but adds latency |
+| SPIFFE/SPIRE | Workload identity separate from user identity | Strong identity but infrastructure overhead |
+| OPA/Gatekeeper | Policy evaluation at each service hop | Flexible but policy management complexity |
+
+**Review checklist:**
+- [ ] User identity propagated to all downstream services (no identity loss at service boundaries)
+- [ ] Service-to-service calls use workload identity (not user token forwarded directly)
+- [ ] Token validation at every hop (no trusting upstream service's claims without verification)
+- [ ] No hardcoded service credentials (identity from platform, not config)
+- [ ] Token audience restriction prevents replay across services
+
+### Secrets Management
+
+| Aspect | Requirement | Anti-Pattern |
+|--------|-------------|--------------|
+| Storage | Vault, AWS Secrets Manager, Azure KeyVault | Env vars, config files, source code |
+| Rotation | Auto-rotate with short TTL | Static secrets, manual rotation |
+| Access | Per-service secrets, scoped to least privilege | Shared secrets across services |
+| Audit | Log every secret access | No access logging |
+| Injection | Sidecar/CSI driver, not env vars | Secrets in container env (visible in `docker inspect`) |
+
+**Review checklist:**
+- [ ] No secrets in source code (Trivy/secret-scanner clean)
+- [ ] Secrets stored in dedicated secret manager
+- [ ] Secrets scoped per service (no shared credentials)
+- [ ] Auto-rotation configured with appropriate TTL
+- [ ] Secret access audited and monitored
+- [ ] No secrets in container images (multi-stage builds, `.dockerignore`)
+- [ ] Secrets injected via sidecar or CSI driver (not env vars)
+- [ ] Emergency secret rotation procedure documented
+
+### Network Segmentation
+
+| Layer | Tool | Review Check |
+|-------|------|--------------|
+| Kubernetes NetworkPolicy | Calico, Cilium | Default-deny ingress; explicit allow per service |
+| Service mesh authorization | Istio AuthorizationPolicy | L7 policies (method, path, headers) |
+| Cloud VPC/subnet | AWS VPC, GCP VPC | Services in separate subnets, no unnecessary peering |
+| API Gateway | Kong, Envoy, AWS API Gateway | Rate limiting, auth, WAF at edge |
+| Egress controls | Istio ServiceEntry, network policy | Services can only reach required external endpoints |
+
+**Network segmentation checklist:**
+- [ ] Default-deny network policies in all namespaces
+- [ ] Explicit allow rules per service-to-service communication
+- [ ] L7 authorization policies (not just L3/L4)
+- [ ] Egress restricted to known external dependencies
+- [ ] No hostNetwork/hostPID on production pods
+- [ ] Database/cache not directly accessible from outside cluster
+- [ ] Admin interfaces on separate network segment
+- [ ] Service mesh enforces mutual TLS across namespace boundaries
+
+## Security Architecture Checklist for Microservices
+
+Comprehensive checklist for reviewing microservices security architecture:
+
+### Authentication & Authorization
+- [ ] Centralized identity provider (Keycloak, Auth0, Cognito)
+- [ ] OAuth2/OIDC for user authentication (no custom auth)
+- [ ] Service-to-service auth via mTLS + SPIFFE or short-lived JWT
+- [ ] RBAC/ABAC enforced at service level (not just gateway)
+- [ ] Token validation at every service (don't trust gateway alone)
+- [ ] No authentication bypass paths (health checks excluded from auth)
+
+### Data Protection
+- [ ] Encryption at rest (AES-256, cloud KMS managed keys)
+- [ ] Encryption in transit (TLS 1.3, mTLS internally)
+- [ ] PII field-level encryption or tokenization
+- [ ] Data classification labels on all data stores
+- [ ] No sensitive data in logs (redact PII, credentials, tokens)
+- [ ] Data retention policies enforced automatically
+
+### API Security
+- [ ] Input validation on all endpoints (schema validation, allowlisting)
+- [ ] Rate limiting per user/IP/service
+- [ ] API versioning with deprecation policy
+- [ ] CORS configured correctly (no wildcard `*` in production)
+- [ ] GraphQL: depth limiting, query complexity analysis, introspection disabled
+- [ ] gRPC: message validation, deadline enforcement
+- [ ] No sensitive data in URL query parameters
+
+### Observability & Incident Response
+- [ ] Structured logging with correlation IDs (trace entire request)
+- [ ] Security event logging (auth failures, access denials, privilege changes)
+- [ ] Alerting on anomalous patterns (spike in 401/403, unusual data access)
+- [ ] Distributed tracing (Jaeger, Zipkin, OpenTelemetry)
+- [ ] Runbooks for common security incidents
+- [ ] Incident response plan tested quarterly
+
+### Resilience & Availability
+- [ ] Circuit breakers between services (prevent cascade failures)
+- [ ] Bulkhead pattern (isolate failure domains)
+- [ ] Graceful degradation (fallback behavior, not 500 errors)
+- [ ] Chaos engineering for security (fault injection, latency injection)
+- [ ] DDoS protection at edge (CDN, WAF, rate limiting)
+- [ ] Backup and recovery tested (RTO/RPO documented)
+
+### Supply Chain & Dependencies
+- [ ] All dependencies pinned by hash (not mutable tags)
+- [ ] SBOM generated for every build
+- [ ] Container images scanned (Trivy) and signed (Sigstore/cosign)
+- [ ] Base images minimal (distroless, scratch) and updated
+- [ ] No `latest` tags in production manifests
+- [ ] Dependency update automation (Renovate, Dependabot) with security prioritization
+
+### Deployment & Configuration
+- [ ] Immutable infrastructure (no SSH into containers)
+- [ ] Configuration from ConfigMaps/Secrets (not baked into images)
+- [ ] Security context: non-root user, read-only filesystem, drop all capabilities
+- [ ] Pod security standards enforced (restricted profile)
+- [ ] No privileged containers or host mounts
+- [ ] Canary/blue-green deployment with automatic rollback on security regression

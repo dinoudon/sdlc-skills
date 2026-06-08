@@ -1,7 +1,7 @@
 ---
 name: sdlc-developer-tooling
 description: "Modern dev tooling: Python (uv, Ruff, pytest, mypy), JS/TS (pnpm, Bun, Vitest, Biome, Playwright), Go (golangci-lint, go test -race), Rust (cargo). Cross-cutting: just, mise, direnv, Docker Compose, Dev Containers, Nix. Includes LSP/DAP patterns, AI-assisted dev, green software tooling."
-version: 3.0.0
+version: 3.1.0
 author: Hermes Agent
 license: MIT
 platforms: [linux, macos, windows]
@@ -656,47 +656,250 @@ bun build ./src/index.ts --outdir ./dist --target node  # Node-compatible
 
 Patterns for integrating AI coding assistants into SDLC workflows.
 
-### GitHub Copilot
-- Inline completions + chat in VS Code, JetBrains, Neovim
-- `@workspace` chat context: indexes full repo for Q&A
-- Copilot CLI: shell command suggestions (`??` prefix)
-- Use `.github/copilot-instructions.md` for project-specific guidance
+### AI Coding Assistants Comparison
 
-```markdown
-# .github/copilot-instructions.md
-- Use Ruff for linting, never flake8
-- Prefer uv over pip
-- All functions need docstrings
-- Use pytest, not unittest
+| Feature | GitHub Copilot | Cursor | Sourcegraph Cody | Codeium / Windsurf |
+|---------|---------------|--------|------------------|---------------------|
+| **Type** | Extension | Standalone editor (VS Code fork) | Extension | Extension + standalone editor |
+| **Inline completions** | Yes (multi-line) | Yes (multi-line, tab-to-accept) | Yes | Yes |
+| **Chat** | Yes (`@workspace`, `@terminal`) | Yes (codebase-aware, multi-file edits) | Yes (full codebase index) | Yes (Cascade agentic flow) |
+| **Codebase indexing** | `@workspace` in chat | Automatic, `.cursorignore` | Deep indexing, supports private repos | Workspace-aware context |
+| **Agentic mode** | Copilot Workspace (preview) | Composer mode (multi-file edits) | Limited | Cascade (Windsurf, multi-step agent) |
+| **IDE support** | VS Code, JetBrains, Neovim | Own editor only | VS Code, JetBrains | VS Code, JetBrains, own editor |
+| **CLI assistant** | Copilot CLI (`??` prefix) | Terminal chat | No | No |
+| **Self-hosted** | No (GitHub Enterprise only) | No | Yes (Enterprise) | No |
+| **Pricing** | $10/mo individual, $19/mo business | $20/mo Pro, $40/mo Business | Free tier, $9/mo Pro, Enterprise custom | Free tier, $10/mo Pro, Enterprise custom |
+| **Model** | GPT-4o, Claude 3.5 Sonnet | GPT-4o, Claude 3.5 Sonnet, own models | Claude 3.5 Sonnet, Mixtral | GPT-4o, Claude 3.5 Sonnet |
+| **Strengths** | Broadest IDE support, GitHub integration, CLI tool | Best multi-file editing, fastest iteration, `.cursorrules` | Best codebase search, enterprise self-host | Free tier generous, agentic Cascade flow |
+| **Weaknesses** | Less context-aware than Cursor for large refactors | Lock-in to own editor, no self-hosted | Weaker inline completions, no CLI | Newer ecosystem, less mature |
+
+**Selection guide:**
+- Already on VS Code + GitHub → **Copilot** (lowest friction)
+- Want best AI-native editor experience → **Cursor** (Composer, multi-file edits)
+- Enterprise with private repos, need self-hosted → **Cody**
+- Budget-constrained or want agentic flows → **Windsurf** (free tier, Cascade)
+
+### Prompt Engineering for Developers
+
+Effective prompting turns AI from autocomplete into a force multiplier. Apply these patterns in chat, inline comments, `.cursorrules`, and `copilot-instructions.md`.
+
+#### 1. Role Assignment
+Set context before asking. AI performs better with a role.
+
+```
+You are a senior Python developer specializing in FastAPI and async programming.
+Write code following PEP 8, using type hints, and preferring composition over inheritance.
 ```
 
-### Sourcegraph Cody
-- Context-aware code chat with full codebase indexing
-- Works with private repos, self-hosted option
-
-### Cursor Patterns
-- AI-native editor (VS Code fork) with codebase-aware chat
-- `.cursorrules` file for project conventions:
+#### 2. Few-Shot Examples
+Show input/output pairs to anchor the pattern.
 
 ```
-# .cursorrules
-Use TypeScript strict mode. Prefer Vitest over Jest.
-Use pnpm catalog protocol for shared deps in monorepos.
-Format with Biome. Use uv for Python deps.
+Convert these function signatures to use Result types:
+
+Input:  def divide(a: int, b: int) -> float:
+Output: def divide(a: int, b: int) -> Result[float, str]:
+
+Input:  def parse_json(raw: str) -> dict:
+Output: def parse_json(raw: str) -> Result[dict, JSONDecodeError]:
+
+Now convert:
+def fetch_user(user_id: int) -> User:
 ```
 
-### General AI-Assisted Dev Patterns
-1. **AI in PR reviews**: Copilot/Cody review bots catch style + logic issues
-2. **Test generation**: AI generates test skeletons, human refines assertions
-3. **Refactoring assistance**: Large-scale renames, API migrations
-4. **Documentation**: AI drafts, human verifies accuracy
-5. **Onboarding**: New devs use AI to explore unfamiliar codebases
+#### 3. Chain-of-Thought
+Force step-by-step reasoning for complex tasks.
 
-**Guardrails:**
-- Never paste secrets/credentials into AI tools
-- Review all AI-generated code — treat like junior dev PRs
-- Use `.cursorrules` / copilot-instructions to enforce team conventions
-- Disable AI suggestions for sensitive/proprietary code paths
+```
+I need to refactor this monolith into microservices. Think step by step:
+1. Identify bounded contexts in the codebase
+2. Map dependencies between contexts
+3. Propose service boundaries
+4. List shared vs per-service data stores
+5. Draft migration plan with rollback strategy
+```
+
+#### 4. Output Format Control
+Specify exact structure to avoid free-form rambling.
+
+```
+Review this function. Output format:
+- BUGS: [list of bugs with line numbers]
+- PERFORMANCE: [optimization suggestions]
+- STYLE: [naming/formatting issues]
+- IMPROVED: [rewritten function]
+```
+
+#### 5. Negative Examples
+Tell AI what NOT to do — reduces bad suggestions.
+
+```
+Write a database query function. Do NOT:
+- Use raw SQL strings (use SQLAlchemy ORM)
+- Use `any` type annotations
+- Add comments that restate the code
+- Use default mutable arguments
+- Catch broad exceptions (catch specific ones)
+```
+
+#### 6. Context Window Management
+- Paste only relevant code, not entire files
+- Use `@file` / `@workspace` references when available
+- For large refactors: describe the change, paste the target file, not the whole repo
+- Summarize conversation context when switching topics mid-chat
+
+### AI Pair Programming Best Practices
+
+#### Boilerplate, Not Architecture
+Use AI for repetitive code (CRUD endpoints, data models, test fixtures, config files). Do NOT let AI design system architecture, choose patterns, or make security decisions. Architecture requires understanding business context, trade-offs, and long-term maintenance — AI lacks all three.
+
+```python
+# GOOD: AI generates boilerplate CRUD
+# Prompt: "Generate a FastAPI CRUD router for the User model with SQLAlchemy"
+
+# BAD: AI designs your auth system
+# "Design an authentication system for my app" — too many business decisions
+```
+
+#### Review All AI Code
+Treat every AI-generated code block like a PR from an unknown contributor:
+- Does it handle edge cases? (null, empty, overflow)
+- Are error messages user-safe? (no stack traces, no secrets leaked)
+- Are types correct? (not just no errors — semantically correct)
+- Does it follow your team's patterns? (not generic "best practices")
+- Could it be a hallucinated API? (verify imports, function signatures, library existence)
+
+```bash
+# Always verify AI suggestions compile and pass tests
+uv run ruff check --fix . && uv run mypy src/ && uv run pytest
+```
+
+#### Break Tasks Small
+Large prompts produce large, often wrong outputs. Break work into atomic units:
+
+```
+# BAD: "Build a full REST API with auth, pagination, and rate limiting"
+
+# GOOD (incremental):
+# 1. "Create User model with SQLAlchemy 2.0 mapped_column syntax"
+# 2. "Add Pydantic schemas for User create/read/update"
+# 3. "Write FastAPI router with CRUD endpoints for User"
+# 4. "Add pagination with cursor-based approach"
+# 5. "Add JWT auth dependency"
+# 6. "Add rate limiting with slowapi"
+```
+
+Each step is reviewable, testable, and correctable in isolation.
+
+### AI Anti-Patterns
+
+#### Blindly Accepting
+The most dangerous pattern: accepting AI suggestions without reading them. Signs:
+- Copilot suggestions accepted with Tab without scanning
+- Chat responses pasted directly into codebase
+- "It compiles, ship it" mentality
+
+**Fix:** Enable "preview before accept" in your editor. Force yourself to read every line. If you can't explain what the code does, don't merge it.
+
+#### Compensating for Lack of Understanding
+Using AI as a crutch instead of learning fundamentals. Symptoms:
+- Can't write a basic function without AI assistance
+- Don't understand what the AI-generated code does
+- Can't debug AI-generated code when it breaks
+- Repeatedly asking AI the same category of question
+
+**Fix:** After AI generates code, study it. Understand why it works. Next time, try writing it yourself first. AI should accelerate competent developers, not replace learning.
+
+#### Context Pollution
+Dumping entire files or unrelated code into prompts. Results in:
+- AI picks up wrong patterns from unrelated code
+- Suggestions that "average" across conflicting conventions
+- Wasted tokens on irrelevant context
+
+**Fix:** Paste only the function/section being worked on. Use `@file` references for context, not raw pastes.
+
+#### Prompt-Driven Development (Without Tests)
+Iterating on prompts until code "looks right" without running it. Common loop:
+```
+Ask AI → paste code → ask again → paste again → never run tests
+```
+**Fix:** After every AI interaction, run the relevant test suite. Code that hasn't been executed doesn't exist.
+
+### LLM-Powered Test Generation Patterns
+
+#### Pattern 1: Scaffold-and-Refine
+AI generates test structure, human fills business logic.
+
+```python
+# Prompt: "Generate pytest tests for calculate_discount. Include:
+#   - Happy path with percentage and fixed discounts
+#   - Edge cases: zero price, negative discount, 100% discount
+#   - Error cases: invalid discount type
+# Use parametrize for similar cases."
+
+# AI output gives you structure. Human refines:
+#   - Exact expected values (AI guesses, you know)
+#   - Business-specific edge cases
+#   - Mocking strategy for external deps
+```
+
+#### Pattern 2: Property-Based Test Generation
+AI suggests Hypothesis strategies you might not think of.
+
+```python
+# Prompt: "Write Hypothesis property-based tests for this sorting function.
+# Properties: output is sorted, same length as input, same elements,
+# idempotent when applied twice."
+
+from hypothesis import given, strategies as st
+
+@given(st.lists(st.integers()))
+def test_sort_properties(lst):
+    result = my_sort(lst)
+    assert result == sorted(lst)
+    assert len(result) == len(lst)
+    assert set(result) == set(lst)
+    assert my_sort(result) == result  # idempotent
+```
+
+#### Pattern 3: Test Migration
+AI converts tests between frameworks.
+
+```
+# Prompt: "Convert these unittest tests to pytest. Use fixtures instead of
+# setUp/tearDown. Use parametrize instead of subTest. Remove self.assertEqual
+# in favor of assert."
+```
+
+#### Pattern 4: Negative Test Generation
+AI generates adversarial inputs you'd miss.
+
+```
+# Prompt: "Generate negative tests for parse_config(path: str) -> Config.
+# Think of inputs that could crash, hang, or produce wrong results:
+# empty file, binary file, missing keys, extra keys, wrong types,
+# circular references, 100MB file, unicode keys, symlink loops."
+```
+
+#### Pattern 5: Coverage Gap Analysis
+Use AI to suggest tests for uncovered code paths.
+
+```bash
+# First: identify uncovered lines
+uv run pytest --cov=src --cov-report=json
+# Then: feed uncovered functions to AI
+# Prompt: "These functions have 0% test coverage. Generate tests:
+#   - src/auth.py: validate_token (lines 45-72)
+#   - src/cache.py: evict_lru (lines 12-38)
+# Cover all branches shown in the coverage report."
+```
+
+#### Test Generation Rules
+- AI-generated tests catch ~60% of real bugs. Human-written assertions catch the rest.
+- Always verify expected values — AI guesses outputs, you know them.
+- Never trust AI to generate security-critical test cases (auth, crypto, permissions).
+- Run `pytest --tb=short` immediately after generation — fix import errors and API mismatches.
+- Use AI to generate, not to verify. Verification is your job.
 
 ## Step 11: Green Software Tooling
 

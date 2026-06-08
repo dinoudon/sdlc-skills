@@ -1,13 +1,13 @@
 ---
 name: sdlc-deployment
-description: "Deployment strategies: canary, blue-green, rolling, progressive delivery (Flagger/Argo Rollouts), feature flags (LaunchDarkly/Unleash/OpenFeature), rollback, database migrations, zero-downtime patterns. v3: Gateway API traffic splitting, OpenFeature CNCF standard, FinOps (OpenCost/Karpenter/FOCUS), AnalysisTemplate, multi-cluster progressive delivery."
-version: 3.0.0
+description: "Deployment strategies: canary, blue-green, rolling, progressive delivery (Flagger/Argo Rollouts), feature flags (LaunchDarkly/Unleash/OpenFeature), rollback, database migrations, zero-downtime patterns. v3: Gateway API traffic splitting, OpenFeature CNCF standard, FinOps (OpenCost/Karpenter/FOCUS), AnalysisTemplate, multi-cluster progressive delivery. v3.1: Serverless (Lambda/Cloud Run/Container Apps), edge deployment (Cloudflare Workers/Deno Deploy), cold start optimization, serverless observability."
+version: 3.1.0
 author: Hermes Agent
 license: MIT
 platforms: [linux, macos, windows]
 metadata:
   hermes:
-    tags: [sdlc, deployment, canary, blue-green, rolling, feature-flags, progressive-delivery, flagger, argo-rollouts, kubernetes, zero-downtime, gateway-api, openfeature, finops, opencost, karpenter, analysis-template, multi-cluster, database-migration]
+    tags: [sdlc, deployment, canary, blue-green, rolling, feature-flags, progressive-delivery, flagger, argo-rollouts, kubernetes, zero-downtime, gateway-api, openfeature, finops, opencost, karpenter, analysis-template, multi-cluster, database-migration, serverless, lambda, cloud-run, container-apps, edge-deployment, cloudflare-workers, cold-start, serverless-observability]
     related_skills: [sdlc-cicd-pipeline, sdlc-testing-qa, sdlc-observability]
 ---
 
@@ -751,6 +751,709 @@ ORDER BY total_cost DESC;
     fi
 ```
 
+## Step 11: Serverless Deployment — AWS Lambda
+
+Packaged functions deployed per-request. No servers to manage. Pay per invocation + duration.
+
+### ARM64 (Graviton2)
+
+34% better price-performance vs x86_64. Set architecture in function config:
+
+```yaml
+# SAM template
+Globals:
+  Function:
+    Architectures: [arm64]
+    Runtime: python3.12
+    MemorySize: 256
+    Timeout: 10
+```
+
+```bash
+# CDK
+new lambda.Function(this, 'Fn', {
+  architecture: lambda.Architecture.ARM_64,
+  runtime: lambda.Runtime.PYTHON_3_12,
+  handler: 'index.handler',
+  code: lambda.Code.fromAsset('lambda/'),
+});
+```
+
+**Caveat:** all native dependencies must be compiled for arm64. Use Docker-based Lambda build with `--platform linux/arm64`.
+
+### SnapStart (Java)
+
+Snapshot initialized execution environment. Subsequent cold starts restore from snapshot instead of re-initializing JVM. Reduces cold start from ~3-6s to ~200ms.
+
+```yaml
+# SAM
+MyFunction:
+  Type: AWS::Serverless::Function
+  Properties:
+    Runtime: java21
+    SnapStart:
+      ApplyOn: PublishedVersions
+```
+
+```bash
+# Publish version after deploy — SnapStart only applies to published versions
+aws lambda publish-version --function-name MyFunction --description "snapstart"
+```
+
+**Constraints:**
+- Only Java (Corretto 11+) supported
+- No file descriptors, sockets, or encryption contexts can be snapshotted — use `beforeCheckpoint()` / `afterRestore()` hooks
+- Each published version stores a snapshot (cost per stored snapshot)
+- Not compatible with Provisioned Concurrency
+
+### Provisioned Concurrency
+
+Pre-initializes N execution environments. Eliminates cold starts for those N invocations. Costs money even when idle.
+
+```yaml
+# SAM with alias
+MyFunction:
+  Type: AWS::Serverless::Function
+  Properties:
+    AutoPublishAlias: live
+    ProvisionedConcurrencyConfig:
+      ProvisionedConcurrentExecutions: 10
+```
+
+```bash
+# CDK
+const alias = new lambda.Alias(this, 'Live', {
+  aliasName: 'live',
+  version: fn.currentVersion,
+  provisionedConcurrentExecutions: 10,
+});
+```
+
+**Cost model:** pay for provisioned concurrency * memory * time, even at zero traffic. Reserve for latency-critical paths only.
+
+### Lambda Layers
+
+Share code/libraries across functions without bundling in each deployment package.
+
+```bash
+# Create layer from requirements
+mkdir -p python/lib/python3.12/site-packages
+pip install requests boto3 -t python/lib/python3.12/site-packages
+zip -r shared-deps.zip python/
+aws lambda publish-layer-version \
+  --layer-name shared-deps \
+  --zip-file fileb://shared-deps.zip \
+  --compatible-runtimes python3.12 \
+  --compatible-architectures arm64 x86_64
+```
+
+**Limits:** 5 layers per function, 250 MB unzipped total (function + all layers). 50 MB zipped per layer.
+
+### Powertools for AWS Lambda
+
+Best-practice utilities for structured logging, tracing, metrics, idempotency, batch processing.
+
+```python
+from aws_lambda_powertools import Logger, Tracer, Metrics
+from aws_lambda_powertools.event_handler import APIGatewayRestResolver
+from aws_lambda_powertools.utilities.typing import LambdaContext
+
+logger = Logger()
+tracer = Tracer()
+metrics = Metrics(namespace="MyApp")
+app = APIGatewayRestResolver()
+
+@app.get("/items/<item_id>")
+@tracer.capture_method
+def get_item(item_id: str):
+    logger.info("Fetching item", extra={"item_id": item_id})
+    metrics.add_metric(name="GetItem", unit="Count", value=1)
+    return {"id": item_id, "name": "widget"}
+
+@logger.inject_lambda_context
+@tracer.capture_lambda_handler
+@metrics.log_metrics
+def handler(event: dict, context: LambdaContext):
+    return app.resolve(event, context)
+```
+
+**Key features:**
+- `Logger`: structured JSON logs with correlation IDs, Lambda context auto-injected
+- `Tracer`: X-Ray subsegment creation, captures request/response
+- `Metrics`: CloudWatch EMF (Embedded Metric Format) — no custom metric filters needed
+- `Idempotency`: DynamoDB-backed idempotent processing for SQS/API GW events
+- `BatchProcessor`: partial failure handling for SQS, Kinesis, DynamoDB Streams
+
+## Step 12: Serverless Deployment — Google Cloud Run
+
+Container-based serverless. Run any container with per-request billing. Scales to zero.
+
+### Concurrency
+
+Each container instance handles multiple concurrent requests (default: 80, max: 1000). Lower concurrency = more instances = higher cost but more isolation.
+
+```bash
+gcloud run deploy myapp \
+  --image gcr.io/myproject/myapp:latest \
+  --concurrency 80 \
+  --cpu 2 \
+  --memory 2Gi \
+  --max-instances 100
+```
+
+```yaml
+# service.yaml
+apiVersion: serving.knative.dev/v1
+kind: Service
+metadata:
+  name: myapp
+spec:
+  template:
+    metadata:
+      annotations:
+        autoscaling.knative.dev/maxScale: "100"
+    spec:
+      containerConcurrency: 80
+      containers:
+      - image: gcr.io/myproject/myapp:latest
+        resources:
+          limits:
+            cpu: "2"
+            memory: "2Gi"
+```
+
+**Guidelines:**
+- CPU-bound workloads: lower concurrency (1-8), higher CPU
+- I/O-bound (typical web apps): higher concurrency (80-250)
+- WebSockets: concurrency = 1 per connection (each WS is long-lived)
+
+### Min Instances (Avoid Cold Starts)
+
+```bash
+gcloud run deploy myapp --min-instances 2
+```
+
+Keeps N instances warm. Costs money at idle. Use for latency-sensitive production services.
+
+### Traffic Splitting (Revisions)
+
+Deploy new revision without shifting traffic, then split:
+
+```bash
+gcloud run deploy myapp --image gcr.io/myproject/myapp:v2 --no-traffic
+# Test revision at .preview subdomain
+gcloud run services update-traffic myapp --to-revisions=myapp-00042=10,myapp-00041=90
+# Gradually increase
+gcloud run services update-traffic myapp --to-revisions=myapp-00042=50,myapp-00041=50
+gcloud run services update-traffic myapp --to-latest
+```
+
+**Canary with tag:** `--tag=canary` gives revision unique URL (`canary---myapp-xxx.run.app`) for testing before shifting traffic.
+
+### Startup CPU Boost
+
+Extra CPU during container startup. Reduces boot time for heavy init (JVM, Node.js bundling, Python import graph).
+
+```bash
+gcloud run deploy myapp --cpu-boost
+```
+
+```yaml
+# service.yaml
+metadata:
+  annotations:
+    run.googleapis.com/startup-cpu-boost: "true"
+```
+
+Doubles CPU during startup (e.g., 1 CPU → 2 CPU) then drops to limit. No extra cost — only duration is shorter.
+
+## Step 13: Azure Container Apps
+
+Serverless container platform on Azure. Built on K8s but abstracts nodes away.
+
+### KEDA Autoscaling
+
+Scale on custom metrics beyond HTTP: queue length, event hub messages, CPU, custom Prometheus queries.
+
+```bash
+az containerapp create \
+  --name myapp \
+  --resource-group mygroup \
+  --image myregistry.azurecr.io/myapp:v1 \
+  --min-replicas 0 \
+  --max-replicas 50 \
+  --scale-rule-name queue-scaler \
+  --scale-rule-type azure-queue \
+  --scale-rule-metadata queueName=myqueue connection=storage-connection \
+  --scale-rule-auth connection=storage-connection
+```
+
+```yaml
+# Bicep / ARM: multiple KEDA scalers
+scale:
+  minReplicas: 0
+  maxReplicas: 50
+  rules:
+  - name: queue-scaler
+    custom:
+      type: azure-queue
+      metadata:
+        queueName: orders
+        queueLength: "5"
+      auth:
+      - secretRef: storage-connection
+        triggerParameter: connection
+  - name: cpu-scaler
+    custom:
+      type: cpu
+      metadata:
+        type: Utilization
+        value: "70"
+```
+
+**KEDA scaler types:** azure-servicebus, rabbitmq, kafka, cron, redis, postgresql, external (Prometheus), etc.
+
+### Dapr Sidecar
+
+Distributed Application Runtime as sidecar. Service invocation, pub/sub, state management, secrets — all without SDK in app code.
+
+```yaml
+az containerapp create \
+  --name myapp \
+  --dapr-enabled \
+  --dapr-app-id myapp \
+  --dapr-app-port 8080 \
+  --dapr-app-protocol http
+```
+
+```yaml
+# Bicep: Dapr with pub/sub
+dapr:
+  enabled: true
+  appId: order-processor
+  appPort: 8080
+  appProtocol: http
+  components:
+  - name: pubsub
+    type: pubsub.azure.servicebus
+    version: v1
+    metadata:
+    - name: connectionString
+      secretRef: servicebus-connection
+```
+
+**Dapr components in Container Apps:** pubsub, bindings, state stores, secret stores — configured at environment level, shared across apps.
+
+### Revisions
+
+Immutable snapshots. New revision created on any config change (image, env var, scale rule, Dapr config).
+
+```bash
+# Deploy new revision (blue/green — old still serves traffic)
+az containerapp revision copy \
+  --name myapp \
+  --resource-group mygroup \
+  --image myregistry.azurecr.io/myapp:v2
+
+# Traffic splitting
+az containerapp ingress traffic set \
+  --name myapp \
+  --resource-group mygroup \
+  --revision-weight myapp--v2=20 myapp--v1=80
+```
+
+**Revision modes:**
+- `Single`: latest active revision gets 100% traffic (default, simplest)
+- `Multiple`: manual traffic splitting across revisions
+
+## Step 14: Edge Deployment
+
+Run code at CDN edge locations. Sub-50ms latency globally. Limited runtime (no filesystem, no native binaries).
+
+### Cloudflare Workers
+
+V8 isolate-based. No containers. Each request gets a lightweight isolate (not a VM). ~0ms cold start.
+
+```typescript
+// wrangler.toml
+// name = "myapp"
+// main = "src/index.ts"
+// compatibility_date = "2024-01-01"
+
+export default {
+  async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
+    const url = new URL(request.url);
+    return new Response(`Hello from ${url.pathname}`);
+  },
+};
+```
+
+```typescript
+// Durable Objects — stateful edge compute (single-instance coordination)
+export class Counter {
+  state: DurableObjectState;
+  value: number = 0;
+
+  constructor(state: DurableObjectState, env: Env) {
+    this.state = state;
+  }
+
+  async fetch(request: Request): Promise<Response> {
+    this.value++;
+    await this.state.storage.put("count", this.value);
+    return new Response(`Count: ${this.value}`);
+  }
+}
+
+// Worker routes to Durable Object
+export default {
+  async fetch(request: Request, env: Env): Promise<Response> {
+    const id = env.COUNTER.idFromName("global");
+    const stub = env.COUNTER.get(id);
+    return stub.fetch(request);
+  },
+};
+```
+
+**Cloudflare platform primitives:**
+
+| Primitive | Type | Use Case |
+|-----------|------|----------|
+| KV | Key-value (eventual consistency) | Config, feature flags, session cache |
+| R2 | Object storage (S3-compatible) | Images, blobs, backups (zero egress) |
+| D1 | SQLite at edge | Relational data, full-text search |
+| Durable Objects | Stateful singletons | Counters, rate limiting, coordination |
+| Queues | Message queue | Async processing, decoupling |
+| Hyperdrive | Connection pooler | Accelerate DB queries from edge |
+| Vectorize | Vector database | Semantic search, RAG |
+
+```typescript
+// KV — read config at edge
+const config = await env.MY_KV.get("feature-flags", { type: "json" });
+
+// R2 — serve images
+const object = await env.MY_BUCKET.get("images/photo.webp");
+return new Response(object.body, { headers: { "Content-Type": "image/webp" } });
+
+// D1 — query SQLite
+const { results } = await env.DB.prepare(
+  "SELECT * FROM users WHERE id = ?"
+).bind(userId).all();
+```
+
+### Deno Deploy
+
+V8 isolate-based. Native TypeScript. Global distribution at 35+ edge locations.
+
+```typescript
+// main.ts — deployed via `deployctl deploy --project=myapp main.ts`
+Deno.serve(async (req: Request) => {
+  const url = new URL(req.url);
+  if (url.pathname === "/api/hello") {
+    return new Response(JSON.stringify({ message: "hello" }), {
+      headers: { "content-type": "application/json" },
+    });
+  }
+  return new Response("Not Found", { status: 404 });
+});
+```
+
+**Deno Deploy KV (DenoKV):**
+```typescript
+const kv = await Deno.openKv();
+await kv.set(["users", "alice"], { name: "Alice", role: "admin" });
+const entry = await kv.get(["users", "alice"]);
+```
+
+**Limits:** 50ms CPU time per request (free), 500ms (Pro). No native modules. No filesystem. Use DenoKV or external DB for persistence.
+
+## Step 15: Cold Start Optimization
+
+Cold start = time from request arrival to first code execution when no warm instance exists. Varies by runtime, package size, and initialization work.
+
+### Runtime Choice Impact
+
+| Runtime | Typical Cold Start | Notes |
+|---------|-------------------|-------|
+| Node.js | 150-300ms | Fast, but large `node_modules` hurts |
+| Python | 200-500ms | Import-heavy frameworks (Django, Flask) slow |
+| Go | 50-100ms | Compiled binary, near-instant init |
+| Java (no SnapStart) | 3-6s | JVM class loading, Spring context |
+| Java (SnapStart) | 200-400ms | Snapshot restore, only on Lambda |
+| Rust | 10-30ms | Fastest cold start, smallest binary |
+| .NET (NativeAOT) | 100-200ms | Ahead-of-time compilation |
+
+### Package Size Optimization
+
+```python
+# Python: use slim base, exclude dev dependencies
+# requirements.txt — pin only what you need
+boto3==1.34.0       # NOT aws-sdk (use boto3, not full AWS SDK)
+requests==2.31.0
+# NOT Django (200MB) — use lightweight (FastAPI, Lambda Powertools)
+
+# .gitignore-style for Lambda packaging
+# SAM: exclude files from deployment
+# template.yaml
+Resources:
+  MyFunction:
+    Metadata:
+      Sam:
+        Exclude:
+          - "*.pyc"
+          - "__pycache__"
+          - "tests/"
+          - ".venv/"
+```
+
+```javascript
+// Node.js: tree-shake, exclude devDependencies
+// esbuild bundler config
+{
+  "bundle": true,
+  "minify": true,
+  "platform": "node",
+  "target": "node20",
+  "external": ["@aws-sdk/*"]  // provided by Lambda runtime
+}
+```
+
+**Size targets:** <10 MB zipped for Python, <5 MB for Node.js (bundled), <25 MB for Java.
+
+### Lazy Initialization
+
+Move heavy work out of module scope. Init on first request, not during cold start.
+
+```python
+import os
+import boto3
+
+# BAD: initialized on every cold start even if not used in this invocation
+db_client = boto3.client('dynamodb')
+s3_client = boto3.client('s3')
+ssm_client = boto3.client('ssm')
+config = json.loads(ssm_client.get_parameter(Name='/myapp/config')['Parameter']['Value'])
+
+# GOOD: lazy init with module-level caching
+_db_client = None
+def get_db():
+    global _db_client
+    if _db_client is None:
+        _db_client = boto3.client('dynamodb')
+    return _db_client
+
+def handler(event, context):
+    # Only init what this invocation needs
+    table = get_db().get_item(...)
+```
+
+```typescript
+// Node.js: top-level await for async init, only if needed
+let db: DynamoDBClient;
+
+export async function getDb(): Promise<DynamoDBClient> {
+  if (!db) {
+    db = new DynamoDBClient({});
+    // Optional: pre-warm connection
+    await db.send(new ListTablesCommand({}));
+  }
+  return db;
+}
+```
+
+### Keep-Alive and Connection Reuse
+
+Reuse HTTP connections and DB connections across invocations (warm container reuse).
+
+```python
+# Python: use module-level session (persists across warm invocations)
+import requests
+session = requests.Session()  # NOT requests.get() per invocation
+# Connection pooling built-in
+
+# boto3: reuse client objects (they use connection pools)
+import boto3
+dynamodb = boto3.resource('dynamodb')  # module-level, reused in warm containers
+table = dynamodb.Table('my-table')
+
+def handler(event, context):
+    table.get_item(Key={'pk': event['id']})  # reuses connection
+```
+
+```typescript
+// Node.js: reuse fetch/HTTP agent
+import { Agent } from 'undici';
+
+const agent = new Agent({
+  keepAliveTimeout: 60_000,
+  connections: 10,
+});
+
+export const handler = async (event) => {
+  const res = await fetch('https://api.example.com/data', {
+    dispatcher: agent,  // reuse TCP connections
+  });
+};
+```
+
+**Critical:** DB connections (RDS, Postgres) should use RDS Proxy. Direct connections from Lambda exhaust connection pool during scale-up.
+
+### Cold Start Optimization Checklist
+
+1. Prefer Go/Rust/Node.js over Java/Python for latency-critical paths
+2. Use ARM64 architecture (Lambda) — faster startup, cheaper
+3. Bundle/minify — remove unused dependencies, tree-shake
+4. Lazy-init heavy clients (DB, S3, SSM) — only init what request needs
+5. Reuse connections (HTTP keep-alive, DB connection pooling)
+6. Set Provisioned Concurrency for p99 latency requirements
+7. Use Lambda Layers for shared deps (avoids duplicate bundling)
+8. Enable SnapStart for Java workloads
+9. Enable Startup CPU Boost on Cloud Run
+10. Set min-instances > 0 on Cloud Run for prod services
+
+## Step 16: Serverless Observability
+
+Serverless challenges: no persistent hosts, ephemeral logs, distributed across many tiny invocations, no SSH.
+
+### Challenge → Solution Map
+
+| Challenge | Solution |
+|-----------|----------|
+| No persistent log files | Structured JSON logs → CloudWatch Logs / GCP Cloud Logging |
+| Distributed traces across services | X-Ray / Cloud Trace / OTEL |
+| No host metrics (CPU, memory per host) | Lambda Insights / Powertools Metrics (EMF) |
+| Log correlation across invocations | Powertools Logger with `correlation_id` |
+| Cold start visibility | X-Ray subsegments, Powertools `cold_start` annotation |
+| Cost per log ingestion | CloudWatch Logs Insights queries, log sampling |
+
+### AWS X-Ray Tracing
+
+```yaml
+# SAM: enable active tracing
+MyFunction:
+  Type: AWS::Serverless::Function
+  Properties:
+    Tracing: Active
+```
+
+```python
+from aws_xray_sdk.core import xray_recorder
+from aws_xray_sdk.core import patch_all
+
+patch_all()  # auto-patch boto3, requests, etc.
+
+@xray_recorder.capture('process_order')
+def process_order(order):
+    subsegment = xray_recorder.current_subsegment()
+    subsegment.put_annotation('order_id', order['id'])
+    subsegment.put_metadata('order', order)
+    # ...
+```
+
+**X-Ray provides:** service map, trace waterfall, error/latency analysis, annotation-based filtering.
+
+### Powertools Logger
+
+```python
+from aws_lambda_powertools import Logger
+from aws_lambda_powertools.logging import correlation_paths
+
+logger = Logger(service="order-service")
+
+@logger.inject_lambda_context(correlation_id_path=correlation_paths.API_GATEWAY_REST)
+def handler(event, context):
+    logger.info("Processing order", extra={
+        "order_id": event["pathParameters"]["id"],
+        "http_method": event["httpMethod"],
+    })
+    # Output: {"level":"INFO","message":"Processing order","order_id":"123",
+    #          "cold_start":true,"function_name":"OrderFn","request_id":"abc",
+    #          "service":"order-service","timestamp":"2024-01-15T10:30:00Z"}
+```
+
+**Auto-included fields:** `cold_start`, `function_name`, `function_memory_size`, `function_arn`, `function_request_id`, `xray_trace_id`, `service`, `timestamp`.
+
+### OpenTelemetry Lambda Layer
+
+```bash
+# Install OTEL Lambda layer (Python example)
+# ARN: arn:aws:lambda:{region}:901920570463:layer:aws-otel-python-amd64-ver-1-x:1
+# For ARM: aws-otel-python-arm64-ver-1-x
+
+# SAM
+MyFunction:
+  Properties:
+    Layers:
+      - !Sub arn:aws:lambda:${AWS::Region}:901920570463:layer:aws-otel-python-arm64-ver-1-x:1
+    Environment:
+      Variables:
+        AWS_LAMBDA_EXEC_WRAPPER: /opt/otel-instrument
+        OTEL_SERVICE_NAME: order-service
+        OTEL_EXPORTER_OTLP_ENDPOINT: "http://otel-collector:4317"
+        OTEL_TRACES_SAMPLER: parentbased_traceidratio
+        OTEL_TRACES_SAMPLER_ARG: "0.1"
+```
+
+**OTEL Lambda layer provides:** auto-instrumentation for AWS SDK, HTTP clients, DB drivers. Exports traces to any OTLP-compatible backend (Jaeger, Grafana Tempo, Honeycomb, Datadog).
+
+### CloudWatch Embedded Metric Format (EMF)
+
+Publish custom metrics as structured logs. No `PutMetricData` API call — metrics appear in CloudWatch automatically.
+
+```python
+from aws_lambda_powertools.metrics import Metrics, MetricUnit
+
+metrics = Metrics(namespace="MyApp", service="order-service")
+
+@metrics.log_metrics(capture_cold_start_metric=True)
+def handler(event, context):
+    metrics.add_metric(name="OrderCreated", unit=MetricUnit.Count, value=1)
+    metrics.add_metric(name="OrderValue", unit=MetricUnit.None_, value=49.99)
+    metrics.add_dimension(name="environment", value="production")
+    metrics.add_dimension(name="region", value="us-east-1")
+    # EMF JSON line emitted automatically on return
+```
+
+```json
+// EMF log line (auto-parsed by CloudWatch):
+{
+  "_aws": {
+    "Timestamp": 1705312200000,
+    "CloudWatchMetrics": [{
+      "Namespace": "MyApp",
+      "Dimensions": [["environment", "region"]],
+      "Metrics": [
+        {"Name": "OrderCreated", "Unit": "Count"},
+        {"Name": "OrderValue", "Unit": "None"}
+      ]
+    }]
+  },
+  "environment": "production",
+  "region": "us-east-1",
+  "OrderCreated": 1,
+  "OrderValue": 49.99
+}
+```
+
+**Benefits over `PutMetricData`:** no API cost, no rate limiting, batched with logs, metric dimensions from log context.
+
+### Serverless Observability Stack
+
+```
+Request → Lambda (Powertools Logger + OTEL layer)
+  → Structured JSON logs → CloudWatch Logs Insights (query)
+  → X-Ray traces → X-Ray Console / Grafana Tempo
+  → EMF metrics → CloudWatch Metrics → Alarms / Dashboards
+  → Lambda Insights (enhanced metrics: init duration, memory max, cold start)
+```
+
+**Recommended for production:**
+- Powertools Logger for structured logging + correlation
+- OTEL layer OR X-Ray SDK for distributed tracing (not both — they conflict)
+- EMF via Powertools Metrics for custom metrics
+- Lambda Insights for infrastructure metrics (enable in function config)
+- CloudWatch Logs Insights for ad-hoc queries across invocations
+
 ## Sources
 
 - Canary deployments: https://docs.flagger.app/usage/deployment-strategies
@@ -769,6 +1472,20 @@ ORDER BY total_cost DESC;
 - FOCUS spec: https://focus.finops.org/
 - Argo CD ApplicationSets: https://argo-cd.readthedocs.io/en/stable/operator-manual/applicationset/
 - Atlas schema diffing: https://atlasgo.io/concepts/declarative-vs-versioned
+- AWS Lambda best practices: https://docs.aws.amazon.com/lambda/latest/dg/best-practices.html
+- AWS Lambda Powertools: https://docs.powertools.aws.dev/lambda/python/latest/
+- AWS SnapStart: https://docs.aws.amazon.com/lambda/latest/dg/snapstart.html
+- AWS X-Ray: https://docs.aws.amazon.com/xray/latest/devguide/xray-services-lambda.html
+- Cloud Run docs: https://cloud.google.com/run/docs
+- Cloud Run traffic splitting: https://cloud.google.com/run/docs/rollouts-rollbacks-traffic-migration
+- Azure Container Apps: https://learn.microsoft.com/en-us/azure/container-apps/
+- Azure Container Apps KEDA: https://learn.microsoft.com/en-us/azure/container-apps/scale-app
+- Azure Container Apps Dapr: https://learn.microsoft.com/en-us/azure/container-apps/dapr-overview
+- Cloudflare Workers: https://developers.cloudflare.com/workers/
+- Cloudflare Durable Objects: https://developers.cloudflare.com/durable-objects/
+- Deno Deploy: https://deno.com/deploy
+- OpenTelemetry Lambda: https://opentelemetry.io/docs/faas/
+- Cold start benchmarks: https://maxday.github.io/lambda-perf/
 
 ## Pitfalls
 
@@ -784,3 +1501,11 @@ ORDER BY total_cost DESC;
 10. **Don't skip migration testing in CI** — schema drift in production causes outages
 11. **Don't ignore canary cost** — a misconfigured canary can rack up cloud spend fast
 12. **Don't skip OpenFeature hooks** — audit logging is required for compliance in regulated environments
+13. **Don't initialize all clients at module scope** — lazy-init to minimize cold start
+14. **Don't use Provisioned Concurrency + SnapStart together** — they're mutually exclusive on Lambda
+15. **Don't ignore ARM64** — Graviton Lambda is 34% cheaper with similar or better performance
+16. **Don't connect Lambda directly to RDS** — use RDS Proxy to avoid connection exhaustion
+17. **Don't mix X-Ray SDK and OTEL layer** — they conflict; pick one
+18. **Don't use `PutMetricData` in hot paths** — use EMF (Powertools Metrics) for zero-cost custom metrics
+19. **Don't set Cloud Run concurrency too high** — test with your workload; 80 is safe default
+20. **Don't deploy Dapr components without secrets** — use Azure Key Vault references, not inline connection strings

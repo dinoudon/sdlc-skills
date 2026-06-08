@@ -1,14 +1,14 @@
 ---
 name: sdlc-architecture-design
-description: "System design, C4 diagrams, API design (REST/GraphQL/gRPC), database schema, code architecture (Clean/Hexagonal/DDD), ADRs, branching strategies, code review, dependency management, DDIA patterns. Includes architecture fitness functions, DDD context mapping, platform engineering, Gateway API, green software, and API governance."
-version: 3.0.0
+description: "System design, C4 diagrams, API design (REST/GraphQL/gRPC), database schema, code architecture (Clean/Hexagonal/DDD), ADRs, branching strategies, code review, dependency management, DDIA patterns. Includes architecture fitness functions, DDD context mapping, platform engineering, Gateway API, green software, API governance, serverless architecture, edge computing, and multi-cloud patterns."
+version: 3.1.0
 author: Hermes Agent
 license: MIT
 platforms: [linux, macos, windows]
 metadata:
   hermes:
-    tags: [sdlc, architecture, c4, api-design, database, clean-architecture, ddd, code-review, branching, adr, ddia, fitness-functions, context-mapping, platform-engineering, gateway-api, green-software, api-governance, service-mesh]
-    related_skills: [sdlc-requirements-engineering, sdlc-cicd-pipeline, architecture-blueprint, api-design]
+    tags: [sdlc, architecture, c4, api-design, database, clean-architecture, ddd, code-review, branching, adr, ddia, fitness-functions, context-mapping, platform-engineering, gateway-api, green-software, api-governance, service-mesh, serverless, edge-computing, multi-cloud, faas]
+    related_skills: [sdlc-requirements-engineering, sdlc-cicd-pipeline, architecture-blueprint, api-design, sdlc-cloud-deployment]
 ---
 
 # Architecture, Design & Development
@@ -892,3 +892,399 @@ X-Trace-ID: hex-128          # OpenTelemetry trace ID (if using OTel)
 13. **Don't use Ingress for new K8s projects** — Gateway API is the standard, richer and role-oriented
 14. **Don't ignore carbon cost** — include sustainability in architecture fitness functions
 15. **Don't allow unstructured logging** — enforce structured JSON + correlation IDs from day one
+16. **Don't default to servers** — evaluate serverless-first for event-driven, bursty, or low-traffic workloads
+17. **Don't ignore vendor lock-in** — use abstraction layers (Terraform, Score, SAM) or plan exit strategy
+18. **Don't ignore edge** — consider edge compute for latency-sensitive or geo-distributed workloads
+
+## Step 20: Serverless Architecture Patterns
+
+Source: https://aws.amazon.com/lambda/, https://cloud.google.com/functions/, https://docs.microsoft.com/azure/azure-functions/
+
+FaaS (Function as a Service) and serverless patterns eliminate server management. Pay-per-invocation, auto-scaling to zero.
+
+### FaaS Platforms
+
+| Platform | Runtime | Max Timeout | Cold Start | Source |
+|----------|---------|-------------|------------|--------|
+| AWS Lambda | Node, Python, Go, Java, .NET, Rust (custom) | 15 min | ~100-500ms | https://docs.aws.amazon.com/lambda/ |
+| Google Cloud Functions (Gen 2) | Node, Python, Go, Java, .NET, Ruby | 60 min | ~100-300ms | https://cloud.google.com/functions |
+| Azure Functions | Node, Python, Java, .NET, PowerShell | Unlimited (Consumption: 5/10 min) | ~200-1000ms | https://learn.microsoft.com/azure/azure-functions/ |
+| Cloudflare Workers | JS/TS, WASM | 30s (paid), 10ms (free) | ~0ms (V8 isolates) | https://developers.cloudflare.com/workers/ |
+| Deno Deploy | JS/TS (Deno runtime) | 50ms-15min | ~0ms (V8 isolates) | https://deno.com/deploy |
+
+### Event-Driven Serverless
+
+```
+Event sources → Event bus/router → FaaS functions → Stateful services (DB, storage)
+
+Event sources: HTTP, S3 uploads, DynamoDB streams, SQS, EventBridge, Kafka, IoT, cron
+Event bus: AWS EventBridge, Google Eventarc, Azure Event Grid
+```
+
+**Pattern: Event-driven processing pipeline:**
+```yaml
+# AWS SAM example
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Resources:
+  ImageProcessor:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: app.handler
+      Runtime: python3.12
+      MemorySize: 1024
+      Timeout: 60
+      Events:
+        S3Upload:
+          Type: S3
+          Properties:
+            Bucket: !Ref UploadBucket
+            Event: s3:ObjectCreated:*
+            Filter:
+              S3Key:
+                Suffix: .jpg
+      Policies:
+        - S3ReadPolicy:
+            BucketName: !Ref UploadBucket
+        - DynamoDBCrudPolicy:
+            TableName: !Ref ImagesTable
+```
+
+### Serverless Microservices
+
+Decompose into small, independently deployable functions grouped by bounded context:
+
+```
+api-gateway/
+  orders/
+    create-order/     # POST /orders → Lambda
+    get-order/        # GET /orders/{id} → Lambda
+    list-orders/      # GET /orders → Lambda
+    order-processor/  # SQS consumer, async processing
+  inventory/
+    check-stock/      # GET /inventory/{sku} → Lambda
+    update-stock/     # EventBridge consumer
+  payments/
+    process-payment/  # SQS consumer
+    webhook-handler/  # POST /payments/webhook → Lambda
+```
+
+**API Gateway options:**
+- **AWS:** API Gateway (REST/HTTP) + Lambda, or App Runner for containers
+- **GCP:** API Gateway + Cloud Functions, or Cloud Run (container-based serverless)
+- **Azure:** API Management + Azure Functions
+- **Multi-cloud:** Kong, Traefik, or Ambassador as API gateway in front of FaaS
+
+### Serverless Design Patterns
+
+**Fan-out/Fan-in:** One function triggers N parallel functions, collects results.
+```
+Orchestrator → invoke N workers in parallel → aggregate results → respond
+```
+Implementation: AWS Step Functions Map state, Durable Functions fan-out
+
+**Strangler Fig:** Incrementally migrate from monolith to serverless.
+```
+Legacy monolith ← API Gateway routes → new Lambda functions (for new endpoints)
+Over time: migrate old endpoints to Lambda, decommission monolith
+```
+
+**Backend for Frontend (BFF):** Dedicated serverless function per client type.
+```
+Mobile app  → Mobile BFF Lambda  → downstream services
+Web app     → Web BFF Lambda     → downstream services
+Partner API → Partner BFF Lambda → downstream services
+```
+
+### Stateful Serverless Patterns
+
+Functions are stateless — use external state:
+
+| State Type | Service | Use Case |
+|-----------|---------|----------|
+| Ephemeral | ElastiCache / Redis | Session data, rate limiting |
+| Document | DynamoDB / Firestore | Application state, user data |
+| Queue | SQS / Pub-Sub / Service Bus | Async task queues |
+| Workflow | Step Functions / Durable Functions | Multi-step orchestration |
+| Object | S3 / GCS / Blob Storage | Files, blobs, artifacts |
+
+## Step 21: Edge Architecture Patterns
+
+Source: https://developers.cloudflare.com/workers/, https://deno.com/deploy, https://www.fastly.com/
+
+Edge computing runs code at CDN points-of-presence (PoPs) — hundreds of locations worldwide. Latency-sensitive, geo-distributed workloads benefit most.
+
+### Edge Platforms
+
+| Platform | Runtime | Locations | Key Differentiator | Source |
+|----------|---------|-----------|-------------------|--------|
+| Cloudflare Workers | V8 isolates (JS/TS/WASM) | 300+ cities | KV, R2, D1, Durable Objects, Queues | https://developers.cloudflare.com/workers/ |
+| Deno Deploy | V8 isolates (JS/TS) | 35+ regions | Native Deno, Web Standard APIs | https://deno.com/deploy |
+| Fastly Compute | WASM (any language→WASM) | 90+ PoPs | True isolation via WASM sandbox | https://www.fastly.com/products/edge-compute |
+| AWS Lambda@Edge | Node, Python | CloudFront 400+ PoPs | Pairs with CloudFront CDN | https://docs.aws.amazon.com/lambda/latest/dg/lambda-edge.html |
+| Vercel Edge Functions | V8 isolates (JS/TS) | Global | Next.js integration, middleware | https://vercel.com/docs/functions/edge-functions |
+| Netlify Edge Functions | Deno runtime | Global | Deno-based, integrated with Netlify | https://docs.netlify.com/edge-functions/overview/ |
+
+### Edge Caching Strategies
+
+**Cache hierarchy:**
+```
+User → Edge PoP (cached) → Shield/Mid-tier (cached) → Origin
+
+TTLs: Edge 60s, Shield 300s, Origin 3600s
+```
+
+**Strategies:**
+
+| Strategy | Description | Use Case |
+|----------|-------------|----------|
+| Stale-while-revalidate | Serve stale, refresh in background | High-traffic content, APIs |
+| Cache-aside | App controls cache population | User-specific data |
+| Edge-side includes (ESI) | Compose page from cached fragments | Personalized pages with shared layout |
+| Purge-on-write | Invalidate cache on data mutation | E-commerce inventory, pricing |
+| Tiered caching | Edge → Shield → Origin | Reduce origin load, improve global latency |
+
+**Cloudflare-specific edge services:**
+```yaml
+# wrangler.toml — Cloudflare Worker with KV + R2 + D1
+name = "edge-api"
+main = "src/index.ts"
+compatibility_date = "2025-01-01"
+
+[[kv_namespaces]]
+binding = "CACHE"
+id = "kv-namespace-id"
+
+[[r2_buckets]]
+binding = "ASSETS"
+bucket_name = "static-assets"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "edge-db"
+database_id = "d1-database-id"
+```
+
+**Edge compute patterns:**
+```
+# Request flow with edge compute
+User (Tokyo) → Cloudflare PoP (Tokyo)
+  ├── KV lookup: user session cached at edge → fast auth
+  ├── D1 query: product data (read replica at edge) → fast read
+  ├── Cache HIT: return response (p50 < 20ms)
+  └── Cache MISS: fetch origin, cache at edge, return
+```
+
+### When to Use Edge vs Origin
+
+| Criteria | Edge Compute | Origin/Serverless |
+|----------|-------------|-------------------|
+| Latency requirement | < 50ms globally | < 200ms acceptable |
+| Data freshness | Eventually consistent OK | Strong consistency needed |
+| CPU intensive | No (isolate limits) | Yes |
+| State | Read-heavy, cached | Write-heavy, transactional |
+| Geo-specific logic | Yes (localization, routing) | No |
+
+## Step 22: Serverless-First Design Principles
+
+**Design for serverless by default. Move to servers only with justification.**
+
+### Core Principles
+
+1. **Pay-per-use:** Zero cost when idle. Cost scales linearly with usage.
+   ```
+   Lambda: $0.20 per 1M requests + $0.0000166667 per GB-second
+   vs EC2 t3.micro: $0.0104/hr = ~$7.50/month regardless of usage
+   Breakeven: ~37.5M requests/month at 256MB, 100ms avg
+   ```
+
+2. **Auto-scaling:** No capacity planning. Scales from 0 to thousands of concurrent executions automatically.
+   - Concurrency limits are soft (AWS: 1000 default, request increase)
+   - Provisioned concurrency for latency-critical paths (eliminates cold starts)
+
+3. **Event-driven:** Functions react to events, not poll. Natural fit for async workflows.
+   ```
+   S3 upload → Lambda resize → SQS → Lambda index → DynamoDB
+   DB change → DynamoDB Streams → Lambda sync → Elasticsearch
+   Cron → EventBridge → Lambda report → S3 + SNS notify
+   ```
+
+4. **Single-purpose:** One function = one responsibility. Small, focused, testable.
+   - Good: `createOrder` function handles only order creation
+   - Bad: `handleAllOrders` function with switch/case routing
+
+5. **Stateless:** No in-memory state between invocations. Externalize to DB/cache/queue.
+
+6. **Managed services over self-hosted:** Prefer DynamoDB over self-hosted Mongo, SQS over self-hosted RabbitMQ.
+
+### Decision Framework
+
+```
+Is it event-driven or HTTP-triggered?
+  ├── Yes → Is traffic bursty or low?
+  │   ├── Yes → Serverless-first (Lambda, Cloud Functions)
+  │   └── No → Is steady-state > breakeven?
+  │       ├── Yes → Consider containers (ECS, Cloud Run)
+  │       └── No → Still serverless (simpler ops)
+  └── No → Is it long-running (>15min)?
+      ├── Yes → Containers or Step Functions
+      └── No → Is it CPU/memory intensive (>10GB)?
+          ├── Yes → Containers or EC2
+          └── No → Serverless-first
+```
+
+## Step 23: Serverless Tradeoffs
+
+### Cold Starts
+
+**Problem:** First invocation after idle period incurs latency for runtime initialization.
+
+| Platform | Cold Start (typical) | Mitigation |
+|----------|---------------------|------------|
+| Lambda (Python/Node) | 100-300ms | Provisioned concurrency, SnapStart (Java) |
+| Lambda (Java/.NET) | 500-2000ms | SnapStart, ARM64 (Graviton2), Lambda Layers |
+| Lambda (Rust/Go) | 10-50ms | Minimal, often negligible |
+| Cloudflare Workers | ~0ms | V8 isolates, no cold start |
+| Cloud Functions Gen 2 | 100-500ms | Min instances |
+
+**Mitigation patterns:**
+- **Provisioned concurrency** (AWS): keep N instances warm, cost = provisioned × duration × price
+- **Min instances** (GCP): same concept for Cloud Functions
+- **Scheduled warming:** cron invokes function every 5 min to prevent idle (hacky, costs money)
+- **ARM64 (Graviton2):** 20-34% cheaper, 10-20% faster cold starts on AWS Lambda
+- **SnapStart** (Java): snapshot initialized JVM, restore on cold start — 10x faster cold starts
+
+### Vendor Lock-in
+
+**Problem:** Deep integration with provider-specific services creates migration cost.
+
+| Lock-in Level | Services | Migration Difficulty |
+|--------------|----------|---------------------|
+| Low | Lambda + API Gateway + S3 | Easy — replace with any FaaS + gateway + storage |
+| Medium | Lambda + DynamoDB + SQS + EventBridge | Medium — need equivalent services |
+| High | Step Functions + DynamoDB Streams + Lambda@Edge | Hard — workflow logic tied to provider |
+
+**Mitigation:**
+- **Infrastructure abstraction:** Terraform/Pulumi for IaC (not CloudFormation-only)
+- **Application abstraction:** hexagonal architecture — domain logic independent of AWS SDK
+- **Portable runtimes:** use standard runtimes (Node, Python) not provider-specific languages
+- **S3-compatible storage:** MinIO, R2 (Cloudflare) — same API as S3
+- **Open standards:** CloudEvents for event format, OpenTelemetry for observability
+
+### Debugging Complexity
+
+**Problem:** Distributed, ephemeral functions are harder to debug than long-running servers.
+
+**Challenges:**
+- No SSH into a running server
+- Logs scattered across thousands of invocations
+- Cold start vs warm start behavior differences
+- Concurrency limits and throttling invisible locally
+
+**Mitigation:**
+- **Structured logging:** JSON logs with correlation IDs (X-Request-ID, X-Correlation-ID)
+- **Distributed tracing:** OpenTelemetry + X-Ray/Jaeger/Tempo
+- **Local emulation:** SAM CLI (`sam local invoke`), Serverless Framework (`sls invoke local`), Cloudflare Wrangler (`wrangler dev`)
+- **X-Ray active tracing:** automatic trace segments for Lambda + API Gateway + DynamoDB
+- **Dead letter queues:** capture failed invocations for analysis
+- **Anomaly detection:** CloudWatch anomaly detection on error rates, duration, throttles
+
+### Other Tradeoffs
+
+| Tradeoff | Detail |
+|----------|--------|
+| Execution limits | Lambda 15min, Cloud Functions 60min. Long jobs need Step Functions or containers. |
+| Package size | Lambda 250MB unzipped, 50MB zipped. Large deps need Lambda Layers or container images. |
+| Concurrency limits | Default 1000 concurrent (AWS). High-traffic may need limit increase or reserved concurrency. |
+| VPC latency | Lambda in VPC adds ~1-2s cold start (ENI attachment). Fixed with Hyperplane (2019+). |
+| Cost at scale | High-volume steady workloads cheaper on containers/EC2. Model your break-even. |
+| Testing gaps | Local testing never matches production environment exactly. Canary deploys essential. |
+
+## Step 24: Multi-Cloud Architecture Patterns
+
+Source: https://www.terraform.io/, https://www.pulumi.com/, https://score.dev/
+
+### Why Multi-Cloud
+
+| Reason | Description |
+--------|-------------|
+| Avoid vendor lock-in | Negotiation leverage, exit strategy |
+| Best-of-breed services | Use GCP ML + AWS compute + Cloudflare edge |
+| Regulatory | Data residency requirements per region |
+| Disaster recovery | Provider-level outages (rare but catastrophic) |
+| Acquisitions | Merge orgs on different clouds |
+
+### Abstraction Layers
+
+**Infrastructure abstraction (IaC):**
+```
+Application Code
+  ↓
+Pulumi / Terraform / Crossplane    ← Abstract cloud resources
+  ↓
+Cloud Provider SDKs                ← AWS / GCP / Azure APIs
+```
+
+| Tool | Approach | Multi-Cloud | Source |
+|------|----------|-------------|--------|
+| Terraform | Declarative HCL | ✓ (providers for all clouds) | https://www.terraform.io/ |
+| Pulumi | Imperative (TS, Python, Go, C#) | ✓ (same concept) | https://www.pulumi.com/ |
+| Crossplane | K8s CRDs for infrastructure | ✓ (providers as K8s controllers) | https://www.crossplane.io/ |
+| AWS CDK + cdk8s | Imperative (TS, Python) | Partial (cdk8s for K8s, CDK for AWS) | https://cdk8s.io/ |
+
+**Application-level abstraction:**
+
+| Layer | Abstraction | Example |
+|-------|------------|---------|
+| Storage | S3-compatible API | MinIO, R2, GCS (with S3 compat), Azure Blob (with S3 compat) |
+| Messaging | AMQP / CloudEvents | RabbitMQ, SQS, Pub/Sub, Service Bus |
+| Compute | Containers | Docker on ECS, Cloud Run, AKS, GKE |
+| Database | PostgreSQL | RDS, Cloud SQL, Azure Database, Supabase |
+| Secrets | Vault | HashiCorp Vault (cloud-agnostic), AWS Secrets Manager, GCP Secret Manager |
+| Observability | OpenTelemetry | Vendor-neutral telemetry → any backend |
+
+### Portability Patterns
+
+**Container-first compute:**
+```
+Docker image (same everywhere)
+  ├── AWS: ECS Fargate / EKS
+  ├── GCP: Cloud Run / GKE
+  ├── Azure: Container Apps / AKS
+  └── Edge: Cloudflare Container Instances
+```
+
+**Database portability:**
+```
+Use PostgreSQL everywhere:
+  AWS → RDS PostgreSQL or Aurora PostgreSQL
+  GCP → Cloud SQL for PostgreSQL or AlloyDB
+  Azure → Azure Database for PostgreSQL
+  Edge → Neon (serverless Postgres), Turso (SQLite at edge)
+
+Avoid: DynamoDB-only, Spanner-only, CosmosDB-only in portable designs
+```
+
+**Multi-cloud anti-patterns:**
+```
+1. Lowest-common-denominator: using only services available on all clouds
+   → Misses best features of each. Use abstraction + targeted services.
+
+2. Active-active across clouds: complex networking, data sync, cost
+   → Prefer active-passive or regional deployment per cloud.
+
+3. Abstracting too early: wrapping cloud services before understanding needs
+   → Start cloud-native, abstract when migration is real.
+
+4. One Terraform module for all clouds: unmaintainable
+   → Separate modules per cloud, shared variables/outputs.
+```
+
+### Multi-Cloud Architecture Decision Matrix
+
+| Approach | Complexity | Cost | Portability | When to Use |
+|----------|-----------|------|-------------|-------------|
+| Single cloud (best-of-breed) | Low | Low | Low | Startups, single-region, specific cloud features needed |
+| Cloud-agnostic containers | Medium | Medium | Medium | Most teams — use K8s, PostgreSQL, S3-compatible storage |
+| Active-active multi-cloud | High | High | High | Regulated industries, global SLAs < 100ms |
+| Abstraction layer (Pulumi/TF) | Medium | Low | High | All teams — IaC portability from day one |

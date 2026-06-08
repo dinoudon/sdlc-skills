@@ -1,13 +1,13 @@
 ---
 name: sdlc-observability
-description: "Observability: OpenTelemetry 2024, GenAI semantic conventions, eBPF (Cilium/Hubble/Tetragon), sidecar-less mesh, profiling signal, structured logging, SLIs/SLOs/SLAs, error budgets, burn-rate alerting, Grafana LGTM, distributed tracing, cost optimization."
-version: 3.0.0
+description: "Observability: OpenTelemetry 2024, GenAI semantic conventions, eBPF (Cilium/Hubble/Tetragon), sidecar-less mesh, profiling signal, structured logging, SLIs/SLOs/SLAs, error budgets, burn-rate alerting, Grafana LGTM, distributed tracing, cost optimization, serverless observability, LLM/AI observability, edge observability."
+version: 3.1.0
 author: Hermes Agent
 license: MIT
 platforms: [linux, macos, windows]
 metadata:
   hermes:
-    tags: [sdlc, observability, opentelemetry, prometheus, grafana, loki, jaeger, sli, slo, error-budget, tracing, logging, sre, ebpf, cilium, genai, profiling]
+    tags: [sdlc, observability, opentelemetry, prometheus, grafana, loki, jaeger, sli, slo, error-budget, tracing, logging, sre, ebpf, cilium, genai, profiling, serverless, lambda, cloudwatch, emf, edge, llm, ai]
     related_skills: [sdlc-deployment, sdlc-cicd-pipeline, sdlc-testing-qa]
 ---
 
@@ -671,3 +671,316 @@ Source: https://opentelemetry.io/docs/collector/configuration/#processors
 6. **Don't create too many dashboards** — one per service with SLIs
 7. **Don't skip error budgets** — they balance reliability vs velocity
 8. **Don't ignore log sampling** — high-throughput paths need sampling
+
+## Step 17: Serverless Observability
+
+### Challenges
+
+Serverless (Lambda, Cloud Functions, Workers) introduces observability gaps traditional host-based monitoring can't fill:
+
+| Challenge | Why | Impact |
+|-----------|-----|--------|
+| **Cold starts** | New execution environment spun up on demand | Latency spike 100ms-10s, inconsistent baselines |
+| **No persistent host** | Container recycled after idle period | Can't tail logs on disk, no host-level agent |
+| **Ephemeral spans** | Execution context dies when function returns | Must flush telemetry before return or lose data |
+| **Distributed spans** | Single request may invoke multiple functions asynchronously | Cross-function correlation requires explicit propagation |
+| **Concurrency = cost** | Parallel invocations = parallel telemetry exporters | OTLP backpressure = dropped spans or throttled Lambda |
+| **Short-lived execution** | Sub-second to few seconds max | Batching windows must fit within timeout |
+
+### Solutions Pattern
+
+```
+[Lambda] → OTLP → [OTel Collector sidecar or Lambda Extension] → [Backend]
+                  (runs as Lambda Extension layer, keeps telemetry buffer across invocations)
+```
+
+**Key principles:**
+- Use Lambda Extensions (init outside handler) to keep warm across invocations
+- Flush telemetry at end of handler, not mid-invocation
+- Propagate trace context via environment variables or SNS/SQS message attributes
+- Set short OTLP export timeouts (2-5s) to fit within Lambda timeout
+
+### AWS Lambda Observability
+
+**AWS X-Ray:**
+```python
+from aws_xray_sdk.core import xray_recorder
+from aws_xray_sdk.core import patch_all
+patch_all()  # auto-patch requests, boto3, etc.
+
+def handler(event, context):
+    with xray_recorder.capture('process_request'):
+        subsegment = xray_recorder.begin_subsegment('db_query')
+        # ... db call ...
+        xray_recorder.end_subsegment()
+```
+**Limitation:** X-Ray SDK is AWS-only, doesn't export to OTLP backends.
+
+**Powertools Logger (AWS Lambda Powertools for Python):**
+```python
+from aws_lambda_powertools import Logger
+
+logger = Logger(service="order-processor", level="INFO")
+
+@logger.inject_lambda_context(correlation_id_path="correlation_id")
+def handler(event, context):
+    logger.info("Processing order", extra={
+        "order_id": event["order_id"],
+        "customer_id": event["customer_id"],
+    })
+```
+**Output (structured JSON with correlation):**
+```json
+{
+  "level": "INFO",
+  "location": "handler:4",
+  "message": "Processing order",
+  "timestamp": "2024-06-15T10:30:00.000Z",
+  "service": "order-processor",
+  "cold_start": true,
+  "function_name": "order-processor-prod",
+  "function_memory_size": 128,
+  "function_arn": "arn:aws:lambda:us-east-1:123456:function:order-processor-prod",
+  "correlation_id": "abc-123-def",
+  "xray_trace_id": "1-665f1a3e-1234567890abcdef",
+  "order_id": "ord-42",
+  "customer_id": "cust-100"
+}
+```
+**Key:** `correlation_id_path` extracts ID from event payload and injects into every log line. `cold_start` field auto-detected.
+
+**OTEL Lambda Layer:**
+```bash
+# Add OTEL layer to Lambda
+aws lambda update-function-configuration \
+  --function-name order-processor \
+  --layers arn:aws:lambda:us-east-1:123456:layer:opentelemetry-collector-arm64-0_98_0:1
+
+# Environment variables
+OTEL_SERVICE_NAME=order-processor
+OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4317
+OTEL_TRACES_SAMPLER=parentbased_traceidratio
+OTEL_TRACES_SAMPLER_ARG=0.1
+```
+**Architecture:** OTEL Lambda Extension runs as Lambda layer. Collector process starts during init phase, buffers telemetry, exports on flush. Spans survive across warm invocations.
+
+Source: https://aws-otel.github.io/docs/getting-started/lambda
+
+### CloudWatch Embedded Metric Format (EMF)
+
+EMF lets Lambda emit custom metrics as structured log lines — CloudWatch extracts metrics automatically. No API calls, no metric dimension limits hit, zero extra latency.
+
+```python
+import json
+EMF_METRIC = {
+    "_aws": {
+        "Timestamp": 1623456789000,
+        "CloudWatchMetrics": [{
+            "Namespace": "OrderService",
+            "Dimensions": [["environment"]],
+            "Metrics": [
+                {"Name": "OrderProcessingDuration", "Unit": "Milliseconds"},
+                {"Name": "OrderCount", "Unit": "Count"}
+            ]
+        }]
+    },
+    "environment": "prod",
+    "OrderProcessingDuration": 145.2,
+    "OrderCount": 1
+}
+print(json.dumps(EMF_METRIC))  # stdout → CloudWatch Logs → auto-extracted metric
+```
+**Powertools Metrics shortcut:**
+```python
+from aws_lambda_powertools import Metrics
+from aws_lambda_powertools.metrics import MetricUnit
+
+metrics = Metrics(namespace="OrderService", service="order-processor")
+
+@metrics.log_metrics(capture_cold_start_metric=True)
+def handler(event, context):
+    metrics.add_metric(name="OrderCount", unit=MetricUnit.Count, value=1)
+    metrics.add_metric(name="OrderProcessingDuration", unit=MetricUnit.Milliseconds, value=145.2)
+    metrics.add_dimension(name="environment", value="prod")
+```
+**Key:** EMF metrics appear in CloudWatch as standard custom metrics. Can alarm on them. No PutMetricData API call needed. Cost: just normal CloudWatch Logs ingestion.
+
+Source: https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/CloudWatch_Embedded_Metric_Format.html
+
+## Step 18: LLM/AI Observability
+
+### GenAI Semantic Conventions (Expanded)
+
+Beyond `gen_ai.system` and token counts, track request parameters, response quality, and operational cost:
+
+| Attribute | Description | Example |
+|-----------|-------------|---------|
+| `gen_ai.system` | Provider | openai, anthropic, cohere, vertex_ai |
+| `gen_ai.request.model` | Model name | gpt-4-turbo, claude-3-opus |
+| `gen_ai.request.max_tokens` | Max output tokens | 4096 |
+| `gen_ai.request.temperature` | Sampling temperature | 0.7 |
+| `gen_ai.request.top_p` | Nucleus sampling | 0.95 |
+| `gen_ai.request.encoding_format` | Embedding format | float, base64 |
+| `gen_ai.usage.input_tokens` | Prompt tokens | 350 |
+| `gen_ai.usage.output_tokens` | Completion tokens | 120 |
+| `gen_ai.response.finish_reason` | Stop condition | stop, length, content_filter |
+| `gen_ai.response.model` | Actual model used (may differ) | gpt-4-0613 |
+| `gen_ai.response.id` | Provider response ID | chatcmpl-abc123 |
+| `gen_ai.operation.name` | Operation type | chat, text_completion, embeddings |
+
+### Token Usage Tracking
+
+```python
+from opentelemetry import trace
+import time
+
+tracer = trace.get_tracer("genai.tracer")
+
+def call_llm(prompt: str, model: str = "gpt-4-turbo"):
+    with tracer.start_as_current_span("chat_completion") as span:
+        span.set_attribute("gen_ai.system", "openai")
+        span.set_attribute("gen_ai.operation.name", "chat")
+        span.set_attribute("gen_ai.request.model", model)
+        span.set_attribute("gen_ai.request.temperature", 0.7)
+
+        start = time.time()
+        response = openai.chat.completions.create(
+            model=model,
+            messages=[{"role": "user", "content": prompt}],
+        )
+        latency_ms = (time.time() - start) * 1000
+
+        span.set_attribute("gen_ai.usage.input_tokens", response.usage.prompt_tokens)
+        span.set_attribute("gen_ai.usage.output_tokens", response.usage.completion_tokens)
+        span.set_attribute("gen_ai.response.finish_reason", response.choices[0].finish_reason)
+        span.set_attribute("gen_ai.response.model", response.model)
+        span.set_attribute("gen_ai.response.id", response.id)
+        span.set_attribute("llm.latency_ms", latency_ms)
+        span.set_attribute("llm.cost_usd", calculate_cost(model, response.usage))
+
+        return response
+```
+
+### Latency Per Model Dashboard
+
+**Prometheus queries for LLM observability:**
+```promql
+# p50 latency by model
+histogram_quantile(0.5,
+  sum(rate(gen_ai_latency_ms_bucket[5m])) by (le, gen_ai_request_model)
+)
+
+# Token cost per model (input + output)
+sum(rate(gen_ai_usage_input_tokens_total[1h]) * on() group_left() input_cost_per_token{model="gpt-4-turbo"})
++
+sum(rate(gen_ai_usage_output_tokens_total[1h]) * on() group_left() output_cost_per_token{model="gpt-4-turbo"})
+
+# Error rate by model
+sum(rate(gen_ai_requests_total{status="error"}[5m])) by (gen_ai_request_model)
+/
+sum(rate(gen_ai_requests_total[5m])) by (gen_ai_request_model)
+```
+
+**Key metrics to track:**
+- **Token usage:** input_tokens, output_tokens, total_tokens (alert on runaway usage)
+- **Latency:** p50/p95/p99 per model, per operation (chat vs embeddings)
+- **Cost:** USD per request based on token pricing table
+- **Error rate:** by model, by finish_reason (content_filter rate = prompt policy issue)
+- **Cache hit rate:** if using semantic cache (embedding distance < threshold)
+
+Source: https://opentelemetry.io/docs/specs/semconv/gen-ai/
+
+## Step 19: Edge Observability
+
+### Challenges
+
+Edge compute (Cloudflare Workers, Deno Deploy, Vercel Edge) runs in hundreds of PoPs. Standard observability patterns break:
+
+- **No persistent process:** worker starts, handles request, dies
+- **No local exporter:** can't run OTel Collector on edge runtime
+- **Limited execution time:** 30ms-30s depending on platform
+- **High cardinality from geo:** every PoP is a dimension
+- **Cost:** per-request logging to external backends gets expensive fast
+
+### Cloudflare Workers Analytics Engine
+
+Workers Analytics Engine (WAE) writes datapoints directly from Workers code — no external exporter, zero network hop. Data lands in ClickHouse-backed analytics store.
+
+```javascript
+export default {
+  async fetch(request, env) {
+    const start = Date.now();
+    const response = await handleRequest(request);
+    const duration = Date.now() - start;
+
+    // Write to Analytics Engine (no network call, batches internally)
+    env.WAE.writeDataPoint({
+      blobs: [
+        request.url,           // blob1: route
+        request.method,        // blob2: method
+        request.cf.colo,       // blob3: colo (PoP)
+        request.cf.country,    // blob4: country
+      ],
+      doubles: [
+        duration,              // double1: latency_ms
+        response.status,       // double2: status_code
+      ],
+    });
+
+    return response;
+  }
+};
+```
+
+**Query via GraphQL:**
+```graphql
+query {
+  viewer {
+    accounts(filter: {accountTag: "abc123"}) {
+      workersAnalyticsEngineAdaptiveGroups(
+        limit: 100
+        filter: {
+          datetime_gt: "2024-06-15T00:00:00Z"
+          blob1_like: "/api/%"
+        }
+        orderBy: [double1_DESC]
+      ) {
+        dimensions { blob3 }      # colo
+        max { double1 }           # max latency
+        avg { double1 }           # avg latency
+        count
+      }
+    }
+  }
+}
+```
+**Key:** Datapoints are free (included in Workers paid plan). Query via GraphQL API or Grafana plugin. Max 20 blobs + 20 doubles per datapoint.
+
+### Cloudflare Logpush
+
+Logpush ships HTTP request logs to S3, GCS, or HTTP endpoint. For long-term storage and deep analysis.
+
+```bash
+# Create Logpush job → S3
+curl -X POST "https://api.cloudflare.com/client/v4/accounts/{account_id}/logpush/jobs" \
+  -H "Authorization: Bearer {token}" \
+  -d '{
+    "name": "worker-logs",
+    "destination_conf": "s3://my-bucket/worker-logs?region=us-east-1",
+    "dataset": "workers_trace_logs",
+    "output_options": {
+      "field_names": ["RayID", "Outcome", "EventTimestampMs", "ScriptName", "CpuTimeMs", "WallTimeMs", "Logs"],
+      "timestamp_format": "unix"
+    }
+  }'
+```
+
+**Combined pattern:**
+```
+[Worker] ──→ WAE (real-time dashboards, aggregation)
+         ──→ Logpush (full request logs → S3 → Athena/BigQuery)
+         ──→ OTLP over HTTP (sampled traces → Grafana Tempo)
+```
+**Key:** WAE for fast aggregates and alerting. Logpush for forensics and compliance. OTLP for trace-level debugging on sampled requests.
+
+Source: https://developers.cloudflare.com/workers/observability/

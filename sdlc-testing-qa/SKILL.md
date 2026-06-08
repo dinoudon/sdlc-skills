@@ -1,19 +1,19 @@
 ---
 name: sdlc-testing-qa
-description: "Test pyramid (unit/integration/e2e), TDD/BDD, property-based testing, mutation testing, contract testing, chaos engineering, performance testing (k6/Locust), security testing (SAST/DAST), accessibility testing. Includes Google testing culture and test architecture patterns."
-version: 3.0.0
+description: "Test pyramid (unit/integration/e2e), TDD/BDD, property-based testing, mutation testing, contract testing, chaos engineering, performance testing (k6/Locust), security testing (SAST/DAST), accessibility testing, AI-assisted test generation, serverless testing patterns. Includes Google testing culture and test architecture patterns."
+version: 3.1.0
 author: Hermes Agent
 license: MIT
 platforms: [linux, macos, windows]
 metadata:
   hermes:
-    tags: [sdlc, testing, tdd, bdd, playwright, pytest, k6, security, sast, dast, accessibility, google, contract-testing, chaos-engineering, mutation-testing, property-based]
+    tags: [sdlc, testing, tdd, bdd, playwright, pytest, k6, security, sast, dast, accessibility, google, contract-testing, chaos-engineering, mutation-testing, property-based, ai-test-generation, serverless-testing]
     related_skills: [sdlc-cicd-pipeline, sdlc-deployment, test-driven-development, security-review-owasp]
 ---
 
 # Testing & Quality Assurance
 
-Test pyramid, TDD/BDD, property-based testing, mutation testing, contract testing, chaos engineering, performance, security, accessibility testing. Includes Google testing culture and test architecture patterns.
+Test pyramid, TDD/BDD, property-based testing, mutation testing, contract testing, chaos engineering, performance, security, accessibility testing, AI-assisted test generation, serverless testing patterns. Includes Google testing culture and test architecture patterns.
 
 ## When to Use
 
@@ -24,6 +24,8 @@ Trigger when user:
 - Scans for security vulnerabilities
 - Tests accessibility compliance
 - Measures test quality
+- Generates tests with AI/LLM assistance
+- Tests serverless functions locally
 
 ## Step 1: Test Pyramid / Trophy
 
@@ -1098,3 +1100,288 @@ def pytest_collection_modifyitems(items):
 10. **Don't skip chaos engineering in production** — staging doesn't match prod
 11. **Don't test implementation details** — test behavior (Testing Library principle)
 12. **Don't skip mutation testing** — coverage alone doesn't measure test quality
+
+## Step 22: AI-Assisted Test Generation
+
+### Scaffold-and-Refine Pattern
+
+LLM-generated tests follow a scaffold-and-refine workflow: generate initial tests, run them, fix failures, repeat. Typical LLM first-pass test suite achieves **70-80% pass rate** on first generation. Iterative refinement (2-3 rounds) brings this to 90%+.
+
+**Workflow:**
+```
+1. SCAFFOLD — LLM generates test suite from function signature + docstring
+2. RUN      — execute generated tests, collect failures
+3. ANALYZE  — feed failures back to LLM with error output
+4. REFINE   — LLM fixes failing tests, adds missing edge cases
+5. VALIDATE — human reviews for meaningful assertions, not just pass/fail
+```
+
+**Key insight:** LLMs generate syntactically correct tests 85-95% of the time. Semantic correctness (asserting the right thing) requires human review. The scaffold phase is fast; refinement is where value accumulates.
+
+### AI Test Generation Anti-Patterns
+
+| Anti-Pattern | Example | Fix |
+|---|---|---|
+| **Trivial assertions** | `assert result is not None` | Assert specific values, types, structure |
+| **Happy-path only** | Only tests valid input | Add boundary, empty, negative, overflow cases |
+| **No adversarial inputs** | Missing injection, XSS, path traversal | Add security-relevant inputs (SQL, shell, path) |
+| **Assertion-free tests** | Calls function, no assert | Every test must have at least one meaningful assertion |
+| **Snapshot of current behavior** | Asserts current (wrong) output | Verify against spec/docstring, not current output |
+| **Copy-paste duplication** | 5 tests that differ only in input | Parametrize |
+| **Overmocking** | Mocks everything, tests nothing | Mock only external boundaries (DB, network, filesystem) |
+
+### Test Generation Prompt Patterns
+
+Provide the LLM with: function signature, docstring, type hints, and 1-2 example input/output pairs. More context = better tests.
+
+```
+PROMPT TEMPLATE:
+---
+Write comprehensive {framework} tests for this function.
+
+Function:
+```{language}
+{function_signature_with_type_hints}
+```
+
+Docstring:
+{docstring}
+
+Examples:
+{example_input_output_pairs}
+
+Requirements:
+- Test happy path, edge cases, error cases
+- Include boundary values (empty, null, max, min, negative)
+- Include adversarial inputs (injection, overflow, malformed)
+- Use parametrized tests where appropriate
+- Assert specific values, not just "no exception"
+---
+```
+
+**Example prompt (Python):**
+```
+Write pytest tests for this function:
+
+def calculate_discount(price: float, discount: float) -> float:
+    """Apply percentage discount to price.
+
+    Args:
+        price: Original price (must be >= 0)
+        discount: Discount as decimal 0.0-1.0
+
+    Returns:
+        Discounted price
+
+    Raises:
+        ValueError: If price < 0 or discount not in [0, 1]
+
+    Examples:
+        calculate_discount(100, 0.1) -> 90.0
+        calculate_discount(50, 0.5) -> 25.0
+    """
+```
+
+### AI Test Generation Tools
+
+**CodiumAI / Qodo** (https://qodo.ai/)
+- Analyzes function behavior, generates test suggestions with explanations
+- Supports Python, JavaScript/TypeScript, Java, Go, C++
+- IDE integration (VS Code, JetBrains) + CLI (`qodo gen`)
+- Generates test names that describe behavior (not `test_1`, `test_2`)
+- Distinguishes between "meaningful" and "trivial" tests
+
+**Diffblue Cover** (https://www.diffblue.com/)
+- Java-focused, autonomous test generation (no prompt needed)
+- Generates JUnit tests with meaningful assertions
+- Integrates with Maven/Gradle, runs in CI
+- Used by Goldman Sachs, Amazon — enterprise-grade
+- Captures current behavior as regression tests; human reviews for correctness
+
+**GitHub Copilot Test Generation**
+- `/tests` or `/test` slash command in Copilot Chat
+- Generates test file from source file context
+- Supports all major frameworks (pytest, Jest, JUnit, Go testing)
+- Best results: open source file + test file side-by-side for style reference
+- Limitation: tends toward happy-path; manually prompt for edge cases
+
+**Hypothesis Ghostwriter** (Python, built-in)
+```bash
+# Auto-generates property-based tests from type hints
+hypothesis write my_module.my_function
+# Produces: @given strategies matching parameter types
+```
+
+### Practical Workflow
+
+```
+1. Write function + docstring + type hints
+2. AI generates scaffold tests (70-80% pass on first run)
+3. Run tests, collect failures
+4. Feed failures to AI: "These tests fail: {errors}. Fix them."
+5. Review: are assertions meaningful? Add adversarial inputs manually.
+6. Run mutation testing (Stryker/mutmut) to verify test quality
+7. Commit tests + source together
+```
+
+## Step 23: Serverless Testing Patterns
+
+Serverless functions (AWS Lambda, Cloudflare Workers, Azure Functions) are hard to test because they depend on platform-specific runtime, event formats, and ephemeral state. Test locally first, then verify in cloud.
+
+### AWS Lambda — SAM Local
+
+```bash
+# Install SAM CLI
+pip install aws-sam-cli
+
+# Invoke function locally with event payload
+sam local invoke ProcessOrder --event events/order.json
+
+# Start local API Gateway
+sam local start-api --port 3000
+# Now curl http://localhost:3000/orders triggers handler
+
+# Run tests against local API
+sam local start-lambda --port 3001
+# pytest calls Lambda via boto3 pointing to localhost:3001
+```
+
+```python
+# pytest + local Lambda
+import boto3
+import json
+
+@pytest.fixture
+def lambda_client():
+    return boto3.client('lambda', endpoint_url='http://localhost:3001')
+
+def test_process_order(lambda_client):
+    response = lambda_client.invoke(
+        FunctionName='ProcessOrder',
+        Payload=json.dumps({"orderId": "123", "items": [{"sku": "A", "qty": 2}]})
+    )
+    body = json.loads(response['Payload'].read())
+    assert body['status'] == 'confirmed'
+```
+
+**template.yaml for local testing:**
+```yaml
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Resources:
+  ProcessOrder:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: app.handler
+      Runtime: python3.12
+      Timeout: 30
+      Environment:
+        Variables:
+          TABLE_NAME: !Ref OrdersTable
+```
+
+### Cloudflare Workers — Miniflare
+
+Source: https://miniflare.dev/
+
+Miniflare is local Cloudflare Workers simulator. Wrangler uses it under the hood.
+
+```bash
+# Install
+npm install -D miniflare wrangler
+
+# Run worker locally
+wrangler dev  # starts on http://localhost:8787
+
+# Or use miniflare directly
+npx miniflare --modules src/index.js --port 8787
+```
+
+```typescript
+// Test with Vitest + @cloudflare/vitest-pool-workers
+// vitest.config.ts
+import { defineWorkersConfig } from '@cloudflare/vitest-pool-workers/config';
+
+export default defineWorkersConfig({
+  test: {
+    poolOptions: {
+      workers: {
+        wrangler: { configPath: './wrangler.toml' },
+        miniflare: {
+          // Override bindings for tests
+          DURABLE_OBJECTS: { COUNTER: 'Counter' },
+          KV: { CACHE: true },
+          R2: { BUCKET: true },
+        },
+      },
+    },
+  },
+});
+```
+
+```typescript
+// src/index.test.ts
+import { env, SELF } from 'cloudflare:test';
+import { describe, it, expect } from 'vitest';
+
+describe('Worker', () => {
+  it('responds with greeting', async () => {
+    const res = await SELF.fetch('https://example.com/');
+    expect(res.status).toBe(200);
+    expect(await res.text()).toBe('Hello World');
+  });
+
+  it('uses KV', async () => {
+    await env.CACHE.put('key', 'value');
+    const res = await SELF.fetch('https://example.com/kv/key');
+    expect(await res.text()).toBe('value');
+  });
+});
+```
+
+### Azure Functions — Local Testing
+
+```bash
+# Install Azure Functions Core Tools
+npm install -g azure-functions-core-tools@4
+
+# Run locally
+func start  # reads local.settings.json, starts on port 7071
+
+# Test
+curl http://localhost:7071/api/HttpTrigger?name=test
+```
+
+### Serverless Testing Strategy
+
+```
+Layer 1: UNIT TESTS (fast, no platform)
+  - Test handler logic in isolation
+  - Mock event/context objects
+  - Run in CI without cloud credentials
+
+Layer 2: LOCAL INTEGRATION (medium, platform simulation)
+  - SAM local / Miniflare / func start
+  - Test with real event payloads
+  - Verify integrations: KV, D1, DynamoDB Local, S3 local
+
+Layer 3: CLOUD INTEGRATION (slow, real platform)
+  - Deploy to staging/dev account
+  - Invoke real endpoints
+  - Verify IAM permissions, cold starts, timeouts
+```
+
+**Event fixtures:** Store real event payloads as JSON files. AWS: `sam local generate-event`, Cloudflare: capture from `wrangler tail`.
+
+```bash
+# Generate sample AWS events
+sam local generate-event s3 put > events/s3-put.json
+sam local generate-event sqs receive-message > events/sqs.json
+sam local generate-event apigateway aws-proxy > events/api-gateway.json
+```
+
+**Common pitfalls:**
+- Don't test only locally — IAM, VPC, timeouts only manifest in cloud
+- Don't skip cold start testing — first invocation is 10-100x slower
+- Don't ignore timeout limits — test what happens at 29s (Lambda max)
+- Don't assume local == cloud — DynamoDB Local behaves differently than real DynamoDB
