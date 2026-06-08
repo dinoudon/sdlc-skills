@@ -1,14 +1,14 @@
 ---
 name: sdlc-requirements-engineering
 description: "Requirements: user story mapping (Jeff Patton), BDD/Gherkin (Cucumber, pytest-bdd), acceptance criteria (Given/When/Then), impact mapping (Gojko Adzic), example mapping, specification by example (Gojko Adzic), JTBD framework, RICE scoring, WSJF prioritization, user story splitting, NFR patterns, requirements traceability, OKR alignment (Doerr), design thinking, Lean UX (Gothelf), design sprint (Knapp), dual-track agile (Cagan), AI/ML requirements, STRIDE security, OWASP ASVS, WCAG 2.2 AA accessibility, event storming (Brandolini), domain storytelling (Hofer), platform team requirements, cost of delay (Reinertsen), requirements elicitation techniques, ATDD, strategic DDD (bounded contexts, context mapping, ubiquitous language), tactical DDD (entities, value objects, aggregates, domain events, repositories, domain services, factories), event storming workshop (6-phase, process+design level), domain storytelling workshop (notation, discovery patterns)."
-version: 4.7.0
+version: 4.8.0
 author: Dinoudon
 license: MIT
 platforms: [linux, macos, windows]
 metadata:
   hermes:
     tags: [sdlc, requirements, user-stories, bdd, gherkin, acceptance-criteria, impact-mapping, example-mapping, specification-by-example, jtbd, rice-scoring, wsjf, story-splitting, nfr, traceability, okr, design-thinking, lean-ux, design-sprint, dual-track-agile, ai-ml, stride, owasp-asvs, wcag-2.2, accessibility, event-storming, domain-storytelling, platform-teams, cost-of-delay, elicitation, atdd, strategic-ddd, tactical-ddd, bounded-contexts, context-mapping, ubiquitous-language, domain-events, aggregates, value-objects, event-storming-workshop, domain-storytelling-workshop]
-    related_skills: [sdlc-architecture-design, sdlc-testing-qa, sdlc-prd-to-production, sdlc-domain-driven-design]
+    related_skills: [sdlc-architecture-design, sdlc-testing-qa, sdlc-prd-to-production, sdlc-architecture-design]
 ---
 
 # Requirements Engineering

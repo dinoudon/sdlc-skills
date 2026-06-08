@@ -1,7 +1,7 @@
 ---
 name: sdlc-prd-to-production
 description: "End-to-end workflow: PRD → design doc → implementation → code review → testing → deployment → monitoring → retrospective. Includes Ship/Show/Ask branching, design doc templates, PRD patterns (YC, Amazon Working Backwards), ephemeral environments, DORA 2024 insights, Score spec, AI-augmented development, technical specification templates, GitOps automation, documentation-as-code pipelines, metrics-driven development, production readiness reviews, launch strategies, post-launch monitoring, stakeholder communication templates, product-engineering alignment, continuous discovery habits, product-led growth, technical debt management, engineering metrics, incident management, engineering leadership, developer onboarding, inner source patterns, product analytics, A/B testing at scale, feature flag experimentation, product metrics frameworks, Shape Up cycles, continuous deployment culture, engineering team building, product-market fit, high growth handbook, engineering culture patterns, Google SRE, and blameless postmortems."
-version: 4.7.0
+version: 4.8.0
 author: Dinoudon
 license: MIT
 platforms: [linux, macos, windows]
