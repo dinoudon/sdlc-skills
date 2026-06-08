@@ -1,13 +1,13 @@
 ---
 name: sdlc-testing-qa
-description: "Test pyramid (unit/integration/e2e), TDD/BDD, property-based testing, mutation testing, contract testing, chaos engineering, performance testing (k6/Locust), security testing (SAST/DAST), accessibility testing, AI-assisted test generation, serverless testing patterns, ML model testing, API contract testing, database testing, concurrency testing, observability-driven testing. Includes Google testing culture and test architecture patterns."
-version: 3.2.0
+description: "Test pyramid (unit/integration/e2e), TDD/BDD, property-based testing, mutation testing, contract testing, chaos engineering, performance testing (k6/Locust), security testing (SAST/DAST), accessibility testing, AI-assisted test generation, serverless testing patterns, ML model testing, API contract testing, database testing, concurrency testing, observability-driven testing, visual regression testing, test data management. Includes Google testing culture and test architecture patterns."
+version: 4.0.0
 author: Hermes Agent
 license: MIT
 platforms: [linux, macos, windows]
 metadata:
   hermes:
-    tags: [sdlc, testing, tdd, bdd, playwright, pytest, k6, security, sast, dast, accessibility, google, contract-testing, chaos-engineering, mutation-testing, property-based, ai-test-generation, serverless-testing, ml-testing, api-contract, database-testing, concurrency-testing, observability-testing]
+    tags: [sdlc, testing, tdd, bdd, playwright, pytest, k6, security, sast, dast, accessibility, google, contract-testing, chaos-engineering, mutation-testing, property-based, ai-test-generation, serverless-testing, ml-testing, api-contract, database-testing, concurrency-testing, observability-testing, visual-regression, performance-testing, security-automation, test-data-management, hypothesis, fast-check]
     related_skills: [sdlc-cicd-pipeline, sdlc-deployment, test-driven-development, security-review-owasp]
 ---
 
@@ -2272,3 +2272,684 @@ chaos_scenarios:
 - Build chaos experiments from post-incident reviews
 - Assert on trace structure (spans, attributes, relationships) not just response codes
 - Use OpenTelemetry test exporters to capture and verify instrumentation
+
+## Step 29: Mutation Testing
+
+Mutation testing introduces small faults (mutants) into source code, then checks if tests catch them. Higher mutation score = stronger test suite.
+
+### Tools
+
+| Tool | Language | Notes |
+|------|----------|-------|
+| PIT (pitest) | Java/JVM | Most mature. Supports incremental analysis, JUnit 5 |
+| Stryker | JS/TS/C# | First-class Jest/Vitest support, dashboard for tracking |
+| Cosmic Ray | Python | Works with pytest, AST-level mutations |
+| Mull | C/C++ | LLVM-based, integrates with Google Test |
+
+### Mutation Score Thresholds
+
+| Score | Interpretation |
+|-------|---------------|
+| >80% | Excellent — very strong test suite |
+| 70-80% | Strong — acceptable for most projects |
+| 50-70% | Weak — significant test gaps exist |
+| <50% | Poor — tests barely verify behavior |
+
+### Incremental Mutation for CI
+
+Full mutation testing is slow (minutes to hours). Run incremental in CI:
+
+```yaml
+# .github/workflows/mutation.yml
+- name: Mutation testing (incremental)
+  run: |
+    # PIT: only mutate changed files
+    ./gradlew pitest \
+      -Dpit.mutationEngine=bytecode \
+      -PtargetClasses="com.app.changed.*" \
+      -Dpit.timestampedReports=false
+```
+
+```bash
+# Stryker incremental mode
+npx stryker run --incremental  # uses .stryker-tmp/ for previous results
+```
+
+### Equivalent Mutant Problem
+
+Some mutants are semantically identical to original (equivalent) — no test can kill them. Mitigations:
+- Auto-detect: static analysis to flag common equivalents (e.g., `i++` → `++i`)
+- Timeout: mutants that don't cause test failure within N seconds likely equivalent
+- Mark known equivalents manually; exclude from score calculation
+- Use equivalent mutant detection plugins (PIT's `return values` mutator)
+
+### Key Mutators
+
+| Mutator Type | Example |
+|-------------|---------|
+| Conditionals | `>` → `>=`, `==` → `!=` |
+| Return values | `return x` → `return null` |
+| Void method calls | Remove method calls |
+| Math | `+` → `-`, `*` → `/` |
+| Negate conditionals | `if (a)` → `if (!a)` |
+
+## Step 30: Visual Regression Testing
+
+Catch unintended UI changes by comparing screenshots pixel-by-pixel.
+
+### Tools
+
+| Tool | Best For | Notes |
+|------|----------|-------|
+| Percy (BrowserStack) | Teams needing CI/CD integration | Snapshot diffs in PR, approve/reject workflow |
+| Chromatic | Storybook projects | First-class Storybook integration, turbosnap |
+| BackstopJS | Standalone scripts | OnBefore/OnReady scripts, Scenarios JSON config |
+| Playwright `toHaveScreenshot()` | Minimal setup | Built-in, no external service, `pixelmatch` under hood |
+| reg-suit | GitHub-centric | Stores snapshots in S3, comments on PRs |
+
+### Playwright Visual Comparison
+
+```typescript
+import { test, expect } from '@playwright/test';
+
+test('homepage visual check', async ({ page }) => {
+  await page.goto('/');
+  await expect(page).toHaveScreenshot('homepage.png', {
+    maxDiffPixelRatio: 0.01,   // <1% pixels may differ
+    animations: 'disabled',     // prevent flaky diffs
+  });
+});
+
+// Component-level screenshot
+test('button states', async ({ page }) => {
+  const button = page.locator('button.submit');
+  await expect(button).toHaveScreenshot('submit-button.png');
+});
+```
+
+### Threshold Tuning
+
+| Threshold | Use Case |
+|-----------|----------|
+| 0 (exact) | Critical UI (medical, financial dashboards) |
+| 0.1 | High-fidelity apps (marketing pages) |
+| 0.2 | Standard apps — good balance |
+| 0.3 | Tolerant — apps with dynamic fonts, anti-aliasing |
+
+### Masking Dynamic Content
+
+```typescript
+// Playwright: mask selectors that change every render
+await expect(page).toHaveScreenshot('dashboard.png', {
+  mask: [
+    page.locator('.timestamp'),
+    page.locator('.user-avatar'),
+    page.locator('[data-testid="random-id"]'),
+  ],
+  maskColor: '#FF00FF',  // highlight masked areas
+});
+```
+
+### Baseline Management
+
+```
+project/
+  __screenshots__/          # checked into git (or S3)
+    homepage.png            # approved baseline
+    dashboard.png
+  test-results/             # gitignored — new screenshots
+    homepage.png            # diff generated here
+```
+
+**Workflow:** Run tests → diff against baseline → approve new baseline or fix regression. In CI, upload diffs as artifacts; require manual approval for baseline updates.
+
+## Step 31: Performance Testing Patterns
+
+### k6 Load Profiles
+
+```javascript
+import http from 'k6/http';
+import { check, sleep } from 'k6';
+
+// Profile 1: Constant VUs
+export const options = {
+  scenarios: {
+    constant_load: {
+      executor: 'constant-vus',
+      vus: 50,
+      duration: '5m',
+    },
+  },
+};
+
+// Profile 2: Ramping VUs (step load)
+export const rampingOptions = {
+  scenarios: {
+    ramping: {
+      executor: 'ramping-vus',
+      startVUs: 0,
+      stages: [
+        { duration: '2m', target: 100 },  // ramp up
+        { duration: '5m', target: 100 },  // hold
+        { duration: '2m', target: 0 },    // ramp down
+      ],
+    },
+  },
+};
+
+// Profile 3: Constant Arrival Rate (requests/sec target)
+export const arrivalOptions = {
+  scenarios: {
+    constant_rate: {
+      executor: 'constant-arrival-rate',
+      rate: 1000,              // 1000 iterations/sec
+      timeUnit: '1s',
+      duration: '5m',
+      preAllocatedVUs: 200,    // initial VU pool
+      maxVUs: 500,             // can scale up to
+    },
+  },
+};
+
+// Profile 4: Ramping Arrival Rate
+export const rampArrivalOptions = {
+  scenarios: {
+    ramp_rate: {
+      executor: 'ramping-arrival-rate',
+      startRate: 100,
+      timeUnit: '1s',
+      stages: [
+        { target: 500, duration: '3m' },   // ramp to 500 rps
+        { target: 500, duration: '5m' },   // hold
+        { target: 0, duration: '2m' },     // ramp down
+      ],
+      preAllocatedVUs: 200,
+      maxVUs: 1000,
+    },
+  },
+};
+```
+
+### Test Types
+
+| Type | Purpose | Duration | Key Metric |
+|------|---------|----------|------------|
+| Smoke | Verify script works | 1-2 min, few VUs | Error rate |
+| Load | Expected traffic | 15-30 min | p95 latency < SLA |
+| Stress | Beyond capacity | 15-30 min | Where does it break? |
+| Soak | Memory leaks, degradation | 4-24 hours | Memory growth, latency drift |
+| Spike | Sudden traffic surge | Short bursts | Recovery time |
+| Breakpoint | Find max capacity | Until failure | Max RPS before errors |
+
+### k6 Thresholds
+
+```javascript
+export const options = {
+  thresholds: {
+    http_req_duration: ['p(95)<500', 'p(99)<1500'],  // 95th < 500ms, 99th < 1500ms
+    http_req_failed: ['rate<0.01'],                    // <1% errors
+    http_reqs: ['rate>100'],                           // >100 req/sec throughput
+    iteration_duration: ['avg<3000'],                  // avg iteration < 3s
+  },
+};
+```
+
+### Tool Comparison
+
+| Feature | k6 | Locust | Gatling | Artillery |
+|---------|-----|--------|---------|-----------|
+| Language | JS (Go engine) | Python | Scala/Kotlin/Java | YAML/JS |
+| Protocol | HTTP/WS/gRPC | HTTP (extensible) | HTTP/JMS/gRPC | HTTP/WS |
+| Distributed | k6-operator (k8s) | Native | Built-in | Fargate plugin |
+| Realtime UI | k6 Cloud | Web UI built-in | HTML report | Dashboard |
+| Best for | Dev teams, CI | Python shops, complex logic | Enterprise, JVM | Quick YAML setup |
+
+## Step 32: Security Testing Automation
+
+### OWASP ZAP Automation Framework
+
+```yaml
+# zap-automation.yaml — run ZAP in Docker headless
+---
+env:
+  contexts:
+    - name: "target-app"
+      urls:
+        - "https://staging.example.com"
+      includePaths:
+        - "https://staging.example.com/.*"
+      excludePaths:
+        - ".*logout.*"
+  parameters:
+    failOnError: true
+    progressToStdout: true
+
+jobs:
+  # 1. Spider — crawl the app
+  - type: spider
+    parameters:
+      context: "target-app"
+      maxDuration: 5  # minutes
+
+  # 2. Ajax spider for SPAs
+  - type: ajaxSpider
+    parameters:
+      context: "target-app"
+      maxDuration: 5
+
+  # 3. Active scan
+  - type: activeScan
+    parameters:
+      context: "target-app"
+      maxRuleDurationInMins: 5
+      maxScanDurationInMins: 30
+
+  # 4. Report
+  - type: report
+    parameters:
+      template: traditional-html
+      reportFile: zap-report.html
+```
+
+```bash
+# Run ZAP baseline scan (passive only, fast)
+docker run -t ghcr.io/zaproxy/zaproxy:stable zap-baseline.py \
+  -t https://staging.example.com \
+  -r zap-baseline.html
+
+# Full scan (active + passive, slower)
+docker run -t ghcr.io/zaproxy/zaproxy:stable zap-full-scan.py \
+  -t https://staging.example.com \
+  -r zap-full.html
+
+# API scan (OpenAPI spec)
+docker run -t ghcr.io/zaproxy/zaproxy:stable zap-api-scan.py \
+  -t https://staging.example.com/openapi.json \
+  -f openapi \
+  -r zap-api.html
+```
+
+### SAST Tools
+
+| Tool | Type | Integration | Strengths |
+|------|------|-------------|-----------|
+| Semgrep | Pattern-based | CLI, CI, PR comments | Custom rules, fast, 2000+ rulesets |
+| CodeQL | Semantic analysis | GitHub native | Deep dataflow analysis, zero-config |
+| SonarQube | Multi-language | CI, IDE, PR decoration | Quality gates, technical debt tracking |
+| Bandit | Python SAST | CLI, pre-commit | Python-specific, low false positives |
+| ESLint Security | JS/TS linting | IDE, CI | `eslint-plugin-security` rules |
+
+### Pipeline Integration (SAST + DAST)
+
+```yaml
+# GitHub Actions — full security scan pipeline
+security-scan:
+  jobs:
+    sast:
+      runs-on: ubuntu-latest
+      steps:
+        - uses: actions/checkout@v4
+        - uses: returntocorp/semgrep-action@v1
+          with:
+            config: >-
+              p/owasp-top-ten
+              p/security-audit
+              p/secrets
+
+    dast:
+      needs: [deploy-staging]  # run after deploy
+      runs-on: ubuntu-latest
+      steps:
+        - name: ZAP baseline scan
+          uses: zaproxy/action-baseline@v0.12.0
+          with:
+            target: 'https://staging.example.com'
+            rules_file_name: '.zap/rules.tsv'
+            fail_action: true  # fail pipeline on high/medium
+
+    dependency-check:
+      runs-on: ubuntu-latest
+      steps:
+        - uses: actions/checkout@v4
+        - uses: aquasecurity/trivy-action@master
+          with:
+            scan-type: 'fs'
+            severity: 'CRITICAL,HIGH'
+```
+
+### API Fuzzing
+
+```python
+# Schemathesis — fuzz test from OpenAPI spec
+import schemathesis
+
+schema = schemathesis.from_url("https://api.example.com/openapi.json")
+
+@schema.parametrize()
+def test_api(case):
+    response = case.call()
+    case.validate_response(response)  # checks status codes, schema conformance
+
+# Finds: 500s, schema violations, malformed responses
+```
+
+```bash
+# RESTler — stateful API fuzzer from OpenAPI
+restler-compile --api_spec api.json
+restler-fuzz --grammar_file Compile/grammar.py \
+  --target_ip staging.example.com \
+  --target_port 443 \
+  --time_budget 60  # minutes
+```
+
+| Tool | Approach | Strengths |
+|------|----------|-----------|
+| Schemathesis | Property-based from OpenAPI | Fast, pytest integration, schema validation |
+| RESTler | Stateful grammar-based | Learns API state transitions, finds complex bugs |
+| Fuzz-lightyear | Swagger-based | Sequence-aware fuzzing |
+| Burp Suite headless | Full DAST suite | `burp-rest-api` for CI, deep scanning |
+
+## Step 33: Test Data Management
+
+### Synthetic Data Generation
+
+```python
+# Faker (Python)
+from faker import Faker
+fake = Faker()
+Faker.seed(42)  # reproducible data
+
+user = {
+    "name": fake.name(),
+    "email": fake.email(),
+    "ssn": fake.ssn(),  # fake SSN
+    "address": fake.address(),
+    "credit_card": fake.credit_card_number(),
+}
+# Generate 1000 users
+users = [fake.profile() for _ in range(1000)]
+```
+
+```javascript
+// Faker (JavaScript)
+import { faker } from '@faker-js/faker';
+faker.seed(123);
+
+const user = {
+  name: faker.person.fullName(),
+  email: faker.internet.email(),
+  phone: faker.phone.number(),
+  address: faker.location.streetAddress(),
+};
+```
+
+### Factory Boy (Python — factory pattern)
+
+```python
+import factory
+from app.models import User
+
+class UserFactory(factory.Factory):
+    class Meta:
+        model = User
+
+    name = factory.Faker('name')
+    email = factory.LazyAttribute(lambda o: f"{o.name.lower().replace(' ', '.')}@example.com")
+    is_active = True
+    role = 'user'
+
+class AdminFactory(UserFactory):
+    role = 'admin'
+
+class InactiveUserFactory(UserFactory):
+    is_active = False
+    deleted_at = factory.LazyFunction(datetime.now)
+
+# Usage
+user = UserFactory()                    # default user
+admin = AdminFactory()                  # admin
+batch = UserFactory.build_batch(50)     # 50 users
+```
+
+### Fixtures Patterns (pytest)
+
+```python
+import pytest
+
+# Scope hierarchy: function → class → module → package → session
+@pytest.fixture(scope="session")
+def db_engine():
+    """Create engine once per test session."""
+    engine = create_engine("sqlite:///:memory:")
+    Base.metadata.create_all(engine)
+    yield engine
+    engine.dispose()
+
+@pytest.fixture(scope="function")
+def db_session(db_engine):
+    """Rollback after each test — perfect isolation."""
+    connection = db_engine.connect()
+    transaction = connection.begin()
+    session = Session(bind=connection)
+    yield session
+    session.close()
+    transaction.rollback()
+    connection.close()
+
+# Snapshot fixtures — store expected data
+@pytest.fixture
+def expected_user_response(snapshot):
+    return snapshot("expected_user.json")
+```
+
+### Data Masking / Anonymization
+
+| Technique | Library | Use Case |
+|-----------|---------|----------|
+| Presidio (Microsoft) | `presidio-analyzer`, `presidio-anonymizer` | PII detection + redaction in text |
+| k-anonymity | `arx` (Java), custom scripts | Ensure each record matches ≥k others |
+| Pseudonymization | Custom mapping tables | Replace real IDs with consistent fake IDs |
+| Differential privacy | OpenDP, Google DP Library | Add statistical noise to datasets |
+
+```python
+# Presidio example
+from presidio_analyzer import AnalyzerEngine
+from presidio_anonymizer import AnonymizerEngine
+from presidio_anonymizer.entities import OperatorConfig
+
+analyzer = AnalyzerEngine()
+anonymizer = AnonymizerEngine()
+
+text = "John Smith, SSN 123-45-6789, lives at 123 Main St"
+results = analyzer.analyze(text=text, language="en")
+anonymized = anonymizer.anonymize(
+    text=text,
+    analyzer_results=results,
+    operators={"DEFAULT": OperatorConfig("replace", {"new_value": "[REDACTED]"})},
+)
+# Output: "[REDACTED], SSN [REDACTED], lives at [REDACTED]"
+```
+
+### Test Isolation Strategies
+
+```python
+# Transaction rollback (fastest — no cleanup needed)
+@pytest.fixture
+def isolated_session(db_engine):
+    conn = db_engine.connect()
+    txn = conn.begin()
+    session = Session(bind=conn)
+    yield session
+    session.close()
+    txn.rollback()  # all changes discarded
+    conn.close()
+
+# Testcontainers (real database in Docker)
+import pytest
+from testcontainers.postgres import PostgresContainer
+
+@pytest.fixture(scope="session")
+def postgres():
+    with PostgresContainer("postgres:16") as pg:
+        yield pg
+
+@pytest.fixture
+def db(postgres):
+    engine = create_engine(postgres.get_connection_url())
+    Base.metadata.create_all(engine)
+    yield Session(engine)
+    engine.dispose()
+```
+
+## Step 34: Property-Based Testing Expanded
+
+### Hypothesis Strategies
+
+```python
+from hypothesis import given, settings, assume
+from hypothesis import strategies as st
+
+# Built-in strategies
+@given(
+    x=st.integers(min_value=-1000, max_value=1000),
+    y=st.integers(min_value=0),
+    text=st.text(alphabet=st.characters(whitelist_categories=('L', 'N')), min_size=1, max_size=50),
+    items=st.lists(st.integers(), min_size=1, max_size=100, unique=True),
+)
+def test_operations(x, y, text, items):
+    assume(y != 0)  # skip cases where y=0
+    result = divide(x, y)
+    assert result * y == x or abs(result * y - x) < 0.001
+
+# from_regex — generate strings matching a pattern
+@given(email=st.from_regex(r"[a-z]{3,10}@[a-z]{3,8}\.(com|org)", fullmatch=True))
+def test_email_parser(email):
+    parsed = parse_email(email)
+    assert parsed.is_valid
+
+# builds — construct objects from strategies
+@given(st.builds(
+    User,
+    name=st.text(min_size=1, max_size=50),
+    age=st.integers(min_value=0, max_value=150),
+))
+def test_user_serialization(user):
+    data = user.to_json()
+    restored = User.from_json(data)
+    assert user == restored
+
+# deferred — recursive/self-referential strategies
+tree_strategy = st.deferred(lambda: st.one_of(
+    st.integers(),                              # leaf node
+    st.tuples(tree_strategy, tree_strategy),    # branch node
+))
+```
+
+### Shrinking Behavior
+
+Hypothesis automatically shrinks failing examples to minimal reproducing cases:
+```python
+@given(st.lists(st.integers()))
+def test_sort_idempotent(xs):
+    assert sorted(sorted(xs)) == sorted(xs)
+    # If fails with [5, 3, 1], Hypothesis shrinks to minimal case automatically
+```
+
+Control shrinking:
+```python
+from hypothesis import reject, assume
+
+@given(st.integers())
+@settings(suppress_health_check=list())  # don't suppress
+def test_positive(x):
+    if x <= 0:
+        reject()  # explicit reject — Hypothesis won't try smaller values
+    assert x > 0
+```
+
+### Stateful Testing
+
+```python
+from hypothesis.stateful import RuleBasedStateMachine, rule, invariant, initialize
+from hypothesis import strategies as st
+
+class LinkedListMachine(RuleBasedStateMachine):
+    @initialize()
+    def init_list(self):
+        self.list = LinkedList()
+        self.contents = []
+
+    @rule(value=st.integers())
+    def append(self, value):
+        self.list.append(value)
+        self.contents.append(value)
+
+    @rule(index=st.integers(min_value=0))
+    def get(self, index):
+        assume(index < len(self.contents))
+        assert self.list.get(index) == self.contents[index]
+
+    @rule(index=st.integers(min_value=0))
+    def remove(self, index):
+        assume(index < len(self.contents))
+        self.list.remove(index)
+        del self.contents[index]
+
+    @invariant()
+    def length_matches(self):
+        assert len(self.list) == len(self.contents)
+
+# Generate and run state machine tests
+TestLinkedList = LinkedListMachine.TestCase
+TestLinkedList.settings = settings(max_examples=200, stateful_step_count=50)
+```
+
+### Ghostwriter — Auto-generate Tests
+
+```bash
+# Generate tests for a module automatically
+hypothesis write app.calculator
+# Output: property-based tests for every function in app.calculator
+
+# Generate for specific function
+hypothesis write app.calculator:divide
+# Generates:
+#   @given(a=..., b=...)
+#   def test_fuzz_divide(a, b): ...
+```
+
+### fast-check (JavaScript) Comparison
+
+```typescript
+import fc from 'fast-check';
+
+// Basic property
+fc.assert(
+  fc.property(
+    fc.array(fc.integer()),
+    (arr) => {
+      const sorted = [...arr].sort((a, b) => a - b);
+      return sorted.length === arr.length;
+    }
+  )
+);
+
+// With explicit examples + shrinking
+fc.assert(
+  fc.property(
+    fc.string({ minLength: 1 }),
+    fc.integer({ min: 0 }),
+    (str, n) => str.slice(n).length <= str.length
+  ),
+  { numRuns: 1000, verbose: true }  // log all cases
+);
+```
+
+| Feature | Hypothesis (Python) | fast-check (JS/TS) |
+|---------|--------------------|--------------------|
+| Shrinking | Automatic, very aggressive | Automatic, configurable |
+| Stateful testing | `RuleBasedStateMachine` | `@fast-check/ava` model-based |
+| Strategy composition | Excellent, composable | Good, `fc.oneof`, `fc.record` |
+| Auto-generation | `hypothesis write` ghostwriter | None built-in |
+| CI integration | pytest plugin | Jest/AVA/Vitest plugin |
+| Performance | Python — slower | JS engine — faster |

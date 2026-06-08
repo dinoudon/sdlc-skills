@@ -1,7 +1,7 @@
 ---
 name: sdlc-retrospective
 description: "Retrospective formats: Start/Stop/Continue, 4Ls, Mad/Sad/Glad, Sailboat, Kaizen PDCA cycle, Toyota Kata (Mike Rother), blameless postmortems, incident deep-dive (Swiss cheese model), continuous improvement patterns. DORA metrics integration, DORA capability assessment, SPACE framework productivity metrics, Team Topologies awareness, team cognitive load measurement, Value Stream Mapping, flow metrics (lead time, cycle time, flow efficiency, WIP limits), anti-patterns, remote retro patterns, psychological safety measurement, action item tracking."
-version: 3.2.0
+version: 4.0.0
 author: Hermes Agent
 license: MIT
 platforms: [linux, macos, windows]
@@ -1244,3 +1244,835 @@ Reducing WIP is usually the faster lever.
 | Multi-tasking | Every person has 4+ items | Enforce per-person WIP = 2 max |
 | No aging tracking | Old items invisible | Add age indicator to Kanban board |
 | Ignoring wait time | Only measuring "work time" | Track lead time and cycle time separately |
+
+## Step 18: Team Topologies Deep-Dive
+
+Source: Skelton & Pais, "Team Topologies" (2019) | https://teamtopologies.com/
+
+Team Topologies provides a model for organizing engineering teams to optimize for fast flow of value. Use in retros to assess whether team structure is enabling or hindering delivery.
+
+### Conway's Law
+
+> "Any organization that designs a system will produce a design whose structure is a copy of the organization's communication structure." — Melvin Conway (1967)
+
+**Implication for retros:** If delivery is slow, don't just examine processes — examine team boundaries. Misaligned team structures create architectural friction no process fix can overcome.
+
+### Four Team Types
+
+#### 1. Stream-Aligned Team
+```
+Purpose: Aligned to a single value stream (product, feature set, user journey).
+         Primary team type — most teams should be stream-aligned.
+
+Characteristics:
+  - End-to-end ownership of a flow of work
+  - Cross-functional (dev, QA, UX, product)
+  - Empowered to deploy independently
+  - Receives fast feedback from production
+
+Cognitive Load: Manage one or two domains max. If overloaded, split.
+Retro Focus: Flow efficiency, deployment frequency, customer feedback loops.
+```
+
+#### 2. Platform Team
+```
+Purpose: Provide internal services that reduce cognitive load for stream-aligned teams.
+         Makes infrastructure, tooling, and common capabilities self-service.
+
+Characteristics:
+  - Treats internal teams as customers
+  - Provides APIs, CLI tools, dashboards, golden paths
+  - Measures adoption and developer satisfaction
+  - Reduces extraneous cognitive load for stream-aligned teams
+
+Retro Focus: Self-service adoption rate, API stability, onboarding time, DX scores.
+```
+
+#### 3. Enabling Team
+```
+Purpose: Help stream-aligned teams acquire new capabilities.
+         Temporary collaboration — goal is to transfer knowledge, then step back.
+
+Characteristics:
+  - Deep expertise in specific domain (e.g., testing, security, observability)
+  - Works WITH teams, not FOR them
+  - Success = team no longer needs them
+  - Rotates through teams on a cadence
+
+Retro Focus: Knowledge transfer effectiveness, capability adoption rate, time-to-independence.
+```
+
+#### 4. Complicated-Subsystem Team
+```
+Purpose: Own a subsystem requiring deep specialist expertise.
+         Exists when component complexity is too high for stream-aligned team.
+
+Characteristics:
+  - Owns specific technical subsystem (e.g., video codec, ML model, financial engine)
+  - Deep domain expertise required
+  - Provides clear API/interface to consuming teams
+  - Should be rare — most organizations need 0-1
+
+Retro Focus: API documentation completeness, integration test coverage, interface stability.
+```
+
+### Three Interaction Modes
+
+| Mode | Description | When to Use | Duration | Retro Question |
+|------|-------------|-------------|----------|---------------|
+| **Collaboration** | Two teams work closely together on shared problem | Discovery phase, novel problems, new tech | Timeboxed (weeks, not months) | "Are we learning fast enough to transition to XaaS or Facilitating?" |
+| **X-as-a-Service** | One team provides well-defined API/tool/service to another | Known interface, clear boundary, stable domain | Ongoing | "Is the service meeting consumers' needs? Is the interface clear?" |
+| **Facilitating** | Enabling team helps another team learn/adopt capability | Knowledge transfer, new practices, capability building | Temporary (weeks to months) | "Has the receiving team gained the capability? Can we step back?" |
+
+### Team Topology Anti-Patterns
+
+| Anti-Pattern | Symptom | Fix |
+|-------------|---------|-----|
+| **Spaghetti teams** | Every team depends on every other team | Map value streams, restructure to stream-aligned |
+| **Platform without customers** | Platform team builds what nobody uses | Treat internal teams as customers, measure adoption |
+| **Permanent collaboration** | Two teams "collaborating" for 6+ months | Timebox collaboration, transition to XaaS or merge |
+| **Enabling team becomes gatekeeper** | Enabling team blocks stream-aligned team | Enabling team coaches, doesn't do the work |
+| **Too many complicated-subsystem teams** | Specialist silos everywhere | Invest in self-service docs, simplify interfaces |
+| **One team, all domains** | Single team owns 5+ business domains | Split by domain boundary, reduce intrinsic cognitive load |
+
+### Applying Team Topologies in Retros
+
+1. **Map current team types** — classify each team as stream-aligned, platform, enabling, or complicated-subsystem
+2. **Map interaction modes** — how do teams actually interact? Collaboration? XaaS? Facilitating?
+3. **Identify mismatches** — "We're collaborating but should be XaaS" or "We're stream-aligned but acting like a platform team"
+4. **Assess cognitive load** — use Step 16 survey to validate team boundaries
+5. **Create topology change actions** — restructure teams, change interaction modes, split/merge teams
+6. **Re-evaluate quarterly** — topology should evolve as product and org evolve
+
+Source: https://teamtopologies.com/key-concepts
+
+## Step 19: SPACE Framework Deep-Dive
+
+Source: Forsgren et al., "The SPACE of Developer Productivity" (2021)
+Paper: https://queue.acm.org/detail.cfm?id=3454124
+
+SPACE provides a multi-dimensional framework for measuring developer productivity without reducing it to a single metric. Step 13 introduced the basics; this section provides detailed metrics, principles, and anti-patterns.
+
+### Five Dimensions with Specific Metrics
+
+#### S — Satisfaction
+```
+What: How fulfilled, happy, and healthy developers feel about their work.
+Why:  Low satisfaction predicts attrition, burnout, and reduced quality.
+
+Metrics:
+  - Developer satisfaction survey score (1-7 scale, quarterly)
+  - Employee Net Promoter Score (eNPS): "Would you recommend this team?"
+  - Burnout indicators: emotional exhaustion, depersonalization
+  - Tool satisfaction rating: "How satisfied are you with your dev tools?"
+  - Work-life balance score: "I can maintain healthy work-life balance"
+  - Retention rate: % developers who stay over 12 months
+
+Data Sources: Quarterly surveys, 1-on-1s, exit interviews, pulse surveys
+Frequency: Quarterly survey + monthly pulse
+```
+
+#### P — Performance
+```
+What: Quality, correctness, and reliability of work produced.
+Why:  Volume without quality creates debt. Performance measures craft.
+
+Metrics:
+  - Code review thoroughness: % PRs with substantive comments (not "LGTM")
+  - Test pass rate: % CI builds passing on first attempt
+  - Defect escape rate: bugs found in production / total bugs found
+  - SLO adherence: % time meeting service level objectives
+  - Incident count per deploy: production incidents / deployments
+  - Rework rate: % PRs requiring significant revision after review
+
+Data Sources: CI/CD systems, monitoring, code review tools, incident tracking
+Frequency: Weekly (automated) + monthly review
+```
+
+#### A — Activity
+```
+What: Volume of outputs and actions produced.
+Why:  Activity alone doesn't indicate productivity, but absence signals problems.
+      MUST be balanced with other dimensions.
+
+Metrics:
+  - Commits per week (by team, not individual)
+  - PRs merged per week
+  - Deploys per week (DORA deployment frequency)
+  - Tickets/issues closed per sprint
+  - Builds triggered per day
+  - Code reviews completed per week
+
+Data Sources: Git, CI/CD, issue trackers
+Frequency: Weekly (automated dashboard)
+WARNING: Never use activity metrics in isolation — they game easily.
+```
+
+#### C — Communication & Collaboration
+```
+What: Effectiveness of information flow, collaboration, and knowledge sharing.
+Why:  Poor communication creates silos, duplicated work, slow decisions.
+
+Metrics:
+  - PR review response time: hours from PR opened to first review
+  - Knowledge sharing frequency: tech talks, brown bags, doc updates per month
+  - Documentation freshness: % docs updated within last 90 days
+  - Async/sync ratio: % decisions made async vs. in meetings
+  - Cross-team collaboration index: PRs reviewed by members of other teams
+  - Meeting load: hours/week in meetings vs. deep work
+
+Data Sources: Git, Slack, Confluence, calendar analytics
+Frequency: Monthly review
+```
+
+#### E — Efficiency & Flow
+```
+What: Ability to complete work with minimal interruptions and delays.
+Why:  High efficiency = less waste, faster delivery, happier developers.
+
+Metrics:
+  - Flow efficiency: active work time / total lead time (target > 25%)
+  - Interruption count: context switches per day
+  - Time in meetings vs. deep work: % of workday in meetings
+  - Time to first commit: how long from "starting" to first code change
+  - Blocked time: hours/week waiting on others
+  - WIP age: how long items have been in progress
+
+Data Sources: Calendar, flow tracking tools, Git timestamps, IDE telemetry
+Frequency: Weekly (automated) + monthly review
+```
+
+### Key Principles
+
+1. **No single metric captures productivity.** Always use multiple dimensions.
+2. **Measure teams, not individuals.** Individual metrics create perverse incentives.
+3. **Balance leading and lagging indicators.** Activity = leading; Performance = lagging.
+4. **Context matters.** A "low activity" week might mean deep architectural work.
+5. **Metrics should inform, not evaluate.** Never tie SPACE metrics to performance reviews.
+6. **Surveys are data too.** Perception metrics (Satisfaction) are as valid as system metrics.
+7. **Trends beat absolutes.** Improving trajectory matters more than current number.
+
+### Anti-Patterns
+
+| Anti-Pattern | Description | Consequence |
+|-------------|-------------|-------------|
+| **Lines of code** | Measuring LOC as productivity | Rewards verbose code, punishes elegant solutions |
+| **Individual commit counts** | Ranking developers by commits | Gaming: tiny commits, unnecessary splits |
+| **Velocity as performance** | Comparing sprint velocity across teams | Inflated estimates, no cross-team comparison valid |
+| **Single-metric optimization** | Maximizing one dimension at expense of others | "Fast but fragile" (high Activity, low Performance) |
+| **Metrics in performance reviews** | Using SPACE metrics for compensation decisions | People optimize for metric, not outcome |
+| **Ignoring survey data** | Dismissing Satisfaction dimension as "soft" | Miss burnout, attrition signals, morale collapse |
+| **Measuring without acting** | Collecting metrics but never using in retro | Survey fatigue, cynicism, wasted effort |
+
+### SPACE-in-Retro Protocol
+
+```
+1. PRESENT: Show SPACE radar chart in "Gather Data" (auto-generated from tools + survey)
+2. IDENTIFY: Which dimension is weakest? Why?
+3. CORRELATE: Does low SPACE dimension explain DORA metric problems?
+4. DIAGNOSE: Root cause analysis on weakest dimension
+5. ACT: Create 1-2 action items targeting weakest dimension
+6. TRACK: Compare radar chart shift next retro
+```
+
+Source: https://queue.acm.org/detail.cfm?id=3454124
+
+## Step 20: Psychological Safety Deep-Dive
+
+Source: Amy Edmondson, "The Fearless Organization" (2018) | https://www.fearlessorganization.com/
+
+Step 11 introduced Edmondson's 7-item survey for measurement. This section covers the full framework, the 4-quadrant model, and specific leader behaviors that build or destroy safety.
+
+### Edmondson's Framework: Definition
+
+```
+Psychological Safety = shared belief held by team members that the team is safe
+for interpersonal risk-taking.
+
+Key properties:
+  - It's a CLIMATE, not a personality trait (team-level, not individual)
+  - It's NOT about being nice — it's about candor with respect
+  - It's NOT about lowering standards — high safety + high standards = learning zone
+  - It's measurable, improvable, and prerequisite for learning and innovation
+```
+
+### The 4-Quadrant Model
+
+Combining Psychological Safety (Y-axis) with Accountability/Standards (X-axis):
+
+```
+                    HIGH ACCOUNTABILITY
+                           │
+         LEARNING ZONE     │     COMFORT ZONE
+         ─────────────────────────────────
+         High Safety       │    High Safety
+         High Standards    │    Low Standards
+                           │
+         People speak up,  │    People are relaxed
+         take risks,       │    but don't push
+         hold each other   │    themselves. Nice
+         accountable,      │    but complacent.
+         innovate.         │    "Feels good, ships
+                           │     nothing."
+         IDEAL STATE       │
+                           │
+HIGH ──────────────────────┼──────────────────────── LOW
+SAFETY                     │                        SAFETY
+                           │
+         ANXIETY ZONE      │     APATHY ZONE
+         ─────────────────────────────────
+         Low Safety        │    Low Safety
+         High Standards    │    Low Standards
+                           │
+         People are        │    People are
+         stressed, afraid  │    disengaged,
+         to speak up,      │    checked out.
+         hide mistakes,    │    No learning,
+         burn out.         │    no accountability.
+         "Fear-driven      │    "Why bother?"
+          performance."    │
+                           │
+                    LOW ACCOUNTABILITY
+```
+
+### Zone Characteristics & Interventions
+
+| Zone | Safety | Accountability | Symptoms | Intervention |
+|------|--------|---------------|----------|-------------|
+| **Learning** (target) | High | High | Candor, innovation, accountability, learning from failure | Maintain: continue leader behaviors, celebrate learning |
+| **Comfort** | High | Low | Pleasant meetings, no conflict, no urgency, mediocrity | Raise standards: set ambitious OKRs, introduce healthy pressure |
+| **Anxiety** | Low | High | Stress, silence in meetings, hidden problems, blame game | Build safety: leader vulnerability, blameless postmortems, celebrate risk-taking |
+| **Apathy** | Low | Low | Disengagement, apathy, "quiet quitting", no improvement | Both: build safety AND raise standards simultaneously |
+
+### Leader Behaviors That Build Safety
+
+#### Positive Behaviors (Do These)
+
+| Behavior | Example | Effect |
+|----------|---------|--------|
+| **Model vulnerability** | "I made a mistake in the architecture decision. Here's what I learned." | Normalizes mistakes, signals it's safe to admit errors |
+| **Ask genuine questions** | "What am I missing?" "What would you do differently?" | Shows you value input, don't have all answers |
+| **Respond well to bad news** | "Thank you for surfacing this. What do we need to do?" | Reinforces that raising problems is valued |
+| **Admit ignorance** | "I don't know. Can you help me understand?" | Removes pressure to have all answers |
+| **Share credit, take blame** | "The team shipped this." + "That was my call, I was wrong." | Builds trust, reduces fear |
+| **Invite dissent** | "I want to hear the counterargument." "Who disagrees?" | Makes disagreement safe and expected |
+| **Follow through** | When someone raises issue, act on it or explain why not | Shows speaking up leads to change |
+| **Protect experimenters** | "That experiment didn't work, but we learned X." | Makes risk-taking safe |
+
+#### Destructive Behaviors (Stop These)
+
+| Behavior | Example | Effect |
+|----------|---------|--------|
+| **Punishing the messenger** | "Why didn't you catch this earlier?" | Teaches people to hide problems |
+| **Shooting the messenger** | Getting visibly angry at bad news | People stop bringing bad news |
+| **Public blame** | "Dev A caused this outage" in postmortem | People hide mistakes, fear retrospectives |
+| **Retaliating against dissent** | Giving poor assignments to dissenters | Teaches compliance, not candor |
+| **Surveillance** | Monitoring keystrokes, tracking individuals | Signals distrust, kills intrinsic motivation |
+| **False safety** | "This is a safe space" then punishing honesty | Destroys trust faster than admitting danger |
+
+### Measuring Safety Beyond Surveys
+
+| Signal | What It Indicates | How to Observe |
+|--------|-------------------|---------------|
+| Questions asked in meetings | Higher questions = higher safety | Count questions per meeting |
+| Mistakes reported proactively | People feel safe admitting errors | Track self-reported incidents vs. discovered incidents |
+| Disagreement frequency | Healthy conflict = safety | Observe if people push back on ideas |
+| Silence in retros | Silence = fear | Track participation rate per person |
+| Information flow speed | Bad news travels fast in safe teams | Time from incident to team notification |
+| Escalation patterns | Direct escalation = trust | Track if problems are escalated early or hidden |
+
+### Safety-Building Retro Practices
+
+1. **Leader goes first** — leader shares own mistake before asking others to share
+2. **Celebrate failures** — "Best failure of the sprint" award (learning-focused)
+3. **Anonymous option always available** — never remove anonymous input
+4. **No follow-up punishment** — if someone raises issue in retro, no negative consequences
+5. **Discuss safety explicitly** — "How safe did this retro feel? What would help?"
+6. **Prime Directive every time** — never skip it, it sets the norm
+7. **Rotate facilitator** — prevents power dynamics from dominating
+
+Source: https://www.fearlessorganization.com/
+
+## Step 21: Blameless Postmortems Deep-Dive
+
+Source: Google SRE Book, Chapter 10 | https://sre.google/sre-book/postmortem-culture/
+
+Step 4 provided a basic postmortem template. This section details Google SRE's full postmortem process, triggers, template, and follow-through practices.
+
+### Google SRE Postmortem Philosophy
+
+```
+Core belief: Postmortems are LEARNING tools, not BLAME tools.
+
+Goals:
+  1. Understand what happened (not who caused it)
+  2. Identify systemic improvements (not individual punishment)
+  3. Share learnings broadly (not hide failures)
+  4. Prevent recurrence (not just fix symptoms)
+
+Prerequisites:
+  - Blameless culture (see Step 20: psychological safety)
+  - Management commitment to not punish reporters
+  - Time allocated for postmortem writing and review
+```
+
+### When to Write a Postmortem (Triggers)
+
+| Trigger | Required? | Notes |
+|---------|-----------|-------|
+| P1/S1 incident (user-facing, >5 min) | **Yes** | Always required |
+| P2/S2 incident (user-facing, >30 min) | **Yes** | Always required |
+| Data loss or security breach | **Yes** | Regardless of duration |
+| Customer escalation | **Recommended** | If root cause is systemic |
+| Near-miss (caught before impact) | **Recommended** | Learning opportunity |
+| P3/P4 incident | **Optional** | Team decides, or if pattern emerges |
+| Successful recovery worth noting | **Optional** | Document what went right |
+
+### Google SRE Postmortem Template
+
+```markdown
+# Postmortem: [Incident Title]
+
+## Status
+- [ ] Draft
+- [ ] Reviewed
+- [ ] Action items tracked
+- [ ] Closed
+
+## Incident Metadata
+| Field | Value |
+|-------|-------|
+| **Date** | YYYY-MM-DD |
+| **Duration** | X hours Y minutes |
+| **Severity** | P1/P2/P3 |
+| **Author** | [Name] |
+| **Reviewers** | [Names] |
+| **Incident Commander** | [Name] |
+| **Tracking Bug/Issue** | [Link] |
+
+## Summary
+[2-3 sentence plain-language description of what happened, who was affected,
+and how it was resolved. A new team member should understand the incident
+from this section alone.]
+
+## Impact
+| Metric | Value |
+|--------|-------|
+| **Users affected** | [Number or %] |
+| **Revenue impact** | [If applicable] |
+| **Duration of impact** | [Time] |
+| **Services affected** | [List] |
+| **Regions affected** | [List] |
+| **Data integrity** | [Was data lost/corrupted?] |
+
+## Timeline (UTC)
+| Time | Event | Actor |
+|------|-------|-------|
+| HH:MM | [Trigger event] | [System/person] |
+| HH:MM | [First symptom observed] | [Monitoring/user report] |
+| HH:MM | [Alert fired / incident declared] | [System/person] |
+| HH:MM | [Investigation started] | [Person] |
+| HH:MM | [Hypothesis formed] | [Person] |
+| HH:MM | [Mitigation action 1] | [Person] |
+| HH:MM | [Mitigation action 2] | [Person] |
+| HH:MM | [Service restored] | [Person] |
+| HH:MM | [Monitoring confirms stability] | [System] |
+
+## Root Cause(s)
+[Detailed explanation of root cause(s). Use 5 Whys if helpful.
+Describe the mechanism, not the blame.]
+
+### Contributing Factors
+- [Factor 1: how it contributed]
+- [Factor 2: how it contributed]
+- [Factor 3: how it contributed]
+
+## What Went Well
+- [Detection was fast because...]
+- [Mitigation worked because...]
+- [Communication was effective because...]
+
+## What Went Wrong
+- [Detection was slow because...]
+- [Mitigation failed because...]
+- [Communication broke down because...]
+
+## Where We Got Lucky
+- [Near-miss that could have made it worse]
+- [Coincidental factor that helped]
+
+## Lessons Learned
+- [Lesson 1: what we now understand]
+- [Lesson 2: what we would do differently]
+
+## Action Items
+| Priority | Action | Owner | Due Date | Status | Tracking |
+|----------|--------|-------|----------|--------|----------|
+| P1 | [Immediate fix] | [Name] | [Date] | [Status] | [Link] |
+| P1 | [Detection improvement] | [Name] | [Date] | [Status] | [Link] |
+| P2 | [Process change] | [Name] | [Date] | [Status] | [Link] |
+| P3 | [Long-term improvement] | [Name] | [Date] | [Status] | [Link] |
+
+## Supporting Data
+- [Link to monitoring dashboard during incident]
+- [Link to logs]
+- [Link to chat transcript]
+- [Link to incident channel recording]
+```
+
+### Postmortem Process
+
+```
+Day 0 (Incident Day):
+  → Incident Commander creates draft postmortem
+  → Fill in: Summary, Impact, Timeline (initial)
+  → Share link in incident channel
+
+Day 1-2 (Writing):
+  → Author completes full postmortem
+  → Gather input from all responders
+  → Include all perspectives, not just commander's
+
+Day 3-5 (Review):
+  → Circulate to all responders + stakeholders
+  → Collect comments, corrections, additions
+  → Blameless review: redirect "who" questions to "what/why"
+
+Day 5-7 (Meeting — optional for P1):
+  → 30-60 min review meeting
+  → Walk through timeline
+  → Identify systemic improvements
+  → Finalize action items with owners and dates
+
+Day 7+ (Follow-Through):
+  → Action items tracked on Kanban board (Step 12)
+  → Weekly review of postmortem action items
+  → Publish summary to wider org (wiki, Slack, email)
+```
+
+### Postmortem Meeting Facilitation
+
+```
+1. READ PRIME DIRECTIVE (2 min)
+   "Regardless of what we discover, we understand and truly believe
+    that everyone did the best job they could..."
+
+2. WALK TIMELINE (15 min)
+   - Read timeline aloud
+   - Corrections and additions from attendees
+   - Fill gaps in understanding
+
+3. WHAT WENT WELL / WHAT WENT WRONG (10 min)
+   - Quick round-robin
+   - Note: focus on systems, not people
+
+4. ROOT CAUSE & CONTRIBUTING FACTORS (15 min)
+   - 5 Whys or fishbone diagram
+   - Identify all layers that failed (Swiss cheese)
+
+5. ACTION ITEMS (10 min)
+   - Brainstorm improvements
+   - Prioritize: P1 (immediate), P2 (this sprint), P3 (backlog)
+   - Assign owners and dates
+   - Max 5 items (focus)
+
+6. CLOSE (3 min)
+   - Appreciation round
+   - Rate the postmortem itself (1-5)
+   - Confirm action item tracking
+```
+
+### Follow-Through: Making Postmortems Actually Work
+
+| Practice | Description | Frequency |
+|----------|-------------|-----------|
+| **Action item Kanban** | Track all postmortem actions on board (Step 12) | Ongoing |
+| **Weekly review** | Review postmortem action items in team sync | Weekly |
+| **Postmortem index** | Searchable list of all postmortems with status | Updated per incident |
+| **Trend analysis** | Track recurring themes across postmortems | Monthly/quarterly |
+| **Publish externally** | Share anonymized learnings with wider org | Per incident |
+| **Celebrate learning** | Highlight what was learned, not just what broke | In retros |
+
+### Common Postmortem Anti-Patterns
+
+| Anti-Pattern | Description | Fix |
+|-------------|-------------|-----|
+| **Blame in postmortem** | "Dev X pushed bad code" | Redirect: "What in our process allowed this code to reach production?" |
+| **No follow-through** | Action items created, never tracked | Kanban board, weekly review, escalation protocol |
+| **Only fixing symptoms** | "Add more monitoring" without addressing root cause | 5 Whys to find systemic issues |
+| **No postmortem for P2s** | Only P1s get postmortems | Set clear triggers, automate reminder |
+| **Postmortem takes weeks** | Draft created but never completed | Set deadline: draft by Day 1, review by Day 5 |
+| **Single perspective** | Only commander writes, responders not consulted | Gather input from all responders before review |
+| **Publishing without anonymizing** | Names attached to mistakes in shared docs | Remove names from public versions, keep internal versions blameless |
+
+Source: https://sre.google/sre-book/postmortem-culture/
+
+## Step 22: Developer Experience (DevEx)
+
+Source: DevEx: A New Paradigm for Developer Productivity (GitHub, 2023)
+Paper: https://queue.acm.org/detail.cfm?id=3595878
+
+Developer Experience (DevEx) measures how developers perceive their work environment, tools, and processes. Poor DevEx = slow delivery, high attrition, low quality.
+
+### Three Dimensions of DevEx
+
+#### 1. Cognitive Load
+```
+Definition: Mental effort required to do work, including understanding systems,
+            navigating tooling, and managing context switches.
+
+Key question: "How much of my mental energy goes to the WORK vs. the TOOLING?"
+
+Components:
+  - Intrinsic load: core domain complexity (can't eliminate)
+  - Extraneous load: unnecessary complexity from tools, docs, processes (eliminate this)
+  - Germane load: learning that builds expertise (invest in this)
+
+Signs of high cognitive load:
+  - Developers can't explain how their system works
+  - Frequent "I don't know who owns this" moments
+  - Long onboarding time (> 2 weeks to first meaningful commit)
+  - Developers avoid certain parts of the codebase
+  - Context switching between many unrelated tasks
+```
+
+#### 2. Flow State
+```
+Definition: Deep, focused, uninterrupted work where developers do their best work.
+            Csikszentmihalyi's "flow" applied to software development.
+
+Key question: "Can I get into and stay in flow state?"
+
+Requirements for flow:
+  - Clear goals (know what to do next)
+  - Immediate feedback (see results of actions quickly)
+  - Challenge-skill balance (not too easy, not too hard)
+  - Uninterrupted time (minimum 2-hour blocks)
+
+Flow blockers:
+  - Meetings scattered throughout the day
+  - Slack/Teams notifications every few minutes
+  - Unclear requirements ("figure it out")
+  - Slow build/test cycles (> 10 min)
+  - Waiting for approvals, reviews, environments
+  - Context switching between projects
+```
+
+#### 3. Feedback Loops
+```
+Definition: Speed and quality of information developers receive about their work.
+
+Key question: "How quickly do I know if my work is correct?"
+
+Feedback loops in software:
+  - Code → Test result: seconds (unit tests) to minutes (integration)
+  - Code → Review: hours to days (PR review turnaround)
+  - Code → Production: minutes (CI/CD) to weeks (release cycles)
+  - Code → User impact: days (analytics) to weeks (customer feedback)
+  - Idea → Validation: weeks (A/B test) to months (product metrics)
+
+Fast feedback = faster learning = better decisions = better code.
+Slow feedback = stale context = higher error rate = more rework.
+```
+
+### Measurement Approach
+
+| Dimension | Method | Frequency | Example Instruments |
+|-----------|--------|-----------|-------------------|
+| **Cognitive Load** | Survey + system metrics | Quarterly | Step 16 cognitive load survey, onboarding time tracking |
+| **Flow State** | Survey + calendar analysis | Monthly | "How often can you get 2+ hours uninterrupted?" Calendar: meeting-free blocks |
+| **Feedback Loops** | System metrics | Weekly (automated) | CI/CD build times, PR review turnaround, deploy frequency |
+
+### DevEx Survey Template
+
+Rate 1 (Strongly Disagree) to 7 (Strongly Agree):
+
+| # | Statement | Dimension |
+|---|-----------|-----------|
+| 1 | I can easily understand the systems I work on | Cognitive Load |
+| 2 | Documentation helps me do my job effectively | Cognitive Load |
+| 3 | Our tooling is intuitive and well-integrated | Cognitive Load |
+| 4 | I can onboard onto a new codebase quickly | Cognitive Load |
+| 5 | I have enough uninterrupted time for deep work | Flow State |
+| 6 | I can focus on one task at a time | Flow State |
+| 7 | I know what I need to work on and why | Flow State |
+| 8 | Our build and test cycles are fast enough | Feedback Loops |
+| 9 | I get timely feedback on my code (reviews, tests) | Feedback Loops |
+| 10 | I know quickly if something I deployed is working | Feedback Loops |
+| 11 | I can deploy my changes to production easily | Feedback Loops |
+| 12 | Overall, I am satisfied with my developer experience | Overall |
+
+### Key DevEx Metrics
+
+| Metric | What It Measures | Target | Elite |
+|--------|-----------------|--------|-------|
+| **Time to first commit** | Onboarding effectiveness | < 1 week | < 1 day |
+| **CI build time** | Feedback loop speed | < 10 min | < 5 min |
+| **PR review turnaround** | Collaboration speed | < 4 hours | < 1 hour |
+| **Deploy-to-production time** | Delivery speed | < 30 min | < 15 min |
+| **Uninterrupted work hours/day** | Flow state availability | > 4 hours | > 6 hours |
+| **Meeting hours/week** | Context switch load | < 10 hours | < 6 hours |
+| **Doc freshness** | Cognitive load reduction | > 80% updated in 90 days | > 90% |
+| **Developer satisfaction score** | Overall DevEx | > 5.0/7 | > 6.0/7 |
+
+### DevEx Improvement Patterns
+
+| Pattern | Targets | How |
+|---------|---------|-----|
+| **Golden paths** | Cognitive Load | Provide opinionated, supported ways to build common things |
+| **Internal developer portal** | Cognitive Load | Single place for docs, APIs, ownership, runbooks |
+| **Meeting-free blocks** | Flow State | Designate 2+ hours/day with no meetings allowed |
+| **Fast CI** | Feedback Loops | Invest in build speed (< 10 min), parallelize tests |
+| **PR review SLA** | Feedback Loops | Commit to < 4 hour first review response |
+| **Automated environments** | Cognitive Load + Feedback | One-click dev environment setup, ephemeral preview envs |
+| **Platform team investment** | All | Dedicated team to improve DevEx as product |
+
+### Integrating DevEx into Retros
+
+1. Measure DevEx quarterly (survey + automated metrics)
+2. In retro "Gather Data," present DevEx scores alongside SPACE and DORA
+3. Identify weakest dimension (Cognitive Load, Flow State, or Feedback Loops)
+4. Root cause analysis: what specific tools/processes/practices are causing friction?
+5. Create 1-2 action items targeting weakest dimension
+6. Track DevEx metrics trend over time
+7. Correlate DevEx improvements with DORA metric improvements
+
+Source: https://queue.acm.org/detail.cfm?id=3595878
+
+## Step 23: Westrum Culture Model
+
+Source: Ron Westrum, "A Typology of Organisational Cultures" (2004)
+Paper: https://qualitysafety.bmj.com/content/13/suppl_2/ii22
+
+Ron Westrum's model classifies organizational culture into three types based on how information flows. DORA research shows generative culture is the strongest predictor of software delivery performance.
+
+### Three Culture Types
+
+```
+PATHOLOGICAL (Power-Oriented)
+──────────────────────────────
+  - Information is used as political weapon
+  - Messengers are punished ("shoot the messenger")
+  - Responsibilities are compartmentalized, siloed
+  - Failure leads to scapegoating
+  - Bridging between teams is discouraged or punished
+  - Novelty is crushed ("not invented here")
+
+  Information flow: Top-down only, hoarded, distorted
+  Typical org: Traditional command-and-control hierarchies
+  DORA impact: Low performance across all metrics
+
+BUREAUCRATIC (Rule-Oriented)
+──────────────────────────────
+  - Information is guarded by departments
+  - Messengers are tolerated but ignored ("that's not my department")
+  - Responsibilities are departmental, not shared
+  - Failure leads to investigation and blame assignment
+  - Bridging between teams requires formal approval
+  - Novelty creates discomfort ("that's not how we do things")
+
+  Information flow: Departmental, formal channels only
+  Typical org: Large enterprises, government, regulated industries
+  DORA impact: Medium performance, slow but stable
+
+GENERATIVE (Performance-Oriented)
+──────────────────────────────────
+  - Information is actively sought and shared
+  - Messengers are trained and protected
+  - Responsibilities are shared across teams
+  - Failure leads to inquiry and learning
+  - Bridging between teams is encouraged and rewarded
+  - Novelty is welcomed ("let's try it")
+
+  Information flow: Free, fast, multi-directional
+  Typical org: High-performing tech companies, elite engineering orgs
+  DORA impact: High/Elite performance across all metrics
+```
+
+### Culture Characteristics Comparison
+
+| Characteristic | Pathological | Bureaucratic | Generative |
+|---------------|-------------|-------------|-----------|
+| **Power** | Based on fear | Based on rules | Based on respect |
+| **Information flow** | Weaponized, hoarded | Guarded, siloed | Shared, sought |
+| **Messenger treatment** | Punished | Tolerated | Protected |
+| **Failure response** | Scapegoating | Blame assignment | Learning inquiry |
+| **Responsibility** | Compartmentalized | Departmental | Shared |
+| **Collaboration** | Discouraged | Requires approval | Encouraged |
+| **Innovation** | Crushed | Creates discomfort | Welcomed |
+| **Trust** | Low | Contractual | High |
+| **Blame** | Personal | Process | Systemic |
+
+### Assessment Questions
+
+Rate each statement 1 (Strongly Disagree) to 5 (Strongly Agree):
+
+#### Information Flow
+1. Information flows freely across team boundaries
+2. Bad news travels fast (up and across)
+3. I have access to information I need without asking permission
+4. Failures are openly discussed, not hidden
+5. Knowledge sharing is rewarded, not hoarded
+
+#### Messenger Treatment
+6. People who report problems are thanked, not blamed
+7. Raising concerns about decisions is safe
+8. I can challenge leadership decisions without career risk
+9. "I don't know" is an acceptable answer
+10. Admitting mistakes is seen as strength, not weakness
+
+#### Failure Response
+11. Postmortems focus on systems, not individuals
+12. We learn from failures and share those learnings
+13. Retrying after failure is encouraged
+14. "Best failure" awards or celebrations exist
+15. Failure leads to process improvement, not punishment
+
+#### Responsibility & Collaboration
+16. Teams collaborate across boundaries without formal approval
+17. Helping another team is valued, not seen as distraction
+18. I feel responsible for outcomes beyond my immediate role
+19. Cross-functional work is the norm, not the exception
+20. Innovation and experimentation are encouraged
+
+#### Scoring
+```
+Total Score: Sum of all 20 items (max 100)
+
+80-100  →  GENERATIVE — healthy culture, optimize for improvement
+60-79   →  BUREAUCRATIC — functional but slow, focus on information flow
+< 60    →  PATHOLOGICAL — culture is blocking improvement, address immediately
+```
+
+### Westrum in Retrospectives
+
+| Culture Type | Retro Behavior | Intervention |
+|-------------|---------------|-------------|
+| **Pathological** | People afraid to speak. Only surface issues. Blame dominant. | Fix culture FIRST before deep retros. Leader vulnerability. Anonymous-only. External facilitator. |
+| **Bureaucratic** | People share but nothing changes. Actions lost in bureaucracy. | Focus on small, team-owned actions. Reduce approval chains. Empower team to fix their own process. |
+| **Generative** | Open, honest, productive retros. People volunteer failures. | Maintain and deepen. Experiment with formats. Share learnings across org. |
+
+### Moving Toward Generative Culture
+
+| From | To | Actions |
+|------|----|---------|
+| Punishing messengers | Protecting messengers | Leader publicly thanks people who raise problems |
+| Hiding failures | Sharing failures | Blameless postmortems (Step 21), failure celebrations |
+| Siloed information | Open information | Internal wikis, public dashboards, open Slack channels |
+| Approval-heavy | Trust-based | Reduce approval gates, empower team decisions |
+| Individual blame | Systemic thinking | "What in our process allowed this?" not "Who caused this?" |
+| Novelty rejected | Novelty welcomed | Innovation time, hack days, experiment budgets |
+
+### Correlating Westrum with Other Models
+
+| Model | Westrum Connection |
+|-------|-------------------|
+| **Psychological Safety (Step 20)** | Generative culture requires high psychological safety |
+| **DORA Metrics (Step 6)** | Generative culture → Elite DORA performance |
+| **Team Topologies (Step 18)** | Stream-aligned teams need generative culture to work |
+| **SPACE (Step 19)** | Generative culture → higher Satisfaction dimension |
+| **DevEx (Step 22)** | Generative culture → better feedback loops, less extraneous load |
+| **Blameless Postmortems (Step 21)** | Only work in bureaucratic/generative cultures |
+
+Source: https://qualitysafety.bmj.com/content/13/suppl_2/ii22
+DORA reference: https://dora.dev/capabilities/generative-organizational-culture/
