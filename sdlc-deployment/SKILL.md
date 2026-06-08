@@ -1,13 +1,13 @@
 ---
 name: sdlc-deployment
-description: "Deployment strategies: canary, blue-green, rolling, progressive delivery (Flagger/Argo Rollouts), feature flags (LaunchDarkly/Unleash/OpenFeature), rollback, database migrations, zero-downtime patterns. v3: Gateway API traffic splitting, OpenFeature CNCF standard, FinOps (OpenCost/Karpenter/FOCUS), AnalysisTemplate, multi-cluster progressive delivery. v3.1: Serverless (Lambda/Cloud Run/Container Apps), edge deployment (Cloudflare Workers/Deno Deploy), cold start optimization, serverless observability. v4: Production hardening (health probes, graceful shutdown, PDB), multi-region patterns (active-active/passive, follow-the-sun), disaster recovery (RPO/RTO, failover automation), cost optimization (right-sizing, spot/reserved), deployment verification (smoke tests, synthetic monitoring, canary analysis). v4.3: Deployment failure case studies (Knight Capital, AWS S3, Cloudflare, GitLab, Facebook BGP), successful deployment patterns (Netflix, Google, Amazon, Etsy), database migration war stories (gh-ost, expand-contract, Vitess), feature flag case studies (Facebook Gate, LaunchDarkly, Microsoft flight rings). v4.5: IaC testing (Terratest, Checkov, tfsec, OPA/Rego, 4-layer strategy), GitOps advanced (ArgoCD app-of-apps, Flux v2, progressive delivery), service mesh deep dive (Istio Ambient, Linkerd viz, Cilium eBPF/Hubble), edge computing patterns (Cloudflare Workers, Deno Deploy, Lambda@Edge)."
-version: 4.5.0
+description: "Deployment strategies: canary, blue-green, rolling, progressive delivery (Flagger/Argo Rollouts), feature flags (LaunchDarkly/Unleash/OpenFeature), rollback, database migrations, zero-downtime patterns. v3: Gateway API traffic splitting, OpenFeature CNCF standard, FinOps (OpenCost/Karpenter/FOCUS), AnalysisTemplate, multi-cluster progressive delivery. v3.1: Serverless (Lambda/Cloud Run/Container Apps), edge deployment (Cloudflare Workers/Deno Deploy), cold start optimization, serverless observability. v4: Production hardening (health probes, graceful shutdown, PDB), multi-region patterns (active-active/passive, follow-the-sun), disaster recovery (RPO/RTO, failover automation), cost optimization (right-sizing, spot/reserved), deployment verification (smoke tests, synthetic monitoring, canary analysis). v4.3: Deployment failure case studies (Knight Capital, AWS S3, Cloudflare, GitLab, Facebook BGP), successful deployment patterns (Netflix, Google, Amazon, Etsy), database migration war stories (gh-ost, expand-contract, Vitess), feature flag case studies (Facebook Gate, LaunchDarkly, Microsoft flight rings). v4.5: IaC testing (Terratest, Checkov, tfsec, OPA/Rego, 4-layer strategy), GitOps advanced (ArgoCD app-of-apps, Flux v2, progressive delivery), service mesh deep dive (Istio Ambient, Linkerd viz, Cilium eBPF/Hubble), edge computing patterns (Cloudflare Workers, Deno Deploy, Lambda@Edge). v4.6: Automated rollback strategies (metric-based, error-rate-based, synthetic check, Netflix Kayenta/Mann-Whitney), deployment verification testing (smoke tests, Helm test hooks, synthetic monitoring, canary analysis with Kayenta/Flagger), multi-region deployment (active-active CockroachDB/Spanner/CRDTs, active-passive hot standby, failover automation, global LB)."
+version: 4.6.0
 author: Hermes Agent
 license: MIT
 platforms: [linux, macos, windows]
 metadata:
   hermes:
-    tags: [sdlc, deployment, canary, blue-green, rolling, feature-flags, progressive-delivery, flagger, argo-rollouts, kubernetes, zero-downtime, gateway-api, openfeature, finops, opencost, karpenter, analysis-template, multi-cluster, database-migration, serverless, lambda, cloud-run, container-apps, edge-deployment, cloudflare-workers, cold-start, serverless-observability, production-hardening, health-checks, graceful-shutdown, pdb, multi-region, disaster-recovery, rpo-rto, cost-optimization, spot-instances, deployment-verification, smoke-tests, synthetic-monitoring, canary-analysis, failure-case-studies, deployment-patterns, database-migration-war-stories, feature-flag-case-studies, iac-testing, terratest, checkov, tfsec, opa, rego, gitops, argocd, flux, service-mesh, istio, linkerd, cilium, ebpf, edge-computing, deno-deploy, lambda-at-edge]
+    tags: [sdlc, deployment, canary, blue-green, rolling, feature-flags, progressive-delivery, flagger, argo-rollouts, kubernetes, zero-downtime, gateway-api, openfeature, finops, opencost, karpenter, analysis-template, multi-cluster, database-migration, serverless, lambda, cloud-run, container-apps, edge-deployment, cloudflare-workers, cold-start, serverless-observability, production-hardening, health-checks, graceful-shutdown, pdb, multi-region, disaster-recovery, rpo-rto, cost-optimization, spot-instances, deployment-verification, smoke-tests, synthetic-monitoring, canary-analysis, failure-case-studies, deployment-patterns, database-migration-war-stories, feature-flag-case-studies, iac-testing, terratest, checkov, tfsec, opa, rego, gitops, argocd, flux, service-mesh, istio, linkerd, cilium, ebpf, edge-computing, deno-deploy, lambda-at-edge, automated-rollback, metric-based-rollback, synthetic-check-rollback, kayenta, mann-whitney, helm-tests, datadog-synthetics, cloudwatch-canaries, checkly, multi-region-deployment, active-active, active-passive, cockroachdb, spanner, crdt, failover-automation, global-load-balancer]
     related_skills: [sdlc-cicd-pipeline, sdlc-testing-qa, sdlc-observability]
 ---
 
@@ -4367,3 +4367,929 @@ Vendor lock-in       Medium           Low (Deno std)   High (AWS)
 23. **Don't use Lambda@Edge for long operations** — 5s viewer timeout is hard limit
 24. **Don't assume CF Workers KV is strongly consistent** — eventual consistency; use Durable Objects for strong reads
 25. **Don't deploy Dapr components without secrets** — use Azure Key Vault references, not inline connection strings
+
+## Step 30: Automated Rollback Strategies
+
+Rollback should not require human intervention. Define objective triggers, measure continuously, and revert automatically when thresholds breach.
+
+### Metric-Based Rollback (Argo Rollouts AnalysisTemplate)
+
+Argo Rollouts `AnalysisTemplate` queries Prometheus/Datadog during canary and gates promotion on metric thresholds.
+
+```yaml
+apiVersion: argoproj.io/v1alpha1
+kind: AnalysisTemplate
+metadata:
+  name: latency-rollback
+spec:
+  args:
+  - name: service-name
+  metrics:
+  - name: p99-latency
+    interval: 30s
+    count: 10
+    successCondition: result[0] < 500   # p99 < 500ms
+    failureLimit: 3                     # 3 failures → rollback
+    provider:
+      prometheus:
+        address: http://prometheus.monitoring:9090
+        query: |
+          histogram_quantile(0.99,
+            sum(rate(http_request_duration_seconds_bucket{
+              service="{{args.service-name}}",route!="health"
+            }[2m])) by (le)
+          ) * 1000
+  - name: error-rate
+    interval: 30s
+    count: 10
+    successCondition: result[0] < 0.01   # < 1% error rate
+    failureLimit: 2
+    provider:
+      prometheus:
+        address: http://prometheus.monitoring:9090
+        query: |
+          sum(rate(http_requests_total{
+            service="{{args.service-name}}",code=~"5.."
+          }[2m])) /
+          sum(rate(http_requests_total{
+            service="{{args.service-name}}"
+          }[2m]))
+```
+
+**Attach to Rollout:**
+
+```yaml
+apiVersion: argoproj.io/v1alpha1
+kind: Rollout
+metadata:
+  name: myapp
+spec:
+  strategy:
+    canary:
+      analysis:
+        templates:
+        - templateName: latency-rollback
+        startingStep: 2           # skip analysis for first 10% traffic
+        args:
+        - name: service-name
+          value: myapp
+```
+
+### Error-Rate-Based Rollback
+
+Hard rule: if 5xx rate exceeds 1% of total requests, rollback immediately.
+
+```yaml
+apiVersion: argoproj.io/v1alpha1
+kind: AnalysisTemplate
+metadata:
+  name: error-rate-guard
+spec:
+  args:
+  - name: service-name
+  metrics:
+  - name: http-5xx-rate
+    interval: 15s
+    count: 4                    # 4 checks × 15s = 1 min window
+    successCondition: result[0] < 0.01
+    failureLimit: 0             # zero tolerance → instant rollback
+    provider:
+      prometheus:
+        address: http://prometheus.monitoring:9090
+        query: |
+          sum(rate(http_requests_total{
+            service="{{args.service-name}}",code=~"5.."
+          }[1m])) /
+          sum(rate(http_requests_total{
+            service="{{args.service-name}}"
+          }[1m]))
+```
+
+**Datadog equivalent:** use `datadog` provider with query `sum:http.requests{service:myapp,status_code:5xx}.as_rate() / sum:http.requests{service:myapp}.as_rate()`.
+
+### Synthetic Check Rollback
+
+Run synthetic user journeys against the canary. If critical flows fail, roll back — even if error rates look fine.
+
+```yaml
+apiVersion: argoproj.io/v1alpha1
+kind: AnalysisTemplate
+metadata:
+  name: synthetic-check
+spec:
+  args:
+  - name: canary-url
+  metrics:
+  - name: checkout-flow
+    interval: 60s
+    count: 5
+    failureLimit: 1
+    provider:
+      job:
+        spec:
+          template:
+            spec:
+              containers:
+              - name: synthetic
+                image: synthetic-runner:latest
+                env:
+                - name: TARGET_URL
+                  value: "{{args.canary-url}}"
+                command: ["run-check", "--flow", "checkout"]
+              restartPolicy: Never
+```
+
+**When to use synthetic rollback:**
+- Canary passes error-rate checks but users report broken flows
+- Business-critical paths (checkout, auth, payment) need end-to-end validation
+- Latency OK but functional regression (wrong response schema, missing field)
+
+### Netflix Kayenta (Advanced Canary Analysis)
+
+Kayenta uses statistical tests — not simple thresholds — to compare canary vs. baseline.
+
+**Algorithms:**
+
+| Test | Use Case | How It Works |
+|------|----------|--------------|
+| Mann-Whitney U | Metric distributions (latency, CPU) | Non-parametric; tests if two samples come from same distribution; no assumption of normality |
+| Bootstrapping | Ratio metrics (error rates, throughput) | Resamples data 1000+ times to estimate confidence interval of difference |
+| T-test | Normally distributed metrics | Classical; sensitive to outliers; avoid for latency (skewed) |
+
+```yaml
+# Kayenta configuration (Standalone or Spinnaker-integrated)
+canary:
+  name: myapp-canary
+  configName: production
+  metricsAccountName: datadog-account
+  storageAccountName: gcs-store
+  thresholds:
+    pass: 95        # score >= 95 → promote
+    marginal: 75    # score 75-95 → manual review
+                     # score < 75 → auto-rollback
+  classifier:
+    groupWeights:
+      latency: 40
+      error-rate: 30
+      throughput: 15
+      saturation: 15
+    metrics:
+    - name: latency_p99
+      query: histogram_quantile(0.99, ...)
+      groups: latency
+      scopeName: default
+      analysisConfigurations:
+        canary_direction: decrease     # lower is better
+      extendedScope:
+        query: "{service='myapp'}"
+    - name: error_rate
+      query: sum(rate(http_requests_total{code=~"5.."}[1m]))
+      groups: error-rate
+      canary_direction: decrease
+```
+
+**Kayenta scoring flow:**
+1. Collect equal-duration samples from canary and baseline
+2. For each metric, run Mann-Whitney U (or bootstrapping for ratios)
+3. Compute per-metric score: 0–100 (0 = identical, 100 = canary much worse)
+4. Apply group weights → weighted score
+5. Compare to thresholds → pass/marginal/fail
+
+**Standalone Kayenta (without Spinnaker):**
+
+```bash
+docker run -p 8090:8090 \
+  -v kayenta.yml:/opt/kayenta/config/kayenta.yml \
+  kelseyhightower/kayenta:latest
+
+# Trigger analysis via API
+curl -X POST http://localhost:8090/canary -d '{
+  "canaryConfig": { ... },
+  "executionRequest": {
+    "scopes": {
+      "default": {
+        "controlScope": { "scope": "baseline", "start": 1609459200000, "end": 1609459800000 },
+        "experimentScope": { "scope": "canary", "start": 1609459200000, "end": 1609459800000 }
+      }
+    }
+  }
+}'
+```
+
+**Kayenta vs. Flagger vs. Argo Analysis:**
+
+| Feature | Kayenta | Flagger | Argo Analysis |
+|---------|---------|---------|---------------|
+| Mann-Whitney U | ✅ Native | ❌ | ❌ |
+| Bootstrapping | ✅ Native | ❌ | ❌ |
+| Multi-metric weighted score | ✅ Built-in | Manual (Prometheus rules) | Manual (multiple metrics) |
+| Standalone API | ✅ | N/A (K8s operator) | N/A (K8s CRD) |
+| K8s native | ❌ (external) | ✅ | ✅ |
+| Spinnaker integration | ✅ | ❌ | ❌ |
+
+**When to use Kayenta:** high-stakes deploys where simple threshold comparison isn't enough — latency p99 has high variance, error rates spike randomly, need statistical confidence.
+
+---
+
+## Step 31: Deployment Verification Testing
+
+Verify deployments at multiple levels: infrastructure probes, synthetic user journeys, and statistical canary analysis.
+
+### Smoke Tests
+
+**Kubernetes readiness + liveness probes (mandatory):**
+
+```yaml
+spec:
+  containers:
+  - name: myapp
+    livenessProbe:
+      httpGet:
+        path: /healthz
+        port: 8080
+      initialDelaySeconds: 10
+      periodSeconds: 5
+      failureThreshold: 3      # 3 failures → restart
+    readinessProbe:
+      httpGet:
+        path: /readyz
+        port: 8080
+      initialDelaySeconds: 5
+      periodSeconds: 3
+      failureThreshold: 2      # 2 failures → remove from Service
+    startupProbe:
+      httpGet:
+        path: /healthz
+        port: 8080
+      failureThreshold: 30      # 30 × 5s = 150s startup grace
+      periodSeconds: 5
+```
+
+**Helm test hooks:**
+
+```yaml
+# templates/tests/smoke-test.yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: {{ include "myapp.fullname" . }}-smoke-test
+  annotations:
+    "helm.sh/hook": test
+    "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
+spec:
+  restartPolicy: Never
+  containers:
+  - name: smoke
+    image: curlimages/curl:latest
+    command:
+    - sh
+    - -c
+    - |
+      set -e
+      echo "Testing health endpoint..."
+      curl -sf http://{{ include "myapp.fullname" . }}:{{ .Values.service.port }}/healthz
+      echo "Testing API endpoint..."
+      curl -sf http://{{ include "myapp.fullname" . }}:{{ .Values.service.port }}/api/v1/status | jq .
+      echo "All smoke tests passed"
+```
+
+```bash
+helm test myapp --timeout 120s --logs
+```
+
+**Argo Rollouts pre/post promotion checks:**
+
+```yaml
+strategy:
+  blueGreen:
+    prePromotionAnalysis:
+      templates:
+      - templateName: smoke-tests
+    postPromotionAnalysis:
+      templates:
+      - templateName: production-smoke
+---
+apiVersion: argoproj.io/v1alpha1
+kind: AnalysisTemplate
+metadata:
+  name: smoke-tests
+spec:
+  metrics:
+  - name: smoke
+    provider:
+      job:
+        spec:
+          template:
+            spec:
+              containers:
+              - name: smoke
+                image: myapp-tests:latest
+                command: ["pytest", "tests/smoke/", "-v"]
+              restartPolicy: Never
+```
+
+### Synthetic Monitoring
+
+Run continuous synthetic user journeys against production. Catches issues metrics miss.
+
+**Datadog Synthetics:**
+
+```yaml
+# Terraform
+resource "datadog_synthetics_test" "checkout" {
+  type    = "api"
+  subtype = "multi"
+  name    = "Production Checkout Flow"
+
+  locations = ["aws:us-east-1", "aws:eu-west-1", "aws:ap-southeast-1"]
+
+  options_list {
+    tick_every = 60          # run every 60s
+    retry {
+      count    = 2
+      interval = 30000       # 30s between retries
+    }
+  }
+
+  # Step 1: Add item to cart
+  api_step {
+    name = "Add to cart"
+    request {
+      method = "POST"
+      url    = "https://api.example.com/cart"
+      body   = jsonencode({ sku = "TEST-001", qty = 1 })
+    }
+    assertion {
+      type     = "statusCode"
+      operator = "is"
+      target   = "200"
+    }
+  }
+
+  # Step 2: Checkout
+  api_step {
+    name = "Checkout"
+    request {
+      method = "POST"
+      url    = "https://api.example.com/checkout"
+    }
+    assertion {
+      type     = "statusCode"
+      operator = "is"
+      target   = "200"
+    }
+    assertion {
+      type     = "responseTime"
+      operator = "lessThan"
+      target   = "3000"      # < 3s
+    }
+  }
+
+  alert {
+    message = "Checkout flow failing in production"
+  }
+}
+```
+
+**AWS CloudWatch Synthetics Canaries:**
+
+```python
+# canary_script.py
+from aws_synthetics.selenium import webdriver
+from aws_synthetics.common import synthetics_logger as logger
+
+def main():
+    browser = webdriver.Chrome()
+    browser.get("https://app.example.com/login")
+
+    # Login
+    browser.find_element("id", "username").send_keys("test@example.com")
+    browser.find_element("id", "password").send_keys("{{ssm:/synthetics/password}}")
+    browser.find_element("id", "submit").click()
+
+    # Verify dashboard loads
+    assert "/dashboard" in browser.current_url
+    logger.info("Login and dashboard verified")
+
+    browser.quit()
+
+def handler(event, context):
+    return main()
+```
+
+```bash
+# Create canary via CLI
+aws synthetics create-canary \
+  --name user-login-flow \
+  --code '{"Handler": "canary_script.handler", "S3Bucket": "...", "S3Key": "..."}' \
+  --schedule '{"Expression": "rate(5 minutes)"}' \
+  --artifact-s3-location "s3://canary-artifacts/" \
+  --runtime-version syn-python-selenium-2.1
+```
+
+**Checkly:**
+
+```javascript
+// checkly.config.js
+module.exports = {
+  checks: [
+    {
+      name: "API Health",
+      request: { url: "https://api.example.com/health", method: "GET" },
+      frequency: 5,
+      locations: ["us-east-1", "eu-west-1"],
+      assertions: [
+        { source: "STATUS_CODE", comparison: "EQUALS", target: 200 },
+        { source: "RESPONSE_TIME", comparison: "LESS_THAN", target: 2000 }
+      ]
+    },
+    {
+      name: "Browser Checkout",
+      frequency: 15,
+      checkType: "BROWSER",
+      script: `
+        const { test, expect } = require('@playwright/test');
+        test('checkout flow', async ({ page }) => {
+          await page.goto('https://app.example.com');
+          await page.click('[data-testid="add-to-cart"]');
+          await page.click('[data-testid="checkout"]');
+          await expect(page.locator('.confirmation')).toBeVisible();
+        });
+      `
+    }
+  ]
+}
+```
+
+**Comparison:**
+
+| Feature | Datadog Synthetics | CloudWatch Canaries | Checkly |
+|---------|-------------------|--------------------|---------| 
+| Multi-step API | ✅ Native | ✅ Puppeteer/Selenium | ✅ Playwright |
+| Browser tests | ✅ Chromium | ✅ Puppeteer/Selenium | ✅ Playwright |
+| Alert to PagerDuty | ✅ | ✅ (via CloudWatch alarm) | ✅ |
+| Global locations | 20+ | ~20 | 20+ |
+| IaC (Terraform) | ✅ | ✅ | ✅ (CLI) |
+| Pricing | Per test × location | Per canary run | Per check |
+
+### Canary Analysis (Statistical)
+
+**Flagger automated canary with Prometheus:**
+
+```yaml
+apiVersion: flagger.app/v1beta1
+kind: Canary
+metadata:
+  name: myapp
+spec:
+  targetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: myapp
+  progressDeadlineSeconds: 600
+  analysis:
+    interval: 30s
+    threshold: 5            # max failed checks before rollback
+    maxWeight: 50           # max canary traffic %
+    stepWeight: 10          # traffic increment per step
+    metrics:
+    - name: request-success-rate
+      thresholdRange:
+        min: 99             # >= 99% success rate
+      interval: 1m
+    - name: request-duration
+      thresholdRange:
+        max: 500            # p99 < 500ms
+      interval: 1m
+    webhooks:
+    - name: acceptance-test
+      type: pre-rollout
+      url: http://flagger-loadtester.test/
+      timeout: 30s
+      metadata:
+        type: bash
+        cmd: "curl -sd 'test' http://myapp-canary.test/api/v1/status"
+    - name: load-test
+      type: rollout
+      url: http://flagger-loadtester.test/
+      metadata:
+        cmd: "hey -z 5m -q 10 -c 2 http://myapp-canary.test/"
+```
+
+**Kayenta integration for advanced analysis:**
+
+```yaml
+# Combine Kayenta + Argo Rollouts via webhook
+apiVersion: argoproj.io/v1alpha1
+kind: AnalysisTemplate
+metadata:
+  name: kayenta-analysis
+spec:
+  args:
+  - name: service-name
+  metrics:
+  - name: kayenta-canary
+    interval: 60s
+    count: 5
+    failureLimit: 1
+    successCondition: result >= 95
+    provider:
+      web:
+        url: "http://kayenta:8090/canary"
+        method: POST
+        headers:
+        - key: Content-Type
+          value: application/json
+        body: |
+          {
+            "canaryConfig": {
+              "metricsAccountName": "datadog",
+              "thresholds": { "pass": 95, "marginal": 75 }
+            },
+            "executionRequest": {
+              "scopes": {
+                "default": {
+                  "controlScope": { "scope": "{{args.service-name}}-baseline" },
+                  "experimentScope": { "scope": "{{args.service-name}}-canary" }
+                }
+              }
+            }
+          }
+        jsonPath: "{.result.score.score}"
+```
+
+**Verification level decision matrix:**
+
+| Level | Catches | Latency | Cost | When |
+|-------|---------|---------|------|------|
+| K8s probes | Container crash, OOM, deadlock | Instant | Free | Always |
+| Smoke tests | Broken endpoints, bad config | Minutes | Low | After every deploy |
+| Synthetics | Broken user flows, 3rd-party failures | Minutes | Medium | Continuous in prod |
+| Canary analysis | Latency regression, error rate increase | 10-30 min | Medium | Progressive rollout |
+| Kayenta | Statistically significant regressions | 30-60 min | High | High-stakes deploys |
+
+---
+
+## Step 32: Multi-Region Deployment
+
+Deploy across multiple regions for low latency, high availability, and disaster recovery.
+
+### Active-Active (Multi-Primary)
+
+All regions serve reads and writes simultaneously. Requires conflict resolution.
+
+**Database options:**
+
+| Database | Consistency | Conflict Resolution | Latency |
+|----------|------------|-------------------|---------|
+| CockroachDB | Serializable (Raft) | Automatic (timestamp ordering) | ~100ms cross-region |
+| Google Spanner | External consistency (TrueTime) | Automatic (TrueTime) | ~150ms cross-region |
+| Amazon DynamoDB Global | Eventual | Last-writer-wins / custom | ~100ms replication lag |
+| YugabyteDB | Serializable | Automatic (Raft) | ~100ms cross-region |
+| Cassandra | Tunable (QUORUM) | LWW / custom | ~50ms cross-region |
+
+**CockroachDB multi-region:**
+
+```sql
+-- Configure regions
+ALTER DATABASE mydb SET PRIMARY REGION "us-east1";
+ALTER DATABASE mydb ADD REGION "eu-west1";
+ALTER DATABASE mydb ADD REGION "ap-southeast1";
+
+-- Table-level locality
+ALTER TABLE users SET LOCALITY GLOBAL;        -- replicated to all regions (read-fast)
+ALTER TABLE orders SET LOCALITY REGIONAL BY ROW;  -- row pinned to user's region
+ALTER TABLE sessions SET LOCALITY REGIONAL BY TABLE; -- all data in primary region
+
+-- Pin rows to originating region
+ALTER TABLE orders ADD COLUMN region crdb_internal_region
+  AS (CASE
+    WHEN country IN ('US','CA','MX') THEN 'us-east1'
+    WHEN country IN ('GB','DE','FR') THEN 'eu-west1'
+    ELSE 'ap-southeast1'
+  END) STORED;
+```
+
+**CRDTs for conflict-free state:**
+
+```javascript
+// Using yjs CRDT library for collaborative state
+const Y = require('yjs');
+const { WebsocketProvider } = require('y-websocket');
+
+const doc = new Y.Doc();
+
+// Each region connects to local WebSocket, syncs via CRDT
+const provider = new WebsocketProvider(
+  'wss://ws-us-east.example.com', 'shared-state', doc
+);
+
+const counter = doc.getMap('counters');
+counter.observe(event => {
+  // No conflicts — CRDT merge is deterministic
+  console.log('Counter:', counter.get('page_views'));
+});
+
+// Increment — merges deterministically across regions
+doc.transact(() => {
+  const current = counter.get('page_views') || 0;
+  counter.set('page_views', current + 1);
+});
+```
+
+**Conflict resolution patterns:**
+
+| Pattern | Use Case | Tradeoff |
+|---------|----------|----------|
+| Last-writer-wins (LWW) | Session state, preferences | Data loss on concurrent writes |
+| Merge (CRDT) | Counters, sets, maps | Limited data types, no deletes (some CRDTs) |
+| App-level resolution | Orders, inventory | Complex, but semantically correct |
+| Serializable DB (Spanner/Cockroach) | Financial, inventory | Higher latency, limited to DB-level |
+
+### Active-Passive (Hot Standby)
+
+One region serves traffic. Standby replicates synchronously/asynchronously. Failover when primary fails.
+
+**Architecture:**
+
+```
+                 ┌─────────────────┐
+                 │   Global DNS     │
+                 │  (Route53/GSLB)  │
+                 └────────┬─────────┘
+                          │ health check
+                          ▼
+              ┌───────────────────────┐
+              │    Active Region      │
+              │    (us-east-1)        │
+              │  ┌─────────────────┐  │
+              │  │   App + DB      │  │
+              │  │   (primary)     │  │
+              │  └────────┬────────┘  │
+              └───────────│───────────┘
+                          │ sync replication
+                          ▼
+              ┌───────────────────────┐
+              │   Standby Region      │
+              │   (us-west-2)         │
+              │  ┌─────────────────┐  │
+              │  │   App + DB      │  │
+              │  │   (replica)     │  │
+              │  └─────────────────┘  │
+              └───────────────────────┘
+```
+
+**RPO/RTO targets:**
+
+| Tier | RPO | RTO | Replication | Use Case |
+|------|-----|-----|-------------|----------|
+| Critical (finance) | 0 | < 1 min | Synchronous | Banking, payments |
+| Important (SaaS) | < 5 min | < 15 min | Async + semi-sync | Most production apps |
+| Standard | < 1 hour | < 1 hour | Async | Internal tools, blogs |
+| Archive | < 24 hours | < 4 hours | Backup/restore | Non-critical data |
+
+**Synchronous replication (PostgreSQL):**
+
+```conf
+# postgresql.conf (primary)
+synchronous_standby_names = 'standby1'
+synchronous_commit = on         # or 'remote_apply' for zero RPO
+wal_level = replica
+max_wal_senders = 5
+```
+
+### Failover Automation
+
+**Health check + DNS failover (Route53):**
+
+```hcl
+# Terraform
+resource "aws_route53_health_check" "primary" {
+  fqdn              = "app-primary.example.com"
+  port               = 443
+  type               = "HTTPS"
+  resource_path      = "/healthz"
+  failure_threshold  = 3
+  request_interval   = 10
+  regions            = ["us-east-1", "eu-west-1", "ap-southeast-1"]
+}
+
+resource "aws_route53_record" "app" {
+  zone_id = aws_route53_zone.main.zone_id
+  name    = "app.example.com"
+  type    = "A"
+
+  failover_routing_policy {
+    type = "PRIMARY"
+  }
+
+  set_identifier  = "primary"
+  health_check_id = aws_route53_health_check.primary.id
+
+  alias {
+    name    = aws_lb.primary.dns_name
+    zone_id = aws_lb.primary.zone_id
+  }
+}
+
+resource "aws_route53_record" "app_standby" {
+  zone_id = aws_route53_zone.main.zone_id
+  name    = "app.example.com"
+  type    = "A"
+
+  failover_routing_policy {
+    type = "SECONDARY"
+  }
+
+  set_identifier = "standby"
+
+  alias {
+    name    = aws_lb.standby.dns_name
+    zone_id = aws_lb.standby.zone_id
+  }
+}
+```
+
+**Automated database promotion script:**
+
+```bash
+#!/bin/bash
+# failover.sh — promotes standby DB and updates DNS
+set -euo pipefail
+
+PRIMARY_REGION="${1:-us-east-1}"
+STANDBY_REGION="${2:-us-west-2}"
+DB_IDENTIFIER="${3:-myapp-primary}"
+
+echo "=== Starting failover from ${PRIMARY_REGION} to ${STANDBY_REGION} ==="
+
+# 1. Verify primary is truly down
+echo "Checking primary health..."
+if aws rds describe-db-instances \
+  --db-instance-identifier "${DB_IDENTIFIER}" \
+  --region "${PRIMARY_REGION}" \
+  --query 'DBInstances[0].DBInstanceStatus' \
+  --output text 2>/dev/null | grep -q "available"; then
+  echo "WARNING: Primary still appears available. Aborting."
+  exit 1
+fi
+
+# 2. Promote read replica
+echo "Promoting read replica in ${STANDBY_REGION}..."
+aws rds promote-read-replica \
+  --db-instance-identifier "${DB_IDENTIFIER}-replica" \
+  --region "${STANDBY_REGION}"
+
+# 3. Wait for promotion
+echo "Waiting for promotion to complete..."
+aws rds wait db-instance-available \
+  --db-instance-identifier "${DB_IDENTIFIER}-replica" \
+  --region "${STANDBY_REGION}"
+
+# 4. Update DNS to point to standby
+echo "Updating Route53 records..."
+aws route53 change-resource-record-sets \
+  --hosted-zone-id "${HOSTED_ZONE_ID}" \
+  --change-batch file://dns-failover.json
+
+# 5. Update application config
+echo "Scaling up application in ${STANDBY_REGION}..."
+aws eks update-nodegroup-config \
+  --cluster-name "myapp-${STANDBY_REGION}" \
+  --nodegroup-name "main" \
+  --scaling-config minSize=3,maxSize=10,desiredSize=5 \
+  --region "${STANDBY_REGION}"
+
+echo "=== Failover complete. Verify at https://app.example.com ==="
+```
+
+**Automated failover with external tools:**
+
+```yaml
+# Kubernetes CronJob for health check + failover
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: region-health-check
+spec:
+  schedule: "*/1 * * * *"     # every minute
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          serviceAccountName: failover-sa
+          containers:
+          - name: checker
+            image: region-checker:latest
+            env:
+            - name: REGIONS
+              value: "us-east-1,us-west-2,eu-west-1"
+            - name: FAIL_THRESHOLD
+              value: "3"        # 3 consecutive failures
+            - name: DB_IDENTIFIER
+              value: "myapp-primary"
+            command:
+            - /bin/sh
+            - -c
+            - |
+              for region in $(echo $REGIONS | tr ',' ' '); do
+                health=$(curl -sf --max-time 5 \
+                  "https://app.${region}.example.com/healthz" \
+                  && echo "healthy" || echo "unhealthy")
+                echo "${region}: ${health}"
+              done
+          restartPolicy: OnFailure
+```
+
+### Global Load Balancer Architecture
+
+**CloudFront + Route53 latency-based routing:**
+
+```
+┌─────────────────────────────────────────────┐
+│              CloudFront (Edge)               │
+│  ┌─────────┐ ┌─────────┐ ┌─────────┐       │
+│  │ PoP     │ │ PoP     │ │ PoP     │  ...  │
+│  │ us-east │ │ eu-west │ │ ap-se   │       │
+│  └────┬────┘ └────┬────┘ └────┬────┘       │
+│       │           │           │             │
+└───────│───────────│───────────│─────────────┘
+        │           │           │
+        ▼           ▼           ▼
+  ┌──────────┐ ┌──────────┐ ┌──────────┐
+  │ ALB      │ │ ALB      │ │ ALB      │
+  │ us-east-1│ │ eu-west-1│ │ ap-se-1  │
+  │ (primary)│ │ (primary)│ │ (primary)│
+  └──────────┘ └──────────┘ └──────────┘
+```
+
+```hcl
+# Route53 latency-based routing
+resource "aws_route53_record" "app_us" {
+  zone_id = aws_route53_zone.main.zone_id
+  name    = "api.example.com"
+  type    = "A"
+
+  latency_routing_policy {
+    region = "us-east-1"
+  }
+  set_identifier  = "us-east-1"
+  health_check_id = aws_route53_health_check.us.id
+  alias {
+    name    = aws_lb.us.dns_name
+    zone_id = aws_lb.us.zone_id
+  }
+}
+```
+
+**Global Accelerator for TCP/UDP (non-HTTP):**
+
+```hcl
+resource "aws_globalaccelerator_accelerator" "app" {
+  name            = "myapp-global"
+  ip_address_type = "IPV4"
+  enabled         = true
+
+  attributes {
+    flow_logs_enabled   = true
+    flow_logs_s3_bucket = "ga-logs"
+    flow_logs_s3_prefix = "myapp"
+  }
+}
+
+resource "aws_globalaccelerator_endpoint_group" "us" {
+  listener_arn = aws_globalaccelerator_listener.app.arn
+  endpoint_group_region = "us-east-1"
+  health_check_path     = "/healthz"
+  health_check_port     = 8080
+
+  endpoint_configuration {
+    endpoint_id = aws_lb.us.arn
+    weight      = 100
+  }
+}
+```
+
+**Multi-region decision matrix:**
+
+| Pattern | Latency | Consistency | Cost | Complexity | Best For |
+|---------|---------|-------------|------|------------|----------|
+| Active-active | Lowest (local) | Eventual/tunable | Highest | Very high | Global SaaS, gaming |
+| Active-passive | Higher (cross-region) | Strong (sync) | Medium | Medium | Traditional enterprise |
+| Active-active read + passive write | Low reads, medium writes | Read: local, Write: serial | Medium | High | Read-heavy apps |
+| Global LB + single region | Medium | Strong | Low | Low | Single-market apps |
+
+**When to go multi-region:**
+
+1. Users in 3+ geographic regions (latency > 200ms cross-region)
+2. Regulatory requirements (data sovereignty, GDPR)
+3. SLA requires 99.99%+ availability
+4. Disaster recovery mandate (RTO < 1 hour)
+
+**When NOT to go multi-region:**
+
+1. Single-region user base
+2. Budget < $10K/month for infra
+3. Small team (< 5 engineers) — operational overhead is brutal
+4. Strong consistency requirements with high write throughput (conflicts are hard)
+

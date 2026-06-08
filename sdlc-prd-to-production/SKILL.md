@@ -1,14 +1,14 @@
 ---
 name: sdlc-prd-to-production
-description: "End-to-end workflow: PRD → design doc → implementation → code review → testing → deployment → monitoring → retrospective. Includes Ship/Show/Ask branching, design doc templates, PRD patterns (YC, Amazon Working Backwards), ephemeral environments, DORA 2024 insights, Score spec, AI-augmented development, technical specification templates, GitOps automation, documentation-as-code pipelines, metrics-driven development, production readiness reviews, launch strategies, post-launch monitoring, stakeholder communication templates, product-engineering alignment, continuous discovery habits, product-led growth, technical debt management, engineering metrics, incident management, engineering leadership, developer onboarding, inner source patterns, product analytics, A/B testing at scale, feature flag experimentation, and product metrics frameworks."
-version: 4.5.0
+description: "End-to-end workflow: PRD → design doc → implementation → code review → testing → deployment → monitoring → retrospective. Includes Ship/Show/Ask branching, design doc templates, PRD patterns (YC, Amazon Working Backwards), ephemeral environments, DORA 2024 insights, Score spec, AI-augmented development, technical specification templates, GitOps automation, documentation-as-code pipelines, metrics-driven development, production readiness reviews, launch strategies, post-launch monitoring, stakeholder communication templates, product-engineering alignment, continuous discovery habits, product-led growth, technical debt management, engineering metrics, incident management, engineering leadership, developer onboarding, inner source patterns, product analytics, A/B testing at scale, feature flag experimentation, product metrics frameworks, Shape Up cycles, continuous deployment culture, engineering team building, and product-market fit."
+version: 4.6.0
 author: Hermes Agent
 license: MIT
 platforms: [linux, macos, windows]
 metadata:
   hermes:
-    tags: [sdlc, prd, design-doc, rfc, ship-show-ask, workflow, end-to-end, product-development, yc, amazon-working-backwards, ephemeral-envs, score-spec, dora, ai-augmented, gitops, metrics-driven, docs-as-code, tech-spec, production-readiness, launch-strategy, post-launch, stakeholder-comms, okr, ab-testing, continuous-discovery, plg, product-led-growth, tech-debt, devex, incident-management, pagerduty, engineering-leadership, developer-onboarding, inner-source]
-    tags: [sdlc, prd, design-doc, rfc, ship-show-ask, workflow, end-to-end, product-development, yc, amazon-working-backwards, ephemeral-envs, score-spec, dora, ai-augmented, gitops, metrics-driven, docs-as-code, tech-spec, production-readiness, launch-strategy, post-launch, stakeholder-comms, okr, ab-testing, continuous-discovery, plg, product-led-growth, tech-debt, devex, incident-management, pagerduty, engineering-leadership, developer-onboarding, inner-source, product-analytics, amplitude, mixpanel, posthog, feature-flags, launchdarkly, unleash, statsig, flipt, flagsmith, aarrar, north-star-metric, heart-framework, experiment-platform]
+    tags: [sdlc, prd, design-doc, rfc, ship-show-ask, workflow, end-to-end, product-development, yc, amazon-working-backwards, ephemeral-envs, score-spec, dora, ai-augmented, gitops, metrics-driven, docs-as-code, tech-spec, production-readiness, launch-strategy, post-launch, stakeholder-comms, okr, ab-testing, continuous-discovery, plg, product-led-growth, tech-debt, devex, incident-management, pagerduty, engineering-leadership, developer-onboarding, inner-source, shape-up, continuous-deployment, devops-culture, engineering-teams, product-market-fit]
+    tags: [sdlc, prd, design-doc, rfc, ship-show-ask, workflow, end-to-end, product-development, yc, amazon-working-backwards, ephemeral-envs, score-spec, dora, ai-augmented, gitops, metrics-driven, docs-as-code, tech-spec, production-readiness, launch-strategy, post-launch, stakeholder-comms, okr, ab-testing, continuous-discovery, plg, product-led-growth, tech-debt, devex, incident-management, pagerduty, engineering-leadership, developer-onboarding, inner-source, product-analytics, amplitude, mixpanel, posthog, feature-flags, launchdarkly, unleash, statsig, flipt, flagsmith, aarrar, north-star-metric, heart-framework, experiment-platform, shape-up, continuous-deployment, devops-culture, engineering-teams, product-market-fit]
     related_skills: [sdlc-requirements-engineering, sdlc-architecture-design, sdlc-cicd-pipeline, sdlc-deployment, sdlc-retrospective]
 ---
 
@@ -3272,6 +3272,644 @@ TASK SUCCESS — Can users accomplish what they came to do?
   Weekly: product metrics (North Star, key AARRR metrics, experiment results)
   Monthly: business metrics (revenue, churn, CAC, LTV)
   Quarterly: strategic metrics (HEART scores, market share, NPS trend)
+```
+
+---
+
+## Step 26: Shape Up
+
+### Overview
+Source: Ryan Singer, Basecamp. "Shape Up: Stop Running Sprints and Ship in Six Weeks."
+
+Shape Up is a product development methodology that replaces sprints/standups with fixed 6-week cycles, shaped work with appetite (time budget), and a betting table (no backlog).
+
+### Core Cycle: 6 Weeks Build + 2 Weeks Cooldown
+
+```
+SHAPE UP CYCLE:
+
+  ┌─────────────────────────────────────────────┐
+  │            6-WEEK BUILD CYCLE                │
+  │                                              │
+  │  Shaping → Betting → Building → Presenting  │
+  │  (pre-cycle) (day 1) (weeks 1-6) (week 6)  │
+  └─────────────────────────────────────────────┘
+  ┌─────────────────────────────────────────────┐
+  │           2-WEEK COOLDOWN                    │
+  │                                              │
+  │  Bug fixes, refactoring, exploration,        │
+  │  writing, learning, decompressing            │
+  └─────────────────────────────────────────────┘
+
+# Key rules:
+- Fixed time, variable scope (not fixed scope, variable time)
+- If it doesn't ship in 6 weeks, it doesn't ship (circuit breaker)
+- No sprints, no story points, no velocity tracking
+- Cooldown is NOT for finishing build cycle work
+```
+
+### Appetite (Time Budget Before Solutioning)
+
+```
+APPETITE: Time budget set BEFORE any solution is designed.
+
+# Process:
+1. Stakeholder raises a problem or opportunity
+2. Shaper asks: "How much time is this worth?"
+   - Small batch: 1-2 weeks
+   - Big batch: 6 weeks (full cycle)
+3. Appetite constrains the solution, not the other way around
+4. "We can't afford a perfect solution, but we can afford X weeks"
+
+# Why appetite-first:
+- Prevents gold-plating (solution expands to fill available time)
+- Forces honest tradeoffs ("Is this worth 6 weeks of the company's time?")
+- Aligns cost/benefit before emotional attachment to solutions
+- Appetite is a ceiling, not a target — ship when it's good enough
+
+# Example:
+  Problem: "Users can't find their saved reports"
+  Appetite: 2 weeks
+  Shaped solution: Quick-search with recent + pinned reports
+  NOT shaped: Full reporting dashboard redesign (that's 6 weeks)
+```
+
+### Shaping (Problem + Solution Boundaries)
+
+```
+SHAPING: Define boundaries for a solution before committing to build.
+
+# Three levels of definition:
+  1. Raw idea      — vague, unbounded ("we need better reporting")
+  2. Shaped idea   — bounded, with appetite and rough solution
+  3. Under construction — detailed, being built
+
+# Shaping happens in the "before" phase (previous cooldown or ongoing):
+  - Problem definition: What exactly is broken? For whom? What's the context?
+  - Solution boundaries: What's in/out? What's the rough UI/UX/tech?
+  - Rabbit holes: What's tricky? What assumptions might fail?
+  - No-gos: What are we explicitly NOT doing?
+
+# Shaping output — a "pitch":
+  ┌──────────────────────────────────────────┐
+  │ PITCH TEMPLATE                           │
+  ├──────────────────────────────────────────┤
+  │ Problem: [What's wrong and for whom]     │
+  │ Appetite: [Time budget]                  │
+  │ Solution: [Rough sketch + boundaries]    │
+  │ Rabbit holes: [Risks and unknowns]       │
+  │ No-gos: [Explicit exclusions]            │
+  └──────────────────────────────────────────┘
+
+# Shaping rules:
+- Shape at the right level of abstraction (not too vague, not too concrete)
+- Shaper must NOT be the builder (avoid premature commitment)
+- Fat marker sketches (low-fidelity) to avoid design rabbit holes
+- Betting table evaluates pitches, not features
+```
+
+### Betting Table (No Backlog)
+
+```
+BETTING TABLE: Where pitches get funded. No persistent backlog.
+
+# The anti-backlog:
+- No product backlog. No grooming. No story pointing.
+- Pitches that don't get bet on are DISCARDED (not queued)
+- If the idea is good, someone will re-raise it next cycle
+- This prevents backlog bloat, zombie tickets, and priority debates
+
+# Betting table composition:
+  - CEO / Head of Product
+  - CTO / Head of Engineering
+  - Key stakeholders (as needed)
+
+# Betting process:
+1. Review all pitches from current shaping cycle
+2. Each pitch has appetite + rough solution + risks
+3. Bet on pitches: commit 1-2 teams to each for the 6-week cycle
+4. Leave capacity for "bugs and keep-the-lights-on" work (~15-20%)
+5. Unbeted pitches are discarded (not deferred)
+
+# Betting rules:
+- Once a bet is placed, team has autonomy on HOW to build
+- No mid-cycle scope changes (protect the team's focus)
+- If a bet proves wrong, circuit breaker fires (see below)
+```
+
+### Circuit Breaker (Project Dies If Not Done)
+
+```
+CIRCUIT BREAKER: If the work doesn't ship in 6 weeks, it's dead.
+
+# How it works:
+1. Team commits to shipping within the 6-week cycle
+2. At week 6, the team presents what they shipped
+3. If it's not done → the project is KILLED (not extended, not reshaped)
+4. The team moves on to the next cycle's bets
+
+# Why this works:
+- Forces ruthless scope cutting during the build ("is this essential?")
+- Prevents death marches ("just one more sprint")
+- Creates urgency without overtime (fixed time, variable scope)
+- Dead projects can be re-shaped with fresh eyes in a future cycle
+
+# Scope hammering (related technique):
+  Ask for every feature during build:
+  - "Does this matter for the core concept?"
+  - "Can we ship without this?"
+  - "Is this edge case worth the time?"
+  If not → cut it. The circuit breaker doesn't care about completeness.
+
+# Exceptions:
+- Critical security issues get immediate attention (outside cycle)
+- Infrastructure emergencies are handled by designated on-call
+```
+
+### Hill Chart (Unknowns → Knowns)
+
+```
+HILL CHART: Track progress by moving from unknowns to knowns.
+
+# Concept:
+  Left side of hill  = figuring out WHAT and HOW (unknowns)
+  Top of hill         = the inflection point (plan is clear)
+  Right side of hill  = executing the plan (knowns)
+
+       ╱╲
+      ╱  ╲
+     ╱    ╲
+    ╱      ╲
+  UNKNOWN   KNOWN
+
+# How to use:
+1. Break project into scopes (independent pieces of work)
+2. Place each scope on the hill chart
+3. Update positions weekly (move scopes rightward)
+4. If a scope moves LEFT (regression), that's a red flag
+
+# Anti-patterns:
+- Stuck at the top: "We know what to do but haven't started"
+- Bouncing back and forth: scope is undershaped (needs more shaping)
+- Everything on the right but not shipped: polish trap, cut scope
+
+# Hill chart vs. task boards:
+- Task boards show WHAT needs to be done (binary: done/not done)
+- Hill charts show CONFIDENCE in each scope (spectrum: unknown → known)
+- A task board with 8/10 tasks done can still have massive unknowns
+```
+
+### Scope Hammering
+
+```
+SCOPE HAMMERING: Relentlessly cut scope to fit the appetite.
+
+# Technique: For every feature/requirement, ask:
+1. "What's the core concept this feature supports?"
+2. "Does removing this break the core concept?"
+3. "Can users work around this missing piece?"
+4. "Is this edge case worth X days of our 6-week budget?"
+
+# Scope hammering toolkit:
+  - Cut the feature entirely
+  - Limit to a subset of users (e.g., only English, only desktop)
+  - Manual workaround first (e.g., admin does it, not automated)
+  - Simplify the UI (fewer options, fewer screens)
+  - Remove error handling (fail loudly, fix later)
+  - Defer polish (ugly but functional)
+
+# Example:
+  Feature: "Email notification preferences"
+  Appetite: 3 days
+  Full scope: per-notification-type toggles, quiet hours, digest mode
+  Hammered scope: one toggle (on/off) + manual unsubscribe link
+  Why: digest mode is a separate appetite; quiet hours is an edge case
+```
+
+---
+
+## Step 27: Continuous Deployment Culture
+
+### Overview
+Source: Etsy, Flickr, GitHub engineering blogs. DevOps culture pioneers.
+
+Continuous deployment is a culture, not just a pipeline. Companies that deploy 50-100x/day share common practices: feature flags, observability-first, small batches, and trust in engineers.
+
+### Etsy: Deploy Train
+
+```
+ETSY DEPLOY MODEL (2010s-2020s):
+
+# Deploy train concept:
+- Scheduled deploys happen on a fixed cadence (e.g., every 2 hours)
+- Engineers "board the train" by merging to main branch
+- If your change causes issues, you get off (revert) and board next train
+- No approvals, no release managers — just merge and ship
+
+# "If it moves, graph it" (Etsy motto):
+- Every metric gets a dashboard BEFORE the feature ships
+- Engineers define graphs as part of their PR
+- Monitoring is code: dashboards version-controlled alongside features
+- Alert fatigue addressed by: fewer, better alerts + on-call rotation
+
+# Feature flags at Etsy:
+- Flags are first-class citizens, not afterthoughts
+- Gradual rollout: 1% → 10% → 50% → 100%
+- Every deploy is behind a flag until proven safe
+- Flags allow "dark launching" (code runs but users don't see it)
+
+# Etsy's cultural rules:
+  1. Everyone deploys their own code (no "release engineer" role)
+  2. If you break it, you fix it (blameless postmortem follows)
+  3. Make it easy to deploy → people deploy more → smaller changes
+  4. Small batches = smaller blast radius = faster recovery
+```
+
+### Flickr: 10+ Deploys/Day (Allspaw/Hammond)
+
+```
+FLICKR DEPLOY MODEL (2009 — "10+ Deploys Per Day"):
+
+# The seminal DevOps moment:
+- John Allspaw + Paul Hammond, Velocity 2009
+- Proved that velocity and stability are NOT tradeoffs
+- "Ops enables dev to deploy; dev enables ops to monitor"
+
+# Key practices:
+1. SINGLE BRANCH (trunk-based development)
+   - No long-lived feature branches
+   - Merge to main multiple times per day
+   - Integration happens continuously, not at release time
+
+2. AUTOMATED INFRASTRUCTURE
+   - One-click deploy: engineer pushes button, code goes live
+   - Rollback is equally easy (one-click revert)
+   - No manual server configuration (Chef/Puppet → infrastructure as code)
+
+3. DEVS ON CALL
+   - Developers who write code carry pagers for their services
+   - This creates natural incentive to write observable, reliable code
+   - "You build it, you run it" (Werner Vogels, Amazon)
+
+4. SMALL BATCHES
+   - Each deploy = 1-3 changes (not 50 changes bundled)
+   - If deploy breaks, the cause is obvious (few changes to inspect)
+   - Rollback affects a small surface area
+
+# Culture shift required:
+  FROM: "Ops prevents devs from breaking production"
+  TO:   "Ops empowers devs to deploy safely and frequently"
+  FROM: "Stability requires slow, careful releases"
+  TO:   "Stability requires fast, small, reversible releases"
+```
+
+### GitHub: Ship to Master
+
+```
+GITHUB DEPLOY MODEL (2010s):
+
+# Ship-to-master philosophy:
+- No release branches. Merge to main = deploy to production.
+- Every merge is a deploy candidate.
+- Continuous integration tests gate every merge.
+- Production is always deployable (main branch = source of truth).
+
+# ChatOps:
+- Deploy via chat commands: `.deploy production` in Slack/Hubot
+- Everyone sees who deployed what and when (transparency)
+- Deploy is a conversation, not a ticket in a queue
+- Other engineers can see, question, or block deploys in real-time
+
+# Merge-to-deploy pipeline:
+  1. Engineer opens PR
+  2. CI runs (tests, lint, type check)
+  3. Review by 1+ peer (async, not blocking)
+  4. Merge to main
+  5. Auto-deploy to staging
+  6. Engineer verifies on staging
+  7. Engineer runs `.deploy production` (ChatOps)
+  8. Monitor dashboards + error rates for 15 min
+  9. Done. Repeat 10-50x per day across teams.
+
+# Async culture:
+- No "deployment windows" or "release days"
+- Engineers deploy when ready, not when scheduled
+- On-call handles issues; deployer isn't blocked waiting for approval
+- README/docs prioritized over meetings (written > verbal)
+
+# Enabling conditions:
+  - Comprehensive test suite (>90% coverage on critical paths)
+  - Fast CI (<10 min from push to green)
+  - Feature flags for incremental rollout
+  - Robust rollback (< 5 min to revert any deploy)
+  - Observability: logs, metrics, traces on every service
+```
+
+### Deploy Frequency Comparison
+
+```
+DEPLOY FREQUENCY SPECTRUM:
+
+  Annual release ── Quarterly ── Monthly ── Weekly ── Daily ── Continuous
+  │                  │            │          │         │         │
+  "Big bang"       Waterfall    Scrum     Some      Etsy     GitHub
+  releases        sprints      teams    startups   Flickr    Ideal
+
+# DORA metrics connection:
+  Elite performers: multiple deploys/day, <1hr lead time, <1hr MTTR
+  High performers:  weekly deploys, <1day lead time, <1day MTTR
+  Medium:           monthly, <1week lead time, <1day MTTR
+  Low:              <monthly, >6mo lead time, >1week MTTR
+
+# Path from monthly to daily:
+  1. Automate deployment (remove manual steps)
+  2. Add feature flags (decouple deploy from release)
+  3. Shorten CI (parallel tests, caching, selective runs)
+  4. Trunk-based development (eliminate long-lived branches)
+  5. Put devs on call (they fix what they break)
+  6. Measure DORA metrics (lead time, deploy freq, change fail rate, MTTR)
+```
+
+---
+
+## Step 28: Building Engineering Team 0→50
+
+### CTO vs VP Engineering
+
+```
+CTO vs VP ENGINEERING — different roles, often confused:
+
+CTO (Chief Technology Officer):
+  - VISION: Where is the technology going? What's our technical moat?
+  - Owns: technical strategy, architecture decisions, build vs. buy
+  - External: speaks at conferences, recruits senior talent, shapes brand
+  - Reports to: CEO
+  - Skills: deep technical expertise, strategic thinking, industry knowledge
+  - Typical at: seed → Series B (may evolve into advisory role later)
+
+VP ENGINEERING:
+  - EXECUTION: How do we ship reliably at scale?
+  - Owns: delivery, process, team health, hiring pipeline, eng metrics
+  - External: rarely speaks externally, focused inward on team
+  - Reports to: CTO or CEO
+  - Skills: people management, process design, operational excellence
+  - Typical at: Series A → Series C+ (often replaces or supplements CTO)
+
+# When to have both:
+  - <20 engineers: CTO who also manages (one role)
+  - 20-50 engineers: CTO + VP Eng split (vision + execution)
+  - 50+ engineers: CTO focuses on strategy, VP Eng + Directors manage
+
+# Anti-pattern: "CTO who can't let go of IC work"
+  → Blocks team growth, bottlenecks decisions, burns out
+  → Solution: hire VP Eng, CTO shifts to architecture + strategy
+```
+
+### Phases of Engineering Team Growth
+
+```
+PHASE 1: 0-5 ENGINEERS (Foundation)
+────────────────────────────────────
+- ALL generalists. Everyone codes, deploys, and on-calls.
+- No specialization. No "backend only" or "frontend only" hires.
+- First 10 hires shape culture permanently (hiring bar, code quality, values)
+- Titles are meaningless. Equity is the real incentive.
+- Hire: "Can this person build an entire feature end-to-end?"
+- Avoid: specialists, architects who don't code, managers
+
+PHASE 2: 5-15 ENGINEERS (First Manager)
+────────────────────────────────────
+- First dedicated engineering manager (or CTO splits time)
+- Begin specializing: someone owns infra, someone owns mobile, etc.
+- First on-call rotation (no longer just CTO carrying pager)
+- Introduce lightweight process: weekly syncs, retros, 1:1s
+- Hire 1-2 levels ahead: if you need a senior IC now, hire a staff-level
+- First "culture carriers" who weren't there at founding
+
+PHASE 3: 15-30 ENGINEERS (Team Leads)
+────────────────────────────────────
+- Team leads emerge (tech leads + people management)
+- Teams form around products/features (squads)
+- Introduce: architecture reviews, RFC process, code review standards
+- First dedicated QA, SRE, or platform roles
+- Hiring pipeline needs process (recruiter, structured interviews, scorecards)
+- VP Engineering role is full-time (if CTO was managing before)
+
+PHASE 4: 30-50 ENGINEERS (Directors + Process)
+────────────────────────────────────
+- Directors manage managers (layer of abstraction)
+- Clear career ladder: IC track (junior → senior → staff → principal)
+  and management track (lead → manager → director)
+- Dedicated teams: platform/infra, security, data engineering
+- Process scales: sprint cadence, release trains, cross-team coordination
+- CTO is now primarily strategic (architecture, vision, recruiting)
+```
+
+### Hire 1-2 Levels Ahead
+
+```
+HIRE AHEAD: When scaling fast, hire for where you'll be in 12-18 months.
+
+# Why:
+- Hiring takes 3-6 months (search + close + ramp)
+- If you hire for today's needs, you'll be behind by the time they're productive
+- Senior hires raise the bar for everyone around them
+
+# How:
+  Current need: senior IC → Hire: staff-level IC
+    They'll: mentor juniors, set technical standards, future team lead
+  Current need: tech lead → Hire: engineering manager
+    They'll: run the team, hire more engineers, scale processes
+  Current need: eng manager → Hire: director
+    They'll: build the management layer, define eng org structure
+
+# Exceptions:
+- Don't hire 3+ levels ahead (misaligned incentives, boredom, cost)
+- Don't hire only senior (no pipeline for future leaders)
+- Balance: 60% at level, 30% one level ahead, 10% stretch hires
+
+# First 10 hires shape culture:
+  - Code quality bar (do they review each other's code?)
+  - Speed vs. craft (ship fast or build to last?)
+  - Communication style (async vs. sync, docs vs. meetings)
+  - Values (customer obsession vs. tech elegance vs. team harmony)
+  - These norms persist even after original 10 are gone
+```
+
+### Engineering Team Scaling Checklist
+
+```
+SCALING CHECKLIST:
+
+0-5 Engineers:
+  [ ] Founding team covers: backend, frontend, infra, product sense
+  [ ] Single deploy pipeline (CI/CD from day 1)
+  [ ] On-call: founder/CTO carries pager
+  [ ] Communication: standup (5 min) + weekly retro
+
+5-15 Engineers:
+  [ ] First engineering manager hired (or promoted)
+  [ ] 1:1s established for every engineer
+  [ ] On-call rotation (no more single-person pager)
+  [ ] Code review standard established
+  [ ] Architecture RFC process started
+  [ ] Hiring process documented (interview stages, scorecard)
+
+15-30 Engineers:
+  [ ] Team structure: 2-3 squads (product-aligned)
+  [ ] Team leads identified (tech lead + EM per squad)
+  [ ] Career ladder published (IC + management tracks)
+  [ ] Dedicated SRE/platform team (at least 2 people)
+  [ ] Cross-team coordination: guild meetings, architecture council
+  [ ] Onboarding program (2-week ramp plan for new hires)
+
+30-50 Engineers:
+  [ ] Director-level managers (managing managers)
+  [ ] Engineering-wide OKRs aligned to company OKRs
+  [ ] Internal mobility (engineers can move between teams)
+  [ ] Formal mentorship program
+  [ ] Engineering brand (blog posts, open source, conference talks)
+  [ ] DORA metrics tracked and reviewed quarterly
+```
+
+---
+
+## Step 29: Product-Market Fit
+
+### Overview
+Source: Sean Ellis (GrowthHackers), Rahul Vohra (Superhuman).
+
+Product-market fit (PMF) is when your product satisfies strong market demand. Before PMF, focus on retention and love (not growth). After PMF, pour fuel on the fire.
+
+### Sean Ellis Test
+
+```
+SEAN ELLIS TEST — The simplest PMF measurement:
+
+# The question (survey existing users):
+  "How would you feel if you could no longer use [product]?"
+
+  A) Very disappointed
+  B) Somewhat disappointed
+  C) Not disappointed
+  D) N/A — I no longer use it
+
+# THE THRESHOLD:
+  ≥ 40% respond "Very disappointed" = you have product-market fit
+  < 40% = you don't (yet). Focus on improving the product, not marketing.
+
+# Why 40%?
+- Ellis analyzed hundreds of startups
+- Companies that hit 40%+ "very disappointed" grew sustainably
+- Below 40%, growth tactics (ads, referrals) don't stick — users leak
+
+# How to run the survey:
+1. Survey ACTUAL USERS (not just signups — people who've used it)
+2. Minimum sample size: 40-50 responses (more is better)
+3. Include open-ended follow-up: "What would you use instead?"
+4. Segment by user type (free vs. paid, recent vs. long-term)
+5. Re-run quarterly to track trend
+
+# What to do with results:
+  ≥ 40% "very disappointed" → PMF achieved. Start scaling/growth.
+  25-40% → Close. Double down on what power users love.
+  < 25% → Not there yet. Pivot or fundamentally rethink.
+```
+
+### Superhuman Framework (Rahul Vohra)
+
+```
+SUPERHUMAN PMF FRAMEWORK — 7 Steps to Find and Increase PMF:
+Source: Rahul Vohra, "How Superhuman Built Product-Market Fit"
+
+STEP 1: SURVEY YOUR USERS
+  Ask the Sean Ellis question + these follow-ups:
+  - "What type of people do you think would benefit most?"
+  - "What is the main benefit you receive?"
+  - "How can we improve [product] for you?"
+
+STEP 2: SEGMENT YOUR RESPONDENTS
+  Categorize into 4 buckets:
+  ┌─────────────────────┬──────────────────────┐
+  │ Segment             │ Definition           │
+  ├─────────────────────┼──────────────────────┤
+  │ High-Expectation    │ "Very disappointed"  │
+  │ Customers (HXC)     │ = your target market │
+  ├─────────────────────┼──────────────────────┤
+  │ Supporters          │ "Somewhat            │
+  │                     │  disappointed"        │
+  │                     │ = like it, don't love │
+  ├─────────────────────┼──────────────────────┤
+  │ Neutral             │ "Not disappointed"   │
+  │                     │ = wrong market       │
+  ├─────────────────────┼──────────────────────┤
+  │ Disengaged          │ "No longer use it"   │
+  │                     │ = churned — learn why│
+  └─────────────────────┴──────────────────────┘
+
+STEP 3: FIND YOUR HIGH-EXPECTATION CUSTOMERS (HXC)
+  - HXC are the 40%+ who said "very disappointed"
+  - Profile them: who are they? What do they do? What do they value?
+  - HXC defines your TARGET MARKET (not the market you imagined)
+  - Example: Superthought their market was "busy professionals"
+    but HXC was "startup founders who live in email"
+
+STEP 4: COMPARE WHAT HXC WANT VS. WHAT SUPPORTERS WANT
+  - Ask HXC: "How can we improve for you?"
+  - Ask Supporters: "How can we improve for you?"
+  - Compare the lists:
+    HXC wants: faster keyboard shortcuts, offline mode, integrations
+    Supporters want: mobile app, social features, free tier
+  - BUILD WHAT HXC WANTS (they're your core; supporters are marginal)
+
+STEP 5: DOUBLE DOWN ON WHAT USERS ALREADY LOVE
+  - Look at HXC open-ended responses: "What is the main benefit?"
+  - Find the #1 benefit (most frequently mentioned)
+  - Make that benefit 10x better (don't add new features — amplify strengths)
+  - Example: HXC said "speed" → invest in making it even faster
+    (not adding a mobile app that would slow down the core)
+
+STEP 6: IGNORE WHAT USERS DON'T CARE ABOUT
+  - Features that HXC don't mention → deprioritize
+  - Features that only Supporters want → ignore (wrong audience)
+  - "Not disappointed" users' opinions → don't act on them
+  - Ruthless focus on what HXC loves, not what everyone wants
+
+STEP 7: REPEAT QUARTERLY
+  - Run the survey every quarter
+  - Track: % "very disappointed" (should be increasing)
+  - If % stalls → you've saturated current market OR product is plateauing
+  - Each quarter: re-segment, re-profile HXC, re-prioritize
+
+# Superhuman's actual results:
+  - Started at 22% "very disappointed"
+  - Applied the framework (focused on speed, keyboard shortcuts)
+  - Reached 58% "very disappointed" in 6 months
+  - Then poured fuel on growth (referral program, waitlist)
+```
+
+### PMF Checklist
+
+```
+PMF READINESS CHECKLIST:
+
+Before PMF (focus: product, not growth):
+  [ ] Ran Sean Ellis survey (≥ 40 responses)
+  [ ] Identified HXC (high-expectation customers)
+  [ ] Profiled HXC (who they are, what they value)
+  [ ] Listed what HXC loves about product
+  [ ] Listed what HXC wants improved
+  [ ] Built improvement roadmap focused on HXC needs
+  [ ] Re-ran survey quarterly to track % "very disappointed"
+
+After PMF (focus: growth):
+  [ ] Retention curves flattening (users aren't churning)
+  [ ] Organic growth emerging (referrals, word-of-mouth)
+  [ ] NPS > 50 (strong advocacy)
+  [ ] CAC payback period < 12 months (growth is profitable)
+  [ ] HXC profile informs marketing targeting (ICP defined)
+  [ ] Growth experiments start (referral loops, paid acquisition)
+  [ ] "Pour fuel on fire" — but only after PMF is confirmed
 ```
 
 ---

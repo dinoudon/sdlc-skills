@@ -1,7 +1,7 @@
 ---
 name: sdlc-cicd-pipeline
 description: "CI/CD pipeline design with GitHub Actions and GitLab CI. Docker multi-stage builds, caching, matrix builds, test sharding, security scanning, GitOps, DORA metrics, trunk-based development, anti-patterns. SLSA L3 supply chain, SBOM generation, Green CI/CD, AI in pipelines, GitHub Actions hardening. Serverless CI/CD (SAM/CDK/Serverless Framework), preview environments, multi-platform builds, advanced dependency caching. Pipeline security hardening, build reproducibility, pipeline observability, monorepo CI patterns, pipeline cost optimization. FinOps for CI/CD, Green CI/CD (SCI), pipeline governance. Deployment at scale (Spinnaker/Argo Rollouts/Flagger), multi-environment management, database CI/CD, progressive delivery."
-version: 4.5.0
+version: 4.6.0
 author: Hermes Agent
 license: MIT
 platforms: [linux, macos, windows]
@@ -3617,5 +3617,805 @@ spec:
 - [ ] Traffic mirroring to validate canary with real traffic patterns
 - [ ] Automated rollback triggers on any analysis failure
 - [ ] Alerting configured (Slack/PagerDuty) on rollback events
-- [ ] Post-deployment background analysis runs for 30+ minutes after promotion
+
+## Step 32: SLSA Detailed
+
+### SLSA Levels Requirements
+
+| Level | Build-as-Code | Provenance | Isolation | Non-falsifiable | Ephemeral |
+|-------|--------------|------------|-----------|-----------------|-----------|
+| L1 | Optional | Optional | Optional | Optional | Optional |
+| L2 | Required | Required | Optional | Optional | Optional |
+| L3 | Required | Required | Required | Required | Required |
+| L4 | Required | Required | Required + Hermetic | Required | Required + Two-party review |
+
+**L1** — Provenance exists (may be self-attested). Basic supply chain visibility.
+**L2** — Hosted build platform generates signed provenance. Harder to tamper.
+**L3** — Hardened build platform, isolated from tenants, provenance non-falsifiable.
+**L4** — Hermetic/reproducible builds, two-person review of all changes.
+
+### Provenance Generation
+
+#### GitHub Attestations (native, simplest)
+
+```yaml
+# Requires: GitHub Enterprise or public repo + actions/attest-build-provenance
+name: Build with provenance
+on:
+  push:
+    tags: ['v*']
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write      # OIDC for Sigstore
+      attestations: write  # Store attestation
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build artifact
+        run: make build
+
+      - name: Generate provenance attestation
+        uses: actions/attest-build-provenance@v2
+        with:
+          subject-path: './build/myapp'
+          # Attaches DSSE envelope with SLSA provenance to the artifact
+
+      - name: Verify attestation
+        run: gh attestation verify ./build/myapp --repo ${{ github.repository }}
+```
+
+#### slsa-github-generator (SLSA L3 compliant)
+
+```yaml
+# Delegator pattern — reusable workflow runs in isolated runner
+name: Release
+on:
+  push:
+    tags: ['v*']
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    outputs:
+      hashes: ${{ steps.hash.outputs.hashes }}
+    steps:
+      - uses: actions/checkout@v4
+      - run: make build
+      - id: hash
+        run: |
+          set -euo pipefail
+          echo "hashes=$(sha256sum ./build/myapp | base64 -w0)" >> "$GITHUB_OUTPUT"
+
+  provenance:
+    needs: build
+    permissions:
+      actions: read
+      id-token: write
+      packages: write
+    # slsa-framework/slsa-github-generator/delegator/generic-container
+    # — runs in ephemeral, isolated runner (L3 requirement)
+    uses: slsa-framework/slsa-github-generator/.github/workflows/generator_generic_slsa3.yml@v2.1.0
+    with:
+      base64-subjects: "${{ needs.build.outputs.hashes }}"
+      provenance-name: "myapp.intoto.jsonl"
+      upload-assets: true
+```
+
+#### Tekton Chains (Kubernetes-native)
+
+```yaml
+# Tekton Chains watches TaskRuns, auto-generates provenance
+# Install Chains: kubectl apply -f https://github.com/tektoncd/chains/releases/latest/download/release.yaml
+
+# ConfigMap — configure Chains
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: chains-config
+  namespace: tekton-chains
+data:
+  artifacts.oci.storage: oci          # Store in OCI registry
+  artifacts.oci.format: simplesigning
+  artifacts.taskrun.storage: tekton   # Store in TaskRun
+  artifacts.taskrun.format: in-toto   # SLSA in-toto format
+  transparency.enabled: "true"        # Publish to Rekor
+  signers.x509.fulcio.enabled: "true" # Keyless via Fulcio
+
+# PipelineRun generates task, Chains auto-signs
+apiVersion: tekton.dev/v1
+kind: PipelineRun
+metadata:
+  name: build-and-sign
+  annotations:
+    chains.tekton.dev/transparency-upload: "true"
+```
+
+### in-toto Attestation Format
+
+```json
+{
+  "_type": "https://in-toto.io/Statement/v1",
+  "subject": [
+    {
+      "name": "pkg:github.com/org/myapp@v1.2.3",
+      "digest": { "sha256": "abc123..." }
+    }
+  ],
+  "predicateType": "https://slsa.dev/provenance/v1",
+  "predicate": {
+    "buildDefinition": {
+      "buildType": "https://actions.github.io/buildtypes/workflow/v1",
+      "externalParameters": {
+        "workflow": { "ref": "refs/tags/v1.2.3", "repository": "https://github.com/org/myapp" }
+      },
+      "resolvedDependencies": [
+        { "uri": "pkg:npm/express@4.18.2", "digest": { "sha512": "..." } }
+      ]
+    },
+    "runDetails": {
+      "builder": { "id": "https://github.com/actions/runner" },
+      "metadata": {
+        "invocationId": "https://github.com/org/myapp/actions/runs/12345",
+        "startedOn": "2026-01-15T10:30:00Z",
+        "finishedOn": "2026-01-15T10:32:15Z"
+      }
+    }
+  }
+}
+```
+
+**DSSE envelope** wraps the statement for transport:
+```json
+{
+  "payloadType": "application/vnd.in-toto+json",
+  "payload": "<base64-encoded statement>",
+  "signatures": [{ "keyid": "", "sig": "<base64 signature>" }]
+}
+```
+
+**SLSA checklist:**
+- [ ] L2 minimum: use hosted CI (GitHub Actions) with signed provenance
+- [ ] L3: slsa-github-generator delegator workflow (isolated runner)
+- [ ] Provenance attestation attached to release artifacts
+- [ ] Verify provenance on deploy: `slsa-verifier verify-artifact`
+- [ ] in-toto v1 statement format (predicateType matches SLSA version)
+
+## Step 33: Sigstore
+
+### Architecture Overview
+
+```
+Developer → OIDC Provider (GitHub/GitLab/Google)
+  │
+  ▼
+Fulcio (Certificate Authority)
+  │  Issues short-lived x509 cert bound to OIDC identity
+  ▼
+Cosign (Signing Tool)
+  │  Signs artifact with Fulcio cert, keyless
+  ▼
+Rekor (Transparency Log)
+  │  Immutable Merkle tree log entry, publicly auditable
+  ▼
+Verifier → fetches Rekor entry, verifies signature + identity
+```
+
+### Fulcio — Short-lived Certificate Authority
+
+```bash
+# Fulcio issues ephemeral x509 certs from OIDC identity
+# No long-lived keys — cert expires in ~10 minutes
+# OIDC token includes: issuer (iss), subject (sub), email
+
+# Manual Fulcio flow (cosign handles this automatically):
+# 1. Get OIDC token from GitHub Actions
+TOKEN=$(curl -sLS "${ACTIONS_ID_TOKEN_REQUEST_URL}" \
+  -H "Authorization: bearer ${ACTIONS_ID_TOKEN_REQUEST_TOKEN}" \
+  -H "Accept: application/json; api-version=2.0" \
+  -d "audience=sigstore" | jq -r '.value')
+
+# 2. Fulcio issues cert from token
+# POST https://fulcio.sigstore.dev/api/v1/signingCert
+# Body: { "publicKey": { "content": "<base64>", "algorithm": "ecdsa" }, "signedEmailAddress": "<base64 email>" }
+
+# Cert includes:
+# Subject: https://github.com/org/repo/.github/workflows/build.yml@refs/heads/main
+# Issuer: https://token.actions.githubusercontent.com
+# Extensions: GitHub Actions workflow identity, runner environment
+```
+
+### Rekor — Transparency Log
+
+```bash
+# Rekor stores signed log entries in tamper-proof Merkle tree
+# Each entry: artifact hash + signature + certificate + timestamp
+# Globally auditable — anyone can verify log integrity
+
+# Search Rekor for artifact
+rekor-cli search --sha256 abc123def456
+
+# Get log entry by UUID
+rekor-cli get --uuid <log-entry-uuid>
+
+# Verify Merkle inclusion proof
+rekor-cli verify --uuid <log-entry-uuid>
+
+# Rekor entry structure:
+# {
+#   "body": "<base64 DSSE envelope>",
+#   "integratedTime": 1705312200,
+#   "logID": "...",         // Merkle tree root hash
+#   "logIndex": 12345678,
+#   "verification": {
+#     "inclusionProof": { "hashes": [...], "logIndex": ..., "rootHash": ... }
+#   }
+# }
+```
+
+### Cosign — Keyless Signing
+
+```bash
+# Install cosign
+go install github.com/sigstore/cosign/v2/cmd/cosign@latest
+# or: brew install cosign
+
+# --- Keyless signing (OIDC → Fulcio → sign) ---
+# In GitHub Actions: cosign detects OIDC automatically
+cosign sign --yes \
+  ghcr.io/org/myapp@sha256:abc123...
+
+# Sign a file (not OCI image)
+cosign sign-blob --yes \
+  --output-signature mysig.sig \
+  --output-certificate mycert.pem \
+  ./build/myapp
+
+# Sign with annotations
+cosign sign --yes \
+  -a "commit=${{ github.sha }}" \
+  -a "workflow=build" \
+  ghcr.io/org/myapp:latest
+
+# --- Verification ---
+# Verify OCI image signature (checks Rekor entry)
+cosign verify \
+  --certificate-identity-regexp='.*' \
+  --certificate-oidc-issuer-regexp='.*' \
+  ghcr.io/org/myapp:latest
+
+# Verify with strict identity pinning
+cosign verify \
+  --certificate-identity='https://github.com/org/myapp/.github/workflows/build.yml@refs/tags/v*' \
+  --certificate-oidc-issuer='https://token.actions.githubusercontent.com' \
+  ghcr.io/org/myapp:latest
+
+# Verify blob
+cosign verify-blob \
+  --cert mycert.pem \
+  --signature mysig.sig \
+  --certificate-identity='...' \
+  --certificate-oidc-issuer='...' \
+  ./build/myapp
+
+# --- Store signatures in OCI (default) ---
+# Cosign stores signature as OCI artifact alongside image
+# Manifest: ghcr.io/org/myapp:sha256-abc123.sig
+# No separate signature registry needed
+```
+
+### Full GitHub Actions Sigstore Workflow
+
+```yaml
+name: Build and Sign
+on:
+  push:
+    tags: ['v*']
+
+jobs:
+  build-and-sign:
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write    # OIDC → Fulcio
+      packages: write    # Push to GHCR
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build and push image
+        id: build
+        uses: docker/build-push-action@v5
+        with:
+          push: true
+          tags: ghcr.io/${{ github.repository }}:${{ github.ref_name }}
+
+      - name: Install cosign
+        uses: sigstore/cosign-installer@v3
+
+      - name: Sign image (keyless — OIDC → Fulcio → Rekor)
+        run: |
+          cosign sign --yes \
+            -a "commit=${{ github.sha }}" \
+            -a "version=${{ github.ref_name }}" \
+            ghcr.io/${{ github.repository }}:${{ github.ref_name }}
+
+      - name: Verify signature
+        run: |
+          cosign verify \
+            --certificate-identity='https://github.com/${{ github.repository }}/.github/workflows/build-sign.yml@refs/tags/${{ github.ref_name }}' \
+            --certificate-oidc-issuer='https://token.actions.githubusercontent.com' \
+            ghcr.io/${{ github.repository }}:${{ github.ref_name }}
+
+  generate-provenance:
+    needs: build-and-sign
+    permissions:
+      id-token: write
+      attestations: write
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/attest-build-provenance@v2
+        with:
+          subject-name: ghcr.io/${{ github.repository }}
+          subject-digest: sha256:${{ needs.build-and-sign.outputs.digest }}
+          push-to-registry: true
+```
+
+**Sigstore checklist:**
+- [ ] Cosign installed in CI (sigstore/cosign-installer action)
+- [ ] Keyless signing enabled (`--yes` flag for non-interactive OIDC)
+- [ ] Strict verification: pin `--certificate-identity` and `--certificate-oidc-issuer`
+- [ ] Rekor transparency enabled (default, disables with `--tlog-upload=false`)
+- [ ] Sign both container images and build artifacts (blobs)
+
+## Step 34: Dependency Security
+
+### Dependabot (GitHub Native)
+
+```yaml
+# .github/dependabot.yml
+version: 2
+updates:
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    open-pull-requests-limit: 10
+    reviewers: ["team-security"]
+    labels: ["dependencies", "security"]
+    groups:
+      dev-dependencies:
+        dependency-type: "development"
+        update-types: ["minor", "patch"]
+      production-dependencies:
+        dependency-type: "production"
+        update-types: ["patch"]
+
+  - package-ecosystem: "docker"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    # Keep actions updated (important for SHA-pinned actions)
+
+  - package-ecosystem: "pip"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+
+# Security-only updates (no version bump needed)
+# Dependabot auto-creates PRs for CVEs in dependencies
+# Configured via GitHub UI: Settings → Code security → Dependabot
+```
+
+**Dependabot strengths:** Zero-config for GitHub repos, auto-merges patch updates, security alerts from GitHub Advisory Database, groups related updates.
+
+**Dependabot limits:** No self-hosted GitLab/Bitbucket, limited grouping logic, no PinDigests by default, slower adoption of new ecosystems.
+
+### Renovate (Configurable, 80+ Package Managers)
+
+```jsonc
+// renovate.json — main config
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": [
+    "config:recommended",
+    ":semanticCommits",
+    "group:monorepos",
+    "group:recommended",
+    "workarounds:all"
+  ],
+  "timezone": "America/New_York",
+  "schedule": ["before 6am on monday"],
+  "prConcurrentLimit": 10,
+  "packageRules": [
+    {
+      "matchUpdateTypes": ["patch"],
+      "automerge": true,
+      "automergeType": "pr",
+      "automergeStrategy": "squash"
+    },
+    {
+      "matchDepTypes": ["devDependencies"],
+      "matchUpdateTypes": ["minor", "patch"],
+      "groupName": "dev dependencies (non-major)",
+      "automerge": true
+    },
+    {
+      "matchPackagePatterns": ["^@types/"],
+      "groupName": "TypeScript type definitions",
+      "automerge": true
+    },
+    {
+      "matchManagers": ["dockerfile"],
+      "pinDigests": true,
+      "groupName": "Docker base images"
+    }
+  ],
+  "docker-compose": {
+    "pinDigests": true
+  },
+  "vulnerabilityAlerts": {
+    "enabled": true,
+    "labels": ["security"]
+  },
+  "pinDigests": true
+}
+```
+
+**Renovate strengths:** Self-hosted (or Mend-hosted), 80+ managers (npm/pip/go/docker/terraform/helm/k8s/ansible...), rich grouping, pinDigests, automerge, regex manager for custom deps, JSON5 config with inheritance.
+
+### Socket.dev (Behavior-based Detection)
+
+```yaml
+# Socket detects malicious packages by analyzing behavior, not just CVEs
+# Catches: typosquatting, dependency confusion, install scripts, network calls, env exfil
+
+# GitHub App install → auto PR review comments
+# npm/yarn integration via socket.yml
+
+# socket.yml
+socket:
+  organizationId: "org-abc123"
+  enabledFeatures:
+    - dependency-risk
+    - supply-chain-protection
+
+# In CI — block install of risky packages
+# Use Socket API to gate merges:
+# POST https://api.socket.dev/v0/scan
+```
+
+**Socket.dev catches (examples):**
+- Package with `postinstall` script accessing `~/.ssh/`
+- Typosquat: `lod-ash` vs `lodash`
+- Dependency confusion: internal package name in public registry
+- New package with zero history pulling network data at install
+
+### Snyk (SCA + SAST + IaC)
+
+```bash
+# SCA — Software Composition Analysis
+snyk test                       # Scan open-source deps for vulnerabilities
+snyk monitor                    # Continuous monitoring, alert on new CVEs
+snyk test --severity-threshold=high  # Only high/critical
+
+# SAST — Static Application Security Testing
+snyk code test                  # Scan source code for security issues
+
+# IaC — Infrastructure as Code scanning
+snyk iac test ./terraform/      # Scan Terraform/CloudFormation/k8s manifests
+snyk iac test ./k8s/            # Misconfigurations (no resource limits, root user, etc.)
+
+# Container scanning
+snyk container test myapp:latest
+snyk container test --file=Dockerfile myapp:latest  # Context-aware
+```
+
+```yaml
+# GitHub Actions — Snyk integration
+- uses: snyk/actions/node@master
+  env:
+    SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+  with:
+    command: test
+    args: --severity-threshold=high --fail-on=upgradable
+
+- uses: snyk/actions/iac@master
+  env:
+    SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+  with:
+    args: --severity-threshold=high
+```
+
+### Comparison Matrix
+
+| Feature | Dependabot | Renovate | Socket.dev | Snyk |
+|---------|-----------|----------|------------|------|
+| Primary function | Auto-update deps | Auto-update deps | Malicious pkg detection | SCA + SAST + IaC |
+| Platforms | GitHub only | GitHub/GitLab/Bitbucket/self-hosted | GitHub App + API | GitHub/GitLab/Bitbucket + CLI |
+| Package managers | 15 ecosystems | 80+ managers | npm/pip/Go/Maven (growing) | 10+ languages + containers |
+| CVE scanning | Via GH Advisory DB | Via OSV/GitHub | N/A (behavior focus) | Snyk VulnDB (proprietary) |
+| Malicious detection | ❌ | ❌ | ✅ Behavior-based | Partial (heuristic) |
+| Auto-PR creation | ✅ | ✅ | ❌ (review comments) | ❌ (PR checks) |
+| Automerge | Limited (patch only) | ✅ Full control | N/A | N/A |
+| Digest pinning | ❌ | ✅ | N/A | N/A |
+| Grouping | Basic | Advanced (regex, rules) | N/A | N/A |
+| Self-hosted | ❌ | ✅ (Renovate OSS) | ❌ | ✅ (Snyk Broker) |
+| SAST | ❌ | ❌ | ❌ | ✅ |
+| IaC scanning | ❌ | ❌ | ❌ | ✅ |
+| Cost | Free (GitHub) | Free (OSS) / Mend paid | Free tier + paid | Free tier + paid |
+
+**Recommended stack:**
+- **Renovate** for dependency updates (superior config + pinDigests)
+- **Socket.dev** for malicious package detection (complements CVE scanning)
+- **Snyk** for vulnerability scanning (SCA + SAST + IaC in one tool)
+- **Dependabot** if GitHub-only and want zero-config (backup to Renovate)
+
+**Dependency security checklist:**
+- [ ] Automated dependency updates enabled (Dependabot or Renovate)
+- [ ] Digest pinning enabled (Renovate `pinDigests: true`)
+- [ ] Security-only alerts configured (Snyk or GitHub Security tab)
+- [ ] Malicious package detection active (Socket.dev)
+- [ ] Auto-merge for patch updates of dev dependencies
+- [ ] Vulnerability PRs merge within SLA (critical: 24h, high: 7d, medium: 30d)
+
+## Step 35: GitHub Actions Hardening
+
+### OIDC for Cloud Auth (No Stored Credentials)
+
+```yaml
+# AWS — OIDC provider (no AWS_ACCESS_KEY_ID stored in secrets)
+# Setup: aws iam create-open-id-connect-provider
+#   --url https://token.actions.githubusercontent.com
+#   --client-id-list sts.amazonaws.com
+#   --thumbprint-list 6938fd4d98bab03faadb97b34396831e3780aea1
+
+permissions:
+  id-token: write
+  contents: read
+
+steps:
+  - name: Configure AWS credentials
+    uses: aws-actions/configure-aws-credentials@v4
+    with:
+      role-to-assume: arn:aws:iam::123456789012:role/github-actions-deploy
+      aws-region: us-east-1
+      # Role trust policy restricts to specific repo + branch:
+      # "StringEquals": {"token.actions.githubusercontent.com:aud": "sts.amazonaws.com"}
+      # "StringLike": {"token.actions.githubusercontent.com:sub": "repo:org/repo:ref:refs/heads/main"}
+
+  - name: Deploy to S3
+    run: aws s3 sync ./dist s3://my-bucket/
+```
+
+```yaml
+# GCP — Workload Identity Federation
+permissions:
+  id-token: write
+  contents: read
+
+steps:
+  - uses: google-github-actions/auth@v2
+    with:
+      workload_identity_provider: projects/123/locations/global/workloadIdentityPools/github/providers/github
+      service_account: deploy@my-project.iam.gserviceaccount.com
+      # No JSON key file — OIDC token exchanged for GCP token
+
+  - uses: google-github-actions/deploy-cloudrun@v2
+    with:
+      service: myapp
+      image: gcr.io/my-project/myapp:latest
+```
+
+```yaml
+# Azure — Federated credentials
+permissions:
+  id-token: write
+  contents: read
+
+steps:
+  - uses: azure/login@v2
+    with:
+      client-id: ${{ secrets.AZURE_CLIENT_ID }}
+      tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+      subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+      # Federated credential: subject = repo:org/repo:ref:refs/heads/main
+
+  - run: az webapp deploy --name myapp --src-path ./dist.zip
+```
+
+**OIDC trust policy best practices:**
+- Pin to specific repo AND branch/tag (not wildcard)
+- Use `ref:refs/heads/main` for deploy, `ref:refs/tags/v*` for release
+- Separate roles per environment (staging vs production)
+- Short session duration (`MaxSessionDuration: 3600`)
+
+### SHA-Pinned Actions (pinact Tool)
+
+```bash
+# Pin all actions to full SHA (prevents tag mutation attacks)
+# pinact — official tool from SIGSTORE/sigstore
+go install github.com/sigstore/pinact/cmd/pinact@latest
+
+# Pin actions in workflow files
+pinact run .github/workflows/*.yml
+# Transforms: actions/checkout@v4 → actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4
+
+# Verify pinned actions (CI check)
+pinact run --check .github/workflows/*.yml
+```
+
+```yaml
+# BEFORE (vulnerable — tag can be force-pushed)
+- uses: actions/checkout@v4
+- uses: docker/build-push-action@v5
+
+# AFTER (SHA-pinned — immutable)
+- uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+- uses: docker/build-push-action@14487ce63c7a62a4a324b0bfb37086795e31c6c1 # v6.12.0
+```
+
+```yaml
+# CI gate — fail if actions not SHA-pinned
+name: Pin Check
+on: [pull_request]
+jobs:
+  pinact:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: sigstore/cosign-installer@v3
+      - run: go install github.com/sigstore/pinact/cmd/pinact@latest
+      - run: pinact run --check .github/workflows/*.yml
+```
+
+### CODEOWNERS for Workflow Protection
+
+```bash
+# .github/CODEOWNERS
+# Require security team review for workflow changes
+/.github/workflows/    @org/platform-security
+/.github/dependabot.yml  @org/platform-security
+/.github/CODEOWNERS    @org/platform-security
+
+# Require infra team for Terraform/deploy
+/terraform/            @org/infrastructure
+/deploy/               @org/infrastructure
+```
+
+```yaml
+# Branch protection: require CODEOWNERS review
+# Settings → Branches → main → Require review from Code Owners ✅
+# + Require pull request reviews (min 1-2 approvals)
+# + Dismiss stale reviews on new pushes
+# + Require status checks to pass before merge
+```
+
+### Environment Protection Rules
+
+```yaml
+# GitHub Environments: Settings → Environments
+# Staging: auto-deploy on main merge
+# Production: gated by reviewers + wait timer + branch filter
+
+# In workflow, reference environment:
+jobs:
+  deploy-staging:
+    environment:
+      name: staging
+      url: https://staging.myapp.com
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: ./deploy.sh staging
+
+  deploy-production:
+    needs: deploy-staging
+    environment:
+      name: production
+      url: https://myapp.com
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: ./deploy.sh production
+```
+
+**Environment configuration (UI):**
+
+| Setting | Staging | Production |
+|---------|---------|------------|
+| Required reviewers | 0 | 2 (platform-team) |
+| Wait timer | 0 min | 15 min |
+| Deployment branches | `main` only | `main` + `v*` tags |
+| Custom protection rules | None | Branch policy + reviewers |
+| Variables | `ENV=staging` | `ENV=production` |
+| Secrets | Staging credentials | Production credentials |
+
+**Environment secrets scoping:**
+```yaml
+# Secrets scoped to environment (not repo-wide)
+# deploy-production only has prod AWS role, staging has staging role
+# Limits blast radius — compromised staging secret ≠ production access
+```
+
+### Least Privilege Permissions
+
+```yaml
+# TOP-LEVEL — restrict default for all jobs
+# Always set restrictive defaults, elevate per-job
+permissions: {}  # No permissions by default (empty)
+
+jobs:
+  lint:
+    permissions:
+      contents: read    # Only what's needed
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: npm run lint
+
+  test:
+    permissions:
+      contents: read
+      packages: read    # Pull private packages
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: npm test
+
+  deploy:
+    permissions:
+      contents: read
+      id-token: write   # OIDC for cloud auth
+      deployments: write
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: ./deploy.sh
+
+  publish:
+    permissions:
+      contents: read
+      packages: write   # Push to GHCR
+      id-token: write   # Sigstore signing
+      attestations: write
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker build -t ghcr.io/org/myapp:latest .
+      - run: docker push ghcr.io/org/myapp:latest
+```
+
+**Permission reference:**
+
+| Permission | Read | Write | Use case |
+|-----------|------|-------|----------|
+| `contents` | checkout | create releases | Always read, rarely write |
+| `packages` | pull images | push images | Container registry |
+| `id-token` | N/A | OIDC token | Cloud auth, signing |
+| `deployments` | read status | create deployments | CD workflows |
+| `issues` | read | create/close | Bot issues |
+| `pull-requests` | read | write comments | Bot PR reviews |
+| `attestations` | N/A | write | Build provenance |
+| `security-events` | read | write | CodeQL upload |
+| `actions` | read | write | Workflow dispatch |
+
+**Hardening checklist:**
+- [ ] Top-level `permissions: {}` (restrictive default, elevate per-job)
+- [ ] OIDC for AWS/GCP/Azure (no long-lived credentials in secrets)
+- [ ] All actions SHA-pinned (pinact in CI gate)
+- [ ] CODEOWNERS protects `/.github/workflows/` (security team review)
+- [ ] Environment protection: reviewers + wait timer for production
+- [ ] Environment-scoped secrets (not repo-wide)
+- [ ] Deployment branches restricted (main + tags only for prod)
+- [ ] Fork PRs: no secret access, `pull_request_target` used cautiously
+- [ ] Dependabot/Renovate configured for workflow action updates
 - [ ] Rollout history retained (revisionHistoryLimit >= 3) for quick rollback
