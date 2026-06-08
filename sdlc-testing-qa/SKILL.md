@@ -1,19 +1,19 @@
 ---
 name: sdlc-testing-qa
-description: "Test pyramid (unit/integration/e2e), TDD/BDD, property-based testing, mutation testing, performance testing (k6/Locust), security testing (SAST/DAST), accessibility testing. Includes Google testing culture."
-version: 1.1.0
+description: "Test pyramid (unit/integration/e2e), TDD/BDD, property-based testing, mutation testing, contract testing, chaos engineering, performance testing (k6/Locust), security testing (SAST/DAST), accessibility testing. Includes Google testing culture and test architecture patterns."
+version: 2.0.0
 author: Hermes Agent
 license: MIT
 platforms: [linux, macos, windows]
 metadata:
   hermes:
-    tags: [sdlc, testing, tdd, bdd, playwright, pytest, k6, security, sast, dast, accessibility, google]
+    tags: [sdlc, testing, tdd, bdd, playwright, pytest, k6, security, sast, dast, accessibility, google, contract-testing, chaos-engineering, mutation-testing, property-based]
     related_skills: [sdlc-cicd-pipeline, sdlc-deployment, test-driven-development, security-review-owasp]
 ---
 
 # Testing & Quality Assurance
 
-Test pyramid, TDD/BDD, property-based testing, mutation testing, performance, security, accessibility testing. Includes Google testing culture and SV best practices.
+Test pyramid, TDD/BDD, property-based testing, mutation testing, contract testing, chaos engineering, performance, security, accessibility testing. Includes Google testing culture and test architecture patterns.
 
 ## When to Use
 
@@ -25,19 +25,46 @@ Trigger when user:
 - Tests accessibility compliance
 - Measures test quality
 
-## Step 1: Test Pyramid
+## Step 1: Test Pyramid / Trophy
 
-### Structure (bottom-up)
+### Testing Trophy (Kent C. Dodds — 2019+)
+Source: https://kentcdodds.com/blog/the-testing-trophy-and-testing-classifications
+
+Replaces traditional "testing pyramid" with emphasis on integration tests:
+
 ```
-        /  E2E  \        ~10% — slow, brittle
-       /---------\
-      / Integration\     ~20% — module boundaries
-     /---------------\
-    /     Unit Tests   \ ~70% — fast, isolated
-   /---------------------\
+        /  E2E  \\        few, expensive, critical flows only
+       /---------\\
+      / Integration\\     BULK of tests — test components together
+     /---------------\\
+    /     Unit Tests   \\ many, fast — only for complex logic
+   /---------------------\\
+       Static Analysis    cheapest — catches most bugs
 ```
 
-### Unit Tests (pytest)
+**Key principles:**
+- "Write tests. Not too many. Mostly integration."
+- "The more your tests resemble the way your software is used, the more confidence they give you."
+- Test behavior, not implementation details
+- Avoid testing internals (state, lifecycle methods); test what user sees/does
+
+### Test Size Classification (Google)
+| Size | Runtime | Resources |
+|------|---------|-----------|
+| Small | < 1 min | 1 machine, no network |
+| Medium | < 5 min | 1 machine, localhost |
+| Large | Any | Multiple machines |
+
+### Key Principles (from Google)
+- **Flaky tests are worse than no tests** — they erode trust
+- **Hermetic tests** — no external dependencies, deterministic
+- **Don't mock what you don't own** — wrap external APIs
+- **Hyrum's Law** — all observable behaviors become contracts
+- **Scout rule** — leave code cleaner than you found it
+
+## Step 2: Unit Tests
+
+### pytest
 ```python
 def test_calculate_discount():
     assert calculate_discount(100, 0.1) == 90.0
@@ -50,7 +77,24 @@ def test_calculate_discount_parametrized(price, discount, expected):
     assert calculate_discount(price, discount) == expected
 ```
 
-### Integration Tests (pytest + testcontainers)
+### Vitest (JavaScript/TypeScript)
+```typescript
+import { describe, it, expect } from 'vitest';
+
+describe('calculateDiscount', () => {
+  it('applies percentage discount', () => {
+    expect(calculateDiscount(100, 0.1)).toBe(90.0);
+  });
+
+  it('handles zero discount', () => {
+    expect(calculateDiscount(100, 0)).toBe(100.0);
+  });
+});
+```
+
+## Step 3: Integration Tests
+
+### pytest + testcontainers
 ```python
 from testcontainers.postgres import PostgresContainer
 
@@ -65,7 +109,43 @@ def test_user_creation(postgres):
     assert user.email == "test@example.com"
 ```
 
-### E2E Tests (Playwright)
+### Testing Library (JavaScript)
+Source: https://testing-library.com/docs/guiding-principles
+
+```typescript
+import { render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+
+test('user can submit form', async () => {
+  render(<LoginForm />);
+  await userEvent.type(screen.getByLabelText(/email/i), 'user@example.com');
+  await userEvent.type(screen.getByLabelText(/password/i), 'password123');
+  await userEvent.click(screen.getByRole('button', { name: /submit/i }));
+  expect(screen.getByText(/welcome/i)).toBeInTheDocument();
+});
+```
+
+### MSW (Mock Service Worker) for API mocking
+Source: https://mswjs.io/
+
+```typescript
+import { http, HttpResponse } from 'msw';
+import { setupServer } from 'msw/node';
+
+const server = setupServer(
+  http.get('/api/users', () => {
+    return HttpResponse.json([{ id: 1, name: 'Alice' }]);
+  })
+);
+
+beforeAll(() => server.listen());
+afterEach(() => server.resetHandlers());
+afterAll(() => server.close());
+```
+
+## Step 4: E2E Tests
+
+### Playwright
 ```typescript
 import { test, expect } from '@playwright/test';
 
@@ -84,7 +164,7 @@ npx playwright test --shard=1/3
 npx playwright codegen http://localhost:3000  # Record tests
 ```
 
-## Step 2: TDD
+## Step 5: TDD
 
 ### Cycle: Red → Green → Refactor
 ```python
@@ -98,44 +178,26 @@ def romanize(n):
 
 # Step 3: REFACTOR — improve while tests pass
 def romanize(n):
-    vals = [(1000,"M"),(900,"CM"),(500,"D"),(400,"CD"),
-            (100,"C"),(90,"XC"),(50,"L"),(40,"XL"),
-            (10,"X"),(9,"IX"),(5,"V"),(4,"IV"),(1,"I")]
+    numerals = [(1000, "M"), (900, "CM"), (500, "D"), (400, "CD"),
+                (100, "C"), (90, "XC"), (50, "L"), (40, "XL"),
+                (10, "X"), (9, "IX"), (5, "V"), (4, "IV"), (1, "I")]
     result = ""
-    for v, s in vals:
-        while n >= v:
-            result += s
-            n -= v
+    for value, numeral in numerals:
+        while n >= value:
+            result += numeral
+            n -= value
     return result
 ```
 
-### TDD Anti-Pattern: Horizontal Slices
-**DO NOT** write all tests first, then all implementation.
-**DO** vertical slices: one test → one implementation → repeat.
-
-```
-WRONG: test1, test2, test3 → impl1, impl2, impl3
-RIGHT: test1 → impl1 → test2 → impl2 → test3 → impl3
-```
-
-## Step 3: BDD
-
-### Gherkin Feature File
-```gherkin
-Feature: Shopping Cart
-  Scenario: Add item to cart
-    Given the cart is empty
-    When I add a "Widget" with price 25.00
-    Then the cart total should be 25.00
-```
-
-### pytest-bdd (Python)
+### BDD (pytest-bdd)
 ```python
-from pytest_bdd import scenarios, given, when, then, parsers
+from pytest_bdd import scenario, given, when, then, parsers
 
-scenarios('../features/cart.feature')
+@scenario('cart.feature', 'Add item to cart')
+def test_add_to_cart():
+    pass
 
-@given('the cart is empty')
+@given('an empty cart')
 def empty_cart(cart):
     cart.clear()
 
@@ -144,9 +206,11 @@ def add_item(cart, item, price):
     cart.add(item, price)
 ```
 
-## Step 4: Property-Based Testing
+## Step 6: Property-Based Testing
 
 ### Hypothesis (Python)
+Source: https://hypothesis.works/
+
 ```python
 from hypothesis import given, strategies as st
 
@@ -157,9 +221,63 @@ def test_sort_is_idempotent(xs):
 @given(st.integers(min_value=0, max_value=1000))
 def test_roundtrip(n):
     assert parse_roman(romanize(n)) == n
+
+# Ghostwriter — auto-generate test stubs from type hints
+# hypothesis write my_module.my_function
 ```
 
-## Step 5: Mutation Testing
+### fast-check (JavaScript/TypeScript)
+Source: https://fast-check.dev/
+
+```typescript
+import fc from 'fast-check';
+
+fc.assert(
+  fc.property(fc.array(fc.integer()), arr =>
+    JSON.parse(JSON.stringify(arr)).length === arr.length
+  )
+);
+
+// Model-based testing
+fc.assert(
+  fc.property(fc.commands([addCmd, removeCmd, sizeCmd], { size: '+1' }), cmds => {
+    const model = { size: 0 };
+    const impl = new Set();
+    fc.modelRun(() => ({ model, real: impl }), cmds);
+  })
+);
+```
+
+**2024-2026 developments:**
+- Hypothesis "ghostwriter" auto-generates test code from type hints
+- fast-check added `@fast-check/vitest` and `@fast-check/ava` helpers
+
+## Step 7: Mutation Testing
+
+### Pitest (Java)
+Source: https://pitest.org/
+
+```xml
+<plugin>
+  <groupId>org.pitest</groupId>
+  <artifactId>pitest-maven</artifactId>
+  <executions>
+    <execution><goals><goal>mutationCoverage</goal></goals></execution>
+  </executions>
+</plugin>
+```
+
+### Stryker (JavaScript/TypeScript)
+Source: https://stryker-mutator.io/
+
+```json
+// stryker.config.json
+{
+  "mutate": ["src/**/*.ts"],
+  "testRunner": "vitest",
+  "coverageAnalysis": "perTest"
+}
+```
 
 ### mutmut (Python)
 ```bash
@@ -172,7 +290,90 @@ mutmut results
 - **70-90%** — good
 - **< 70%** — tests are weak
 
-## Step 6: Performance Testing
+## Step 8: Contract Testing
+
+### Pact
+Source: https://docs.pact.io/
+
+Verifies that API provider and consumer agree on request/response shape without running both services together.
+
+**Workflow:**
+1. Consumer writes expectations (pact file)
+2. Provider verifies against pact file
+3. Pact Broker stores/shares contracts
+
+```typescript
+// Consumer test (Pact JS)
+const interaction = {
+  state: 'a user exists',
+  uponReceiving: 'a request for user',
+  withRequest: { method: 'GET', path: '/users/1' },
+  willRespondWith: {
+    status: 200,
+    body: { id: 1, name: 'Alice' }
+  }
+};
+```
+
+**2024-2026 developments:**
+- Pact v4 spec adds synchronous/async messages, binary content
+- Pactflow (commercial) — managed Pact Broker with can-i-deploy checks
+- Bi-directional contract testing (provider spec + consumer pact matched)
+
+## Step 9: Chaos Engineering
+
+### Principles
+Source: https://principlesofchaos.org/
+
+1. Build hypothesis around steady state behavior
+2. Introduce real-world events (server failures, network partitions, resource exhaustion)
+3. Run experiments in production (or staging with prod-like traffic)
+4. Automate experiments to run continuously
+5. Minimize blast radius
+
+### Netflix Chaos Monkey
+Source: https://netflix.github.io/chaosmonkey/
+
+- Terminates random VM instances in production during business hours
+- Part of Netflix Simian Army
+- Integrates with Spinnaker
+
+### Gremlin (Commercial)
+Source: https://www.gremlin.com/
+
+- Attack types: CPU, memory, disk, network (latency, packet loss), process kill, shutdown
+- Free tier available for small teams
+
+### AWS Fault Injection Service (FIS)
+Source: https://aws.amazon.com/fis/
+
+```json
+{
+  "description": "Terminate random EC2 instances",
+  "targets": {
+    "myInstances": {
+      "resourceType": "aws:ec2:instance",
+      "selectionMode": "COUNT(1)"
+    }
+  },
+  "actions": {
+    "terminate": {
+      "actionId": "aws:ec2:terminate-instances",
+      "parameters": {},
+      "targets": ["myInstances"]
+    }
+  }
+}
+```
+
+### LitmusChaos (CNCF Graduated)
+Source: https://litmuschaos.io/
+
+- Kubernetes-native chaos engineering
+- ChaosHub with pre-built experiments
+- Supports AWS, GCP, Azure
+
+## Step 10: Performance Testing
 
 ### k6 (Grafana)
 ```javascript
@@ -198,11 +399,6 @@ export default function () {
 }
 ```
 
-```bash
-k6 run script.js
-k6 run --vus 50 --duration 30s script.js
-```
-
 ### Locust (Python)
 ```python
 from locust import HttpUser, task, between
@@ -215,7 +411,7 @@ class WebsiteUser(HttpUser):
         self.client.get("/")
 ```
 
-## Step 7: Security Testing
+## Step 11: Security Testing
 
 ### SAST (Static)
 ```bash
@@ -242,7 +438,7 @@ trufflehog git file://./ --only-verified
 gitleaks detect --source . -v
 ```
 
-## Step 8: Accessibility Testing
+## Step 12: Accessibility Testing
 
 ### axe-core + Playwright
 ```typescript
@@ -262,7 +458,44 @@ test('no a11y violations', async ({ page }) => {
 npx lhci autorun
 ```
 
-## Step 9: Test Coverage
+## Step 13: Test Architecture — Ports & Adapters
+
+Source: "Growing Object-Oriented Software, Guided by Tests" (Freeman & Pryce)
+
+**Pattern:** Hexagonal architecture makes code testable by isolating domain logic from infrastructure.
+
+```python
+# Port (interface)
+class UserRepository(Protocol):
+    def get_user(self, user_id: str) -> User: ...
+    def save_user(self, user: User) -> None: ...
+
+# Fake adapter for tests
+class InMemoryUserRepository:
+    def __init__(self):
+        self.users = {}
+    def get_user(self, user_id: str) -> User:
+        return self.users[user_id]
+    def save_user(self, user: User) -> None:
+        self.users[user.id] = user
+
+# Real adapter
+class PostgresUserRepository:
+    def __init__(self, db_session): ...
+    # actual SQL
+```
+
+**Test strategy:**
+- Domain logic tested via unit tests (pure functions, no I/O)
+- Tests use fake/stub adapters — no real DB/network in unit tests
+- Integration tests verify real adapters against real infrastructure
+- Testcontainers for real infrastructure in CI
+
+**Humble Object pattern** (Martin Fowler):
+- Thin adapter layer, logic in testable core
+- Source: https://martinfowler.com/bliki/HumbleObject.html
+
+## Step 14: Test Coverage
 
 ```bash
 # Python
@@ -277,34 +510,7 @@ go test -coverprofile=coverage.out ./...
 
 Targets: Statements > 80%, Branches > 75%, Functions > 80%.
 
-## Step 10: Google Testing Culture
-
-### Testing Trophy (not Pyramid)
-```
-        /  E2E  \        (few, expensive)
-       /---------\
-      / Integration\     (most tests here)
-     /---------------\
-    /     Unit Tests   \ (many, fast)
-   /---------------------\
-       Static Analysis    (lint, types)
-```
-
-### Test Size Classification
-| Size | Runtime | Resources |
-|------|---------|-----------|
-| Small | < 1 min | 1 machine, no network |
-| Medium | < 5 min | 1 machine, localhost |
-| Large | Any | Multiple machines |
-
-### Key Principles (from Google)
-- **Flaky tests are worse than no tests** — they erode trust
-- **Hermetic tests** — no external dependencies, deterministic
-- **Don't mock what you don't own** — wrap external APIs
-- **Hyrum's Law** — all observable behaviors become contracts
-- **Scout rule** — leave code cleaner than you found it
-
-## Step 11: Verification Loop (from ECC)
+## Step 15: Verification Loop
 
 ### 5 Phases
 1. **Build** — project compiles
@@ -315,24 +521,17 @@ Targets: Statements > 80%, Branches > 75%, Functions > 80%.
 
 If ANY phase fails → STOP and fix.
 
-## Step 12: QA Systematic Testing (from gstack)
-
-### QA Checklist
-- [ ] All pages load without errors
-- [ ] Forms submit correctly
-- [ ] Error states display properly
-- [ ] Responsive layout works
-- [ ] Keyboard navigation works
-- [ ] Screen reader announces content
-- [ ] No console errors
-
 ## Pitfalls
 
 1. **Don't write more E2E than unit tests** — E2E is slow and brittle
-2. **Don't mock everything in integration tests** — use real services
+2. **Don't mock everything in integration tests** — use real services (Testcontainers)
 3. **Don't ignore flaky tests** — quarantine and fix
-4. **Don't skip property-based tests for parsers**
+4. **Don't skip property-based tests for parsers** — Hypothesis/fast-check find edge cases
 5. **Don't run k6 against production without coordination**
 6. **Don't rely solely on SAST** — combine with DAST
 7. **Don't test a11y only with automated tools** — use screen readers
 8. **Don't treat 100% coverage as target** — focus on critical paths
+9. **Don't skip contract tests for microservices** — Pact prevents integration surprises
+10. **Don't skip chaos engineering in production** — staging doesn't match prod
+11. **Don't test implementation details** — test behavior (Testing Library principle)
+12. **Don't skip mutation testing** — coverage alone doesn't measure test quality

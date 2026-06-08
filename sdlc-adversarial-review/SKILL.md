@@ -1,19 +1,19 @@
 ---
 name: sdlc-adversarial-review
-description: "Multi-agent PR review: 3 specialized reviewers (architecture, security, quality) run in parallel, orchestrator synthesizes findings and applies fixes. Includes Google/Stripe/Meta code review culture."
-version: 1.1.0
+description: "Multi-agent PR review: 3 specialized reviewers (architecture, security, quality) run in parallel, orchestrator synthesizes findings and applies fixes. Includes Google/Stripe/Meta code review culture, DORA velocity metrics, and automated tooling integration."
+version: 2.0.0
 author: Hermes Agent
 license: MIT
 platforms: [linux, macos, windows]
 metadata:
   hermes:
-    tags: [sdlc, code-review, pr-review, adversarial, multi-agent, security, architecture, google, stripe]
+    tags: [sdlc, code-review, pr-review, adversarial, multi-agent, security, architecture, google, stripe, dora, semgrep, codeql]
     related_skills: [sdlc-architecture-design, sdlc-testing-qa, github-code-review, github-pr-workflow]
 ---
 
 # Adversarial PR Review
 
-3-agent parallel review system: architecture + security + quality reviewers run in parallel, orchestrator synthesizes and fixes. Includes Google/Stripe/Meta code review culture.
+3-agent parallel review system: architecture + security + quality reviewers run in parallel, orchestrator synthesizes and fixes. Based on Google/Microsoft/Meta/Stripe engineering practices and DORA metrics.
 
 ## When to Use
 
@@ -29,23 +29,75 @@ Trigger when user:
 - Draft PRs still in progress
 - Hotfixes needing immediate merge
 
+## Step 0: Automated Pre-Review (Before Human Review)
+
+Run automated checks first — machines handle mechanical checks, humans handle design/nuance.
+
+```bash
+# Semgrep — fast pattern-based SAST
+semgrep --config=auto --severity=ERROR --severity=WARNING .
+
+# CodeQL — deep semantic analysis (if GitHub repo)
+gh codeql analyze --language=javascript
+
+# Trivy — dependency + secrets + IaC scanning
+trivy fs --scanners vuln,secret,misconfig .
+```
+
+**Tool selection matrix:**
+| Tool | Speed | Depth | Best for |
+|------|-------|-------|----------|
+| Semgrep | Fast | Medium | Security patterns, code standards, banned APIs |
+| CodeQL | Slow | Deep | Cross-function taint analysis, SQLi/XSS/SSRF |
+| Trivy | Fast | Medium | Dependency CVEs, exposed secrets, IaC misconfig |
+
 ## Step 1: Spawn 3 Reviewers in Parallel
 
 ```python
 tasks = [
     {
         "goal": "Review PR for architecture concerns",
-        "context": "Focus on: design patterns, separation of concerns, scalability, module boundaries, dependency direction. Report findings with severity and suggested fix.",
+        "context": """Focus on (priority order):
+1. Design — right abstraction? Right pattern? (Clean/Hexagonal/DDD)
+2. Dependencies — point inward? No circular deps?
+3. Module boundaries — respected? Interfaces deep (high leverage)?
+4. ADRs followed? If new pattern, flag for ADR creation.
+5. Architecture fitness functions — would this change break any?
+
+Report findings with severity and suggested fix.
+Reference: C4 model for system context, hexagonal architecture for dependency direction.""",
         "toolsets": ["terminal", "file"]
     },
     {
         "goal": "Review PR for security vulnerabilities",
-        "context": "Focus on: OWASP Top 10, auth issues, injection vectors, secrets exposure, input validation. Report findings with severity and suggested fix.",
+        "context": """Focus on (OWASP Top 10 + supply chain):
+1. Injection vectors — SQL, NoSQL, LDAP, OS command
+2. Auth issues — broken auth, session management, missing checks
+3. Secrets exposure — hardcoded keys, tokens, passwords
+4. Input validation — all user input sanitized? SSRF prevention?
+5. XSS prevention — output encoding, CSP headers
+6. CSRF protection — tokens on state-changing endpoints
+7. Rate limiting — on auth and expensive endpoints
+8. Dependency vulnerabilities — CVEs in dependencies
+9. Supply chain — typosquatting, compromised packages
+
+Report findings with severity and suggested fix.
+Reference: OWASP Top 10 2021, CWE/SANS Top 25.""",
         "toolsets": ["terminal", "file"]
     },
     {
         "goal": "Review PR for code quality",
-        "context": "Focus on: readability, test coverage, naming, duplication, error handling, edge cases, performance. Report findings with severity and suggested fix.",
+        "context": """Focus on (Google review priority order):
+1. Functionality — does this do what user needs? Edge cases?
+2. Complexity — is code more complex than needed? Over-engineering?
+3. Tests — present, correct, maintainable? Coverage meets threshold?
+4. Naming — clear, descriptive, consistent?
+5. Comments — explain WHY, not WHAT
+6. Error handling — comprehensive? Graceful degradation?
+7. Performance — N+1 queries, unnecessary allocations, blocking I/O?
+
+Report findings with severity and suggested fix.
+Reference: Google eng-practices review standards.""",
         "toolsets": ["terminal", "file"]
     }
 ]
@@ -58,6 +110,7 @@ tasks = [
 2. Deduplicate findings
 3. Prioritize: critical > high > medium > low
 4. Cross-reference: architecture finding may explain security finding
+5. Apply DORA metrics: flag if PR >400 LOC (break up), >1 day open (unblock)
 
 ## Step 3: Apply Fixes
 
@@ -68,7 +121,7 @@ For each finding:
 
 ## Step 4: Re-run CI
 
-After fixes, push and verify CI passes.
+After fixes, push and verify CI passes. All automated checks must pass before merge.
 
 ## Review Templates
 
@@ -79,19 +132,23 @@ After fixes, push and verify CI passes.
 - [ ] Module boundaries respected
 - [ ] Interfaces are deep (high leverage)
 - [ ] No circular dependencies
-- [ ] ADRs followed
+- [ ] ADRs followed (or new ADR created)
+- [ ] Architecture fitness functions pass
+- [ ] C4 model consistency maintained
 ```
 
 ### Security Review
 ```
-- [ ] No hardcoded secrets
+- [ ] No hardcoded secrets (Trivy secrets scan)
 - [ ] Input validation on all user input
 - [ ] Auth checks on all endpoints
-- [ ] SQL injection prevention
-- [ ] XSS prevention
-- [ ] CSRF protection
-- [ ] Rate limiting
-- [ ] Dependency vulnerabilities checked
+- [ ] SQL injection prevention (parameterized queries)
+- [ ] XSS prevention (output encoding)
+- [ ] CSRF protection (tokens)
+- [ ] Rate limiting on auth/expensive endpoints
+- [ ] Dependency vulnerabilities checked (Trivy/Dependabot)
+- [ ] No SSRF vectors
+- [ ] No path traversal vectors
 ```
 
 ### Quality Review
@@ -101,32 +158,81 @@ After fixes, push and verify CI passes.
 - [ ] Error handling comprehensive
 - [ ] Naming descriptive and consistent
 - [ ] No code duplication
-- [ ] Performance considered
+- [ ] Performance considered (no N+1, no blocking I/O)
+- [ ] Comments explain WHY, not WHAT
+- [ ] PR size <400 LOC (or justified)
 ```
 
-## Code Review Culture (from Google + Stripe + Meta)
+## DORA Velocity Metrics
 
-### Google Code Review
-- **Mandatory** — at least 1 LGTM required
-- **OWNERS files** — auto-assign by directory
-- **Automated checks first** — lint, test, type check before human
-- **Time-to-review SLA** — hours, not days
+Track review velocity against DORA benchmarks:
+
+| Metric | Elite | High | Medium | Low |
+|--------|-------|------|--------|-----|
+| PR to first review | <4 hours | <1 day | <1 week | >1 week |
+| PR review to merge | <1 day | <3 days | <1 week | >1 week |
+| PR size | <400 LOC | <800 LOC | <1500 LOC | >1500 LOC |
+| PR lifetime | <1 day | <3 days | <1 week | >1 week |
+
+**Key findings from DORA research:**
+- Elite performers review in hours, not days
+- Long review queues correlate with lower deployment frequency
+- Small batch size (small PRs) enables fastest review cycles
+- WIP limits on PRs-in-review improve throughput
+
+## Code Review Culture
+
+### Google Engineering Practices
+Source: https://google.github.io/eng-practices/review/
+
+**Reviewer priorities (in order):**
+1. Design — is this the right approach? Right abstraction?
+2. Functionality — does this do what user needs? Edge cases?
+3. Complexity — is code more complex than needed?
+4. Tests — are tests present, correct, maintainable?
+5. Naming — clear, descriptive names
+6. Comments — explain WHY, not WHAT
+7. Style — enforce consistent style (automate this away)
+8. Nit-picks — optional, prefix with "Nit:"
+
+**Speed expectations:**
+- Respond to review requests within 4 hours
+- Small changes (<200 LOC) should review in under 1 hour
+- Never let PR sit unreviewed for >1 business day
+
+**Comment conventions:**
+- "Nit:" — optional, author decides
+- "FYI:" — no action needed, informational
+- Blocking comments — must fix before merge
+- Every comment must explain WHY or provide suggestion
+
+### Microsoft Research Findings
+Source: Bacchelli & Bird, ICSE 2013
+
+- Primary benefit of code review: **knowledge transfer**, NOT defect finding
+- Reviewers spend ~60% of time understanding code, ~20% on defects
+- Review fatigue is real: effectiveness drops after ~60 minutes
+- Short, focused review sessions > marathon reviews
+- Incremental reviews (see only new changes since last review) improve quality
 
 ### Stripe Code Review
-- **Knowledge-sharing** — review as learning
-- **Substantive engagement** — understand the change
-- **Clear PR descriptions** — what, why, how, testing
+- Knowledge-sharing — review as learning opportunity
+- Substantive engagement — understand the change, don't skim
+- Clear PR descriptions — what, why, how, testing
 
 ### Meta Code Review
-- **Ship it culture** — approve quickly, don't block on nitpicks
-- **"Ship it" with comments** — LGTM but note improvements
+- Ship it culture — approve quickly, don't block on nitpicks
+- "Ship it" with comments — LGTM but note improvements
+- Stacked diffs — break large features into dependent PR chain
 
 ### Review Anti-Patterns
-- **Bikeshedding** — arguing about trivial things
+- **Bikeshedding** — arguing about trivial things (naming, formatting)
 - **Rubber stamping** — approving without reading
 - **Slow reviews** — PRs sitting for days kills velocity
+- **NIT overload** — too many optional comments blocks author
+- **Design-by-committee** — too many reviewers with conflicting opinions
 
-### PR Template
+## PR Template
 ```markdown
 ## What
 [1-2 sentence description]
@@ -144,13 +250,46 @@ After fixes, push and verify CI passes.
 
 ## Screenshots (if UI)
 [Before/after]
+
+## Checklist
+- [ ] PR <400 LOC (or justified in description)
+- [ ] No hardcoded secrets
+- [ ] Error handling comprehensive
+- [ ] Comments explain WHY
+```
+
+## Multi-Agent Review Architecture
+
+```
+PR opened
+    │
+    ▼
+┌─────────────────────────────────────┐
+│  Orchestrator Agent                  │
+│  1. Run automated checks (Semgrep,   │
+│     CodeQL, Trivy)                   │
+│  2. Spawn 3 reviewers in parallel    │
+│  3. Collect findings                  │
+│  4. Deduplicate + prioritize         │
+│  5. Apply auto-fixes                 │
+│  6. Present unified review           │
+└─────────┬───────────┬───────────┬────┘
+          │           │           │
+    ┌─────▼──┐  ┌─────▼──┐  ┌─────▼──┐
+    │ Arch   │  │ Sec    │  │ Qual   │
+    │ Review │  │ Review │  │ Review │
+    └────────┘  └────────┘  └────────┘
 ```
 
 ## Pitfalls
 
-1. **Don't run on every PR** — use for significant changes
+1. **Don't run on every PR** — use for significant changes (>100 LOC, security-sensitive)
 2. **Don't auto-fix architecture issues** — create issues
 3. **Don't ignore medium/low findings** — accumulate into tech debt
 4. **Don't skip re-running CI after fixes**
 5. **Don't bikeshed** — focus on logic, not style
 6. **Don't rubber stamp** — actually read the diff
+7. **Don't let PRs sit** — respond within 4 hours (Google SLA)
+8. **Don't review for >60 minutes** — fatigue degrades quality
+9. **Don't skip automated checks** — machines handle mechanical, humans handle design
+10. **Don't mix abstraction levels** — architecture comments in arch review, security in security review

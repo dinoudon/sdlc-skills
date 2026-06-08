@@ -1,19 +1,19 @@
 ---
 name: sdlc-architecture-design
-description: "System design, C4 diagrams, API design (REST/GraphQL/gRPC), database schema, code architecture (Clean/Hexagonal/DDD), ADRs, branching strategies, code review, dependency management, DDIA patterns."
-version: 1.1.0
+description: "System design, C4 diagrams, API design (REST/GraphQL/gRPC), database schema, code architecture (Clean/Hexagonal/DDD), ADRs, branching strategies, code review, dependency management, DDIA patterns. Includes architecture fitness functions and DDD context mapping."
+version: 2.0.0
 author: Hermes Agent
 license: MIT
 platforms: [linux, macos, windows]
 metadata:
   hermes:
-    tags: [sdlc, architecture, c4, api-design, database, clean-architecture, ddd, code-review, branching, adr, ddia]
+    tags: [sdlc, architecture, c4, api-design, database, clean-architecture, ddd, code-review, branching, adr, ddia, fitness-functions, context-mapping]
     related_skills: [sdlc-requirements-engineering, sdlc-cicd-pipeline, architecture-blueprint, api-design]
 ---
 
 # Architecture, Design & Development
 
-System design through code review: C4 diagrams, API design, database schema, architecture patterns, ADRs, branching, dependency management. Includes DDIA and Staff Engineer patterns.
+System design through code review: C4 diagrams, API design, database schema, architecture patterns, ADRs, branching, dependency management. Includes DDIA, Staff Engineer patterns, and architecture fitness functions.
 
 ## When to Use
 
@@ -27,11 +27,38 @@ Trigger when user:
 
 ## Step 1: System Design & C4 Diagrams
 
-### C4 Levels
-1. **Context** — system boundary, external actors
-2. **Container** — apps, databases, message brokers
-3. **Component** — internal modules per container
-4. **Code** — class/module diagrams (rarely needed)
+### C4 Model (Simon Brown)
+Source: https://c4model.com/
+
+4 hierarchical abstraction levels — each zooms into element from level above:
+
+**Level 1 — Context:** System scope, users, external dependencies.
+- Shows: your system as box, actors (people/systems) connected
+- Audience: everyone
+
+**Level 2 — Container:** Applications/services inside system boundary.
+- Shows: web apps, APIs, databases, message buses as boxes inside system
+- Labels: technology choices (e.g., "Spring Boot", "PostgreSQL")
+- Audience: developers, ops
+
+**Level 3 — Component:** Major building blocks inside a container.
+- Shows: classes/packages/modules that fulfill responsibilities
+- Audience: developers
+
+**Level 4 — Code:** UML class diagram for specific component.
+- Shows: classes, interfaces, relationships
+- Audience: developers (rarely needed for entire system)
+
+**Core notation:**
+- Person (stick figure or box)
+- Software System (box, solid or dashed border)
+- Container (box with tech label)
+- Component (box with tech label)
+- Relationships (arrows with description + protocol)
+
+**Key rules:**
+- Don't mix abstraction levels on one diagram
+- Supplement with supporting text (e.g., arc42 doc template)
 
 ### Structurizr DSL
 ```dsl
@@ -48,116 +75,148 @@ workspace {
     api -> db "SQL/TCP"
   }
 }
+
+views {
+  systemContext softwareSystem {
+    include *
+    autolayout lr
+  }
+  container softwareSystem {
+    include *
+    autolayout lr
+  }
+}
 ```
 
-### Mermaid (GitHub-native)
+### Mermaid Alternative
 ```mermaid
-graph TD
-  User --> WebApp[Web App<br/>React/TS]
-  WebApp --> API[API<br/>FastAPI/Python]
-  API --> DB[(PostgreSQL)]
-  API --> Cache[(Redis)]
-```
+C4Context
+title System Context diagram
 
-### Diagram-as-Code Tools
-| Tool | Format | Best For |
-|------|--------|----------|
-| Structurizr DSL | `.dsl` | C4 model, version-controllable |
-| PlantUML + C4 | `.puml` | UML + C4 hybrid |
-| Mermaid | `.mmd` | GitHub-native, inline in .md |
-| D2lang | `.d2` | Declarative, CI-friendly |
-| Excalidraw | `.excalidraw` | Quick whiteboard sketches |
+Person(user, "User", "Uses the platform")
+System(platform, "Platform", "Main system")
+System_Ext(auth, "Auth Provider", "OAuth2/OIDC")
+
+Rel(user, platform, "HTTPS")
+Rel(platform, auth, "OIDC")
+```
 
 ## Step 2: API Design
 
-### REST Best Practices
-- Resource-oriented URIs: `/users/{id}/orders`
-- HTTP verbs → CRUD: GET/POST/PUT/PATCH/DELETE
-- Plural nouns, kebab-case
-- Cursor-based pagination (preferred over offset)
-- Versioning: URI path `/v1/` or header `Accept-Version`
-- Error format: RFC 7807 Problem Details
-- Rate limiting headers: `X-RateLimit-Limit`, `Retry-After`
-
-### OpenAPI 3.1 (spec-first)
+### REST
 ```yaml
+# OpenAPI 3.1
 openapi: 3.1.0
 info:
-  title: User API
+  title: Order API
   version: 1.0.0
 paths:
-  /users:
+  /orders:
     get:
-      summary: List users
+      summary: List orders
       parameters:
-        - name: cursor
+        - name: status
           in: query
-          schema: { type: string }
+          schema: { type: string, enum: [pending, shipped, delivered] }
       responses:
         '200':
-          description: User list
+          description: Order list
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/Order' }
 ```
 
-### API Tools
-| Tool | Purpose |
-|------|---------|
-| Redocly / Swagger UI | Docs generation |
-| Prism (Stoplight) | Mock server from OpenAPI |
-| Schemathesis | Property-based API testing |
-| httpie / curl / xh | CLI testing |
-| Bruno | Open-source Postman alternative |
-
 ### GraphQL
-- Schema-first with SDL
-- DataLoader pattern (N+1 prevention)
-- Relay-style cursor pagination
-- Depth/complexity limits to prevent abuse
+```graphql
+type Query {
+  order(id: ID!): Order
+  orders(status: OrderStatus, first: Int, after: String): OrderConnection!
+}
+
+type Order {
+  id: ID!
+  status: OrderStatus!
+  items: [OrderItem!]!
+  total: Money!
+}
+```
 
 ### gRPC
-- Proto-first design
-- **buf** — proto linter, breaking change detection
-  ```bash
-  buf lint
-  buf breaking --against '.git#branch=main'
-  buf generate
-  ```
-- **grpcurl** — CLI for gRPC
+```protobuf
+service OrderService {
+  rpc GetOrder(GetOrderRequest) returns (Order);
+  rpc ListOrders(ListOrdersRequest) returns (ListOrdersResponse);
+}
+```
+
+### API Versioning
+- **URL path**: `/v1/orders` (simplest)
+- **Header**: `Accept: application/vnd.api.v1+json`
+- **Query param**: `?version=1`
 
 ## Step 3: Database Schema Design
 
-### Relational (PostgreSQL, MySQL)
-- Normalize to 3NF minimum; denormalize for read perf
-- Migrations as code: forward-only, immutable
-- Naming: snake_case tables, consistent singular/plural
-- Always add `created_at`, `updated_at`, soft delete `deleted_at`
-- Index strategy: composite indexes match query patterns
-- Use `EXPLAIN ANALYZE` early
+### Normalization vs Denormalization
+- **3NF** for transactional systems (OLTP)
+- **Denormalized** for analytics (OLAP) and read-heavy workloads
+- **Event sourcing** for auditability
+
+### Schema Patterns
+```sql
+-- Polymorphic association (bad)
+-- Use instead: shared PK or junction table
+
+-- Soft delete
+ALTER TABLE orders ADD COLUMN deleted_at TIMESTAMP NULL;
+
+-- Audit trail
+CREATE TABLE order_audit (
+  id BIGSERIAL PRIMARY KEY,
+  order_id UUID NOT NULL,
+  action VARCHAR(10) NOT NULL, -- INSERT, UPDATE, DELETE
+  old_data JSONB,
+  new_data JSONB,
+  changed_at TIMESTAMP DEFAULT NOW(),
+  changed_by UUID
+);
+
+-- Temporal tables (SQL:2011)
+-- Use for point-in-time queries
+```
+
+### Indexing Strategy
+```sql
+-- Composite index for common query pattern
+CREATE INDEX idx_orders_user_status ON orders(user_id, status);
+
+-- Partial index for active records
+CREATE INDEX idx_orders_active ON orders(user_id) WHERE deleted_at IS NULL;
+
+-- GIN index for JSONB queries
+CREATE INDEX idx_orders_metadata ON orders USING GIN(metadata);
+
+-- Always EXPLAIN ANALYZE before deploying
+EXPLAIN ANALYZE SELECT * FROM orders WHERE user_id = '...' AND status = 'pending';
+```
 
 ### Migration Tools
 | Tool | Ecosystem |
 |------|-----------|
-| Atlas (ariga) | Declarative schema, diff-based |
-| Flyway | Java ecosystem |
-| Prisma Migrate | Node.js/TypeScript |
-| Drizzle Kit | TypeScript, lightweight |
-| Alembic | Python/SQLAlchemy |
-| pgroll (xata) | Zero-downtime PostgreSQL |
-
-### ERD Visualization
-- **dbdocs.io** — DBML to ERD
-- **pgModeler**, **DBeaver**, **DataGrip** — visual design
+| Flyway | Java, SQL |
+| Alembic | Python |
+| golang-migrate | Go |
+| Prisma Migrate | JS/TS |
+| Atlas | Go, SQL-first |
 
 ## Step 4: Code Architecture Patterns
 
 ### Clean Architecture
 ```
 src/
-  domain/          # Entities, value objects, interfaces (no deps)
-    entities/
-    use_cases/     # Application business rules
-  adapters/        # Interface adapters
-    repositories/
-    controllers/
+  domain/          # Entities, value objects, domain services
+  application/     # Use cases, DTOs, ports
   infrastructure/  # Frameworks, DB, external services
     db/
     external/
@@ -165,6 +224,8 @@ src/
 Rule: dependencies point inward. Domain has zero imports from infra.
 
 ### Hexagonal Architecture (Ports & Adapters)
+Source: https://alistair.cockburn.us/hexagonal-architecture/
+
 ```
 src/
   domain/
@@ -173,17 +234,62 @@ src/
       outbound/    # Repository/gateway interfaces
     model/
   adapters/
-    inbound/       # REST handlers, CLI
-    outbound/      # DB repos, HTTP clients
+    inbound/       # REST handlers, CLI, GraphQL resolvers
+    outbound/      # DB repos, HTTP clients, message publishers
 ```
 
-### DDD Tactical Patterns
-- **Entities** — identity, mutable
-- **Value Objects** — immutable, equality by value
-- **Aggregates** — consistency boundary, root entity
-- **Domain Events** — `OrderPlaced`, `PaymentProcessed`
-- **Repositories** — per aggregate root
-- **Anti-Corruption Layer** — for legacy/external integration
+**Core concepts:**
+- **Application Core** — business logic, NO dependencies on infrastructure
+- **Primary/Driving Ports** — interfaces the app exposes (use case interfaces)
+- **Secondary/Driven Ports** — interfaces the app needs (repository interfaces)
+- **Primary/Driving Adapters** — invoke the app (REST controllers, CLI, tests)
+- **Secondary/Driven Adapters** — implement secondary ports (DB repos, message publishers)
+
+**Dependency rule:** Dependencies point INWARD. Core never imports adapter code.
+
+**Benefits:**
+- Testable: swap adapters for mocks/fakes at boundaries
+- Replaceable: swap DB, UI, transport without touching core
+- Framework-independent: core doesn't know Spring/Django/Express
+
+### DDD Strategic Patterns
+Source: Eric Evans "Domain-Driven Design" (2003), Vaughn Vernon "Implementing DDD" (2013)
+
+**Bounded Context** — explicit boundary within which domain model is defined:
+- Same term can mean different things in different contexts
+- Each bounded context has its own ubiquitous language
+
+**Context Map — patterns for relationships between bounded contexts:**
+
+| Pattern | Description |
+|---------|-------------|
+| Shared Kernel | Two contexts share subset of model. Changes require agreement. |
+| Customer-Supplier | Downstream depends on upstream. Supplier may prioritize customer needs. |
+| Conformist | Downstream conforms entirely to upstream model. No translation. |
+| Anti-Corruption Layer (ACL) | Downstream translates upstream model into own model. Isolation. |
+| Open Host Service | Upstream provides protocol/API for multiple consumers. |
+| Published Language | Shared, documented data format (e.g., Avro schema, OpenAPI spec). |
+| Separate Ways | Contexts don't integrate. Each evolves independently. |
+| Partnership | Both contexts coordinate evolution together. |
+
+**Ubiquitous Language** — shared language between developers and domain experts:
+- Same terms in code, docs, conversation
+- Scoped to bounded context (don't force global terms)
+
+**Tactical Patterns (within bounded context):**
+- **Entity** — identity-based equality, lifecycle
+- **Value Object** — immutable, attribute-based equality
+- **Aggregate** — cluster of entities/VOs, transactional consistency boundary
+- **Aggregate Root** — single entry point, enforces invariants
+- **Domain Event** — something that happened, immutable past-tense fact
+- **Repository** — collection-like interface for aggregate persistence
+- **Domain Service** — operation that doesn't belong to single entity/VO
+- **Application Service** — orchestrates use cases, no business logic
+
+**DDD Lite (pragmatic subset):**
+- Start with bounded contexts + ubiquitous language
+- Add aggregates + domain events when complexity warrants
+- Skip full tactical patterns for CRUD domains
 
 ### Modular Monolith (start here)
 ```
@@ -272,9 +378,11 @@ repos:
 | Nx | JS/TS/Angular |
 | Bazel / Pants | Polyglot, large scale |
 
-## Step 8: Architecture Decision Records (from Staff Engineer)
+## Step 8: Architecture Decision Records
 
-### ADR Format
+### ADR Format (Michael Nygard)
+Source: https://adr.github.io/
+
 ```markdown
 # ADR-001: Use PostgreSQL as primary database
 
@@ -296,27 +404,91 @@ Use PostgreSQL 16 as primary database.
 - MongoDB: rejected (no ACID for multi-doc)
 ```
 
+### MADR Enhanced Template
+Source: https://adr.github.io/madr/
+
+```markdown
+# [short title of solved problem and solution]
+
+## Context and Problem Statement
+[describe context and problem]
+
+## Decision Drivers
+* [driver 1]
+* [driver 2]
+
+## Considered Options
+* [option 1]
+* [option 2]
+
+## Decision Outcome
+Chosen option: "[option]", because [justification].
+
+### Consequences
+* Good: ...
+* Bad: ...
+
+### Confirmation
+[how to confirm implementation follows decision]
+
+## Pros and Cons of Options
+
+### [option 1]
+* Good: ...
+* Bad: ...
+
+## More Information
+[links, references]
+```
+
 ### ADR Best Practices
 - One ADR per significant decision
 - ADRs are immutable — supersede with new ADR
 - Store in repo: `docs/adr/`
 - Link from code where decision applies
+- Tooling: adr-tools (CLI), Log4brains (static site)
 
-## Step 9: Architecture Characteristics (from Fundamentals of Software Architecture)
+## Step 9: Architecture Fitness Functions
 
-Identify top 3 per system (not 20):
-- **Operational**: scalability, availability, reliability, performance
-- **Structural**: modifiability, testability, deployability
-- **Cross-cutting**: security, observability, compliance
+Source: "Building Evolutionary Architectures" (Neal Ford, Rebecca Parsons, Patrick Kua, 2017)
 
-### Fitness Functions (Automated Governance)
+**Definition:** Objective integrity assessment of architecture characteristic(s).
+
+**Types:**
+| Type | Description | Example |
+|------|-------------|---------|
+| Atomic + Triggered | Tests single characteristic on event | Layer violation check on PR |
+| Atomic + Continuous | Tests single characteristic always | Performance monitoring |
+| Holistic + Triggered | Tests combination on event | Load test + resilience on deploy |
+| Holistic + Continuous | Tests combination always | Chaos engineering in production |
+
+**Examples:**
+
 ```python
 # ArchUnit-style: enforce dependency rules
 def test_domain_never_depends_on_infra():
     """Domain layer must not import from infrastructure."""
     rule = no_classes().that().reside_in("..domain..").should().depend_on_classes_that().reside_in("..infra..")
     rule.check(import_classes)
+
+# Performance fitness function in CI
+def test_api_latency_p99_under_200ms():
+    """P99 latency must be under 200ms for /api/orders."""
+    result = load_test("/api/orders", concurrent_users=100, duration="30s")
+    assert result.p99_latency_ms < 200
+
+# Resilience fitness function
+def test_api_survives_db_outage():
+    """API returns cached data when DB is unavailable."""
+    with chaos_kill("database"):
+        response = get("/api/orders")
+        assert response.status == 200  # degraded but available
 ```
+
+**Implementation patterns:**
+- Fitness functions as CI pipeline stages (gates on PR merge)
+- Dashboard of architecture metrics over time
+- Versioned architecture decisions linked to fitness functions
 
 ## Step 10: Data-Intensive Design (from DDIA — Kleppmann)
 
@@ -336,7 +508,7 @@ Source of truth (DB) → Event log → Derived views (caches, search indexes)
 - Forward compatible: old code reads new data
 - Use Avro/Protobuf for schema evolution
 
-## Step 11: Codebase Deepening (from mattpocock/skills)
+## Step 11: Codebase Deepening
 
 ### Key Concepts
 - **Depth** — leverage at interface: lots of behavior behind small interface
@@ -358,3 +530,7 @@ Source of truth (DB) → Event log → Derived views (caches, search indexes)
 5. **Don't review style manually** — automate lint/format
 6. **Don't write ADRs after the fact** — write during decision
 7. **Don't ignore Hyrum's Law** — all observable behaviors become contracts
+8. **Don't mix C4 levels** — one abstraction per diagram
+9. **Don't skip fitness functions** — architecture erodes without automated checks
+10. **Don't force DDD on CRUD** — DDD Lite (bounded contexts + ubiquitous language) is enough
+11. **Don't forget context mapping** — bounded contexts need explicit integration patterns
