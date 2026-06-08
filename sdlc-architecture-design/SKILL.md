@@ -1,13 +1,13 @@
 ---
 name: sdlc-architecture-design
-description: "System design, C4 diagrams, API design (REST/GraphQL/gRPC), database schema, code architecture (Clean/Hexagonal/DDD), ADRs, branching strategies, code review, dependency management, DDIA patterns. Includes architecture fitness functions, DDD context mapping, platform engineering, Gateway API, green software, API governance, serverless architecture, edge computing, multi-cloud patterns, resilience patterns, distributed consensus, eventual consistency, idempotency, OAuth2/OIDC, JWT, authorization (RBAC/ABAC/ReBAC), rate limiting, API versioning, GraphQL Federation, Kafka patterns, database sharding, caching strategies, data pipelines, and message queue comparison."
-version: 4.0.0
+description: "System design, C4 diagrams, API design (REST/GraphQL/gRPC), database schema, code architecture (Clean/Hexagonal/DDD), ADRs, branching strategies, code review, dependency management, DDIA patterns. Includes architecture fitness functions, DDD context mapping, platform engineering, Gateway API, green software, API governance, serverless architecture, edge computing, multi-cloud patterns, resilience patterns, distributed consensus, eventual consistency, idempotency, OAuth2/OIDC, JWT, authorization (RBAC/ABAC/ReBAC), rate limiting, API versioning, GraphQL Federation, Kafka patterns, database sharding, caching strategies, data pipelines, message queue comparison, 12-Factor App extended, microservices decomposition (Strangler Fig, DDD), service mesh comparison, API gateway comparison, serverless patterns, edge computing patterns."
+version: 4.1.0
 author: Hermes Agent
 license: MIT
 platforms: [linux, macos, windows]
 metadata:
   hermes:
-    tags: [sdlc, architecture, c4, api-design, database, clean-architecture, ddd, code-review, branching, adr, ddia, fitness-functions, context-mapping, platform-engineering, gateway-api, green-software, api-governance, service-mesh, serverless, edge-computing, multi-cloud, faas]
+    tags: [sdlc, architecture, c4, api-design, database, clean-architecture, ddd, code-review, branching, adr, ddia, fitness-functions, context-mapping, platform-engineering, gateway-api, green-software, api-governance, service-mesh, serverless, edge-computing, multi-cloud, faas, 12-factor, microservices-decomposition, strangler-fig, api-gateway, serverless-patterns, edge-patterns]
     related_skills: [sdlc-requirements-engineering, sdlc-cicd-pipeline, architecture-blueprint, api-design, sdlc-deployment]
 ---
 
@@ -2492,6 +2492,281 @@ Source: https://kafka.apache.org/, https://www.rabbitmq.com/, https://nats.io/, 
 - **Multi-tenant SaaS:** Pulsar
 - **Simple setup, minimal ops:** NATS
 - **Enterprise with existing AMQP:** RabbitMQ
+
+## Step 40: 12-Factor App — Updated
+
+Source: https://12factor.net/
+
+### Original 12 Factors
+
+| # | Factor | Principle |
+|---|--------|-----------|
+| 1 | **Codebase** | One codebase tracked in version control, many deploys |
+| 2 | **Dependencies** | Explicitly declare and isolate dependencies |
+| 3 | **Config** | Store config in environment variables |
+| 4 | **Backing services** | Treat backing services as attached resources |
+| 5 | **Build, release, run** | Strictly separate build and run stages |
+| 6 | **Processes** | Execute the app as one or more stateless processes |
+| 7 | **Port binding** | Export services via port binding |
+| 8 | **Concurrency** | Scale out via the process model |
+| 9 | **Disposability** | Fast startup and graceful shutdown |
+| 10 | **Dev/prod parity** | Keep development, staging, production as similar as possible |
+| 11 | **Logs** | Treat logs as event streams |
+| 12 | **Admin processes** | Run admin/management tasks as one-off processes |
+
+### Extended Factors (Modern Additions)
+
+| # | Factor | Principle | Tools/Patterns |
+|---|--------|-----------|----------------|
+| 13 | **API-First** | Design API contract before implementation; treat API as first-class product | OpenAPI, AsyncAPI, Stoplight, Swagger Codegen, contract testing (Pact) |
+| 14 | **Telemetry** | Observability built in: metrics, traces, logs, events | OpenTelemetry, Prometheus, Grafana, Jaeger, structured logging (JSON) |
+| 15 | **Authentication & Authorization** | Security identity as code; zero-trust by default | OAuth2/OIDC, SPIFFE/SPIRE, OPA/Rego, OIDC providers (Keycloak, Auth0) |
+| 16 | **Cost Awareness** | Monitor and optimize cloud spend per service/team | Kubecost, Infracost, cloud cost APIs, FinOps tagging, rightsizing |
+| 17 | **Supply Chain Security** | Verify provenance of every dependency and artifact | SBOM (Syft/Trivy), SLSA, Sigstore/cosign, Dependabot, Snyk |
+| 18 | **Resilience** | Design for failure; circuit breakers, retries, bulkheads | Envoy, resilience4j, chaos engineering (Litmus, Chaos Monkey), chaos mesh |
+| 19 | **Edge & Distribution** | Deploy logic closer to users; consider latency budgets | Cloudflare Workers, Deno Deploy, Fastly Compute, edge caching |
+| 20 | **AI/ML Lifecycle** | Model versioning, feature stores, drift detection, inference endpoints | MLflow, Seldon, KServe, Vertex AI, feature stores (Feast), model registries |
+
+**Checklist for new services:**
+- [ ] OpenAPI spec committed before implementation (API-first)
+- [ ] OpenTelemetry SDK integrated from day 1 (telemetry)
+- [ ] AuthN/AuthZ middleware configured; no default-allow (auth)
+- [ ] Cost tags applied; budget alerts set (cost awareness)
+- [ ] SBOM generated in CI; signed images in registry (supply chain)
+- [ ] Circuit breakers + retry budgets configured (resilience)
+- [ ] Edge deployment evaluated for latency-sensitive paths (edge)
+- [ ] Model registry and drift monitoring if ML components exist (AI/ML)
+
+## Step 41: Microservices Decomposition
+
+### Strangler Fig Pattern
+
+Incrementally replace monolith by routing traffic to new services. Named after strangler fig vines that grow around host tree.
+
+**Steps:**
+1. **Identify seam** — find bounded context with clear API boundary in monolith
+2. **Build façade** — proxy/intercept traffic to that seam (API gateway, reverse proxy, service mesh)
+3. **Extract service** — implement new service behind façade, same contract
+4. **Route traffic** — gradually shift traffic from monolith → new service (canary, feature flag, weighted routing)
+5. **Migrate data** — dual-write or CDC-based sync until cutover
+6. **Remove monolith code** — delete extracted code from monolith once traffic is 100% on new service
+7. **Repeat** — next bounded context
+
+**Tools:**
+- **Routing/proxy:** NGINX, Envoy, Istio VirtualService, AWS API Gateway
+- **Feature flags:** LaunchDarkly, Unleash, Flagsmith
+- **CDC/data migration:** Debezium, AWS DMS, custom dual-write with idempotency
+- **Testing:** Contract tests (Pact), shadow traffic (mirror proxy), synthetic monitoring
+
+**Anti-patterns:**
+- Big-bang rewrite (stop strangling, rewrite everything)
+- Shared database between old and new (creates tight coupling)
+- No rollback plan (keep monolith path alive until new service proven)
+
+### Branch by Abstraction
+
+Alternative to strangler fig for cases where you can't easily proxy traffic.
+
+**Steps:**
+1. Create abstraction interface in monolith for functionality being replaced
+2. Implement new service behind that interface
+3. Swap implementation (old → new) behind the abstraction
+4. Once stable, remove old implementation and optionally inline the interface
+
+**Use when:** Internal library/module replacement, no external API boundary, tightly coupled components.
+
+### DDD Bounded Contexts for Decomposition
+
+**Guidance:**
+- Each microservice = one bounded context (single domain model)
+- Map contexts with Context Mapping patterns:
+  - **Partnership:** two teams co-evolve shared model
+  - **Customer-Supplier:** downstream team depends on upstream
+  - **Conformist:** downstream adapts to upstream model without negotiation
+  - **Anti-Corruption Layer (ACL):** translate between models at boundary
+  - **Open Host + Published Language:** expose stable public contract (API, events)
+  - **Separate Ways:** no integration needed; different models OK
+- Use Event Storming to discover domain events, commands, aggregates, and bounded context boundaries
+- Split signals: different team ownership, different scaling needs, different deployment cadence, different data stores
+
+**Database per service rule:**
+- Each service owns its data; no shared tables
+- Cross-service data via events (CDC) or API calls
+- Saga pattern for distributed transactions (choreography or orchestration)
+
+## Step 42: Service Mesh Comparison
+
+Source: https://istio.io/, https://linkerd.io/, https://cilium.io/
+
+### Sidecar Mode Comparison
+
+| Feature | Istio (Envoy) | Linkerd (linkerd2-proxy) | Cilium (eBPF + Envoy) |
+|---------|---------------|--------------------------|------------------------|
+| **Proxy** | Envoy sidecar (C++) | linkerd2-proxy (Rust) | eBPF kernel + optional Envoy |
+| **Resource cost** | High — 50-100MB RAM per sidecar | Low — 10-20MB RAM per sidecar | Very low — eBPF in kernel; Envoy only for L7 |
+| **mTLS** | Automatic (strict/permissive) | Automatic (on by default) | Mutual SPIFFE-based (per-pod identity) |
+| **Traffic mgmt** | Rich: VirtualService, DestinationRule, fault injection, retries, timeouts, mirroring | Basic: retries, timeouts, traffic splits (for canary) | Full: CiliumEnvoyConfig, L7 load balancing, bandwidth mgmt |
+| **Observability** | Kiali dashboard, distributed tracing (Jaeger/Zipkin), Prometheus metrics | Viz dashboard (built-in), Prometheus, Grafana, tap (live traffic) | Hubble (flow visibility, service map), Prometheus, Grafana |
+| **Gateway** | Istio ingress/egress Gateway | Not built-in (use any ingress) | Cilium Gateway API (Gateway API native) |
+| **Multi-cluster** | Multi-cluster with trust federation | Multi-cluster with gateway linking | ClusterMesh (native, multi-cluster) |
+| **Install complexity** | High (istiod + CRDs) | Low (`linkerd install`) | Medium (Helm, kernel requirements ≥5.10) |
+| **Kernel dependency** | None | None | Linux kernel ≥5.10 (eBPF) |
+| **Best for** | Enterprise, complex routing, multi-cluster | Simple setup, resource-constrained, Rust-based proxy | High-performance, kernel-level networking, Kubernetes-native |
+
+### Ambient Mode (Istio)
+
+Istio ambient mode eliminates sidecars. Two layers:
+- **ztunnel (L4):** per-node daemon handles mTLS, L4 auth, basic telemetry. Zero sidecar overhead.
+- **waypoint proxy (L7):** optional per-service Envoy proxy for L7 policies (routing, authz, headers).
+
+**Benefits:** Lower resource cost, simpler debugging (no sidecar injection), gradual adoption (L4 first, add L7 where needed).
+**Status:** GA in Istio 1.22+; production-ready as of 2024.
+
+**Cilium equivalent:** No sidecar by default (eBPF). L7 policies via CiliumEnvoyConfig spin up Envoy only where needed.
+
+**Decision guide:**
+- **Simple, fast, low-resource:** Linkerd
+- **Complex enterprise routing, multi-cluster:** Istio (sidecar or ambient)
+- **Kernel-level performance, eBPF ecosystem:** Cilium
+- **Gradual adoption, no sidecar overhead:** Istio ambient or Cilium eBPF
+
+## Step 43: API Gateway Comparison
+
+Source: https://konghq.com/, https://www.envoyproxy.io/, https://apisix.apache.org/
+
+| Feature | Kong | Envoy | APISIX |
+|---------|------|-------|--------|
+| **Language** | Lua (Nginx/OpenResty) | C++ | Lua (OpenResty) + etcd |
+| **Performance** | High (50k-100k RPS typical) | Very high (100k+ RPS) | Very high (100k+ RPS, benchmarked higher than Kong) |
+| **Plugin ecosystem** | 100+ (paid + open source) | Filters (fewer built-in, extensible via WASM/Lua) | 80+ built-in (all open source) |
+| **gRPC support** | Native proxy + gateway | Native (designed for it) | Native proxy + gateway + transcoding |
+| **GUI / Admin** | Kong Manager (commercial), decK CLI | No GUI (control plane needed: Istio, Gloo, Emissary) | Built-in Dashboard (open source) |
+| **Config store** | PostgreSQL or Cassandra | xDS API (dynamic config via control plane) | etcd (distributed KV) |
+| **Service discovery** | DNS, Consul, K8s | xDS, EDS, K8s | DNS, K8s, Consul, Nacos, Eureka |
+| **Auth plugins** | Keycloak, OIDC, JWT, LDAP, mTLS | JWT, RBAC (ext filters), external auth | Keycloak, OIDC, JWT, LDAP, basic auth, Wolf RBAC |
+| **Rate limiting** | Built-in (local + Redis) | Built-in (local) | Built-in (local + Redis + traffic splitting) |
+| **Multi-tenancy** | Workspaces (Enterprise) | N/A (control plane manages) | Built-in (multi-tenancy via admin API) |
+| **Deployment** | K8s, VM, Docker, hybrid | K8s, VM, Docker | K8s, VM, Docker |
+| **Extensibility** | Lua, Go (PDK), WASM | WASM, Lua, ext_authz/ext_proc | Lua, WASM, Java, Go (external plugins) |
+| **License** | Apache 2.0 (OSS) / Enterprise | Apache 2.0 | Apache 2.0 |
+
+**Decision guide:**
+- **Enterprise support, large plugin ecosystem:** Kong
+- **Sidecar/service mesh, low-level proxy:** Envoy (usually behind Istio/consul/Gloo)
+- **Full-featured OSS, built-in dashboard, high perf:** APISIX
+- **gRPC-first:** Envoy or APISIX
+- **WASM extensibility:** Envoy (native), Kong and APISIX (growing)
+
+## Step 44: Serverless Patterns
+
+### Step Functions / Workflow Orchestration
+
+| Tool | Type | Features | Language |
+|------|------|----------|----------|
+| **AWS Step Functions** | Managed | Visual workflow, states (task, choice, parallel, map, wait), integrations with 200+ AWS services | JSON/YAML ASL |
+| **Temporal** | Self-hosted/Cloud | Durable execution, workflow as code, replay, versioning, activity retries | Go, Java, TypeScript, Python, .NET |
+| **Azure Durable Functions** | Managed | Chaining, fan-out/fan-in, human interaction, monitoring | C#, JavaScript, Python, Java |
+| **Cadence** | Self-hosted | Temporal predecessor, same model, mature | Go, Java |
+| **Inngest** | Managed | Event-driven serverless functions, step tooling, built-in retries | TypeScript, Python, Go |
+
+**Temporal core concepts:**
+- **Workflow:** deterministic code; replayed from event history on failure
+- **Activity:** non-deterministic work (API calls, DB writes); retried independently
+- **Workflow replay:** on crash, Temporal replays history + resumes from last completed activity
+
+### Event-Driven Patterns
+
+**Fan-Out / Fan-In:**
+```
+Event → Dispatcher → [Worker1, Worker2, ...WorkerN] → Aggregator → Result
+```
+- AWS: Step Functions Map state or SNS → SQS fan-out
+- Temporal: `Promise.all()` on activities
+- Durable Functions: fan-out/fan-in built-in pattern
+- Knative/KEDA: scale workers based on queue depth
+
+**Event-driven triggers:**
+- S3/object upload → Lambda/Cloud Function
+- DynamoDB Streams → Lambda (CDC)
+- Kafka consumer group → serverless workers (via KEDA)
+- CloudEvents spec for cross-platform event format
+
+### Cold Start Mitigation by Runtime
+
+| Runtime | Cold Start (typical) | Mitigation |
+|---------|---------------------|------------|
+| **Node.js** | 100-300ms | Small bundle, provisioned concurrency, connection pooling |
+| **Python** | 200-500ms | Slim packages (avoid heavy imports), Lambda SnapStart equivalent, layer caching |
+| **Go** | 5-50ms | Compiled binary, near-zero cold start; minimal mitigation needed |
+| **Rust** | 5-30ms | Compiled binary, fastest cold start; use `lambda_runtime` crate |
+| **Java** | 1-5s (JVM) | SnapStart (AWS), GraalVM native-image, Quarkus, Spring Native |
+| **C# / .NET** | 500ms-2s | ReadyToRun, trimming, custom runtime (AOT in .NET 8), provisioned concurrency |
+
+**Cross-runtime strategies:**
+- **Provisioned concurrency** (AWS) / **min instances** (GCP): keep N warm instances
+- **SnapStart** (AWS Lambda Java): snapshot initialized state, restore in ~200ms
+- **Firecracker microVMs**: faster cold start than containers (~125ms)
+- **Scheduled warming pings**: hit endpoint every 5 min (hacky, costs money, last resort)
+
+## Step 45: Edge Computing Patterns
+
+### Platform Comparison
+
+| Feature | Cloudflare Workers | Deno Deploy | Fastly Compute |
+|---------|-------------------|-------------|----------------|
+| **Runtime** | V8 isolates | V8 isolates (Deno) | Wasmtime (WASI) |
+| **Language** | JavaScript/TypeScript, Rust, C/C++ (via WASM) | JavaScript/TypeScript | Rust, Go, JS (compiled to WASM), any WASI lang |
+| **Regions** | 300+ PoPs | 35+ regions | 80+ PoPs |
+| **Cold start** | ~0ms (pre-warmed isolates) | ~0ms (pre-warmed) | ~ms (Wasm instantiation) |
+| **State** | KV, Durable Objects, R2, D1 (SQLite) | KV (Deno KV), no built-in durable objects | ConfigStore, KV (limited); external state needed |
+| **Max execution** | 30s (standard), 15min (Durable Objects) | 50ms-60s per request | 120s (Compute) |
+| **Bundle size** | 10MB (compressed) | 10MB | Platform-dependent |
+| **Edge DB** | D1 (SQLite at edge) | None built-in (use external) | None built-in |
+| **WebSockets** | Durable Objects | Supported | Supported |
+| **Pricing** | Per-request (free tier: 100k/day) | Per-request (free tier available) | Per-request |
+| **Best for** | Full-stack edge (compute + storage + D1) | JS/TS-first, Deno ecosystem | Rust/WASM performance, custom low-level |
+
+### Common Edge Patterns
+
+**1. Edge-side rendering (ESR):**
+- Render HTML at edge, personalize per user/region
+- Tools: Cloudflare Workers + D1, Next.js Edge Runtime, Remix Edge
+- Use: SSR with low latency globally
+
+**2. Edge caching + stale-while-revalidate:**
+```
+Client → Edge PoP → cache HIT? → return cached
+                   → cache MISS? → origin → cache response → return
+```
+- Cache-Control: `public, max-age=60, stale-while-revalidate=300`
+- Cloudflare: Cache API, Cache Reserve (R2-backed)
+
+**3. Edge authentication / token validation:**
+- Validate JWT at edge before hitting origin
+- Reject unauthorized requests at PoP (save origin load)
+- JWKS cached at edge, refreshed periodically
+
+**4. Edge geo-routing:**
+- Route to nearest regional backend based on client geolocation
+- GeoIP lookup at edge (Cloudflare cf-country/cf-city headers)
+
+**5. Edge A/B testing / feature flags:**
+- Split traffic at edge without origin round-trip
+- Cookie-based or random assignment at PoP
+
+**6. Edge API gateway:**
+- Rate limiting, auth, request transformation at edge
+- Offload origin from cross-cutting concerns
+
+**7. Edge-side aggregation (BFF pattern):**
+- Aggregate multiple backend APIs at edge
+- Return single payload to client; reduce round trips
+
+**Decision guide:**
+- **Full-stack edge with storage:** Cloudflare Workers (D1, KV, R2, Durable Objects)
+- **JS/TS, Deno ecosystem:** Deno Deploy
+- **Rust/WASM, low-level control:** Fastly Compute
+- **Lowest cold start, most PoPs:** Cloudflare Workers
 
 ## Pitfalls (Addendum)
 

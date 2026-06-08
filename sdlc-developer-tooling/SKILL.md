@@ -1476,3 +1476,947 @@ Software Carbon Intensity (SCI) = `(E * I) + M per R`
 - **R**: Functional unit (request, user, transaction)
 
 Target: reduce SCI score over time. Measure, optimize, repeat.
+## Step 12: Platform Engineering & Internal Developer Platforms
+
+### Platform as Product
+Shift from ticket-based ops to self-service. Platform teams build products developers consume.
+
+**Mindset principles:**
+- Treat developers as customers, not subordinates
+- Measure adoption, not compliance
+- Product roadmap driven by developer surveys + usage data
+- Dedicated PM for platform team (yes, really)
+- Platform team owns SLO for internal services
+
+### Platform Maturity Model
+
+```
+CRAWL:
+  - Centralized docs (wiki/confluence)
+  - Shared CI templates (GitHub Actions reusable workflows)
+  - Service catalog spreadsheet
+  - Manual provisioning with runbooks
+  - Onboarding time: 2-4 weeks
+
+WALK:
+  - Self-service portal (Backstage/Port)
+  - Golden paths: opinionated starter templates
+  - Automated environment provisioning
+  - TechDocs integrated in portal
+  - Onboarding time: 2-3 days
+
+RUN:
+  - Score/Humanitec workload spec for env-agnostic deploys
+  - Dynamic configuration management (no YAML hand-editing)
+  - Platform APIs (create service, provision DB, rotate secrets)
+  - Paved roads with escape hatches
+  - Developer NPS tracked quarterly
+  - Onboarding time: < 1 day
+```
+
+### Backstage (CNCF)
+
+Open-source developer portal by Spotify.
+
+**Core plugins:**
+
+| Plugin | Purpose |
+|--------|---------|
+| Catalog | Service/component registry. `catalog-info.yaml` in each repo |
+| Scaffolder | Cookiecutter templates. `template.yaml` defines parameters + steps |
+| TechDocs | Docs-as-code. MkDocs in Backstage. Write in repo, render in portal |
+| Kubernetes | Pod/deployment status per service |
+| ArgoCD | Deployment status from ArgoCD |
+| GitHub Actions | CI status per component |
+| Lighthouse | Automated audits (perf, a11y, SEO) |
+
+```yaml
+# catalog-info.yaml (in each repo)
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: order-service
+  description: Handles order lifecycle
+  annotations:
+    github.com/project-slug: org/order-service
+    argocd/app-name: order-service
+  tags: [go, orders, production]
+spec:
+  type: service
+  lifecycle: production
+  owner: team-orders
+  system: e-commerce
+  dependsOn:
+    - resource:postgres-orders
+  providesApis:
+    - order-api
+```
+
+```yaml
+# template.yaml (Scaffolder)
+apiVersion: scaffolder.backstage.io/v1beta3
+kind: Template
+metadata:
+  name: create-go-service
+  title: Go Microservice
+  description: Scaffold new Go service with CI/CD
+spec:
+  owner: platform-team
+  type: service
+  parameters:
+    - title: Service Info
+      properties:
+        name:
+          title: Service name
+          type: string
+          pattern: "^[a-z][a-z0-9-]+$"
+    - title: Infrastructure
+      properties:
+        database:
+          title: Database
+          type: string
+          enum: [postgres, mysql, none]
+  steps:
+    - id: fetch-base
+      action: fetch:template
+      input:
+        url: ./skeleton
+        values:
+          name: ${{ parameters.name }}
+          database: ${{ parameters.database }}
+    - id: publish
+      action: github:repo:create
+      input:
+        repoUrl: github.com?repo=${{ parameters.name }}&owner=org
+    - id: register
+      action: catalog:register
+      input:
+        repoContentsUrl: ${{ steps.publish.output.repoContentsUrl }}
+        catalogInfoPath: /catalog-info.yaml
+```
+
+### Humanitec & Score
+
+**Score**: open-source workload spec. Declarative, environment-agnostic.
+
+```yaml
+# score.yaml
+apiVersion: score.dev/v1b1
+metadata:
+  name: order-service
+  annotations:
+    score.dev/description: "Order processing service"
+
+containers:
+  main:
+    image: .
+    variables:
+      DB_HOST: ${resources.db.host}
+      DB_PORT: ${resources.db.port}
+      DB_NAME: ${resources.db.name}
+    resources:
+      limits:
+        memory: "256Mi"
+        cpu: "500m"
+
+resources:
+  db:
+    type: postgres
+  cache:
+    type: redis
+    params:
+      maxmemory: 128mb
+```
+
+Humanitec orchestrator resolves `${resources.db.host}` differently per env:
+- Dev: local Docker Postgres
+- Staging: small RDS instance
+- Prod: multi-AZ RDS cluster
+
+**Value**: same `score.yaml` deploys to any environment. No env-specific YAML.
+
+### Port vs Cortex
+
+| Aspect | Port | Cortex |
+|--------|------|--------|
+| Focus | Service catalog + self-service actions | Service catalog + scorecards |
+| Scorecards | Yes | Advanced (GPA-style scoring) |
+| Self-service | UI + API forms, webhook actions | Limited |
+| Integrations | 50+ (K8s, ArgoCD, GitHub, PagerDuty) | 40+ |
+| Pricing | Free tier + enterprise | Enterprise only |
+| Config as code | Yes (JSON blueprints) | YAML-based |
+| Open source | No | No |
+| Best for | Self-service portal | Operational excellence scorecards |
+
+### Golden Paths vs Paved Roads vs Guardrails
+
+```
+Golden Paths:
+  - Single recommended way to do something
+  - Opinionated: "use this template, this CI pipeline, this deploy method"
+  - Example: Spring Initializr for Java, Create React App for React
+  - Trade-off: may not fit edge cases
+
+Paved Roads:
+  - Multiple supported paths, all well-maintained
+  - Less opinionated than golden paths
+  - Example: "We support both Go and Java, both have full CI/CD pipelines"
+  - Trade-off: more maintenance burden
+
+Guardrails:
+  - Automated policy enforcement
+  - Prevent bad outcomes without prescribing solutions
+  - Examples: OPA/Kyverno policies, branch protection, required checks
+  - Usually combine with golden paths or paved roads
+```
+
+**Practical mix**: Start with guardrails (cheap). Add golden paths for most common workflows. Graduate to paved roads as org scales.
+
+---
+
+## Step 13: Trunk-Based Development
+
+Source: https://trunkbaseddevelopment.com/
+
+### Core Principles
+
+```
+- All work happens on main/trunk (or very short-lived branches)
+- Branch lifetime: < 1 day (ideally hours)
+- Feature branches merged same day they're created
+- No long-lived release branches
+- Integration happens continuously, not at end of sprint
+- Rebase over merge commits for clean history
+```
+
+### Why Short-Lived Branches
+
+```
+Long-lived branches (> 1 week):
+  - Merge conflicts increase exponentially with age
+  - Integration risk accumulates
+  - Code review becomes "review 2000 LOC wall"
+  - Psychological: harder to merge, more fear
+  - Blocks other developers from using your changes
+
+Short-lived branches (< 1 day):
+  - Small, focused changes
+  - Merge conflicts are trivial
+  - Integration is continuous
+  - Code review is fast (200-400 LOC)
+  - Can always release main
+```
+
+### Feature Flags
+
+**Types:**
+
+```
+Release flags:
+  - Hide incomplete features in production
+  - Short-lived: removed after feature ships
+  - Toggle: FEATURE_CHECKOUT_V2=true
+
+Experiment flags (A/B):
+  - Serve different variants to user segments
+  - Medium-lived: run for experiment duration
+  - Tools: LaunchDarkly, Unleash, Flipt, Flagsmith
+
+Ops flags:
+  - Kill switches for degraded performance
+  - Long-lived: stay forever
+  - Example: DISABLE_RECOMMENDATIONS=true (circuit breaker)
+
+Permission flags:
+  - Feature access per tenant/user
+  - Long-lived: business logic
+  - Example: PREMIUM_ANALYTICS=true
+```
+
+**Flag lifecycle:**
+
+```
+1. Create flag (specify type, owner, expiry date)
+2. Use flag in code (guard new code path)
+3. Roll out (1% -> 10% -> 50% -> 100%)
+4. Verify (metrics, error rates, user feedback)
+5. Remove flag (delete old code path, remove flag definition)
+   - NEVER leave dead flags. Track flag debt.
+```
+
+**Tools:**
+
+| Tool | Type | Notes |
+|------|------|-------|
+| LaunchDarkly | SaaS | Enterprise, expensive, most features |
+| Unleash | Open source | Self-hosted or SaaS, good default |
+| Flipt | Open source | Lightweight, fast, Go-based |
+| Flagsmith | Open source | Good free tier, REST API |
+| OpenFeature | Standard | CNCF standard for flag evaluation APIs |
+
+**OpenFeature SDK example:**
+
+```typescript
+import { OpenFeature } from '@openfeature/web-sdk';
+
+const provider = new LaunchDarklyProvider(ldClient);
+OpenFeature.setProvider(provider);
+const client = OpenFeature.getClient();
+
+const showNewCheckout = await client.getBooleanValue(
+  'checkout-v2',
+  false,  // default value
+  { targetingKey: user.id }
+);
+
+if (showNewCheckout) {
+  render(CheckoutV2);
+} else {
+  render(CheckoutV1);
+}
+```
+
+### Branch by Abstraction
+
+When feature flag is impractical (large refactor spanning many files):
+
+```
+1. Identify the code that needs to change
+2. Introduce abstraction (interface/strategy pattern)
+3. Implement new behavior behind abstraction
+4. Swap implementations at runtime (flag or config)
+5. Verify new implementation works
+6. Remove old implementation
+7. Remove abstraction if no longer needed
+```
+
+```python
+# Step 1-2: Abstract
+class PaymentProcessor(ABC):
+    @abstractmethod
+    def charge(self, amount: Decimal) -> Receipt: ...
+
+class StripeProcessor(PaymentProcessor):  # existing
+    def charge(self, amount: Decimal) -> Receipt: ...
+
+# Step 3: New implementation behind abstraction
+class AdyenProcessor(PaymentProcessor):  # new
+    def charge(self, amount: Decimal) -> Receipt: ...
+
+# Step 4: Swap via config
+processor = AdyenProcessor() if config.use_adyen else StripeProcessor()
+
+# Step 6-7: After full migration, remove StripeProcessor + flag
+```
+
+---
+
+## Step 14: GitOps
+
+### Principles (OpenGitOps - CNCF)
+
+```
+1. Declarative: Desired state described declaratively (YAML/HCL)
+2. Versioned & Immutable: State stored in Git (single source of truth)
+3. Pulled Automatically: Agents pull desired state, not pushed to
+4. Continuously Reconciled: Agent ensures actual = desired state
+```
+
+### Reconciliation Loop
+
+```
++-----------------+
+|   Git Repo      |  (desired state: YAML manifests)
+|   (source)      |
++--------+--------+
+         | watch/poll for changes
+         v
++-----------------+
+|  GitOps Agent   |  (ArgoCD / Flux)
+|  (reconciler)   |
++--------+--------+
+         | compare desired vs actual
+         v
++-----------------+
+|  Kubernetes     |  (actual state)
+|  Cluster        |
++--------+--------+
+         | drift detected?
+         v
+    apply desired state (kubectl apply)
+```
+
+**Drift detection**: If someone runs `kubectl edit` manually, agent detects drift and reverts. Manual changes are anti-pattern.
+
+### ArgoCD vs Flux
+
+| Aspect | ArgoCD | Flux |
+|--------|--------|------|
+| CNCF status | Graduated | Graduated |
+| UI | Rich web UI (built-in) | No built-in UI (use Weave GitOps) |
+| Architecture | Centralized (single control plane) | Distributed (per-cluster agents) |
+| App model | Application CRD | Kustomization + HelmRelease CRDs |
+| Multi-tenancy | Projects + RBAC | Namespace-scoped, native K8s RBAC |
+| Notifications | Built-in (Slack, Discord, webhook) | Notification controller (separate) |
+| Helm support | Native (values from UI) | HelmRelease CRD (more native Helm) |
+| Kustomize support | Native | Kustomization CRD (first-class) |
+| Image automation | No (needs external) | Built-in (image-reflector-controller) |
+| Progressive delivery | Via Argo Rollouts (separate) | Via Flagger (separate) |
+| Secret management | External Secrets, Sealed Secrets, Vault | SOPS, External Secrets, Sealed Secrets |
+| Config | YAML/CLI/UI | YAML only (GitOps-native) |
+| Best for | Teams wanting UI + visualization | Teams wanting pure GitOps + automation |
+
+**ArgoCD example:**
+
+```yaml
+# application.yaml
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: order-service
+  namespace: argocd
+spec:
+  project: production
+  source:
+    repoURL: https://github.com/org/k8s-manifests.git
+    targetRevision: main
+    path: apps/order-service/overlays/production
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: order-service
+  syncPolicy:
+    automated:
+      prune: true        # delete resources removed from Git
+      selfHeal: true      # revert manual changes
+    syncOptions:
+      - CreateNamespace=true
+```
+
+**Flux example:**
+
+```yaml
+# gitrepository.yaml
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: GitRepository
+metadata:
+  name: k8s-manifests
+  namespace: flux-system
+spec:
+  interval: 1m
+  url: https://github.com/org/k8s-manifests.git
+  ref:
+    branch: main
+
+# kustomization.yaml
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: order-service
+  namespace: flux-system
+spec:
+  interval: 5m
+  path: ./apps/order-service/overlays/production
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: k8s-manifests
+```
+
+---
+
+## Step 15: Conventional Commits & Semver Automation
+
+### Conventional Commits Format
+
+Source: https://www.conventionalcommits.org/
+
+```
+<type>[optional scope]: <description>
+
+[optional body]
+
+[optional footer(s)]
+
+# Examples:
+feat(auth): add OAuth2 PKCE flow
+fix(api): prevent race condition on order creation
+docs(readme): update installation steps
+feat!: change user API response format    # BREAKING CHANGE
+refactor(core): extract validation logic  # no version bump
+
+# Types that trigger version bumps:
+#   fix:       -> PATCH (1.0.0 -> 1.0.1)
+#   feat:      -> MINOR (1.0.0 -> 1.1.0)
+#   feat!:     -> MAJOR (1.0.0 -> 2.0.0)
+#   BREAKING CHANGE footer: -> MAJOR
+
+# Types that DON'T bump:
+#   docs, style, refactor, perf, test, build, ci, chore
+```
+
+### commitlint
+
+```bash
+npm install -D @commitlint/cli @commitlint/config-conventional
+
+# commitlint.config.js
+echo "module.exports = { extends: ['@commitlint/config-conventional'] };" > commitlint.config.js
+
+# As pre-commit hook (Husky)
+npx husky add .husky/commit-msg 'npx commitlint --edit "$1"'
+```
+
+**Custom rules example:**
+
+```javascript
+// commitlint.config.js
+module.exports = {
+  extends: ['@commitlint/config-conventional'],
+  rules: {
+    'type-enum': [2, 'always', [
+      'feat', 'fix', 'docs', 'style', 'refactor',
+      'perf', 'test', 'build', 'ci', 'chore', 'revert'
+    ]],
+    'scope-enum': [2, 'always', [
+      'api', 'auth', 'db', 'ui', 'ci', 'deps', 'infra'
+    ]],
+    'subject-max-length': [2, 'always', 72],
+    'body-max-line-length': [2, 'always', 100],
+  }
+};
+```
+
+### semantic-release (Node.js)
+
+```bash
+npm install -D semantic-release
+
+# .releaserc.json
+{
+  "branches": ["main"],
+  "plugins": [
+    "@semantic-release/commit-analyzer",
+    "@semantic-release/release-notes-generator",
+    "@semantic-release/changelog",
+    "@semantic-release/npm",
+    "@semantic-release/github",
+    "@semantic-release/git"
+  ]
+}
+```
+
+**What it does:**
+1. Analyzes commits since last tag
+2. Determines version bump (patch/minor/major)
+3. Generates CHANGELOG
+4. Publishes to npm
+5. Creates GitHub release with notes
+6. Commits changelog + version bump back to repo
+
+### release-please (Google)
+
+```yaml
+# .github/workflows/release.yml
+name: Release
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: googleapis/release-please-action@v4
+        with:
+          release-type: node  # or python, go, rust, java, etc.
+          changelog-types: |
+            [
+              {"type":"feat","section":"Features","hidden":false},
+              {"type":"fix","section":"Bug Fixes","hidden":false},
+              {"type":"perf","section":"Performance","hidden":false},
+              {"type":"docs","section":"Documentation","hidden":false}
+            ]
+```
+
+**release-please vs semantic-release:**
+
+| Aspect | release-please | semantic-release |
+|--------|---------------|------------------|
+| Creator | Google | open-source community |
+| Approach | Creates PR with changelog | Auto-commits + tags on merge |
+| Visibility | PR lets humans review release | Fully automated (no human gate) |
+| Multi-language | Yes (20+ release types) | Node.js native, plugins for others |
+| Commit format | Conventional Commits | Conventional Commits |
+| GitHub integration | PRs + releases | Releases only |
+
+---
+
+## Step 16: Monorepo vs Polyrepo
+
+### Approaches by Company
+
+```
+Google (Monorepo):
+  - Single repo, 2B+ lines of code
+  - Custom tools: Bazel (build), Piper (VCS), Critique (code review)
+  - Trunk-based, no branches
+  - Every change reviewed by owner of affected code
+  - Massive CI: only rebuild affected targets
+
+Meta (Monorepo):
+  - Single repo for all products (Facebook, Instagram, WhatsApp)
+  - Mercurial initially, now custom Git (Sapling)
+  - Buck2 build system
+  - Ship-of-Theseus: continuous deployment, no releases
+
+Uber (Polyrepo -> Monorepo -> Polyrepo):
+  - Started polyrepo, migrated to monorepo
+  - Found monorepo hard at scale without Google tooling
+  - Settled on polyrepo with strong service templates
+  - Lesson: monorepo benefits require investment in tooling
+
+Spotify (Polyrepo with Golden Path):
+  - Each team owns repos
+  - Backstage for service discovery
+  - Strong internal templates for consistency
+  - Good for team autonomy
+
+Airbnb (Monorepo):
+  - Single repo, millions of lines
+  - Nx for JS/TS build orchestration
+  - Shared libraries published internally
+```
+
+### When to Use Which
+
+```
+Monorepo wins when:
+  - Shared code/libraries across services
+  - Atomic commits across projects needed
+  - Consistent tooling/linting/formatting
+  - Single CI/CD pipeline per change
+  - Code reuse is high priority
+  - You have/will invest in build tooling
+
+Polyrepo wins when:
+  - Teams are autonomous, different tech stacks
+  - Different release cadences
+  - Strong service boundaries
+  - Open-source repos alongside internal
+  - Teams can't agree on tooling
+  - You don't have build tooling budget
+```
+
+### Build Tooling Comparison
+
+| Tool | Ecosystem | Incremental | Remote Cache | Remote Exec | Language |
+|------|-----------|-------------|--------------|-------------|----------|
+| Nx | JS/TS primary | Yes (affected) | Yes (Nx Cloud) | No | JS/TS, some polyglot |
+| Turborepo | JS/TS | Yes | Yes (Vercel) | No | JS/TS only |
+| Bazel | Polyglot | Yes (fine-grained) | Yes | Yes | Any (via rules) |
+| Pants | Polyglot | Yes | Yes | Yes | Python, Go, Java, Shell |
+| Lage | JS/TS | Yes | No | No | JS/TS only |
+| Moon | Polyglot | Yes | Yes | No | JS/TS, Rust, Go |
+
+**Nx example (monorepo):**
+
+```bash
+npx create-nx-workspace@latest myorg --preset=ts
+
+# Generate apps/libs
+nx g @nx/node:application api
+nx g @nx/react:application web
+nx g @nx/js:library shared-utils
+
+# Run affected only (incremental)
+nx affected -t lint test build    # only builds changed + dependents
+
+# Dependency graph
+nx graph                          # interactive dep graph in browser
+```
+
+**Turborepo example:**
+
+```bash
+npx create-turbo@latest
+
+# turbo.json
+{
+  "tasks": {
+    "build": {
+      "dependsOn": ["^build"],
+      "outputs": ["dist/**"]
+    },
+    "test": {
+      "dependsOn": ["build"]
+    },
+    "lint": {}
+  }
+}
+
+# Run with caching
+turbo run build test lint         # caches outputs, skips unchanged
+turbo run build --filter=web      # only web package + deps
+```
+
+**Bazel example:**
+
+```python
+# BUILD file
+go_library(
+    name = "order_lib",
+    srcs = ["order.go"],
+    deps = [
+        "//proto/order:order_proto",
+        "//shared/errors",
+    ],
+)
+
+go_test(
+    name = "order_test",
+    deps = [":order_lib"],
+)
+```
+
+```bash
+bazel test //services/order:order_test    # only rebuilds changed deps
+bazel test //...                           # all tests (incremental)
+```
+
+---
+
+## Step 17: Git Internals
+
+### Object Model
+
+Git stores everything as 4 object types in `.git/objects/`:
+
+```
+blob:    File content (just bytes, no filename)
+tree:    Directory listing (maps filenames to blobs/trees)
+commit:  Snapshot pointer (tree + parent + author + message)
+tag:     Annotated tag (points to commit + tagger + message)
+```
+
+```bash
+# Inspect objects
+git cat-file -t <hash>     # show type (blob/tree/commit/tag)
+git cat-file -p <hash>     # pretty-print contents
+
+# Example: trace a commit
+git cat-file -p HEAD
+# tree 4b825dc642cb6eb9a060e54bf899d69f3e2e1b
+# parent abc123...
+# author Name <email> timestamp +0000
+# committer Name <email> timestamp +0000
+#
+# Commit message
+
+git cat-file -p 4b825dc642cb6eb9a060e54bf899d69f3e2e1b
+# 100644 blob def123...    README.md
+# 040000 tree abc456...    src
+
+git cat-file -p def123...  # actual file contents
+```
+
+**SHA-1 hash**: content-addressable. Same content = same hash. Hash computed from object header + content.
+
+### Refs
+
+```
+refs/heads/main          -> local branch (pointer to commit SHA)
+refs/heads/feature-x     -> local branch
+refs/remotes/origin/main -> remote tracking branch
+refs/tags/v1.0.0         -> tag (lightweight: commit SHA, annotated: tag object)
+HEAD                     -> symbolic ref: points to branch ref
+```
+
+```bash
+cat .git/HEAD                     # ref: refs/heads/main
+cat .git/refs/heads/main          # commit SHA
+git symbolic-ref HEAD             # read HEAD
+git update-ref refs/heads/main <sha>  # move branch (dangerous)
+```
+
+### Reflog
+
+Local history of where HEAD and branch tips have pointed. Not shared. Default retention: 90 days.
+
+```bash
+git reflog                    # HEAD history
+git reflog show main          # branch tip history
+git reflog show --all         # all refs
+
+# Rescue: undo rebase disaster
+git reflog                    # find pre-rebase SHA
+git reset --hard HEAD@{5}     # go back 5 HEAD movements
+
+# Cherry-pick lost commit
+git reflog | grep "commit msg"
+git cherry-pick <sha>
+```
+
+### Cherry-Pick vs Rebase
+
+```
+cherry-pick:
+  - Copies specific commits onto current branch
+  - Creates NEW commit objects (different SHAs)
+  - Use case: backport fix to release branch
+  - Original commits untouched
+  
+  git cherry-pick abc123           # apply one commit
+  git cherry-pick abc123..def456   # range (exclusive start)
+  git cherry-pick -m 1 merge-sha   # cherry-pick merge commit (first parent)
+
+rebase:
+  - Replays commits from current branch onto new base
+  - Creates NEW commit objects (different SHAs)
+  - Linearizes history (no merge commits)
+  - Use case: update feature branch with latest main
+  
+  git rebase main                  # replay current branch onto main
+  git rebase -i HEAD~5             # interactive: squash, reorder, edit
+  git rebase --onto main old-base feature  # surgical rebase
+```
+
+**Key difference**: cherry-pick selects specific commits. Rebase replays entire branch.
+
+**Interactive rebase commands:**
+
+```
+pick   = use commit as-is
+reword = use commit, edit message
+edit   = use commit, stop for amending
+squash = use commit, meld into previous
+fixup  = use commit, meld into previous (discard message)
+drop   = remove commit
+
+# Typical: squash WIP commits before merge
+git rebase -i main
+# pick abc123 feat: add user model
+# squash def456 fix typo
+# squash ghi789 WIP tests
+# Result: single clean commit
+```
+
+**Safety**: `git rebase` rewrites history. Never rebase commits that are pushed to shared branches. Use `git push --force-with-lease` if you must force-push after rebase.
+
+---
+
+## Step 18: Code Review Best Practices
+
+### Google Engineering Practices
+
+Source: https://google.github.io/eng-practices/review/
+
+**Metrics from Google research:**
+- Review speed: ~400 LOC/hour (diminishing returns after 60 min)
+- Optimal review size: < 400 LOC per review
+- Response time: < 1 hour for initial response (not full review)
+- Multiple small reviews > one large review
+
+**Reviewer responsibilities:**
+```
+1. Correctness: Does code do what it claims?
+2. Design: Is code well-designed? Right abstractions?
+3. Complexity: Can code be simpler? Over-engineered?
+4. Tests: Are there tests? Do they test the right things?
+5. Naming: Are names clear and consistent?
+6. Comments: Are comments useful (why, not what)?
+7. Style: Does it follow style guide?
+8. Documentation: Do public APIs have docs?
+```
+
+**Author responsibilities:**
+```
+1. Self-review first: read your own diff before requesting review
+2. Write good description: what, why, how, testing done
+3. Small CLs: < 400 LOC, single responsibility
+4. Respond to every comment: resolve or discuss
+5. Don't take it personally: feedback is about code, not you
+```
+
+### SmartBear Code Review Findings
+
+Source: https://smartbear.com/learn/code-review/best-practices-for-peer-code-review/
+
+**Key findings from studying 2500+ reviews:**
+- Review no more than 200-400 LOC at a time
+- Take breaks after 60 minutes (inspection rate drops)
+- Expect ~15 defects per hour in dense code
+- Author should annotate code before review (explain non-obvious parts)
+- Checklists improve defect detection by 30-90%
+- Tool-assisted review catches more than unstructured review
+
+### Comment Prefixes
+
+Standardize review comment tone with prefixes:
+
+```
+nit:       Style/formatting preference. Non-blocking. Author decides.
+suggestion: Alternative approach. Optional. Author weighs trade-offs.
+question:  "I don't understand this. Can you explain?" Clarification only.
+issue:     Bug or correctness problem. Must fix before merge.
+todo:      Something that should be done but can be in follow-up.
+praise:    "Nice approach!" Positive feedback. Use generously.
+thought:   Thinking out loud. Neither block nor unblock.
+```
+
+**Examples:**
+```
+nit: Extra blank line here.
+
+suggestion: Consider using a Map instead of array lookup for O(1) access.
+
+question: Why do we need the retry here? Is the upstream unreliable?
+
+issue: This will panic on nil if user has no address. Need nil check.
+
+praise: Clever use of the builder pattern here. Very clean.
+```
+
+### Review Checklist Template
+
+```markdown
+## Code Review Checklist
+
+### Correctness
+- [ ] Does it solve the stated problem?
+- [ ] Edge cases handled? (nil, empty, boundary values)
+- [ ] Error handling present and correct?
+- [ ] Concurrency safe? (if applicable)
+
+### Design
+- [ ] Right level of abstraction?
+- [ ] Follows existing patterns in codebase?
+- [ ] Single responsibility?
+- [ ] Dependencies reasonable?
+
+### Testing
+- [ ] Tests cover happy path + edge cases?
+- [ ] Tests are deterministic (no flakes)?
+- [ ] Error paths tested?
+- [ ] Test names describe behavior?
+
+### Security
+- [ ] Input validated/sanitized?
+- [ ] Auth/permissions checked?
+- [ ] No secrets in code/logs?
+- [ ] SQL injection / XSS prevented?
+
+### Performance
+- [ ] No N+1 queries?
+- [ ] Reasonable memory usage?
+- [ ] Appropriate data structures?
+
+### Maintainability
+- [ ] Code is readable without comments?
+- [ ] Naming is clear and consistent?
+- [ ] Magic numbers extracted?
+- [ ] Public APIs documented?
+```
