@@ -1,13 +1,13 @@
 ---
 name: sdlc-deployment
-description: "Deployment strategies: canary, blue-green, rolling, progressive delivery (Flagger/Argo Rollouts), feature flags (LaunchDarkly/Unleash/OpenFeature), rollback, database migrations, zero-downtime patterns. v3: Gateway API traffic splitting, OpenFeature CNCF standard, FinOps (OpenCost/Karpenter/FOCUS), AnalysisTemplate, multi-cluster progressive delivery. v3.1: Serverless (Lambda/Cloud Run/Container Apps), edge deployment (Cloudflare Workers/Deno Deploy), cold start optimization, serverless observability."
-version: 3.2.0
+description: "Deployment strategies: canary, blue-green, rolling, progressive delivery (Flagger/Argo Rollouts), feature flags (LaunchDarkly/Unleash/OpenFeature), rollback, database migrations, zero-downtime patterns. v3: Gateway API traffic splitting, OpenFeature CNCF standard, FinOps (OpenCost/Karpenter/FOCUS), AnalysisTemplate, multi-cluster progressive delivery. v3.1: Serverless (Lambda/Cloud Run/Container Apps), edge deployment (Cloudflare Workers/Deno Deploy), cold start optimization, serverless observability. v4: Production hardening (health probes, graceful shutdown, PDB), multi-region patterns (active-active/passive, follow-the-sun), disaster recovery (RPO/RTO, failover automation), cost optimization (right-sizing, spot/reserved), deployment verification (smoke tests, synthetic monitoring, canary analysis)."
+version: 4.0.0
 author: Hermes Agent
 license: MIT
 platforms: [linux, macos, windows]
 metadata:
   hermes:
-    tags: [sdlc, deployment, canary, blue-green, rolling, feature-flags, progressive-delivery, flagger, argo-rollouts, kubernetes, zero-downtime, gateway-api, openfeature, finops, opencost, karpenter, analysis-template, multi-cluster, database-migration, serverless, lambda, cloud-run, container-apps, edge-deployment, cloudflare-workers, cold-start, serverless-observability]
+    tags: [sdlc, deployment, canary, blue-green, rolling, feature-flags, progressive-delivery, flagger, argo-rollouts, kubernetes, zero-downtime, gateway-api, openfeature, finops, opencost, karpenter, analysis-template, multi-cluster, database-migration, serverless, lambda, cloud-run, container-apps, edge-deployment, cloudflare-workers, cold-start, serverless-observability, production-hardening, health-checks, graceful-shutdown, pdb, multi-region, disaster-recovery, rpo-rto, cost-optimization, spot-instances, deployment-verification, smoke-tests, synthetic-monitoring, canary-analysis]
     related_skills: [sdlc-cicd-pipeline, sdlc-testing-qa, sdlc-observability]
 ---
 
@@ -23,6 +23,10 @@ Trigger when user:
 - Sets up feature flags
 - Implements rollback mechanisms
 - Plans database migrations for zero-downtime
+- Configures health checks, probes, or graceful shutdown
+- Sets up multi-region or disaster recovery deployments
+- Optimizes deployment costs (right-sizing, spot, reserved)
+- Implements deployment verification (smoke tests, synthetic monitoring)
 
 ## Strategy Comparison
 
@@ -1453,6 +1457,1042 @@ Request → Lambda (Powertools Logger + OTEL layer)
 - EMF via Powertools Metrics for custom metrics
 - Lambda Insights for infrastructure metrics (enable in function config)
 - CloudWatch Logs Insights for ad-hoc queries across invocations
+
+## Step 17: Production Hardening Checklist
+
+Production readiness gates. Every service must pass before go-live.
+
+### Health Check Probes (Kubernetes)
+
+Three probe types. All three mandatory for production.
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+spec:
+  template:
+    spec:
+      containers:
+      - name: myapp
+        ports:
+        - containerPort: 8080
+        # Startup probe: slow-starting apps get time to initialize
+        # Kubelet uses this FIRST. Only after it succeeds do liveness/readiness run.
+        startupProbe:
+          httpGet:
+            path: /healthz/startup
+            port: 8080
+          initialDelaySeconds: 0
+          periodSeconds: 5
+          failureThreshold: 30    # 30 * 5s = 150s max startup time
+          timeoutSeconds: 3
+        # Liveness probe: is the process alive? Restart if failing.
+        livenessProbe:
+          httpGet:
+            path: /healthz/live
+            port: 8080
+          periodSeconds: 10
+          failureThreshold: 3     # 30s of failure → restart
+          timeoutSeconds: 5
+        # Readiness probe: can it serve traffic? Remove from Service if not.
+        readinessProbe:
+          httpGet:
+            path: /healthz/ready
+            port: 8080
+          periodSeconds: 5
+          failureThreshold: 3     # 15s of failure → removed from endpoints
+          timeoutSeconds: 3
+          successThreshold: 1
+```
+
+**Probe endpoint implementation:**
+
+```python
+# FastAPI health check endpoints
+from fastapi import FastAPI, Response, status
+
+app = FastAPI()
+_is_ready = False
+_is_started = False
+
+@app.get("/healthz/startup")
+async def startup():
+    """Called once by kubelet. Returns 200 when init complete."""
+    if _is_started:
+        return {"status": "started"}
+    return Response(status_code=status.HTTP_503_SERVICE_UNAVAILABLE)
+
+@app.get("/healthz/live")
+async def liveness():
+    """Check process is alive. Keep cheap — no external deps.
+    Only fail if the process is truly stuck (deadlock, thread exhaustion)."""
+    return {"status": "alive"}
+
+@app.get("/healthz/ready")
+async def readiness():
+    """Check can serve traffic. OK to check DB/cache connectivity here.
+    Failure removes pod from Service endpoints (no restart)."""
+    checks = {}
+    healthy = True
+    try:
+        await db.execute("SELECT 1")
+        checks["database"] = "ok"
+    except Exception:
+        checks["database"] = "fail"
+        healthy = False
+    if healthy:
+        return {"status": "ready", "checks": checks}
+    return Response(status_code=status.HTTP_503_SERVICE_UNAVAILABLE)
+```
+
+**Probe design rules:**
+- Startup probe: block on init (migrations, cache warmup, model load)
+- Liveness probe: NO external deps (DB down ≠ restart app). Only detect hangs.
+- Readiness probe: check external deps (DB, cache, downstream). Failure = remove from LB, not restart.
+- `timeoutSeconds` < `periodSeconds`. Use `initialDelaySeconds` only if no startup probe.
+
+### Graceful Shutdown
+
+Handle SIGTERM. Drain connections, finish in-flight requests, close resources.
+
+```yaml
+spec:
+  template:
+    spec:
+      terminationGracePeriodSeconds: 60   # default 30s; increase for long-lived requests
+      containers:
+      - name: myapp
+        lifecycle:
+          preStop:
+            exec:
+              command: ["/bin/sh", "-c", "sleep 5"]
+              # 5s delay: removes pod from endpoints BEFORE app gets SIGTERM
+              # Prevents new connections during shutdown
+```
+
+```go
+// Go: graceful shutdown
+srv := &http.Server{Addr: ":8080", Handler: mux}
+
+go func() {
+    sigChan := make(chan os.Signal, 1)
+    signal.Notify(sigChan, syscall.SIGTERM, syscall.SIGINT)
+    <-sigChan
+
+    // Stop accepting new requests
+    ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+    defer cancel()
+    if err := srv.Shutdown(ctx); err != nil {
+        log.Printf("shutdown error: %v", err)
+    }
+    // Close DB connections, flush buffers, etc.
+    db.Close()
+    metrics.Flush()
+}()
+
+srv.ListenAndServe()
+```
+
+```python
+# Python/FastAPI: graceful shutdown
+import signal, asyncio
+
+@app.on_event("shutdown")
+async def shutdown():
+    await engine.dispose()  # close DB pool
+    # flush any buffered logs/metrics
+
+# uvicorn handles SIGTERM → triggers shutdown event → drains connections
+```
+
+**Shutdown sequence:**
+1. Pod marked for termination
+2. Endpoint controller removes pod from Service endpoints
+3. `preStop` hook runs (sleep 5s to let endpoints propagate)
+4. SIGTERM sent to main process
+5. App stops accepting new connections, drains in-flight
+6. `terminationGracePeriodSeconds` expires → SIGKILL
+
+### Resource Limits and Requests
+
+```yaml
+resources:
+  requests:
+    cpu: "250m"       # guaranteed: 0.25 CPU
+    memory: "256Mi"   # guaranteed: 256 MB
+  limits:
+    cpu: "1000m"      # burst up to 1 CPU (throttled beyond)
+    memory: "512Mi"   # OOMKilled beyond 512 MB
+```
+
+**Rules:**
+- Always set requests. Scheduler needs them for bin-packing.
+- Memory limits: set to 1.5-2x request. Memory not compressible → OOMKill.
+- CPU limits: consider removing for latency-sensitive services. Throttling causes jitter. Use requests only + namespace quota.
+- Use VPA recommender to right-size from historical data.
+- Use `LimitRange` for namespace defaults.
+
+```yaml
+# Namespace defaults
+apiVersion: v1
+kind: LimitRange
+metadata:
+  name: default-limits
+spec:
+  limits:
+  - default:
+      cpu: "500m"
+      memory: "512Mi"
+    defaultRequest:
+      cpu: "100m"
+      memory: "128Mi"
+    type: Container
+```
+
+### Pod Disruption Budget (PDB)
+
+Protects voluntary disruptions (node drain, cluster upgrade, autoscaler consolidation).
+
+```yaml
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: myapp-pdb
+spec:
+  minAvailable: 80%     # at least 80% of pods must remain during disruption
+  # OR: maxUnavailable: 1   # at most 1 pod down at a time
+  selector:
+    matchLabels:
+      app: myapp
+```
+
+**PDB rules:**
+- Use `minAvailable` for small deployments (e.g., `2` for 3-replica service)
+- Use `maxUnavailable: 1` for large deployments (avoids percentage rounding issues)
+- PDB + `terminationGracePeriodSeconds` = safe node drain
+- Karpenter respects PDBs during node consolidation
+- PDB does NOT protect against involuntary disruptions (OOMKill, node crash)
+
+### Full Production Hardening Checklist
+
+| Item | Check | How |
+|------|-------|-----|
+| Startup probe | Slow starts don't trigger restarts | `startupProbe` with adequate `failureThreshold` |
+| Liveness probe | Detects deadlocks/hangs | Simple HTTP check, no external deps |
+| Readiness probe | Removes unhealthy from LB | Checks DB, cache, downstream |
+| Graceful shutdown | No dropped connections | `preStop` + SIGTERM handler + drain |
+| Resource requests | Scheduler can bin-pack | CPU + memory requests set |
+| Resource limits | No noisy neighbor | CPU limits (optional) + memory limits |
+| PDB | Survives node drains | `minAvailable` or `maxUnavailable` set |
+| Pod anti-affinity | Spread across nodes | `topologySpreadConstraints` or `podAntiAffinity` |
+| Security context | Non-root, read-only FS | `runAsNonRoot: true`, `readOnlyRootFilesystem: true` |
+| Network policy | Least-privilege networking | `NetworkPolicy` restricting ingress/egress |
+| Priority class | Critical pods scheduled first | `priorityClassName: system-cluster-critical` |
+| Topology spread | Survive zone failure | `topologySpreadConstraints` across zones |
+
+## Step 18: Multi-Region Deployment Patterns
+
+Deploy across regions for latency, availability, and compliance.
+
+### Active-Active
+
+All regions serve read/write traffic simultaneously. Highest availability and lowest latency. Hardest to implement (conflict resolution).
+
+```
+             ┌─────────────┐
+             │  Global LB   │  (Route53 / Cloud DNS / Cloudflare)
+             │ latency-based│
+             └──────┬───────┘
+          ┌─────────┼─────────┐
+          ▼         ▼         ▼
+    ┌──────────┐ ┌──────────┐ ┌──────────┐
+    │ us-east  │ │ eu-west  │ │ ap-south │
+    │  Active  │ │  Active  │ │  Active  │
+    │ RW + RW  │ │  RW + RW │ │  RW + RW │
+    └────┬─────┘ └────┬─────┘ └────┬─────┘
+         │            │            │
+         └──────┬─────┘────────────┘
+                ▼
+         ┌──────────────┐
+         │ Multi-master  │  (CockroachDB / Spanner / Aurora Global)
+         │    Database   │
+         └──────────────┘
+```
+
+**Requirements:**
+- Multi-master or globally replicated database (CockroachDB, Google Spanner, Aurora Global Database with write forwarding)
+- Conflict resolution strategy: last-writer-wins, CRDTs, or application-level merge
+- Session affinity or global session store (Redis Global Datastore)
+- Idempotent writes (retry-safe operations)
+
+```yaml
+# Route53 latency-based routing
+Resources:
+  UseastRecord:
+    Type: AWS::Route53::RecordSet
+    Properties:
+      Name: api.example.com
+      Type: A
+      SetIdentifier: us-east-1
+      Region: us-east-1
+      AliasTarget:
+        DNSName: !GetAtt UseastAlb.DNSName
+        HostedZoneId: !GetAtt UseastAlb.CanonicalHostedZoneID
+      HealthCheckId: !Ref UseastHealthCheck
+  EuwestRecord:
+    Type: AWS::Route53::RecordSet
+    Properties:
+      Name: api.example.com
+      Type: A
+      SetIdentifier: eu-west-1
+      Region: eu-west-1
+      AliasTarget:
+        DNSName: !GetAtt EuwestAlb.DNSName
+        HostedZoneId: !GetAtt EuwestAlb.CanonicalHostedZoneID
+      HealthCheckId: !Ref EuwestHealthCheck
+```
+
+**Database options:**
+
+| Database | Type | Conflict Resolution | Latency |
+|----------|------|---------------------|---------|
+| CockroachDB | Multi-master SQL | Serializable, automatic | 50-200ms cross-region |
+| Google Spanner | Multi-master SQL | External consistency (TrueTime) | <10ms read, 50-100ms write |
+| Aurora Global | Primary + read replicas | Write forwarding to primary | <10ms read, primary-region write |
+| DynamoDB Global Tables | Multi-master KV | Last-writer-wins | <10ms local read/write |
+| YugabyteDB | Multi-master SQL | Serializable, Raft-based | 50-150ms cross-region |
+
+### Active-Passive (Warm Standby)
+
+One region serves traffic. Secondary region ready to take over. Simpler than active-active. Failover requires DNS switch.
+
+```
+             ┌──────────────┐
+             │   Route53     │
+             │ failover      │
+             └──┬────────┬───┘
+           primary    secondary
+              ▼          ▼
+       ┌──────────┐ ┌──────────┐
+       │ us-east  │ │ eu-west  │
+       │  Active  │ │ Standby  │
+       │  RW      │ │  R only  │
+       └────┬─────┘ └────┬─────┘
+            │             │
+            ▼             ▼
+       ┌──────────┐ ┌──────────┐
+       │ Primary  │→│ Replica  │  (async replication)
+       │   DB     │ │   DB     │
+       └──────────┘ └──────────┘
+```
+
+```yaml
+# Route53 failover routing
+Resources:
+  PrimaryRecord:
+    Type: AWS::Route53::RecordSet
+    Properties:
+      Name: api.example.com
+      Type: A
+      Failover: PRIMARY
+      SetIdentifier: primary
+      HealthCheckId: !Ref PrimaryHealthCheck
+      AliasTarget:
+        DNSName: !GetAtt PrimaryAlb.DNSName
+        HostedZoneId: !GetAtt PrimaryAlb.CanonicalHostedZoneID
+  SecondaryRecord:
+    Type: AWS::Route53::RecordSet
+    Properties:
+      Name: api.example.com
+      Type: A
+      Failover: SECONDARY
+      SetIdentifier: secondary
+      AliasTarget:
+        DNSName: !GetAtt SecondaryAlb.DNSName
+        HostedZoneId: !GetAtt SecondaryAlb.CanonicalHostedZoneID
+```
+
+**Failover automation:**
+1. Route53 health check fails (30s interval, 3 failures = 90s detection)
+2. DNS automatically points to secondary
+3. Secondary promotes replica to primary (if DB supports, e.g., Aurora failover)
+4. Application in secondary region starts accepting writes
+
+**Downside:** RPO > 0 (async replication lag), failover time 1-5 min (DNS TTL + DB promotion).
+
+### Follow-the-Sun
+
+Route traffic to region where it's business hours. Off-peak region runs at reduced capacity or standby.
+
+```
+Time (UTC)    Active Region     Standby Region
+00:00-08:00   ap-south (Mumbai) us-east, eu-west (scaled down)
+08:00-16:00   eu-west (Ireland) us-east, ap-south (scaled down)
+16:00-00:00   us-east (Virginia) eu-west, ap-south (scaled down)
+```
+
+```yaml
+# Karpenter NodePool with schedule-based scaling
+apiVersion: karpenter.sh/v1beta1
+kind: NodePool
+metadata:
+  name: myapp-ap-south
+spec:
+  template:
+    spec:
+      requirements:
+      - key: karpenter.sh/capacity-type
+        operator: In
+        values: ["spot", "on-demand"]
+  disruption:
+    consolidationPolicy: WhenUnderutilized
+    consolidateAfter: 5m
+  # Cron-based scaling handled by KEDA or custom controller
+```
+
+**Implementation with KEDA Cron scaler:**
+```yaml
+apiVersion: keda.sh/v1alpha1
+kind: ScaledObject
+metadata:
+  name: myapp-ap-south
+spec:
+  scaleTargetRef:
+    name: myapp
+  minReplicaCount: 2     # off-peak minimum
+  maxReplicaCount: 50
+  triggers:
+  - type: cron
+    metadata:
+      timezone: Asia/Kolkata
+      start: 0 9 * * *     # scale up at 9 AM IST
+      end: 0 17 * * *      # scale down at 5 PM IST
+      desiredReplicas: "30"
+```
+
+**Cost benefit:** 60-70% savings vs running all regions at full capacity 24/7.
+
+### Multi-Region Checklist
+
+| Concern | Active-Active | Active-Passive | Follow-the-Sun |
+---------|---------------|----------------|----------------|
+| Availability | 99.99%+ | 99.95% | 99.9% |
+| RPO | 0 (sync) | seconds-minutes (async) | seconds-minutes |
+| RTO | seconds | 1-5 min | 1-5 min |
+| Cost | 2-3x single region | 1.5x (standby infra) | 0.7-1.0x (scale down off-peak) |
+| Complexity | Very high | Medium | Medium-high |
+| DB requirement | Multi-master | Replica + promote | Replica + promote |
+| Best for | Global SaaS, fintech | DR compliance, enterprise | Global with clear timezone patterns |
+
+## Step 19: Disaster Recovery Patterns
+
+### RPO and RTO
+
+| Tier | RPO | RTO | Strategy | Cost |
+|------|-----|-----|----------|------|
+| Tier 0 | 0 | < 1 min | Multi-region active-active, sync replication | $$$$$ |
+| Tier 1 | < 1 min | < 15 min | Active-passive, async replication, automated failover | $$$$ |
+| Tier 2 | < 1 hour | < 1 hour | Cross-region backup + automated restore | $$$ |
+| Tier 3 | < 24 hours | < 4 hours | Daily backups + manual restore | $$ |
+| Tier 4 | < 7 days | < 24 hours | Weekly backups + manual rebuild | $ |
+
+**RPO** (Recovery Point Objective): max acceptable data loss. Driven by backup/replication frequency.
+**RTO** (Recovery Time Objective): max acceptable downtime. Driven by failover automation speed.
+
+### Backup Strategies
+
+**3-2-1 rule:** 3 copies, 2 different media, 1 offsite.
+
+```bash
+# PostgreSQL: continuous archiving + point-in-time recovery
+# postgresql.conf
+archive_mode = on
+archive_command = 'aws s3 cp %p s3://my-backup-bucket/wal/%f'
+wal_level = replica
+max_wal_senders = 3
+
+# Base backup (daily)
+pg_basebackup -h primary.db -D /backup/base -Ft -z -P
+aws s3 sync /backup/base s3://my-backup-bucket/base/$(date +%Y%m%d)/
+```
+
+```yaml
+# Kubernetes: Velero for cluster-level backup
+apiVersion: velero.io/v1
+kind: Schedule
+metadata:
+  name: daily-backup
+  namespace: velero
+spec:
+  schedule: "0 2 * * *"    # 2 AM daily
+  template:
+    includedNamespaces:
+    - production
+    storageLocation: aws-s3
+    volumeSnapshotLocations:
+    - aws
+    ttl: 720h               # 30 day retention
+    snapshotVolumes: true
+```
+
+```bash
+# Velero restore
+velero restore create --from-backup daily-backup-20250101020000 \
+  --include-namespaces production \
+  --namespace-mappings production:production-restored
+```
+
+**Backup strategy matrix:**
+
+| Component | Method | Frequency | Retention | RPO |
+-----------|--------|-----------|-----------|-----|
+| PostgreSQL | WAL archiving + base backup | Continuous WAL, daily base | 30 days | Near-zero |
+| MySQL | binlog + mysqldump | Continuous binlog, daily dump | 30 days | Near-zero |
+| MongoDB | oplog + mongodump | Continuous oplog, daily dump | 30 days | Near-zero |
+| S3/GCS | Versioning + lifecycle | Per-object | 90 days versions | Zero |
+| K8s manifests | Git (GitOps) | Every commit | Forever | Zero |
+| K8s state | Velero | Daily | 30 days | 24 hours |
+| Secrets | Vault snapshot + encrypted backup | Hourly | 30 days | 1 hour |
+| Container images | Registry replication | Per push | 90 days | Zero |
+
+### Failover Automation
+
+```yaml
+# AWS: automated failover with CloudWatch alarm + Lambda
+Resources:
+  PrimaryHealthAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: primary-region-unhealthy
+      MetricName: HealthCheckStatus
+      Namespace: AWS/Route53
+      Dimensions:
+      - Name: HealthCheckId
+        Value: !Ref PrimaryHealthCheck
+      Statistic: Minimum
+      Period: 60
+      EvaluationPeriods: 3
+      Threshold: 1
+      ComparisonOperator: LessThanThreshold
+      AlarmActions:
+      - !Ref FailoverLambda
+
+  FailoverLambda:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: failover.handler
+      Runtime: python3.12
+      Timeout: 300
+      Environment:
+        Variables:
+          DB_CLUSTER_ID: !Ref AuroraCluster
+          SECONDARY_REGION: eu-west-1
+```
+
+```python
+# failover.py — automated DB promotion + DNS switch
+import boto3
+
+def handler(event, context):
+    rds = boto3.client('rds', region_name='us-east-1')
+    route53 = boto3.client('route53')
+
+    # 1. Promote read replica in secondary region
+    rds.failover_db_cluster(
+        DBClusterIdentifier='myapp-secondary',
+        TargetDBInstanceIdentifier='myapp-secondary-instance-1'
+    )
+
+    # 2. Wait for promotion
+    waiter = rds.get_waiter('db_instance_available')
+    waiter.wait(DBInstanceIdentifier='myapp-secondary-instance-1')
+
+    # 3. Update Route53 to point to secondary
+    # (handled by failover routing policy automatically via health checks)
+
+    # 4. Notify team
+    sns = boto3.client('sns')
+    sns.publish(
+        TopicArn='arn:aws:sns:us-east-1:123456:ops-alerts',
+        Subject='FAILOVER EXECUTED',
+        Message='Primary region unhealthy. Failed over to eu-west-1.'
+    )
+```
+
+**Failover runbook (automated steps):**
+1. Health check fails → CloudWatch alarm fires (3 min detection)
+2. Lambda promotes DB replica in secondary region (2-5 min)
+3. Route53 failover routing switches DNS (TTL-dependent, 30-60s)
+4. Secondary region app instances accept traffic
+5. Alert team via SNS/PagerDuty
+6. Post-failover: verify data consistency, update monitoring dashboards
+
+### DR Testing
+
+```bash
+# Chaos engineering: simulate region failure
+# AWS Fault Injection Simulator
+aws fis create-experiment-template \
+  --description "Simulate us-east-1 failure" \
+  --actions '{
+    "stopInstances": {
+      "actionId": "aws:ec2:stop-instances",
+      "parameters": {
+        "instanceIds": "i-xxx,i-yyy"
+      }
+    }
+  }' \
+  --stop-conditions '[{
+    "source": "aws:cloudwatch:alarm",
+    "value": "arn:aws:cloudwatch:us-east-1:123456:alarm:dr-test-passed"
+  }]'
+```
+
+**DR test cadence:**
+- Monthly: backup restoration test (restore to test env, verify data)
+- Quarterly: full failover drill (DNS switch, DB promotion, app validation)
+- Annually: game day (simulate region outage, run full runbook)
+
+## Step 20: Cost Optimization for Deployments
+
+Complements Step 10 (FinOps monitoring). Focus on infrastructure-level savings.
+
+### Right-Sizing
+
+```bash
+# VPA recommender — get CPU/memory recommendations
+kubectl describe vpa myapp-vpa
+# Output:
+#   Recommendation:
+#     Lower Bound:  cpu: 50m, memory: 128Mi
+#     Target:       cpu: 200m, memory: 256Mi
+#     Upper Bound:  cpu: 500m, memory: 512Mi
+```
+
+```yaml
+# Vertical Pod Autoscaler — auto-apply recommendations
+apiVersion: autoscaling.k8s.io/v1
+kind: VerticalPodAutoscaler
+metadata:
+  name: myapp-vpa
+spec:
+  targetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: myapp
+  updatePolicy:
+    updateMode: "Auto"    # Auto = apply recommendations (pods restarted)
+  resourcePolicy:
+    containerPolicies:
+    - containerName: myapp
+      minAllowed:
+        cpu: 100m
+        memory: 128Mi
+      maxAllowed:
+        cpu: 2000m
+        memory: 2Gi
+```
+
+**Right-sizing rules:**
+1. Set requests at p50 usage, limits at p99 (or 2x requests)
+2. Run VPA in "Off" mode for 2 weeks, review recommendations
+3. Apply in "Auto" mode for non-critical workloads first
+4. Right-size before scaling horizontally — vertical is cheaper
+5. Re-evaluate quarterly — workload profiles change
+
+### Spot Instances
+
+60-90% savings. Best for stateless, fault-tolerant workloads.
+
+```yaml
+# Karpenter: prefer spot, fall back to on-demand
+apiVersion: karpenter.sh/v1beta1
+kind: NodePool
+metadata:
+  name: spot-pool
+spec:
+  template:
+    spec:
+      requirements:
+      - key: karpenter.sh/capacity-type
+        operator: In
+        values: ["spot"]
+      - key: node.kubernetes.io/instance-type
+        operator: In
+        values:
+        - m5.large
+        - m5.xlarge
+        - m6i.large
+        - m6i.xlarge
+        - m5a.large      # diverse types = lower interruption rate
+  limits:
+    cpu: "500"
+  disruption:
+    consolidationPolicy: WhenUnderutilized
+```
+
+```yaml
+# Pod: prefer spot nodes, tolerate interruption
+spec:
+  tolerations:
+  - key: "karpenter.sh/capacity-type"
+    operator: "Equal"
+    value: "spot"
+    effect: "NoSchedule"
+  affinity:
+    nodeAffinity:
+      preferredDuringSchedulingIgnoredDuringExecution:
+      - weight: 100
+        preference:
+          matchExpressions:
+          - key: karpenter.sh/capacity-type
+            operator: In
+            values: ["spot"]
+```
+
+**Spot best practices:**
+- Use multiple instance types (Karpenter handles this automatically)
+- Set PDB to allow graceful draining on interruption
+- Checkpoint long-running jobs (save state to S3 every N minutes)
+- Use Spot Instance Advisor to pick low-interruption instance types
+- Never use spot for: databases, stateful sets, single-replica critical services
+
+### Reserved Capacity / Savings Plans
+
+| Commitment | Discount | Flexibility | Best For |
+|-----------|----------|-------------|----------|
+| 1-year no upfront | 30-40% | Instance family locked | Stable production baseline |
+| 1-year all upfront | 40-50% | Instance family locked | Same + budget predictability |
+| 3-year all upfront | 60-70% | Instance family locked | Long-lived core services |
+| Compute Savings Plan | 20-30% | Any compute (EC2/Fargate/Lambda) | Mixed workloads |
+| Spot | 60-90% | Interruptible | Stateless, batch, dev/staging |
+
+**Strategy: layered purchasing:**
+```
+Base load (40% of infra) → Reserved/Savings Plan (1-3 year)
+Variable load (40%)      → On-Demand
+Burst/dev/staging (20%)  → Spot
+```
+
+```bash
+# AWS Cost Explorer: find Reserved Instance candidates
+aws ce get-savings-plans-purchase-recommendation \
+  --savings-plans-type COMPUTE_SP \
+  --term-in-years ONE_YEAR \
+  --payment-option NO_UPFRONT \
+  --lookback-period-in-days SIXTY_DAYS
+```
+
+### Deployment-Specific Cost Optimization
+
+1. **Blue-green cost:** run green at 10% capacity during validation, scale to 100% only at cutover
+2. **Canary cost:** limit canary to spot nodes, cap at 5% of total compute
+3. **Multi-region cost:** follow-the-sun scales down off-peak regions (see Step 18)
+4. **CI/CD cost:** ephemeral test environments, auto-destroy after merge
+5. **Log cost:** sample logs in non-critical paths (10% sampling), full logging for errors
+
+## Step 21: Deployment Verification Patterns
+
+Verify deployments are correct before, during, and after traffic shift.
+
+### Smoke Tests
+
+Fast, shallow checks that critical paths work after deploy. Run against new version before traffic shift.
+
+```yaml
+# Argo Rollouts: pre-promotion smoke test
+apiVersion: argoproj.io/v1alpha1
+kind: Rollout
+spec:
+  strategy:
+    blueGreen:
+      activeService: myapp-active
+      previewService: myapp-preview
+      prePromotionAnalysis:
+        templates:
+        - templateName: smoke-tests
+        args:
+        - name: service-url
+          value: http://myapp-preview.production:8080
+---
+apiVersion: argoproj.io/v1alpha1
+kind: AnalysisTemplate
+metadata:
+  name: smoke-tests
+spec:
+  args:
+  - name: service-url
+  metrics:
+  - name: smoke-test
+    count: 1
+    provider:
+      job:
+        spec:
+          backoffLimit: 0
+          template:
+            spec:
+              restartPolicy: Never
+              containers:
+              - name: smoke
+                image: curlimages/curl:8.5.0
+                command:
+                - /bin/sh
+                - -c
+                - |
+                  set -e
+                  # Health check
+                  curl -sf {{args.service-url}}/healthz/ready
+                  # Critical user flows
+                  curl -sf {{args.service-url}}/api/v1/products | jq '.items | length > 0'
+                  # Auth check
+                  curl -sf -H "Authorization: Bearer $TOKEN" {{args.service-url}}/api/v1/me
+                  echo "All smoke tests passed"
+```
+
+```python
+# pytest smoke tests (run as K8s Job or CI step)
+import requests, os
+
+BASE_URL = os.environ["SERVICE_URL"]
+
+def test_health():
+    r = requests.get(f"{BASE_URL}/healthz/ready", timeout=5)
+    assert r.status_code == 200
+
+def test_critical_api():
+    r = requests.get(f"{BASE_URL}/api/v1/products", timeout=10)
+    assert r.status_code == 200
+    assert len(r.json()["items"]) > 0
+
+def test_auth_flow():
+    r = requests.post(f"{BASE_URL}/api/v1/auth/login",
+                      json={"user": "smoke", "pass": "test"}, timeout=10)
+    assert r.status_code == 200
+    token = r.json()["token"]
+    r = requests.get(f"{BASE_URL}/api/v1/me",
+                     headers={"Authorization": f"Bearer {token}"}, timeout=10)
+    assert r.status_code == 200
+
+def test_write_flow():
+    r = requests.post(f"{BASE_URL}/api/v1/orders",
+                      json={"item_id": "smoke-test", "qty": 1}, timeout=10)
+    assert r.status_code in (200, 201)
+```
+
+**Smoke test rules:**
+- Run in < 30 seconds. Not exhaustive — just critical paths.
+- Test: health endpoint, read path, write path, auth flow, external dependency connectivity.
+- Fail = block promotion. Do not proceed with traffic shift.
+- Run against preview/canary endpoint, not production active.
+
+### Synthetic Monitoring
+
+Continuously run simulated user flows in production. Detect issues before real users report them.
+
+```yaml
+# Blackbox exporter (Prometheus) — HTTP probes
+scrape_configs:
+- job_name: 'synthetic-probes'
+  metrics_path: /probe
+  params:
+    module: [http_2xx]
+  static_configs:
+  - targets:
+    - https://api.example.com/healthz/ready
+    - https://api.example.com/api/v1/products
+    - https://app.example.com/login
+  relabel_configs:
+  - source_labels: [__address__]
+    target_label: __param_target
+  - source_labels: [__param_target]
+    target_label: instance
+  - target_label: __address__
+    replacement: blackbox-exporter:9115
+```
+
+```yaml
+# Grafana synthetic monitoring (checkly-style)
+# k6 scripted check
+import http from 'k6/http';
+import { check, sleep } from 'k6';
+
+export const options = {
+  vus: 1,
+  duration: '1m',
+  thresholds: {
+    http_req_duration: ['p(95)<500'],
+    http_req_failed: ['rate<0.01'],
+  },
+};
+
+export default function () {
+  // Simulate user login flow
+  let loginRes = http.post('https://api.example.com/api/v1/auth/login',
+    JSON.stringify({ user: 'synthetic', pass: __ENV.SYNTH_PASS }),
+    { headers: { 'Content-Type': 'application/json' } });
+
+  check(loginRes, {
+    'login status 200': (r) => r.status === 200,
+    'login < 500ms': (r) => r.timings.duration < 500,
+  });
+
+  let token = loginRes.json('token');
+
+  let productsRes = http.get('https://api.example.com/api/v1/products', {
+    headers: { 'Authorization': `Bearer ${token}` },
+  });
+
+  check(productsRes, {
+    'products status 200': (r) => r.status === 200,
+    'has products': (r) => r.json('items').length > 0,
+  });
+
+  sleep(5);
+}
+```
+
+**Synthetic monitoring stack:**
+
+| Tool | Type | Protocol | Alert Integration |
+|------|------|----------|-------------------|
+| Prometheus Blackbox | Probes | HTTP, TCP, DNS, ICMP | Alertmanager |
+| Grafana k6 Cloud | Scripted flows | HTTP, WebSocket, gRPC | Grafana alerts |
+| Checkly | Scripted flows | HTTP, Playwright (browser) | PagerDuty, Slack |
+| Datadog Synthetics | Scripted + browser | HTTP, WebSocket, DNS | Datadog alerts |
+| AWS CloudWatch Synthetics | Canary scripts | HTTP, browser (Playwright) | CloudWatch alarms |
+
+### Canary Analysis (Automated)
+
+Statistical comparison of canary vs baseline metrics. Not just threshold checks — compare distributions.
+
+```yaml
+# Argo Rollouts AnalysisTemplate: multi-metric canary analysis
+apiVersion: argoproj.io/v1alpha1
+kind: AnalysisTemplate
+metadata:
+  name: canary-analysis-comprehensive
+spec:
+  args:
+  - name: service-name
+  - name: baseline-hash
+  - name: canary-hash
+  metrics:
+  # Success rate: canary must be >= baseline - 0.5%
+  - name: success-rate
+    interval: 1m
+    count: 5
+    failureLimit: 2
+    successCondition: result[0] >= result[1] - 0.005
+    provider:
+      prometheus:
+        address: http://prometheus.monitoring:9090
+        query: |
+          sum(rate(http_requests_total{
+            service="{{args.service-name}}",
+            status=~"2.*",
+            pod_hash="{{args.canary-hash}}"
+          }[5m]))
+          /
+          sum(rate(http_requests_total{
+            service="{{args.service-name}}",
+            pod_hash="{{args.canary-hash}}"
+          }[5m]))
+  # Latency: canary p99 must not exceed baseline by >10%
+  - name: latency-comparison
+    interval: 1m
+    count: 5
+    failureLimit: 2
+    successCondition: result[0] <= result[1] * 1.1
+    provider:
+      prometheus:
+        address: http://prometheus.monitoring:9090
+        query: |
+          histogram_quantile(0.99,
+            sum(rate(http_request_duration_seconds_bucket{
+              service="{{args.service-name}}",
+              pod_hash="{{args.canary-hash}}"
+            }[5m])) by (le)
+          )
+  # Error budget burn rate
+  - name: error-budget-burn
+    interval: 2m
+    count: 3
+    failureLimit: 1
+    successCondition: result[0] < 1    # burn rate < 1x = healthy
+    provider:
+      prometheus:
+        address: http://prometheus.monitoring:9090
+        query: |
+          sum(rate(http_requests_total{
+            service="{{args.service-name}}",
+            status=~"5.*",
+            pod_hash="{{args.canary-hash}}"
+          }[10m]))
+          /
+          sum(rate(http_requests_total{
+            service="{{args.service-name}}",
+            pod_hash="{{args.canary-hash}}"
+          }[10m]))
+          / 0.001   # 0.1% error budget
+  # Saturation: canary CPU must not exceed 80%
+  - name: cpu-saturation
+    interval: 1m
+    count: 5
+    successCondition: result[0] <= 80
+    provider:
+      prometheus:
+        address: http://prometheus.monitoring:9090
+        query: |
+          max(rate(container_cpu_usage_seconds_total{
+            pod=~".*canary.*",
+            namespace="production"
+          }[5m])) * 100
+```
+
+**Kayenta (Netflix) analysis — comparison-based:**
+```json
+// Kayenta scoring config (for Spinnaker pipelines)
+{
+  "canaryConfig": {
+    "canaryAnalysisConfig": {
+      "beginCanaryAnalysisAfterMins": 5,
+      "canaryAnalysisIntervalMins": 1,
+      "lookbackMins": 10,
+      "metricsAccountName": "atlas",
+      "scopes": [{
+        "scopeName": "default",
+        "controlScope": { "scope": "app.canary_control" },
+        "experimentScope": { "scope": "app.canary_experiment" }
+      }]
+    },
+    "combinedCanaryResultStrategy": "LOWEST",
+    "canaryHealthCheckHandler": { "minimumCanaryResultScore": 75 },
+    "metrics": [
+      { "name": "errors", "query": { "type": "atlas", "q": "nf.errors,app,:eq,:sum" } },
+      { "name": "latency", "query": { "type": "atlas", "q": "nf.latency,app,:eq,:avg" } }
+    ]
+  }
+}
+```
+
+**Canary analysis decision matrix:**
+
+| Metric | Threshold | Action |
+|--------|-----------|--------|
+| Error rate | canary > baseline + 0.5% | Auto-rollback |
+| P99 latency | canary > baseline * 1.1 | Auto-rollback |
+| CPU/memory | canary > 80% | Auto-rollback |
+| Error budget burn | > 1x rate | Pause, investigate |
+| Business metric | canary < baseline * 0.95 | Auto-rollback |
+| Throughput | canary < baseline * 0.5 | Pause (potential issue) |
+
+**Analysis flow:**
+1. Deploy canary at 5-10% traffic
+2. Run AnalysisTemplate (Prometheus queries every 1m for 5-10m)
+3. Compare canary metrics against baseline
+4. If all metrics pass → increase traffic weight
+5. Repeat at 30%, 60%, 100%
+6. Any metric fails → auto-rollback, alert team
 
 ## Sources
 

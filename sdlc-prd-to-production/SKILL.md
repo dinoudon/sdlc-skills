@@ -1,13 +1,13 @@
 ---
 name: sdlc-prd-to-production
-description: "End-to-end workflow: PRD → design doc → implementation → code review → testing → deployment → monitoring → retrospective. Includes Ship/Show/Ask branching, design doc templates, PRD patterns (YC, Amazon Working Backwards), ephemeral environments, DORA 2024 insights, Score spec, AI-augmented development, technical specification templates, GitOps automation, documentation-as-code pipelines, and metrics-driven development."
-version: 3.2.0
+description: "End-to-end workflow: PRD → design doc → implementation → code review → testing → deployment → monitoring → retrospective. Includes Ship/Show/Ask branching, design doc templates, PRD patterns (YC, Amazon Working Backwards), ephemeral environments, DORA 2024 insights, Score spec, AI-augmented development, technical specification templates, GitOps automation, documentation-as-code pipelines, metrics-driven development, production readiness reviews, launch strategies, post-launch monitoring, stakeholder communication templates, and product-engineering alignment."
+version: 4.0.0
 author: Hermes Agent
 license: MIT
 platforms: [linux, macos, windows]
 metadata:
   hermes:
-    tags: [sdlc, prd, design-doc, rfc, ship-show-ask, workflow, end-to-end, product-development, yc, amazon-working-backwards, ephemeral-envs, score-spec, dora, ai-augmented, gitops, metrics-driven, docs-as-code, tech-spec]
+    tags: [sdlc, prd, design-doc, rfc, ship-show-ask, workflow, end-to-end, product-development, yc, amazon-working-backwards, ephemeral-envs, score-spec, dora, ai-augmented, gitops, metrics-driven, docs-as-code, tech-spec, production-readiness, launch-strategy, post-launch, stakeholder-comms, okr, ab-testing]
     related_skills: [sdlc-requirements-engineering, sdlc-architecture-design, sdlc-cicd-pipeline, sdlc-deployment, sdlc-retrospective]
 ---
 
@@ -1201,6 +1201,471 @@ groups:
 - Are alerts actionable? (false positive rate)
 - Should we tighten or loosen any SLO?
 - What new instrumentation should we add next sprint?
+```
+
+## Production Readiness Review (PRR)
+
+Gate before production launch. Every item must be signed off by owner.
+
+### Reliability
+- [ ] Health check endpoints defined and tested (`/healthz`, `/readyz`)
+- [ ] Graceful shutdown handles in-flight requests (drain period configured)
+- [ ] Retry logic with exponential backoff + jitter on all external calls
+- [ ] Circuit breakers on critical downstream dependencies
+- [ ] Bulkhead isolation — failure in one path doesn't cascade
+- [ ] Idempotency keys on all write operations
+- [ ] Chaos testing results reviewed (pod kill, network partition, latency injection)
+
+### Scalability
+- [ ] Load test completed at 2x expected peak traffic
+- [ ] Horizontal autoscaling configured (HPA/KEDA) with tested thresholds
+- [ ] Database connection pooling sized for max concurrent connections
+- [ ] No single-threaded bottlenecks in request path
+- [ ] Caching strategy defined (L1/L2/invalidation policy)
+- [ ] Queue depth monitoring and backpressure handling
+- [ ] Resource requests and limits set in container spec
+
+### Observability
+- [ ] RED metrics emitted for every endpoint (Rate, Errors, Duration)
+- [ ] USE metrics emitted for every resource (Utilization, Saturation, Errors)
+- [ ] Structured logging with correlation IDs (trace_id, request_id)
+- [ ] Distributed tracing spans cover full request path
+- [ ] Dashboard exists: service health, business metrics, infrastructure
+- [ ] Alerts defined with runbook links for every SLO
+- [ ] Log retention policy documented and tested
+
+### Security
+- [ ] AuthN/AuthZ verified on every endpoint
+- [ ] Input validation and output encoding applied (OWASP Top 10)
+- [ ] Secrets managed via vault/K8s secrets — no hardcoded credentials
+- [ ] Dependency vulnerability scan passed (no critical/high CVEs)
+- [ ] TLS enforced end-to-end (no plaintext in transit)
+- [ ] Rate limiting and abuse protection configured
+- [ ] Data classification reviewed (PII handling, encryption at rest)
+- [ ] Security review signed off by security team
+
+### Rollback
+- [ ] Rollback procedure documented and tested in staging
+- [ ] Database migrations are backward-compatible (works with N-1 code)
+- [ ] Feature flag kill switch tested (instant disable, no deploy needed)
+- [ ] Rollback time measured: target < 5 min from decision to restored state
+- [ ] GitOps revert tested (`git revert` + ArgoCD/Flux sync)
+- [ ] Data migration rollback plan (if schema changes involved)
+
+**PRR Sign-off:**
+```
+| Area          | Owner       | Status | Date       |
+|---------------|-------------|--------|------------|
+| Reliability   | [eng lead]  | ☐      |            |
+| Scalability   | [eng lead]  | ☐      |            |
+| Observability | [sre lead]  | ☐      |            |
+| Security      | [sec lead]  | ☐      |            |
+| Rollback      | [eng lead]  | ☐      |            |
+```
+
+## Launch Strategies
+
+### Soft Launch (Gradual Rollout)
+Deploy to production with limited exposure. Measure before scaling.
+
+```
+Day 1: Internal dogfooding (employees only)
+Day 3: 1% of traffic (random sampling or cohort)
+Day 5: 5% of traffic
+Day 7: 25% of traffic
+Day 10: 100% of traffic
+```
+
+**When to use:** new features with uncertain impact, user-facing changes.
+**Metrics gate:** only advance if error rate and latency within SLO at each stage.
+
+### Hard Launch (Big Bang)
+Full release to all users at once. Immediate full exposure.
+
+```
+Deploy → 100% traffic immediately
+```
+
+**When to use:** internal tools, low-risk changes, regulatory requirements (must ship by date).
+**Risk mitigation:** feature flag as kill switch, staged rollback plan, war room active.
+
+### Dark Launch
+Code deployed to production, receives real traffic, but results invisible to users.
+
+```
+Production traffic → Feature processes request
+                   → Result logged/metrics emitted
+                   → User sees OLD behavior (shadow response discarded)
+```
+
+**When to use:** testing performance under real load, validating new algorithms, migration dry-runs.
+**Implementation:**
+```python
+def handle_request(req):
+    old_result = old_handler(req)
+    try:
+        new_result = new_handler(req)
+        emit_metric("dark_launch.compare", old_result == new_result)
+        emit_metric("dark_launch.latency", new_duration)
+    except Exception:
+        emit_metric("dark_launch.error", 1)
+    return old_result  # user always sees old behavior
+```
+
+### Feature Flag Rollout
+Decouple deployment from release. Ship code to production behind flag, enable selectively.
+
+```
+Flag states:
+  OFF          → code deployed but unreachable
+  INTERNAL     → employees only
+  BETA         → opted-in users / beta cohort
+  PERCENTAGE   → X% of random users
+  ON           → all users
+  KILL_SWITCH  → emergency disable (no deploy)
+```
+
+**Flag lifecycle:**
+1. Create flag in flag system (LaunchDarkly, Unleash, Flagsmith, point solution)
+2. Implement feature behind flag check
+3. Ship to production (flag OFF by default)
+4. Enable per strategy above (internal → beta → % → all)
+5. Monitor metrics at each stage
+6. Once stable: remove flag, clean up code paths
+
+**Flag hygiene rules:**
+- Every flag has an owner and expiry date
+- Stale flags (> 90 days) trigger cleanup alert
+- Never nest flags (flag-in-flag = untestable complexity)
+- Flag changes are auditable (who toggled, when, why)
+
+**Tool comparison:**
+
+| Tool | Type | Best for |
+|------|------|----------|
+| LaunchDarkly | SaaS | Enterprise, multi-platform |
+| Unleash | OSS/SaaS | Self-hosted, cost-sensitive |
+| Flagsmith | OSS/SaaS | Simple flag management |
+| Custom (env vars) | Point | Small teams, few flags |
+
+## Post-Launch Monitoring
+
+### Key Metrics to Watch (First 72 Hours)
+
+**Technical metrics (continuous):**
+| Metric | Threshold | Action if breached |
+|--------|-----------|-------------------|
+| Error rate | > 1% of requests | Investigate immediately, prepare rollback |
+| Latency p99 | > SLO target for 5+ min | Check dependencies, scale or rollback |
+| Latency p50 | > 2x baseline | Profile, check resource contention |
+| CPU utilization | > 80% sustained | Scale horizontally, check for leaks |
+| Memory utilization | > 85% sustained | Check for memory leaks, scale |
+| Queue depth | > 1000 or growing | Check consumer health, scale consumers |
+| Disk I/O | > 80% of provisioned IOPS | Scale storage, optimize queries |
+| Restart count | > 0 unexpected | Check logs for crash reason |
+
+**Business metrics (hourly for first 24h, then daily):**
+| Metric | What to watch |
+|--------|-------------|
+| Conversion rate | Drop vs baseline = UX regression |
+| Adoption rate | New feature usage vs eligible users |
+| Engagement | Session duration, pages per session |
+| Support tickets | Spike = user confusion or bugs |
+| Revenue impact | For commerce features, immediate delta |
+
+### Anomaly Detection
+
+**Automated detection approaches:**
+1. **Static thresholds** — alert if metric crosses fixed value (simple, noisy)
+2. **Standard deviation** — alert if value > 3σ from rolling mean (adaptive)
+3. **Seasonal decomposition** — account for daily/weekly patterns (best for traffic)
+4. **ML-based** — train on 30 days of data, detect deviations (fewest false positives)
+
+**Minimum viable anomaly detection:**
+```yaml
+# Prometheus recording rule: 3σ anomaly detection
+- record: http_error_rate_anomaly
+  expr: |
+    (
+      rate(http_requests_total{status=~"5.."}[5m])
+      / rate(http_requests_total[5m])
+    ) > (
+      avg_over_time(http_error_rate[7d]) + 3 * stddev_over_time(http_error_rate[7d])
+    )
+```
+
+### Rollback Triggers
+
+Automatic rollback if ANY of these hit:
+1. Error rate > 2x baseline for 5 minutes
+2. p99 latency > SLO target for 10 minutes
+3. Health check failures > 3 consecutive
+4. Canary analysis threshold exceeded (Flagger)
+5. Business metric drop > 10% from baseline (conversion, revenue)
+
+Manual rollback consideration:
+6. Spike in support tickets (> 3x normal rate)
+7. Security alert triggered by new code path
+8. Data integrity issue detected (duplicate records, missing data)
+
+**Rollback decision matrix:**
+```
+Impact + Urgency → Action
+
+P0 (service down):        Auto-rollback + war room + incident process
+P1 (degraded, many users): Manual rollback within 15 min + notify stakeholders
+P2 (edge case, few users):  Feature flag disable + fix forward
+P3 (cosmetic, no data loss):  Fix forward in next release
+```
+
+## Stakeholder Communication Templates
+
+### Launch Announcement
+
+```
+Subject: [Launch] [Feature Name] is live in production
+
+Hi team,
+
+[Feature Name] is now live for [audience: all users / beta users / X%].
+
+## What changed
+[2-3 sentence summary of what the feature does and why it matters]
+
+## What to watch for
+[Known limitations, expected behavior changes, things that look different]
+
+## Links
+- Dashboard: [link]
+- Documentation: [link]
+- Rollback plan: [link]
+- Feature flag: [link to flag system]
+
+## Support
+- On-call: [name/handle]
+- Escalation: [name/handle]
+
+Questions? Reach out in #[channel].
+```
+
+### Status Update (During Rollout)
+
+```
+Subject: [Status] [Feature Name] rollout — [stage]
+
+## Current status: [ON TRACK / AT RISK / BLOCKED]
+
+## Rollout progress
+- [x] Internal dogfooding (completed [date])
+- [x] 1% rollout (completed [date])
+- [→] 5% rollout (in progress, started [date])
+- [ ] 25% rollout
+- [ ] 100% rollout
+
+## Metrics
+- Error rate: [X%] (target: < 1%) — [OK / ELEVATED / CRITICAL]
+- Latency p99: [Xms] (target: < Yms) — [OK / ELEVATED / CRITICAL]
+- Adoption: [X% of eligible users] — [ON TRACK / BELOW EXPECTATIONS]
+
+## Issues
+- [Issue 1]: [status, owner, ETA]
+
+## Next milestone
+[What's next and when]
+```
+
+### Incident Communication
+
+```
+Subject: [INCIDENT-SEV[X]] [Feature Name] — [brief description]
+
+## Status: [INVESTIGATING / IDENTIFIED / MONITORING / RESOLVED]
+
+## Impact
+- Who is affected: [all users / segment / region]
+- What is broken: [symptom description]
+- Since when: [timestamp]
+- Current error rate: [X%]
+
+## Timeline
+- [HH:MM] Issue detected via [alert/dashboard]
+- [HH:MM] Investigation started. [finding]
+- [HH:MM] Root cause identified: [cause]
+- [HH:MM] Mitigation applied: [action taken]
+
+## Current action
+[What's being done right now]
+
+## Next update
+[When the next status update will be sent]
+
+## Incident commander: [name]
+```
+
+### Post-Incident Summary (for Stakeholders)
+
+```
+Subject: [Post-Incident] [Feature Name] — [date]
+
+## Summary
+[1 paragraph: what happened, impact, resolution]
+
+## Impact
+- Duration: [X hours Y minutes]
+- Users affected: [count/percentage]
+- Revenue impact: [if applicable]
+
+## Root cause
+[Technical explanation, simplified for audience]
+
+## What we're doing to prevent recurrence
+- [Action 1] — owner: [name], ETA: [date]
+- [Action 2] — owner: [name], ETA: [date]
+
+## Lessons learned
+- [Lesson 1]
+- [Lesson 2]
+
+Full postmortem: [link to internal doc]
+```
+
+## Product-Engineering Alignment
+
+### OKR Tracking
+
+Connect feature launches to measurable objectives.
+
+```
+## OKR Mapping
+
+| Objective | Key Result | Feature | SLI | Current | Target |
+|-----------|------------|---------|-----|---------|--------|
+| Improve checkout speed | Reduce p99 to < 2s | Optimized checkout | checkout_latency_p99 | 3.2s | < 2s |
+| Grow user base | Increase DAU by 20% | Referral program | daily_active_users | 10K | 12K |
+| Reduce support load | Cut tickets by 30% | Self-service portal | support_tickets_daily | 150 | 105 |
+```
+
+**OKR review cadence:**
+- Weekly: check SLI trends against OKR targets
+- Monthly: review OKR progress with product + eng leads
+- Quarterly: assess OKR completion, set next quarter's targets
+
+**Engineering health OKRs (don't neglect):**
+| Objective | Key Result | Measurement |
+|-----------|------------|-------------|
+| Improve reliability | SLO compliance > 99.9% | SLI dashboards |
+| Reduce tech debt | < 10% sprint capacity on debt | Sprint tracking |
+| Improve deploy velocity | DORA deploy frequency > 1/day | CI/CD metrics |
+| Improve developer experience | PR cycle time < 24h | Git analytics |
+
+### Feature Usage Analytics
+
+Instrument features to measure actual usage vs expected usage.
+
+**Minimum instrumentation per feature:**
+```yaml
+events:
+  - name: feature_impression
+    properties:
+      feature_name: string
+      user_id: string
+      user_segment: string
+      timestamp: datetime
+
+  - name: feature_interaction
+    properties:
+      feature_name: string
+      interaction_type: string  # click, submit, dismiss
+      user_id: string
+      session_id: string
+      timestamp: datetime
+
+  - name: feature_outcome
+    properties:
+      feature_name: string
+      outcome: string  # success, error, abandon
+      value: number    # revenue, time_saved, etc.
+      user_id: string
+      timestamp: datetime
+```
+
+**Feature adoption funnel:**
+```
+Impression → Interaction → Engagement → Value Created → Retained Use
+100%         45%            20%          12%             8%
+
+Where does the funnel break? Focus improvement at biggest drop.
+```
+
+**Analytics tools:**
+| Tool | Best for |
+|------|----------|
+| Amplitude / Mixpanel | Product analytics, funnels, cohorts |
+| PostHog | Open-source, self-hosted option |
+| Grafana + Prometheus | Technical metrics, SLO tracking |
+| BigQuery / Snowflake | Custom analysis on raw event data |
+
+### A/B Testing
+
+Validate feature impact with controlled experiments.
+
+**A/B test lifecycle:**
+```
+1. Hypothesis: "Changing X will improve Y by Z%"
+2. Design: control (A) vs variant (B), sample size, duration
+3. Implement: feature flag routes users to A or B
+4. Run: minimum 1 week, or until statistical significance
+5. Analyze: check primary metric + guardrail metrics
+6. Decide: ship winner, iterate, or kill
+```
+
+**Sample size calculation:**
+```
+n = (Z_α/2 + Z_β)² * 2p(1-p) / δ²
+
+Where:
+  Z_α/2 = 1.96 (95% confidence)
+  Z_β = 0.84 (80% power)
+  p = baseline conversion rate
+  δ = minimum detectable effect
+
+Example: baseline 5%, want to detect 10% relative lift (5% → 5.5%)
+  n = (1.96 + 0.84)² * 2 * 0.05 * 0.95 / 0.005²
+  n ≈ 29,645 per variant
+```
+
+**Guardrail metrics (check even if primary metric improves):**
+- Error rate must not increase
+- Latency must not increase > 10%
+- Support tickets must not spike
+- Revenue per user must not decrease
+
+**A/B test pitfalls:**
+- Peeking at results early (inflates false positive rate)
+- Running during holidays or unusual traffic patterns
+- Testing too many variants simultaneously (interaction effects)
+- Not accounting for novelty effect (users interact with anything new)
+- Small sample sizes (need statistical power)
+
+**Integration with feature flags:**
+```yaml
+# Feature flag config with A/B variant
+feature: new-checkout-flow
+variants:
+  - name: control
+    weight: 50
+    value: { layout: "current" }
+  - name: streamlined
+    weight: 50
+    value: { layout: "minimal" }
+targeting:
+  - segment: beta_users
+    variant: streamlined
+metrics:
+  primary: checkout_conversion_rate
+  guardrails: [error_rate, p99_latency, support_tickets]
+  minimum_sample_size: 30000
+  minimum_duration: 7d
 ```
 
 ## Pitfalls

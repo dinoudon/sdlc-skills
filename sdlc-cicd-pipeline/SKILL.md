@@ -1,13 +1,13 @@
 ---
 name: sdlc-cicd-pipeline
-description: "CI/CD pipeline design with GitHub Actions and GitLab CI. Docker multi-stage builds, caching, matrix builds, test sharding, security scanning, GitOps, DORA metrics, trunk-based development, anti-patterns. SLSA L3 supply chain, SBOM generation, Green CI/CD, AI in pipelines, GitHub Actions hardening. Serverless CI/CD (SAM/CDK/Serverless Framework), preview environments, multi-platform builds, advanced dependency caching."
-version: 3.2.0
+description: "CI/CD pipeline design with GitHub Actions and GitLab CI. Docker multi-stage builds, caching, matrix builds, test sharding, security scanning, GitOps, DORA metrics, trunk-based development, anti-patterns. SLSA L3 supply chain, SBOM generation, Green CI/CD, AI in pipelines, GitHub Actions hardening. Serverless CI/CD (SAM/CDK/Serverless Framework), preview environments, multi-platform builds, advanced dependency caching. Pipeline security hardening, build reproducibility, pipeline observability, monorepo CI patterns, pipeline cost optimization."
+version: 4.0.0
 author: Hermes Agent
 license: MIT
 platforms: [linux, macos, windows]
 metadata:
   hermes:
-    tags: [sdlc, ci-cd, github-actions, gitlab-ci, docker, devops, pipeline, gitops, dora, accelerate, trunk-based, slsa, sbom, supply-chain, green-ci, security-hardening, serverless, preview-environments, multi-platform, ai-cicd]
+    tags: [sdlc, ci-cd, github-actions, gitlab-ci, docker, devops, pipeline, gitops, dora, accelerate, trunk-based, slsa, sbom, supply-chain, green-ci, security-hardening, serverless, preview-environments, multi-platform, ai-cicd, oidc, secrets-rotation, audit-logging, reproducible-builds, hermetic-builds, build-provenance, build-observability, monorepo-ci, cost-optimization]
     related_skills: [sdlc-architecture-design, sdlc-testing-qa, sdlc-deployment, github-pr-workflow]
 ---
 
@@ -1508,3 +1508,617 @@ test:
 - DO cache `node_modules` for pnpm/yarn (faster than `pnpm install`)
 - Monitor cache size — GitHub limits 10GB per repo
 - Use `actions/cache/save` and `actions/cache/restore` separately for fine-grained control
+
+## Step 20: Pipeline Security Hardening
+
+Source: https://docs.github.com/en/actions/security-for-github-actions/security-hardening-for-github-actions
+
+### OIDC for Cloud Authentication
+
+Replace long-lived static credentials with short-lived OIDC tokens. No secrets to rotate or leak.
+
+**AWS:**
+```yaml
+permissions:
+  id-token: write
+  contents: read
+
+steps:
+  - uses: aws-actions/configure-aws-credentials@v4
+    with:
+      role-to-assume: arn:aws:iam::123456789012:role/GitHubActionsRole
+      aws-region: us-east-1
+      # Optional: restrict to specific repo/branch
+      audience: sts.amazonaws.com
+```
+
+AWS IAM role trust policy — limit to repo + environment:
+```json
+{
+  "Condition": {
+    "StringEquals": {
+      "token.actions.githubusercontent.com:aud": "sts.amazonaws.com"
+    },
+    "StringLike": {
+      "token.actions.githubusercontent.com:sub": "repo:org/repo:ref:refs/heads/main"
+    }
+  }
+}
+```
+
+**GCP Workload Identity Federation:**
+```yaml
+- uses: google-github-actions/auth@v2
+  with:
+    workload_identity_provider: projects/123/locations/global/workloadIdentityPools/github/providers/github
+    service-account: deploy@project.iam.gserviceaccount.com
+```
+
+**Azure Federated Credentials:**
+```yaml
+- uses: azure/login@v2
+  with:
+    client-id: ${{ secrets.AZURE_CLIENT_ID }}
+    tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+    subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+```
+
+**HashiCorp Vault via OIDC:**
+```yaml
+- uses: hashicorp/vault-action@v3
+  with:
+    url: https://vault.example.com
+    method: jwt
+    role: ci-deployer
+    secrets: |
+      secret/data/ci/deploy token | DEPLOY_TOKEN
+```
+
+**OIDC hardening checklist:**
+- [ ] One IAM role per repo (not shared across repos)
+- [ ] Condition on branch/environment (not just repo)
+- [ ] Short session duration (15-60 min, not 12h)
+- [ ] Separate roles: read-only for CI, write for deploy
+- [ ] Audit OIDC token issuance in cloud trail
+
+### Secrets Rotation
+
+```yaml
+# GitHub: use environment-level secrets (rotatable per environment)
+# Rotate on schedule via API or Terraform
+
+# AWS Secrets Manager rotation (Lambda-based)
+# GCP Secret Manager with automatic rotation
+# Azure Key Vault rotation policies
+
+# Rotation automation script
+- name: Rotate secrets
+  if: github.event.schedule  # Cron-triggered
+  run: |
+    # Generate new secret
+    NEW_TOKEN=$(openssl rand -hex 32)
+    # Update via CLI
+    gh secret set DEPLOY_TOKEN --body "$NEW_TOKEN"
+    # Update in cloud vault
+    aws secretsmanager rotate-secret --secret-id ci/deploy-token
+```
+
+**Secrets hygiene:**
+- [ ] No secrets in env vars for logging steps — use `::add-mask::`
+- [ ] Environment-scoped secrets (not repo-wide)
+- [ ] `pull_request` trigger never receives production secrets
+- [ ] Dependabot secrets separate from CI secrets
+- [ ] Rotate all CI secrets quarterly minimum
+- [ ] Scan for leaked secrets in every pipeline (trivy/gitleaks)
+- [ ] Use ephemeral secrets (OIDC tokens) where possible
+
+### Audit Logging
+
+```yaml
+# GitHub Actions audit events (enterprise/org level)
+# Enable: Settings > Security > Audit log > Actions events
+
+# Log all workflow runs to external SIEM
+- name: Log pipeline event
+  if: always()
+  run: |
+    curl -X POST "${{ secrets.SIEM_WEBHOOK }}" -H "Content-Type: application/json" -d "{
+      \"event\": \"workflow_run\",
+      \"repo\": \"${{ github.repository }}\",
+      \"workflow\": \"${{ github.workflow }}\",
+      \"run_id\": \"${{ github.run_id }}\",
+      \"actor\": \"${{ github.actor }}\",
+      \"ref\": \"${{ github.ref }}\",
+      \"sha\": \"${{ github.sha }}\",
+      \"conclusion\": \"${{ github.event.workflow_run.conclusion }}\",
+      \"timestamp\": \"$(date -u +%Y-%m-%dT%H:%M:%SZ)\"
+    }"
+```
+
+**Audit requirements:**
+- [ ] All workflow runs logged (who, what, when, outcome)
+- [ ] Secret access logged (which secrets, by which workflow)
+- [ ] Environment protection rule events logged
+- [ ] Artifact uploads/downloads logged
+- [ ] Retention: minimum 90 days, 1 year for compliance (SOC2/ISO27001)
+- [ ] Alert on: first-time secret usage, unusual actor, off-hours deploy
+
+**GitHub enterprise audit log API:**
+```bash
+gh api /organizations/ORG_ID/audit-log \
+  --jq '.[] | select(.action | startswith("actions."))' \
+  --paginate
+```
+
+## Step 21: Build Reproducibility
+
+Source: https://reproducible-builds.org/, https://slsa.dev/
+
+### Deterministic Builds
+
+Same source + same inputs = identical binary. Every time.
+
+**Principles:**
+- Pin ALL dependency versions (lockfiles, no ranges)
+- Pin toolchain versions (compiler, runtime, OS packages)
+- Eliminate timestamps from builds
+- Use `SOURCE_DATE_EPOCH` for reproducible dates
+- Disable network during build phase (hermetic)
+- Sort file lists (directory traversal order varies)
+
+```dockerfile
+# Deterministic Node.js build
+FROM node:20.11.0-slim@sha256:abc123... AS builder  # Pin image + digest
+WORKDIR /app
+COPY package.json package-lock.json ./
+RUN npm ci --ignore-scripts  # Exact install, no scripts
+COPY . .
+ENV SOURCE_DATE_EPOCH=1
+RUN npm run build
+# Normalize timestamps
+RUN find dist -exec touch -t 197001010000.00 {} +
+```
+
+```dockerfile
+# Deterministic Go build
+FROM golang:1.22.0@sha256:def456... AS builder
+WORKDIR /app
+COPY go.mod go.sum ./
+RUN go mod download
+COPY . .
+RUN CGO_ENABLED=0 go build \
+    -trimpath \              # Remove local paths
+    -buildvcs=false \        # Remove VCS info
+    -ldflags="-s -w -buildid=" \  # Strip build ID
+    -o /app/server .
+```
+
+### Hermetic Builds
+
+No network access during build. All inputs declared upfront.
+
+```yaml
+# Nix-based hermetic build
+- uses: cachix/install-nix-action@v25
+- run: nix build --option sandbox true  # Network isolated in sandbox
+
+# Bazel hermetic build
+- run: bazel build //... --remote_download_minimal --incompatible_strict_action_env
+
+# Docker hermetic build (--network=none)
+- run: |
+    docker buildx build \
+      --network=none \           # No network during build
+      --output type=local,dest=./output \
+      .
+```
+
+**Hermetic build checklist:**
+- [ ] All deps vendored or cached before build starts
+- [ ] Build tool pinned to exact version + hash
+- [ ] No `curl`/`wget`/`pip install` during build phase
+- [ ] `--network=none` for Docker builds
+- [ ] Build sandbox enabled (Bazel, Nix)
+- [ ] Environment variables sanitized (`--incompatible_strict_action_env`)
+
+### Build Provenance
+
+Prove who built what, how, from which source.
+
+```yaml
+# SLSA provenance (covered in Step 10, advanced patterns below)
+# GitHub attestation (built-in)
+- uses: actions/attest-build-provenance@v2
+  with:
+    subject-name: ghcr.io/org/myapp
+    subject-digest: ${{ steps.build.outputs.digest }}
+    push-to-registry: true
+
+# Verify provenance
+# gh attestation verify oci://ghcr.io/org/myapp@sha256:... --owner org
+```
+
+**In-toto attestation (custom predicates):**
+```yaml
+- uses: actions/attest-build-provenance@v2
+  with:
+    subject-path: './dist/**'
+    predicate-type: https://example.com/custom/v1
+    predicate: |
+      {
+        "builder": "github-actions",
+        "tests_passed": true,
+        "vulnerability_scan": "clean",
+        "compliance_checks": ["soc2", "hipaa"]
+      }
+```
+
+**Provenance verification in deploy pipeline:**
+```yaml
+deploy:
+  steps:
+    - name: Verify provenance
+      run: |
+        gh attestation verify oci://${IMAGE}@${DIGEST} \
+          --owner org \
+          --signer-repo org/repo \
+          --predicate-type https://slsa.dev/provenance/v0.2
+    - name: Deploy only if verified
+      run: kubectl apply -f k8s/
+```
+
+## Step 22: Pipeline Observability
+
+### Build Metrics
+
+Track CI performance over time. Identify regressions.
+
+```yaml
+# Emit build metrics to Datadog/Prometheus/Grafana
+- name: Emit build metrics
+  if: always()
+  run: |
+    DURATION=$(($(date +%s) - ${{ github.event.workflow_run.created_at }}))
+    curl -X POST "https://api.datadoghq.com/api/v2/series" \
+      -H "DD-API-KEY: ${{ secrets.DD_API_KEY }}" \
+      -H "Content-Type: application/json" \
+      -d "{
+        \"series\": [{
+          \"metric\": \"ci.build.duration\",
+          \"points\": [[\"$(date +%s)\", $DURATION]],
+          \"tags\": [\"repo:${{ github.repository }}\", \"workflow:${{ github.workflow }}\", \"conclusion:${{ github.event.workflow_run.conclusion }}\"]
+        }]
+      }"
+```
+
+**Key build metrics to track:**
+- Build duration (p50, p95, p99) per workflow
+- Cache hit rate (actions/cache)
+- Queue time (time waiting for runner)
+- Failure rate per workflow/job
+- Flaky test rate
+- Resource usage (runner CPU/memory)
+
+**GitHub Actions metrics API:**
+```bash
+# Workflow run timing
+gh api /repos/{owner}/{repo}/actions/runs \
+  --jq '.workflow_runs[] | {name: .name, duration: (.updated_at | fromdateiso8601) - (.run_started_at | fromdateiso8601), conclusion: .conclusion}'
+```
+
+### Test Analytics
+
+```yaml
+# Upload test results for analysis
+- name: Upload test results
+  if: always()
+  uses: actions/upload-artifact@v4
+  with:
+    name: test-results
+    path: test-results/
+    retention-days: 30
+
+# Playwright test reporter
+- uses: dorny/test-reporter@v1
+  if: always()
+  with:
+    name: Test Results
+    path: '**/test-results.xml'
+    reporter: java-junit
+
+# Codecov for coverage trends
+- uses: codecov/codecov-action@v4
+  with:
+    token: ${{ secrets.CODECOV_TOKEN }}
+    fail_ci_if_error: true
+    flags: unittests
+```
+
+**Test analytics dashboard metrics:**
+- Test pass/fail rate over time
+- Slowest tests (optimization targets)
+- Flaky test detection (pass → fail → pass within 24h)
+- Coverage trend (line, branch, function)
+- Test duration regression alerts
+
+### Deployment Tracking
+
+```yaml
+# Track every deployment
+- name: Record deployment
+  if: success() && github.ref == 'refs/heads/main'
+  run: |
+    curl -X POST "${{ secrets.DEPLOYMENT_TRACKER_URL }}" \
+      -H "Content-Type: application/json" \
+      -d "{
+        \"environment\": \"production\",
+        \"version\": \"${{ github.sha }}\",
+        \"tag\": \"${{ github.ref_name }}\",
+        \"deployer\": \"${{ github.actor }}\",
+        \"commit_message\": \"$(git log -1 --pretty=%B | head -1 | sed 's/\"/\\\\"/g')\",
+        \"pipeline_url\": \"${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}\",
+        \"timestamp\": \"$(date -u +%Y-%m-%dT%H:%M:%SZ)\"
+      }"
+```
+
+**Deployment tracking checklist:**
+- [ ] Every deployment recorded (env, version, who, when)
+- [ ] DORA metrics auto-calculated from deployment records
+- [ ] Rollback events tracked separately
+- [ ] Correlation: deployment → error rate spike → rollback
+- [ ] ChatOps notification (Slack/Teams) on every deploy
+- [ ] Deployment frequency dashboard
+- [ ] Lead time: commit timestamp → deploy timestamp
+
+## Step 23: Monorepo CI Patterns
+
+Source: https://bazel.build/, https://nx.dev/, https://turbo.build/
+
+### Affected-Only Builds
+
+Only build/test what changed. Critical for monorepo performance.
+
+**Nx (JavaScript/TypeScript):**
+```yaml
+# .github/workflows/monorepo-ci.yml
+- uses: nrwl/nx-set-shas@v4
+  with:
+    main-branch-name: main
+
+- run: npx nx affected -t lint test build --base=${{ env.NX_BASE }} --head=${{ env.NX_HEAD }}
+```
+
+**Turborepo:**
+```yaml
+- run: npx turbo run lint test build --filter=...[origin/main]
+```
+
+**Bazel (any language):**
+```yaml
+- run: |
+    bazel test \
+      --keep_going \
+      --test_output=errors \
+      $(bazel query 'kind("test", rdeps(//..., set($(git diff --name-only origin/main HEAD))))')
+```
+
+**Git-based affected detection (manual):**
+```yaml
+- name: Detect affected packages
+  id: affected
+  run: |
+    CHANGED=$(git diff --name-only origin/main...HEAD)
+    PACKAGES=$(echo "$CHANGED" | cut -d/ -f1-2 | sort -u)
+    echo "packages=$PACKAGES" >> $GITHUB_OUTPUT
+    echo "Changed packages: $PACKAGES"
+
+- name: Build affected only
+  run: |
+    for pkg in ${{ steps.affected.outputs.packages }}; do
+      if [ -f "$pkg/package.json" ]; then
+        echo "Building $pkg"
+        cd "$pkg" && npm ci && npm run build && cd -
+      fi
+    done
+```
+
+### Incremental Testing
+
+Only run tests for changed code + its dependents.
+
+```yaml
+# Nx incremental test
+- run: npx nx affected -t test --base=origin/main --parallel=3
+
+# pytest with testmon (incremental Python)
+- run: |
+    pip install pytest-testmon
+    pytest --testmon --testmon-cov=.testmondata
+
+# Jest incremental (via changedSince)
+- run: npx jest --changedSince=origin/main --passWithNoTests
+
+# Go incremental tests (package-level)
+- run: |
+    CHANGED_PKGS=$(git diff --name-only origin/main...HEAD -- '*.go' | \
+      xargs -I{} dirname {} | sort -u | sed 's|^|./|')
+    go test $CHANGED_PKGS -v -count=1
+```
+
+**Incremental test strategies:**
+- [ ] Dependency graph aware (Nx, Bazel, Turborepo)
+- [ ] Test impact analysis (only run tests covering changed lines)
+- [ ] Parallel execution (Nx `--parallel`, `pytest -n auto`)
+- [ ] Skip unchanged packages entirely
+- [ ] Always run full suite on main (nightly or post-merge)
+
+### Shared Caches in Monorepos
+
+```yaml
+# Nx Cloud (distributed cache)
+- run: npx nx affected -t build --cloud
+  env:
+    NX_CLOUD_AUTH_TOKEN: ${{ secrets.NX_CLOUD_TOKEN }}
+
+# Turborepo remote cache
+- run: npx turbo run build --cache-dir=.turbo
+  env:
+    TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
+    TURBO_TEAM: org-name
+
+# Bazel remote cache
+- run: bazel build //... --remote_cache=grpcs://cache.example.com
+
+# GitHub Actions cache for monorepo (scoped)
+- uses: actions/cache@v4
+  with:
+    path: |
+      apps/web/node_modules
+      apps/api/node_modules
+      packages/shared/node_modules
+    key: monorepo-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
+```
+
+**Monorepo CI checklist:**
+- [ ] Use Nx/Turborepo/Bazel for dependency graph awareness
+- [ ] Affected-only builds on PRs, full builds on main
+- [ ] Remote/distributed cache for build artifacts (Nx Cloud, Turbo cache)
+- [ ] Parallel execution across affected packages
+- [ ] CODEOWNERS for package-level review
+- [ ] Path filters per workflow (e.g., `apps/web/**` triggers frontend CI only)
+- [ ] Nightly full test suite (catch drift from incremental)
+
+```yaml
+# Path-based workflow splitting
+name: Frontend CI
+on:
+  pull_request:
+    paths:
+      - 'apps/web/**'
+      - 'packages/shared/**'
+      - 'pnpm-lock.yaml'
+```
+
+## Step 24: Pipeline Cost Optimization
+
+Source: https://docs.github.com/en/billing/managing-billing-for-github-actions
+
+### Runner Selection
+
+Choose runners by actual need, not habit.
+
+| Runner | Cost (GitHub Actions) | Use For |
+|--------|----------------------|---------|
+| ubuntu-latest | 1x (baseline) | Linux builds, Docker, most CI |
+| ubuntu-24.04-arm | 1x | ARM builds (native, no QEMU) |
+| macos-13 | 10x | macOS/iOS builds only |
+| macos-13-xlarge (M1) | 20x | Apple Silicon builds only |
+| windows-latest | 2x | Windows builds only |
+| Larger runners | 2-10x | Memory-heavy builds, many parallel jobs |
+
+**Cost-saving rules:**
+- [ ] Default to `ubuntu-latest` — macOS/Windows only when required
+- [ ] Use ARM runners (same price as x86) for ARM builds instead of QEMU
+- [ ] Self-hosted runners for heavy workloads (owned hardware, zero per-minute)
+- [ ] Larger runners only if build OOMs on standard — test first
+- [ ] macOS: use `macos-13` (Intel) when Apple Silicon not needed
+
+### Cache Strategies
+
+```yaml
+# Cache aggressively, restore cheaply
+# 1. Save cache only on main (PRs restore only)
+- uses: actions/cache/save@v4
+  if: github.ref == 'refs/heads/main'
+  with:
+    path: node_modules
+    key: deps-${{ runner.os }}-${{ hashFiles('**/package-lock.json') }}
+
+- uses: actions/cache/restore@v4
+  with:
+    path: node_modules
+    key: deps-${{ runner.os }}-${{ hashFiles('**/package-lock.json') }}
+    restore-keys: deps-${{ runner.os }}-
+
+# 2. Docker BuildKit cache (GHA backend)
+- uses: docker/build-push-action@v5
+  with:
+    cache-from: type=gha
+    cache-to: type=gha,mode=max  # Cache ALL layers
+
+# 3. Conditional cache restore (skip on cache hit)
+- id: cache
+  uses: actions/cache@v4
+  with:
+    path: ~/.cache/go-build
+    key: go-${{ hashFiles('go.sum') }}
+
+- run: go build ./...
+  if: steps.cache.outputs.cache-hit != 'true'
+```
+
+**Cache cost rules:**
+- [ ] GitHub cache limit: 10GB per repo — monitor usage
+- [ ] Eviction policy: LRU — unused caches auto-deleted after 7 days
+- [ ] `cache-hit` output to skip expensive steps when cache warm
+- [ ] Save cache on main only — PRs inherit via `restore-keys`
+- [ ] Scope caches per OS + architecture (`${{ runner.os }}-${{ runner.arch }}`)
+- [ ] Docker BuildKit cache (`type=gha`) — saves pull time on every build
+
+### Parallelism Tuning
+
+```yaml
+# Matrix parallelism — balance speed vs cost
+strategy:
+  matrix:
+    shard: [1, 2, 3, 4]  # 4x cost, ~4x speed
+  fail-fast: false
+
+# Job-level parallelism — split expensive stages
+jobs:
+  lint:
+    runs-on: ubuntu-latest        # Fast, cheap
+  unit-test:
+    needs: lint
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        shard: [1, 2]
+  integration-test:
+    needs: lint
+    runs-on: ubuntu-latest        # Parallel with unit tests
+    services:
+      postgres:
+        image: postgres:16
+  build:
+    needs: [unit-test, integration-test]
+    runs-on: ubuntu-latest
+```
+
+**Parallelism guidelines:**
+- [ ] Default: 2-4 shards for tests (diminishing returns beyond 8)
+- [ ] Use `fail-fast: false` — don't cancel on first failure (wastes the partial run)
+- [ ] Concurrency groups — cancel stale runs (saves compute)
+- [ ] Estimate: 4 shards costs 4x but finishes ~3.5x faster (scheduling overhead)
+- [ ] Nightly/weekly heavy jobs — don't run full matrix on every PR
+
+```yaml
+# Concurrency: cancel stale PR runs
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+# Schedule heavy jobs off-peak
+on:
+  schedule:
+    - cron: '0 3 * * 1'  # Weekly Monday 3am UTC
+```
+
+**Cost optimization checklist:**
+- [ ] Monitor Actions minutes usage (org billing page)
+- [ ] Set per-repo minutes limit (org settings)
+- [ ] Use `paths:` filters — skip CI for docs/config-only changes
+- [ ] Schedule nightly full suite, skip on PRs
+- [ ] Reuse artifacts between jobs (`actions/upload-artifact` + `download`)
+- [ ] Self-hosted runners for high-volume repos
+- [ ] Audit expensive workflows monthly (sort by minutes consumed)
