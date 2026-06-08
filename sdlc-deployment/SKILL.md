@@ -1,7 +1,7 @@
 ---
 name: sdlc-deployment
 description: "Deployment strategies: canary, blue-green, rolling, progressive delivery (Flagger/Argo Rollouts), feature flags (LaunchDarkly/Unleash/OpenFeature), rollback, database migrations, zero-downtime patterns. v3: Gateway API traffic splitting, OpenFeature CNCF standard, FinOps (OpenCost/Karpenter/FOCUS), AnalysisTemplate, multi-cluster progressive delivery. v3.1: Serverless (Lambda/Cloud Run/Container Apps), edge deployment (Cloudflare Workers/Deno Deploy), cold start optimization, serverless observability. v4: Production hardening (health probes, graceful shutdown, PDB), multi-region patterns (active-active/passive, follow-the-sun), disaster recovery (RPO/RTO, failover automation), cost optimization (right-sizing, spot/reserved), deployment verification (smoke tests, synthetic monitoring, canary analysis). v4.3: Deployment failure case studies (Knight Capital, AWS S3, Cloudflare, GitLab, Facebook BGP), successful deployment patterns (Netflix, Google, Amazon, Etsy), database migration war stories (gh-ost, expand-contract, Vitess), feature flag case studies (Facebook Gate, LaunchDarkly, Microsoft flight rings)."
-version: 4.3.0
+version: 4.4.0
 author: Hermes Agent
 license: MIT
 platforms: [linux, macos, windows]
