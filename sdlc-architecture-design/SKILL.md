@@ -1,13 +1,13 @@
 ---
 name: sdlc-architecture-design
-description: "System design, C4 diagrams, API design (REST/GraphQL/gRPC), database schema, code architecture (Clean/Hexagonal/DDD), ADRs, branching strategies, code review, dependency management, DDIA patterns. Includes architecture fitness functions and DDD context mapping."
-version: 2.0.0
+description: "System design, C4 diagrams, API design (REST/GraphQL/gRPC), database schema, code architecture (Clean/Hexagonal/DDD), ADRs, branching strategies, code review, dependency management, DDIA patterns. Includes architecture fitness functions, DDD context mapping, platform engineering, Gateway API, green software, and API governance."
+version: 3.0.0
 author: Hermes Agent
 license: MIT
 platforms: [linux, macos, windows]
 metadata:
   hermes:
-    tags: [sdlc, architecture, c4, api-design, database, clean-architecture, ddd, code-review, branching, adr, ddia, fitness-functions, context-mapping]
+    tags: [sdlc, architecture, c4, api-design, database, clean-architecture, ddd, code-review, branching, adr, ddia, fitness-functions, context-mapping, platform-engineering, gateway-api, green-software, api-governance, service-mesh]
     related_skills: [sdlc-requirements-engineering, sdlc-cicd-pipeline, architecture-blueprint, api-design]
 ---
 
@@ -508,6 +508,77 @@ Source of truth (DB) → Event log → Derived views (caches, search indexes)
 - Forward compatible: old code reads new data
 - Use Avro/Protobuf for schema evolution
 
+## Step 10b: Platform Engineering
+
+Source: https://backstage.io/, https://score.dev/, https://humanitec.com/, https://maturity.platformengineering.org/
+
+Treat the platform as a product. Build an Internal Developer Platform (IDP) that gives developers golden paths — opinionated, well-supported workflows for common tasks.
+
+### Core Concepts
+
+| Concept | Description |
+|---------|-------------|
+| Internal Developer Platform (IDP) | Self-service layer abstracting infrastructure. Developers consume via APIs, CLIs, UIs. |
+| Golden Paths | Pre-approved, paved roadways for common workflows (new service, deploy pipeline, observability setup). Opinionated defaults, escape hatches available. |
+| Platform-as-Product | Platform team has roadmap, SLAs, internal customers. Measure developer satisfaction (DORA metrics, developer NPS). |
+| Self-Service | Developers provision infrastructure, create services, manage configs without tickets. |
+| Abstraction Layer | Hide complexity of K8s, cloud providers, CI/CD behind developer-friendly interfaces. |
+
+### Backstage (Spotify → CNCF)
+Source: https://backstage.io/
+
+Developer portal — single pane of glass for services, docs, APIs, infrastructure.
+
+- **Software Catalog:** register all services, track ownership, dependencies
+- **Software Templates:** scaffold new services from golden path templates (cookiecutter-based)
+- **TechDocs:** docs-as-code (Markdown in repo, rendered in Backstage)
+- **Plugins:** Scaffolder, Kubernetes, GitHub Actions, SonarQube, Grafana, PagerDuty
+- **RBAC:** role-based access to templates, catalog entities, plugins
+
+### Score Spec
+Source: https://score.dev/
+
+Platform-agnostic workload specification. Developers declare workload intent; platform resolves to concrete infrastructure.
+
+```yaml
+# score.yaml
+apiVersion: score.dev/v1b1
+metadata:
+  name: orders-service
+containers:
+  main:
+    image: orders:latest
+    variables:
+      DB_HOST: ${resources.db.host}
+service:
+  ports:
+    http:
+      port: 8080
+resources:
+  db:
+    type: postgres
+```
+
+- Decouples workload definition from infrastructure
+- `score-compose`, `score-k8s` — resolve Score to Docker Compose or K8s manifests
+- No vendor lock-in: same spec works across environments
+
+### CNCF Platform Engineering Maturity Model
+Source: https://maturity.platformengineering.org/
+
+4 levels:
+1. **Operators:** manual ops, tribal knowledge, ad-hoc tools
+2. **Enabling:** curated tools, some self-service, basic docs
+3. **Scalable:** golden paths, self-service portal, platform team with SLAs
+4. **Optimizing:** data-driven iteration, high DORA metrics, platform NPS tracked
+
+### Implementation Checklist
+- Inventory existing tools and workflows (pain point mapping)
+- Start with one golden path: new service → CI/CD → observability in < 30 min
+- Build on Backstage or similar portal — don't build from scratch
+- Measure: time-to-first-deploy, onboarding time, platform NPS
+- Iterate: treat platform team as product team with sprints and backlog
+
 ## Step 11: Codebase Deepening
 
 ### Key Concepts
@@ -610,9 +681,12 @@ Single entry point that routes, aggregates, and handles cross-cutting concerns.
 
 ## Step 15: Service Mesh
 
-Source: https://istio.io/latest/docs/concepts/
+Source: https://istio.io/latest/docs/concepts/, https://cilium.io/
 
-Infrastructure layer for service-to-service communication. Sidecar proxy pattern.
+Infrastructure layer for service-to-service communication. Two architectural approaches:
+
+**Sidecar proxy pattern** (traditional): one proxy per pod (Envoy, linkerd2-proxy).
+**Sidecar-less / eBPF-based** (next-gen): kernel-level packet processing, no per-pod proxy.
 
 | Feature | Istio | Linkerd |
 |---------|-------|---------|
@@ -623,9 +697,98 @@ Infrastructure layer for service-to-service communication. Sidecar proxy pattern
 | Observability | ✓ | ✓ |
 | CNCF status | Graduated | Graduated |
 
-Source: https://linkerd.io/2.15/overview/
+**Linkerd2-proxy (Rust-based):**
+- Memory-safe, no CVEs from buffer overflows
+- Minimal resource footprint (~10MB RSS vs Envoy ~50MB)
+- Sub-millisecond p99 latency overhead
+- Source: https://linkerd.io/2.15/overview/
 
-## Step 16: API Gateway Tools
+**Cilium Service Mesh (eBPF-based):**
+Source: https://cilium.io/
+
+- Sidecar-less: eBPF programs in Linux kernel handle networking, security, observability
+- No per-pod proxy container — reduced resource overhead and latency
+- Replaces kube-proxy (Cilium CNI), adds service mesh, network policy, Hubble observability
+- mTLS via eBPF socket-level encryption (no proxy negotiation)
+- CNCF Graduated project
+- Tradeoff: requires Linux kernel 5.10+, less mature traffic management than Istio
+
+**When to choose:**
+| Scenario | Recommendation |
+|----------|---------------|
+| Max features, complex traffic rules | Istio + Envoy |
+| Low ops overhead, memory safety | Linkerd |
+| Kernel-level performance, minimal sidecar overhead | Cilium |
+| Hybrid: CNI + mesh in one | Cilium |
+
+## Step 16: Kubernetes Gateway API
+
+Source: https://gateway-api.sigs.k8s.io/
+
+Replaces Ingress resource as the standard for K8s traffic routing. Richer, role-oriented, extensible.
+
+**Why Gateway API over Ingress:**
+- Expressive routing: header matching, method matching, weighted backends — natively
+- Role-oriented: InfrastructureProvider, ClusterOperator, ApplicationDeveloper roles
+- Protocol support: HTTP, HTTPS, gRPC, TCP, UDP, TLS in one API
+- Extensible: policy attachment model (attach rate limiting, auth, CORS per route)
+- Cross-namespace routing (ReferenceGrant)
+
+**Core resources:**
+```yaml
+# GatewayClass — infrastructure provider (e.g., Envoy, Cilium, Istio)
+apiVersion: gateway.networking.k8s.io/v1
+kind: GatewayClass
+metadata:
+  name: cilium
+spec:
+  controllerName: io.cilium/gateway-controller
+---
+# Gateway — cluster operator configures listeners
+apiVersion: gateway.networking.k8s.io/v1
+kind: Gateway
+metadata:
+  name: main-gateway
+  namespace: infra
+spec:
+  gatewayClassName: cilium
+  listeners:
+    - name: https
+      protocol: HTTPS
+      port: 443
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - name: wildcard-cert
+---
+# HTTPRoute — app developer defines routing
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: orders-route
+  namespace: orders
+spec:
+  parentRefs:
+    - name: main-gateway
+      namespace: infra
+  hostnames: ["orders.example.com"]
+  rules:
+    - matches:
+        - path: { type: PathPrefix, value: /api/orders }
+      backendRefs:
+        - name: orders-svc
+          port: 8080
+          weight: 90
+        - name: orders-svc-canary
+          port: 8080
+          weight: 10
+```
+
+**Policy attachments:** attach auth, rate limiting, CORS, retries to routes without modifying route definitions.
+
+**Implementations:** Cilium Gateway API, Istio Gateway API, Envoy Gateway, NGINX Gateway Fabric, Traefik
+
+## Step 17: API Gateway Tools
 
 | Tool | Base | Key Features | Source |
 |------|------|-------------|--------|
@@ -633,6 +796,84 @@ Source: https://linkerd.io/2.15/overview/
 | Ambassador | Envoy | K8s-native, CRD-based, GitOps friendly | https://www.getambassador.io/docs/emissary/latest/ |
 | Traefik | Go | Auto-discovery, Let's Encrypt, Docker/K8s native | https://doc.traefik.io/traefik/ |
 | AWS API Gateway | Managed | Serverless-friendly, pay-per-call | https://docs.aws.amazon.com/apigateway/ |
+
+## Step 18: Green Software & Carbon-Aware Computing
+
+Source: ThoughtWorks Technology Radar — ADOPT
+
+Reduce carbon footprint of software systems. Green Software Foundation patterns.
+
+### Principles
+- **Energy Efficiency:** minimize energy consumed per request (efficient code, fewer round trips)
+- **Carbon Awareness:** shift compute to times/locations with cleaner energy grid
+- **Hardware Efficiency:** maximize utilization, extend hardware lifespan, choose efficient hardware
+
+### Carbon-Aware Patterns
+```yaml
+# Shift batch workloads to low-carbon windows
+# Use carbon-aware scheduler (e.g., KEDA + Carbon Aware SDK)
+triggers:
+  - type: carbon-intensity
+    carbonIntensityThreshold: 200  # gCO2/kWh
+    region: westeurope
+```
+
+- **Time-shifting:** run batch jobs when grid carbon intensity is lowest (Carbon Aware SDK)
+- **Region-shifting:** deploy to regions with cleaner grids (electricityMap API provides real-time data)
+- **Demand shaping:** reduce precision/quality during high-carbon periods (e.g., lower video resolution)
+- **Measurement:** track carbon per request, carbon per deploy (Cloud Carbon Footprint, Green Metrics Tool)
+- **Sustainability scorecards:** include carbon cost in PR review and architecture fitness functions
+
+### Implementation Checklist
+- Instrument: add carbon intensity metrics to CI/CD dashboards
+- Measure: Cloud Carbon Footprint (CCF) for cloud usage
+- Shift: KEDA carbon-aware scaler for batch workloads
+- Optimize: profile hot paths, reduce idle resources, right-size instances
+- Report: include sustainability section in ADRs and architecture reviews
+
+## Step 19: API Governance — Structured Logging & Correlation IDs
+
+Distributed systems require consistent observability. Enforce structured logging and correlation ID propagation as team standard.
+
+### Correlation ID Standard
+```yaml
+# Every service MUST propagate these headers:
+X-Request-ID: uuid-v4        # unique per request, generated at edge
+X-Correlation-ID: uuid-v4    # groups related requests (saga, batch)
+X-Trace-ID: hex-128          # OpenTelemetry trace ID (if using OTel)
+```
+
+- Generate `X-Request-ID` at API gateway / load balancer
+- Propagate all three headers across service calls (HTTP, gRPC metadata, message headers)
+- Log all three in every structured log entry
+- Use correlation ID in error responses for support debugging
+
+### Structured Logging Format
+```json
+{
+  "timestamp": "2025-01-15T10:30:00Z",
+  "level": "INFO",
+  "service": "orders-service",
+  "traceId": "abc123",
+  "spanId": "def456",
+  "requestId": "uuid-v4",
+  "correlationId": "uuid-v4",
+  "message": "Order created",
+  "orderId": "ORD-001",
+  "userId": "USR-001",
+  "duration_ms": 42
+}
+```
+
+- Use JSON format for machine parsing
+- Include: timestamp (ISO 8601), level, service name, trace/span IDs, message, domain context
+- Library recommendations: structlog (Python), pino (Node), zerolog (Go), tracing (Rust)
+- Aggregate to centralized log platform (ELK, Loki, CloudWatch)
+
+### Enforcement
+- Add to CI: lint log statements for structured format compliance
+- Include in PR template: "Does this PR propagate correlation IDs across all call boundaries?"
+- Architecture fitness function: test that correlation headers are present in response headers
 
 ## Pitfalls
 
@@ -647,3 +888,7 @@ Source: https://linkerd.io/2.15/overview/
 9. **Don't skip fitness functions** — architecture erodes without automated checks
 10. **Don't force DDD on CRUD** — DDD Lite (bounded contexts + ubiquitous language) is enough
 11. **Don't forget context mapping** — bounded contexts need explicit integration patterns
+12. **Don't build platform without measuring** — track developer time-to-first-deploy, platform NPS
+13. **Don't use Ingress for new K8s projects** — Gateway API is the standard, richer and role-oriented
+14. **Don't ignore carbon cost** — include sustainability in architecture fitness functions
+15. **Don't allow unstructured logging** — enforce structured JSON + correlation IDs from day one

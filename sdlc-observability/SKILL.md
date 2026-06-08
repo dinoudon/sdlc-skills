@@ -1,27 +1,30 @@
 ---
 name: sdlc-observability
-description: "Observability: OpenTelemetry, structured logging, SLIs/SLOs/SLAs, error budgets, multi-window burn-rate alerting, Grafana LGTM stack, Prometheus, Loki, Jaeger, distributed tracing, continuous profiling."
-version: 2.0.0
+description: "Observability: OpenTelemetry 2024, GenAI semantic conventions, eBPF (Cilium/Hubble/Tetragon), sidecar-less mesh, profiling signal, structured logging, SLIs/SLOs/SLAs, error budgets, burn-rate alerting, Grafana LGTM, distributed tracing, cost optimization."
+version: 3.0.0
 author: Hermes Agent
 license: MIT
 platforms: [linux, macos, windows]
 metadata:
   hermes:
-    tags: [sdlc, observability, opentelemetry, prometheus, grafana, loki, jaeger, sli, slo, error-budget, tracing, logging, sre]
+    tags: [sdlc, observability, opentelemetry, prometheus, grafana, loki, jaeger, sli, slo, error-budget, tracing, logging, sre, ebpf, cilium, genai, profiling]
     related_skills: [sdlc-deployment, sdlc-cicd-pipeline, sdlc-testing-qa]
 ---
 
 # Observability
 
-OpenTelemetry, structured logging, SLIs/SLOs/SLAs, error budgets, burn-rate alerting, Grafana LGTM stack, Prometheus, Loki, Jaeger, distributed tracing, continuous profiling.
+OpenTelemetry 2024 (GenAI conventions, Logs bridge API, Collector Connectors), eBPF observability (Cilium/Hubble/Tetragon, Pixie), sidecar-less service mesh, OTel Profiling signal, structured logging, SLIs/SLOs/SLAs, error budgets, burn-rate alerting, Grafana LGTM stack, distributed tracing, cost optimization.
 
 ## When to Use
 
 Trigger when user:
 - Instruments services with OpenTelemetry
+- Instruments LLM/AI services (GenAI observability)
 - Sets up dashboards, alerts, or SLOs
 - Configures structured logging
 - Implements distributed tracing
+- Configures eBPF-based observability (Cilium, Tetragon, Pixie)
+- Migrates from Envoy sidecars to sidecar-less mesh
 - Designs monitoring architecture
 - Defines error budgets
 
@@ -84,7 +87,90 @@ service:
       exporters: [prometheus]
 ```
 
-**Semantic conventions:** http.method, http.status_code, db.system, rpc.service, etc.
+**Semantic Conventions (2024 stable):**
+
+| Category | Attribute | Description |
+|----------|-----------|-------------|
+| HTTP | `http.request.method` | GET, POST, etc. (replaces deprecated `http.method`) |
+| HTTP | `http.response.status_code` | 200, 404, 500 (replaces `http.status_code`) |
+| HTTP | `url.full` | Full request URL |
+| DB | `db.system` | postgresql, mysql, redis, mongodb |
+| DB | `db.namespace` | Database name (replaces `db.name`) |
+| DB | `db.operation.name` | SELECT, INSERT, etc. (replaces `db.operation`) |
+| Messaging | `messaging.system` | kafka, rabbitmq, sqs |
+| Messaging | `messaging.destination.name` | Topic/queue name |
+| Messaging | `messaging.operation.type` | publish, receive, process, create |
+| RPC | `rpc.system` | grpc, java_rmi, dotnet_wcf |
+| RPC | `rpc.service` | Service name |
+| GenAI | `gen_ai.system` | openai, anthropic, cohere, vertex_ai |
+| GenAI | `gen_ai.request.model` | gpt-4, claude-3, etc. |
+| GenAI | `gen_ai.request.max_tokens` | Max output tokens requested |
+| GenAI | `gen_ai.usage.input_tokens` | Prompt tokens consumed |
+| GenAI | `gen_ai.usage.output_tokens` | Completion tokens generated |
+| GenAI | `gen_ai.response.finish_reason` | stop, length, content_filter |
+
+Source: https://opentelemetry.io/docs/specs/semconv/
+
+### OpenTelemetry GenAI Semantic Conventions (2024)
+
+Standardized telemetry for LLM/AI applications. Covers request/response lifecycle, token usage, model parameters.
+
+```python
+from opentelemetry import trace
+
+tracer = trace.get_tracer("genai.tracer")
+with tracer.start_as_current_span("chat_completion") as span:
+    span.set_attribute("gen_ai.system", "openai")
+    span.set_attribute("gen_ai.request.model", "gpt-4")
+    span.set_attribute("gen_ai.request.max_tokens", 1024)
+    # ... call LLM ...
+    span.set_attribute("gen_ai.usage.input_tokens", response.usage.prompt_tokens)
+    span.set_attribute("gen_ai.usage.output_tokens", response.usage.completion_tokens)
+    span.set_attribute("gen_ai.response.finish_reason", response.choices[0].finish_reason)
+```
+
+Source: https://opentelemetry.io/docs/specs/semconv/gen-ai/
+
+### Logs Bridge API (Stable 2024)
+
+Connects existing logging libraries to OTel without rewriting. Bridge translates log records to OTel LogRecords, enabling correlation with traces via trace_id.
+
+```python
+import logging
+from opentelemetry._logs import set_logger_provider
+from opentelemetry.sdk._logs import LoggerProvider, LoggingHandler
+
+provider = LoggerProvider()
+set_logger_provider(provider)
+handler = LoggingHandler(level=logging.NOTSET, logger_provider=provider)
+logging.getLogger().addHandler(handler)
+# Standard logging calls now export via OTLP
+```
+
+Source: https://opentelemetry.io/docs/specs/otel/logs/bridge-api/
+
+### Collector Connectors
+
+Connectors join two pipelines within the same Collector — no external network hop. Enables routing, deduplication, and cross-signal correlation.
+
+```yaml
+connectors:
+  count:
+    spanevents:
+      my.service.span.count:
+        description: "Span count by service"
+
+service:
+  pipelines:
+    traces:
+      receivers: [otlp]
+      exporters: [count, otlp]
+    metrics:
+      receivers: [count]
+      exporters: [prometheus]
+```
+
+Source: https://opentelemetry.io/docs/collector/configuration/#connectors
 
 ## Step 2: Three Pillars — Logs, Metrics, Traces
 
@@ -281,7 +367,22 @@ docker run -d -p 16686:16686 -p 4317:4317 jaegertracing/all-in-one
 - Time series, stat, table, heatmap, flamegraph, node graph
 - Datasources: Prometheus, Loki, Tempo, Jaeger, Elasticsearch, CloudWatch
 
-## Step 7: Continuous Profiling
+## Step 7: Continuous Profiling & OTel Profiling Signal
+
+### OpenTelemetry Profiling Signal (Experimental)
+
+Fourth OTel signal alongside traces, metrics, logs. Standardizes profiling data format (pprof → OTLP Profiling).
+
+```go
+// OTel profiling SDK (experimental)
+import "go.opentelemetry.io/otel/sdk/trace"
+// Profiling data exported as OTLP profiles, correlated with traces via trace_id
+```
+
+**Status:** Experimental as of 2024. Aim: unify profiling with traces/metrics/logs in single pipeline.
+**Providers:** Grafana Pyroscope, Elastic Profiler already support OTLP profiling export.
+
+Source: https://opentelemetry.io/docs/specs/otel/profiles/
 
 ### Pyroscope
 Source: https://pyroscope.io/
@@ -314,7 +415,116 @@ pyroscope.Start(pyroscope.Config{
 | Vendor lock-in | Can't switch observability tools | OTel Collector as abstraction layer |
 | No correlation IDs | Can't trace request across services | trace_id in every log and span |
 
-## Step 9: Distributed Tracing Advanced Patterns
+## Step 9: eBPF Observability
+
+eBPF runs sandboxed programs in kernel space. No code changes, no sidecars. Observes network, security, and application behavior from kernel level.
+
+### Cilium / Hubble — Network Observability
+
+Cilium is CNI for Kubernetes using eBPF (replaces iptables/kube-proxy). Hubble is its observability layer.
+
+```bash
+# Install Cilium with Hubble
+cilium install --enable-hubble --enable-hubble-ui
+# Hubble CLI: observe network flows
+hubble observe --namespace production --verdict DROPPED
+# Hubble Relay for multi-node
+hubble observe --follow --protocol tcp --to-pod api/deployment
+```
+
+**What Hubble observes:**
+- L3/L4/L7 network flows (DNS, HTTP, Kafka)
+- Dropped packets with reason (policy denied, auth failure)
+- Service dependency map (auto-generated)
+- TCP retransmissions, RTT latency
+
+Source: https://docs.cilium.io/en/stable/observability/
+
+### Tetragon — Security Observability
+
+eBPF-based security observability and enforcement. Monitors process execution, file access, network connections, privilege escalation at kernel level.
+
+```yaml
+# TracingPolicy: watch for sensitive file access
+apiVersion: cilium.io/v1alpha1
+kind: TracingPolicy
+metadata:
+  name: sensitive-file-access
+spec:
+  kprobes:
+  - call: "fd_install"
+    syscall: false
+    args:
+    - index: 1
+      type: "file"
+    selectors:
+    - matchArgs:
+      - index: 1
+        operator: "Prefix"
+        values:
+        - "/etc/shadow"
+```
+
+**Capabilities:**
+- Process lifecycle events (exec, exit, setuid)
+- File access monitoring (read, write, delete)
+- Network observability (connect, accept, bind)
+- Privilege escalation detection
+- Runtime policy enforcement (kill process, block syscall)
+
+Source: https://tetragon.io/docs/
+
+### Pixie — Auto-Telemetry
+
+eBPF-powered auto-instrumentation for Kubernetes. Captures HTTP, gRPC, MySQL, PostgreSQL, Kafka, DNS traffic without code changes. Data stays in-cluster (edge processing).
+
+```bash
+# Install Pixie
+px deploy
+# Query: HTTP requests per service
+px run px/http_data -- --start_rel=-1h
+# Query: flame graph for CPU
+px run px/perf_flamegraph -- -p <pod_name>
+```
+
+**Key:** Zero-instrumentation telemetry. Auto-discovers services. In-cluster storage (short retention). Export to Grafana for long-term.
+
+Source: https://docs.pixielabs.ai/
+
+## Step 10: Sidecar-less Service Mesh Observability
+
+### Cilium Service Mesh (replaces Envoy sidecars)
+
+Traditional service mesh (Istio/Linkerd) injects Envoy sidecar per pod. Cilium provides mesh features via eBPF — no sidecars, lower latency, less resource overhead.
+
+**Comparison:**
+
+| Aspect | Envoy Sidecar (Istio) | Cilium (sidecar-less) |
+|--------|----------------------|----------------------|
+| Data plane | L7 proxy per pod (Envoy) | eBPF in kernel + shared Envoy |
+| Overhead | ~50-100MB RAM per sidecar | ~0 additional RAM per pod |
+| Latency added | +2-5ms per hop | +0.1-0.5ms |
+| mTLS | Envoy terminates | eBPF + WireGuard or IPsec |
+| Observability | Envoy access logs, Istio metrics | Hubble L7 flows, Prometheus metrics |
+| Traffic management | VirtualService, DestinationRule | CiliumNetworkPolicy, CiliumEnvoyConfig |
+
+**Cilium mesh observability:**
+```bash
+# L7-aware flow visibility (HTTP, gRPC, Kafka)
+hubble observe --protocol http --namespace production
+# Service map with encrypted connections marked
+hubble observe --type l7 --output json | jq '.flow.destination'
+# mTLS verification status
+cilium encrypt status
+```
+
+**When to use which:**
+- Cilium mesh: new clusters, latency-sensitive, resource-constrained, eBPF-native
+- Istio/Envoy: existing Envoy investment, complex L7 policies, multi-cluster with Citadel
+
+Source: https://docs.cilium.io/en/stable/network/servicemesh/
+
+## Step 11: Distributed Tracing Advanced Patterns
 
 ### W3C Trace Context
 Source: https://www.w3.org/TR/trace-context/
@@ -334,7 +544,7 @@ Key-value pairs propagated across service boundaries independent of trace. Used 
 
 Source: https://opentelemetry.io/docs/concepts/context-propagation/
 
-## Step 10: Observability-Driven Development (ODD)
+## Step 12: Observability-Driven Development (ODD)
 
 Source: https://www.honeycomb.io/blog/observability-driven-development
 
@@ -345,7 +555,7 @@ Source: https://www.honeycomb.io/blog/observability-driven-development
 - During review: PR checklist includes "did you add instrumentation?"
 - SLO-driven: define SLI → SLO → error budget before deploy
 
-## Step 11: Incident Management
+## Step 13: Incident Management
 
 | Tool | Focus | Source |
 |------|-------|--------|
@@ -359,7 +569,7 @@ Source: https://www.honeycomb.io/blog/observability-driven-development
 - Runbooks attached to alerts
 - Incident retrospectives feed back into SLO definitions
 
-## Step 12: AIOps and Anomaly Detection
+## Step 14: AIOps and Anomaly Detection
 
 **Techniques:**
 - Time-series anomaly detection: z-score, STL decomposition, isolation forest, autoencoders
@@ -375,7 +585,7 @@ Source: https://www.honeycomb.io/blog/observability-driven-development
 
 Source: https://github.com/linkedin/thirdeye, https://github.com/salesforce/Merlion
 
-## Step 13: Observability as Code
+## Step 15: Observability as Code
 
 ### Grafana Dashboards as Code
 - Grafonnet (Jsonnet): https://github.com/grafana/grafonnet
@@ -391,12 +601,57 @@ Source: https://github.com/linkedin/thirdeye, https://github.com/salesforce/Merl
 - PR review for alert threshold changes
 - Drift detection: terraform plan catches manual changes
 
-## Step 14: Cost Optimization
+## Step 16: Cost Optimization
 
 ### Sampling Strategies
 - **Head-based:** decision at trace start, simple but loses tail data
-- **Tail-based:** decision after trace completes, retains errors/slow traces
 - **Rate limiting:** cap traces per service per second
+
+### Tail-Based Sampling Strategies
+
+Decision made after trace completes. Retains error traces, slow traces, high-value traces. Requires Collector buffering (memory/disk).
+
+```yaml
+# Tail-based sampling with OTel Collector
+processors:
+  tail_sampling:
+    decision_wait: 10s          # buffer trace for 10s before deciding
+    num_traces: 100000          # max traces in memory buffer
+    expected_new_traces_per_sec: 1000
+    policies:
+      # Always keep errors
+      - name: errors
+        type: status_code
+        status_code: { status_codes: [ERROR] }
+      # Always keep slow traces (>2s)
+      - name: slow-traces
+        type: latency
+        latency: { threshold_ms: 2000 }
+      # Keep 100% of traces with specific attribute
+      - name: high-value
+        type: string_attribute
+        string_attribute:
+          key: user.tier
+          values: [enterprise, premium]
+      # Sample 5% of remaining (healthy, fast, low-value)
+      - name: probabilistic
+        type: probabilistic
+        probabilistic: { sampling_percentage: 5 }
+```
+
+**Multi-Collector architecture for tail sampling at scale:**
+```
+  [Service Pods] → OTLP → [Gateway Collector: tail_sampling] → [Backend]
+                              ↑
+       [Load Balancer Collector: round-robin routing]
+```
+Gateway Collector buffers traces for decision. Load balancer ensures same trace_id routes to same gateway instance (consistent hashing on trace_id).
+
+**Cost levers:**
+- Retain 100% errors + slow traces (debug value high)
+- Sample 1-5% healthy fast traces (lower debug value)
+- Use attribute-based policies: high-value users, critical paths get 100%
+- Drop noisy spans: health checks, readiness probes, metrics scrapes
 
 Source: https://opentelemetry.io/docs/collector/configuration/#processors
 

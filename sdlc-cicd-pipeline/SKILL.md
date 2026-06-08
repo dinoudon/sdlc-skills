@@ -1,13 +1,13 @@
 ---
 name: sdlc-cicd-pipeline
-description: "CI/CD pipeline design with GitHub Actions and GitLab CI. Docker multi-stage builds, caching, matrix builds, test sharding, security scanning, GitOps, DORA metrics, trunk-based development, anti-patterns."
-version: 2.0.0
+description: "CI/CD pipeline design with GitHub Actions and GitLab CI. Docker multi-stage builds, caching, matrix builds, test sharding, security scanning, GitOps, DORA metrics, trunk-based development, anti-patterns. SLSA L3 supply chain, SBOM generation, Green CI/CD, AI in pipelines, GitHub Actions hardening."
+version: 3.0.0
 author: Hermes Agent
 license: MIT
 platforms: [linux, macos, windows]
 metadata:
   hermes:
-    tags: [sdlc, ci-cd, github-actions, gitlab-ci, docker, devops, pipeline, gitops, dora, accelerate, trunk-based]
+    tags: [sdlc, ci-cd, github-actions, gitlab-ci, docker, devops, pipeline, gitops, dora, accelerate, trunk-based, slsa, sbom, supply-chain, green-ci, security-hardening]
     related_skills: [sdlc-architecture-design, sdlc-testing-qa, sdlc-deployment, github-pr-workflow]
 ---
 
@@ -450,22 +450,129 @@ Supply-chain Levels for Software Artifacts. Google-originated, now OpenSSF.
     id-token: write
 ```
 
+### SLSA L3 Complete Workflow
+
+Full end-to-end SLSA L3 container build + provenance in GitHub Actions:
+
+```yaml
+# .github/workflows/release-slsa3.yml
+name: SLSA L3 Release
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: read
+
+env:
+  IMAGE: ghcr.io/${{ github.repository }}
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    outputs:
+      digest: ${{ steps.build.outputs.digest }}
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: docker/setup-buildx-action@v3
+
+      - id: build
+        uses: docker/build-push-action@v5
+        with:
+          push: true
+          tags: ${{ env.IMAGE }}:${{ github.ref_name }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  provenance:
+    needs: build
+    permissions:
+      actions: read
+      id-token: write
+      packages: write
+    # SLSA generator runs as reusable workflow — MUST be called at top level
+    uses: slsa-framework/slsa-github-generator/.github/workflows/generator_container_slsa3.yml@v2.1.0
+    with:
+      image: ${{ env.IMAGE }}
+      digest: ${{ needs.build.outputs.digest }}
+      registry-username: ${{ github.actor }}
+    secrets:
+      registry-password: ${{ secrets.GITHUB_TOKEN }}
+```
+
+**Verify provenance:**
+```bash
+cosign verify-attestation \
+  --type slsaprovenance \
+  --certificate-identity-regexp 'https://github.com/slsa-framework/slsa-github-generator' \
+  --certificate-oidc-issuer https://token.actions.githubusercontent.com \
+  ${{ env.IMAGE }}@${{ digest }}
+```
+
+**SLSA L3 non-goals vs L2:** L3 adds hardened build platform (isolation, ephemeral env)
+and non-falsifiable provenance (generator is separate from build). L2 only needs signed provenance.
+
+Source: https://slsa.dev/spec/v1.0/levels
+
 ### SBOM Generation
 Source: https://github.com/anchore/syft
 
+Dedicated SBOM step — run after build, before sign. Produces machine-readable inventory of dependencies.
+
+**Syft (Anchore) — standalone CLI:**
 ```yaml
-# Syft — generates SPDX and CycloneDX SBOMs
+# Generate SBOM for built image
+- name: Install Syft
+  run: curl -sSfL https://raw.githubusercontent.com/anchore/syft/main/install.sh | sh -s -- -b /usr/local/bin
+
+- name: Generate SBOM
+  run: syft ${{ env.IMAGE }}@${{ steps.build.outputs.digest }} -o spdx-json=sbom.spdx.json -o cyclonedx-json=sbom.cdx.json
+
+- name: Upload SBOM artifact
+  uses: actions/upload-artifact@v4
+  with:
+    name: sbom
+    path: |
+      sbom.spdx.json
+      sbom.cdx.json
+```
+
+**Or use GitHub Action (simpler):**
+```yaml
 - uses: anchore/sbom-action@v0
   with:
-    image: ${{ env.IMAGE }}
+    image: ${{ env.IMAGE }}@${{ steps.build.outputs.digest }}
     format: spdx-json
     output-file: sbom.spdx.json
+```
+
+**Vulnerability scan from SBOM (Grype):**
+```bash
+grype sbom:sbom.spdx.json --fail-on high
 ```
 
 **Attach SBOM to image:**
 ```bash
 cosign attest --predicate sbom.spdx.json --type spdx IMAGE
 ```
+
+**SBOM best practices:**
+- Generate both SPDX and CycloneDX (different consumers prefer different formats)
+- Include transitive dependencies
+- Pin Syft version for reproducible output
+- Scan SBOM with Grype before attestation — don't attest vulnerable images
+- Store SBOMs as build artifacts for audit trail
 
 ### Dependency Review
 ```yaml
@@ -509,3 +616,256 @@ Source: https://developer.hashicorp.com/vault/docs/github-actions
 8. **Don't use `fail-fast: true`** — one failure shouldn't cancel other matrix legs
 9. **Don't forget concurrency groups** — cancel stale runs on same PR
 10. **Don't skip artifact signing** — Sigstore/cosign for container images
+
+## Step 11: DORA 2024 — AI in CI/CD & Docs-as-Code
+
+Source: https://dora.dev/research/2024-dora-report/
+
+### AI-Assisted CI/CD (DORA 2024 Findings)
+DORA 2024 found AI adoption correlates with improved delivery performance
+when used *inside* pipelines, not as replacement for engineering judgment.
+
+**AI in test generation:**
+```yaml
+# Generate tests from changed code, review before merge
+- name: Generate tests with AI
+  uses: coderabbitai/ai-pr-reviewer@latest
+  with:
+    generate-tests: true
+    review-draft: true
+```
+Tools: GitHub Copilot test generation, Cody, Codeium, aider
+
+**AI in code review (pipeline-integrated):**
+- Automated PR summaries and review comments
+- Vulnerability explanation (why is this CVE dangerous in this context?)
+- Code smell detection beyond static rules
+
+**Key DORA 2024 finding:** AI that augments developers (test suggestions, review hints)
+improves throughput. AI that replaces review gates without human oversight increases
+change failure rate.
+
+### Documentation-as-Code in Pipelines
+DORA 2024 found **documentation quality** is a strong predictor of delivery performance.
+
+```yaml
+# Docs build + deploy in CI pipeline
+docs:
+  runs-on: ubuntu-latest
+  needs: lint
+  steps:
+    - uses: actions/checkout@v4
+    - run: pip install mkdocs-material
+    - run: mkdocs build --strict  # Fail on broken links
+    - uses: actions/upload-pages-artifact@v3
+      with:
+        path: site/
+
+# API docs from OpenAPI spec
+    - run: npx @redocly/cli build-docs openapi.yaml -o site/api.html
+```
+
+**Docs-as-code practices:**
+- Docs live in same repo as code, reviewed in same PRs
+- API docs auto-generated from OpenAPI/gRPC proto
+- Broken links = CI failure (strict build mode)
+- Changelog generated from conventional commits
+
+## Step 12: Green CI/CD Patterns
+
+Source: https://grfrn.org/, https://www.thegreenwebfoundation.org/
+
+### Carbon-Aware Scheduling
+Run compute-heavy jobs when/where grid electricity is cleanest.
+
+```yaml
+# Use Electricity Maps API to find green windows
+- name: Check carbon intensity
+  run: |
+    INTENSITY=$(curl -s "https://api.electricitymap.org/v3/carbon-intensity/latest?zone=${{ runner.location }}" \
+      -H "auth-token: ${{ secrets.ELECTRICITY_MAPS_TOKEN }}" | jq '.carbonIntensity')
+    echo "carbon_intensity=$INTENSITY" >> $GITHUB_OUTPUT
+
+# Delay heavy jobs if carbon intensity > threshold
+- name: Wait for green window
+  if: steps.carbon.outputs.carbon_intensity > 200
+  run: sleep 3600  # Retry in 1 hour
+```
+
+**Green runners:**
+- Use cloud regions with low-carbon grids (Nordics, Quebec, Pacific NW)
+- [Green Web Foundation](https://www.thegreenwebfoundation.org/) directory of green hosts
+- GitHub Actions runs on Azure — some regions cleaner than others
+
+### Efficient Caching (Reduce Redundant Compute)
+```yaml
+# Aggressive Docker layer caching
+- uses: docker/build-push-action@v5
+  with:
+    cache-from: type=gha
+    cache-to: type=gha,mode=max  # Cache ALL layers, not just final
+
+# Cache test results — skip unchanged test suites
+- uses: actions/cache@v4
+  with:
+    path: .test-cache
+    key: tests-${{ runner.os }}-${{ hashFiles('**/*.test.ts') }}-${{ hashFiles('src/**') }}
+```
+
+**Green CI checklist:**
+- [ ] Cancel stale workflow runs (concurrency groups)
+- [ ] Cache aggressively (deps, Docker layers, test fixtures)
+- [ ] Use `paths:` filters — skip CI for docs-only changes
+- [ ] Avoid macOS runners when Linux suffices (10x energy cost)
+- [ ] Schedule nightly heavy jobs during green grid windows
+- [ ] Monitor CI minutes as proxy for carbon footprint
+
+## Step 13: Test Sharding Advanced Patterns
+
+### Playwright Sharding (Native)
+```yaml
+# Playwright built-in sharding
+test:
+  strategy:
+    matrix:
+      shard: [1/4, 2/4, 3/4, 4/4]
+  steps:
+    - run: npx playwright test --shard=${{ matrix.shard }}
+    - uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: playwright-report-${{ strategy.job-index }}
+        path: playwright-report/
+
+# Merge reports after all shards
+merge-reports:
+  needs: test
+  if: always()
+  steps:
+    - run: npx playwright merge-reports --reporter html ./all-blob-reports
+    - uses: actions/upload-artifact@v4
+      with:
+        name: html-report
+        path: playwright-report/
+```
+
+### pytest-xdist (Parallel Workers)
+```yaml
+# Parallel pytest with auto-detected workers
+- run: pip install pytest-xdist
+- run: pytest -n auto --dist loadgroup --timeout=120
+
+# Shard by file hash for matrix builds
+strategy:
+  matrix:
+    shard: [1, 2, 3, 4]
+- run: |
+    FILES=$(pytest --collect-only -q | python -c "
+    import sys, hashlib
+    files = sorted(set(l.split('::')[0] for l in sys.stdin if '::' in l))
+    n = int('${{ matrix.shard }}')
+    total = 4
+    selected = [f for i, f in enumerate(files) if i % total == n - 1]
+    print(' '.join(selected))
+    ")
+    pytest $FILES -v
+```
+
+### Test Sharding Anti-Patterns
+- **Time-based sharding** — fragile, uneven (tests change duration)
+- **Alphabetical sharding** — uneven (test files vary in size)
+- **Use file-hash or count-based** — deterministic, even distribution
+
+### Vitest Sharding
+```yaml
+- run: npx vitest --shard=${{ matrix.shard }}/4 --reporter=default
+```
+
+### Jest Shard (via --shard flag, Jest 28+)
+```yaml
+- run: npx jest --shard=${{ matrix.shard }}/4 --coverage
+```
+
+## Step 14: GitHub Actions Security Hardening
+
+Source: https://docs.github.com/en/actions/security-guides
+
+### Pin Actions to Full SHA
+```yaml
+# BEFORE (vulnerable to tag mutation attack)
+- uses: actions/checkout@v4
+- uses: docker/build-push-action@v5
+
+# AFTER (immutable, auditable)
+- uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11  # v4.1.1
+- uses: docker/build-push-action@0565240e2d4ab88bba5387d7195852808d34b1d1  # v5.1.0
+```
+
+**Automation:** use `gh-actions-pinner` or `pinact` CLI:
+```bash
+go install github.com/suzuki-shunsuke/pinact/cmd/pinact@latest
+pinact run  # Pins all actions in .github/workflows/
+```
+
+### Minimal Permissions
+```yaml
+# Top-level: default to read-only
+permissions:
+  contents: read
+
+# Per-job: elevate only what's needed
+jobs:
+  build:
+    permissions:
+      contents: read
+      packages: write  # Only if pushing to GHCR
+  deploy:
+    permissions:
+      id-token: write  # OIDC for cloud auth
+      contents: read
+```
+
+### GITHUB_TOKEN Scoping
+```yaml
+# NEVER give broad write permissions
+# BAD:
+permissions: write-all
+
+# GOOD: explicit minimal scope
+permissions:
+  contents: read
+  pull-requests: write  # Only if bot needs to comment
+
+# For OIDC (SLSA, cloud deploys):
+permissions:
+  id-token: write
+  contents: read
+```
+
+### Third-Party Action Auditing
+```yaml
+# Pin to SHA + verify maintainer
+- uses: some-org/some-action@a1b2c3d4e5f6  # Pin SHA
+  # Check: who maintains this? Is it a verified creator?
+  # Use: https://github.com/step-security/secure-repo to audit
+```
+
+**Supply chain hardening checklist:**
+- [ ] All actions pinned to full commit SHA
+- [ ] `permissions:` set at workflow level (read-only default)
+- [ ] Per-job elevated permissions are minimal
+- [ ] `GITHUB_TOKEN` has no unnecessary scopes
+- [ ] Dependabot/Renovate configured for action version updates
+- [ ] `CODEOWNERS` protects workflow files
+- [ ] Branch protection: require PR reviews for workflow changes
+- [ ] Use `step-security/harden-runner` for runtime monitoring
+
+```yaml
+# Runtime hardening with StepSecurity
+- uses: step-security/harden-runner@v2
+  with:
+    egress-policy: audit  # or 'block' for strict mode
+    allowed-endpoints: >
+      github.com:443
+      api.github.com:443
+```

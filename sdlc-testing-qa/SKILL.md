@@ -1,7 +1,7 @@
 ---
 name: sdlc-testing-qa
 description: "Test pyramid (unit/integration/e2e), TDD/BDD, property-based testing, mutation testing, contract testing, chaos engineering, performance testing (k6/Locust), security testing (SAST/DAST), accessibility testing. Includes Google testing culture and test architecture patterns."
-version: 2.0.0
+version: 3.0.0
 author: Hermes Agent
 license: MIT
 platforms: [linux, macos, windows]
@@ -226,6 +226,67 @@ def test_roundtrip(n):
 # hypothesis write my_module.my_function
 ```
 
+### Hypothesis Advanced: Stateful Testing
+
+```python
+from hypothesis.stateful import RuleBasedStateMachine, rule, invariant
+import hypothesis.strategies as st
+
+class CounterModel(RuleBasedStateMachine):
+    def __init__(self):
+        super().__init__()
+        self.model = 0        # expected value
+        self.real = Counter()  # actual implementation
+
+    @rule(n=st.integers(min_value=1, max_value=100))
+    def increment(self, n):
+        self.model += n
+        self.real.increment(n)
+
+    @rule(n=st.integers(min_value=1, max_value=100))
+    def decrement(self, n):
+        self.model = max(0, self.model - n)
+        self.real.decrement(n)
+
+    @invariant()
+    def model_matches_real(self):
+        assert self.model == self.real.value
+
+TestCounter = CounterModel.TestCase
+# Generates sequences of increments/decrements, finds minimal failing sequence
+```
+
+### Hypothesis Advanced: Database-Backed Example DB
+
+```python
+from hypothesis import settings, database
+
+# Persistent example database — survives across runs
+@settings(database=directory(".hypothesis/examples"))
+@given(st.integers())
+def test_with_persistence(n):
+    ...
+```
+
+### Hypothesis Advanced: @st.composite and target()
+
+```python
+from hypothesis import strategies as st, target
+
+@st.composite
+def valid_email(draw):
+    local = draw(st.text(alphabet=st.characters(whitelist_categories=('L', 'N')), min_size=1, max_size=64))
+    domain = draw(st.sampled_from(['example.com', 'test.org', 'mail.io']))
+    return f"{local}@{domain}"
+
+# target() for directed search — guide shrinking toward interesting values
+@given(st.integers(min_value=-1000, max_value=1000))
+def test_interesting_edge(n):
+    interestingness = -abs(n)  # closer to 0 is more interesting
+    target(interestingness)
+    assert n != 0  # will converge toward 0 faster
+```
+
 ### fast-check (JavaScript/TypeScript)
 Source: https://fast-check.dev/
 
@@ -237,15 +298,56 @@ fc.assert(
     JSON.parse(JSON.stringify(arr)).length === arr.length
   )
 );
+```
 
-// Model-based testing
+### fast-check Advanced: Model-Based Testing with Commands
+
+```typescript
+import fc from 'fast-check';
+
+// Define model + commands for stateful testing
+class AddCommand implements fc.Command<QueueModel, QueueReal> {
+  constructor(readonly value: number) {}
+  check = (model: QueueModel) => true;  // precondition
+  run(model: QueueModel, real: QueueReal): void {
+    model.items.push(this.value);
+    real.enqueue(this.value);
+    expect(real.size()).toBe(model.items.length);
+  }
+  toString = () => `add(${this.value})`;
+}
+
+class DequeueCommand implements fc.Command<QueueModel, QueueReal> {
+  check = (model: QueueModel) => model.items.length > 0;
+  run(model: QueueModel, real: QueueReal): void {
+    const expected = model.items.shift()!;
+    expect(real.dequeue()).toBe(expected);
+  }
+  toString = () => `dequeue()`;
+}
+
 fc.assert(
-  fc.property(fc.commands([addCmd, removeCmd, sizeCmd], { size: '+1' }), cmds => {
-    const model = { size: 0 };
-    const impl = new Set();
-    fc.modelRun(() => ({ model, real: impl }), cmds);
-  })
+  fc.property(
+    fc.commands([fc.integer().map(n => new AddCommand(n)), fc.constant(new DequeueCommand())], { size: '+1' }),
+    cmds => {
+      const real = new QueueReal();
+      fc.modelRun(() => ({ model: { items: [] as number[] }, real }), cmds);
+    }
+  )
 );
+// Finds shortest failing command sequence, reports as: add(5) → add(3) → dequeue()
+```
+
+### fast-check: @fast-check/vitest Integration
+
+```typescript
+// npm i -D @fast-check/vitest
+import { testProp, fc } from '@fast-check/vitest';
+
+testProp('reverse twice is identity', [fc.array(fc.integer())], arr => {
+  expect([...arr].reverse().reverse()).toEqual(arr);
+});
+// Better stack traces, native vitest reporters, property-based test discovery
 ```
 
 **2024-2026 developments:**
@@ -278,6 +380,37 @@ Source: https://stryker-mutator.io/
   "coverageAnalysis": "perTest"
 }
 ```
+
+### Stryker Advanced: Incremental Mode
+
+```json
+// stryker.config.json — incremental mode
+{
+  "incremental": true,
+  "incrementalFile": ".stryker-patches/stryker.incremental.json"
+}
+```
+
+Incremental mode:
+- First run: full mutation, stores surviving mutants in `.stryker-patches/`
+- Subsequent runs: only mutates changed files + re-checks previously surviving mutants
+- CI: run full mutation on main, incremental on PRs — fast feedback
+
+### Surviving Mutants Analysis
+
+Surviving mutants = tests that **should** catch a bug but don't. Review workflow:
+
+```bash
+npx stryker run --reporters html
+open reports/mutation.html  # interactive diff of each surviving mutant
+```
+
+**Categories of surviving mutants:**
+1. **Weak test** — test doesn't assert the mutated behavior (add assertion)
+2. **Equivalent mutant** — code change produces identical behavior (safe to ignore)
+3. **Redundant code** — dead code that mutation reveals (remove it)
+
+**Action:** For each surviving mutant, either add a test that kills it or document it as equivalent mutant.
 
 ### mutmut (Python)
 ```bash
@@ -319,6 +452,44 @@ const interaction = {
 - Pact v4 spec adds synchronous/async messages, binary content
 - Pactflow (commercial) — managed Pact Broker with can-i-deploy checks
 - Bi-directional contract testing (provider spec + consumer pact matched)
+
+### Bi-Directional Contract Testing (Pactflow)
+
+Source: https://docs.pactflow.io/docs/bi-directional-contract-testing/
+
+Traditional Pact requires provider-side verification (provider runs test against consumer pact). Bi-directional mode removes that requirement by matching **independently generated** contracts:
+
+**Workflow:**
+1. Consumer generates pact file (consumer expectations)
+2. Provider generates OAS spec (provider capabilities)
+3. Pactflow matches both: consumer pact must be subset of provider OAS
+4. No provider-side verification code needed
+
+```
+Consumer (Pact)  ──► Pactflow ◄──  Provider (OpenAPI spec)
+   {GET /users/1       matches       paths:
+     response:                           /users/{id}:
+       200                                 get:
+       body: id, name                        responses: 200
+                                            schema: {id, name}
+```
+
+**Provider side:**
+```bash
+# Generate OAS spec from existing tests or CI
+# Use Dredd, Schemathesis, or prism to validate OAS against running API
+npm i -D @pactflow/pact-bi-directional-provider-dredd
+```
+
+**When to use bi-directional:**
+- Provider team cannot write Pact verification tests (legacy, different language)
+- Provider already has OpenAPI spec
+- Want to decouple provider/consumer release cycles
+
+**Can-I-Deploy gate:**
+```bash
+npx pact-broker can-i-deploy --pacticipant UserService --version $GIT_SHA --to production
+# Returns exit code 0 (safe) or 1 (blocked)
 
 ## Step 9: Chaos Engineering
 
@@ -366,12 +537,84 @@ Source: https://aws.amazon.com/fis/
 }
 ```
 
-### LitmusChaos (CNCF Graduated)
+### LitmusChaos (CNCF Graduated 2023)
 Source: https://litmuschaos.io/
 
-- Kubernetes-native chaos engineering
-- ChaosHub with pre-built experiments
-- Supports AWS, GCP, Azure
+- Kubernetes-native chaos engineering framework
+- CNCF Graduated project (2023) — production-grade, broad ecosystem adoption
+- ChaosEngine CRD defines experiments declaratively:
+
+```yaml
+apiVersion: litmuschaos.io/v1alpha1
+kind: ChaosEngine
+metadata:
+  name: pod-delete-chaos
+spec:
+  appinfo:
+    appns: default
+    applabel: app=nginx
+    appkind: deployment
+  chaosServiceAccount: litmus-admin
+  experiments:
+    - name: pod-delete
+      spec:
+        components:
+          env:
+            - name: TOTAL_CHAOS_DURATION
+              value: '30'
+            - name: CHAOS_INTERVAL
+              value: '10'
+            - name: FORCE
+              value: 'false'
+```
+
+**ChaosHub:** Central marketplace for experiments (https://hub.litmuschaos.io/)
+- 60+ pre-built experiments across categories:
+  - Kubernetes: pod-delete, pod-cpu-hog, pod-memory-hog, node-drain, node-taint
+  - Network: chaos-network-loss, chaos-network-latency, chaos-network-duplicate
+  - AWS: ec2-terminate, ebs-loss, s3-stop, rds-failover
+  - GCP: gce-instance-delete, gcp-disk-loss
+  - Azure: azure-instance-stop, azure-disk-loss
+  - VMware: vm-poweroff, vm-snapshot-delete
+- Workflow CRD: chain experiments in sequence/parallel with conditions
+
+### Chaos Mesh (CNCF Incubating)
+Source: https://chaos-mesh.org/
+
+Kubernetes-native chaos engineering (alternative to LitmusChaos). CNCF incubating project.
+
+- CRDs: ChaosExperiment, ChaosSchedule, Workflow
+- Fault types: PodChaos, NetworkChaos, IOChaos, StressChaos, TimeChaos, KernelChaos
+- Built-in web dashboard for experiment management
+- DNS chaos injection (unique feature)
+- JVM chaos (inject faults into Java apps without modifying code)
+
+```yaml
+apiVersion: chaos-mesh.org/v1alpha1
+kind: NetworkChaos
+metadata:
+  name: network-delay
+spec:
+  action: delay
+  mode: one
+  selector:
+    labelSelectors:
+      app: my-app
+  delay:
+    latency: '100ms'
+    jitter: '20ms'
+  duration: '5m'
+```
+
+**LitmusChaos vs Chaos Mesh:**
+| Feature | LitmusChaos | Chaos Mesh |
+|---------|-------------|------------|
+| CNCF Status | Graduated | Incubating |
+| Cloud targets | AWS/GCP/Azure | Primarily K8s |
+| Dashboard | Litmus Portal | Built-in UI |
+| Workflow | ChaosWorkflow CRD | Workflow CRD |
+| JVM chaos | Via plugins | Built-in |
+| Best for | Multi-cloud chaos | K8s-focused chaos |
 
 ## Step 10: Performance Testing
 
@@ -615,10 +858,94 @@ const createUser = (overrides = {}) => ({
 
 **Faker:** https://fakerjs.dev/ — generates realistic random data
 
+### Faker.js Advanced
+
+```typescript
+import { faker, fakerEN_US, fakerDE } from '@faker-js/faker';
+
+// Locale-specific instances
+const usPhone = fakerEN_US.phone.number();
+const germanAddress = fakerDE.location.streetAddress();
+
+// Structured data with relations
+const createOrder = () => ({
+  id: faker.string.uuid(),
+  customer: createUser(),
+  items: faker.helpers.multiple(() => ({
+    product: faker.commerce.productName(),
+    price: parseFloat(faker.commerce.price()),
+    quantity: faker.number.int({ min: 1, max: 10 }),
+  }), { count: { min: 1, max: 5 } }),
+  createdAt: faker.date.recent({ days: 30 }),
+});
+
+// Conditional data
+const createPremiumUser = () => ({
+  ...createUser(),
+  plan: 'premium',
+  features: faker.helpers.arrayElements(['analytics', 'api', 'sso', 'audit'], { min: 2, max: 4 }),
+});
+```
+
+### Factory Libraries
+
+```typescript
+// fishery (TypeScript) — composable factories with traits and associations
+import { Factory } from 'fishery';
+
+const userFactory = Factory.define(({ sequence, params, associations }) => ({
+  id: sequence,
+  email: params.email || `user${sequence}@test.com`,
+  name: params.name || faker.person.fullName(),
+  posts: associations.hasMany('post'),
+}));
+
+// Usage
+const user = userFactory.build({ name: 'Specific Name' });
+const users = userFactory.buildList(5);
+const premium = userFactory.build({ plan: 'premium' });
+
+// factory_bot (Ruby)
+FactoryBot.define do
+  factory :user do
+    name { Faker::Name.name }
+    email { Faker::Internet.email }
+    trait :admin do
+      role { 'admin' }
+    end
+  end
+end
+```
+
+### Deterministic Seeds
+
+```typescript
+// Freeze faker for reproducible tests
+import { faker } from '@faker-js/faker';
+
+beforeEach(() => {
+  faker.seed(42);  // same data every run
+});
+
+// Or use a global seed from env
+faker.seed(process.env.CI ? 12345 : Date.now());
+
+// fast-check also supports seeded runs
+fc.assert(property, { seed: 42, numRuns: 100 });
+
+// Hypothesis — settings profile with fixed database
+from hypothesis import settings, seed
+@settings(database=directory(".hypothesis/examples"), derandomize=True)
+@given(st.integers())
+def test_deterministic(n): ...
+```
+
 **Key patterns:**
 - Use sequences for unique fields: `(n) => user_${n}@test.com`
 - Reset/auto-cleanup between tests (transaction rollback, truncate)
 - Freeze faker seed for reproducibility when needed
+- Separate test data generation (factories) from assertions (tests)
+- Use traits/overloads for variants: `createUser({ plan: 'premium' })`
 
 ## Step 21: Flaky Test Management
 
@@ -636,6 +963,126 @@ Source: https://testing.googleblog.com/2016/05/flaky-tests-at-google-and-how-we.
 **Industry data:**
 - Google found ~1.5% of tests flaky at any time
 - Flaky tests erode trust, mask real failures
+
+### Google Deflake Bot Pattern
+
+Google's internal deflaking infrastructure:
+
+```
+CI detects flaky test
+      ↓
+Deflake bot creates tracking issue
+      ↓
+Bot auto-runs test 100x in isolation
+      ↓
+If reproducible → attaches logs, assigns owner
+If not reproducible → marks as "environment flaky"
+      ↓
+Owner fixes within SLA or test is quarantined
+```
+
+**Implementing Deflake bot in your CI:**
+
+```yaml
+# GitHub Actions: auto-detect and track flaky tests
+name: Flaky Test Detector
+on:
+  workflow_run:
+    workflows: ["CI"]
+    types: [completed]
+
+jobs:
+  detect-flaky:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Analyze test results
+        run: |
+          # Compare current run results with last N runs
+          # If test passed in main branch but failed in PR, flag as flaky
+          python scripts/detect_flaky.py \
+            --history 10 \
+            --threshold 0.1 \
+            --output flaky-report.json
+
+      - name: Create issue for flaky tests
+        if: failure()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const flaky = require('./flaky-report.json');
+            for (const test of flaky.tests) {
+              await github.rest.issues.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title: `[Flaky] ${test.name}`,
+                labels: ['flaky-test', 'auto-detected'],
+                body: `Flaky rate: ${test.flake_rate}\nLast failure: ${test.last_error}`
+              });
+            }
+```
+
+### Quarantine + Fix Workflow
+
+```
+Step 1: DETECT
+  - CI fails intermittently on test X
+  - Pass rate drops below 95% threshold
+
+Step 2: QUARANTINE (immediate)
+  - Move to quarantine suite (separate job/config)
+  - Mark with @flaky annotation/tag
+  - Main suite continues without flaky test
+
+Step 3: DIAGNOSE (within 48h)
+  - Reproduce locally 100x: pytest -x --count=100 test_foo.py
+  - Root cause categories:
+    - Timing: add proper wait/retry, use polling not sleep
+    - Shared state: isolate test data, use transactions/rollback
+    - External deps: mock or use testcontainers
+    - Non-deterministic: fix random seeds, control time
+
+Step 4: FIX
+  - Apply fix, run 1000x in CI to verify
+  - Remove @flaky annotation
+
+Step 5: DELETE (if unfixed within 2 weeks)
+  - Flaky test with no fix → delete it
+  - A test that can't be trusted provides negative value
+```
+
+```typescript
+// Jest: quarantine pattern with configuration
+// jest.config.js
+module.exports = {
+  projects: [
+    {
+      displayName: 'stable',
+      testMatch: ['**/*.test.ts'],
+      testPathIgnorePatterns: ['quarantine'],
+    },
+    {
+      displayName: 'quarantine',
+      testMatch: ['**/quarantine/**/*.test.ts'],
+      retryTimes: 3,  // allow retries in quarantine only
+    },
+  ],
+};
+```
+
+```python
+# pytest: quarantine via markers
+# pytest.ini
+[pytest]
+markers = flaky: quarantined flaky tests
+
+# conftest.py
+def pytest_collection_modifyitems(items):
+    for item in items:
+        if "flaky" in item.keywords:
+            item.add_marker(pytest.mark.xfail(strict=False))
+
+# Usage: @pytest.mark.flaky(reason="race condition in DB setup")
+```
 
 ## Pitfalls
 

@@ -1,13 +1,13 @@
 ---
 name: sdlc-adversarial-review
-description: "Multi-agent PR review: 3 specialized reviewers (architecture, security, quality) run in parallel, orchestrator synthesizes findings and applies fixes. Includes Google/Stripe/Meta code review culture, DORA velocity metrics, and automated tooling integration."
-version: 2.0.0
+description: "Multi-agent PR review: 3 specialized reviewers (architecture, security, quality) run in parallel, orchestrator synthesizes findings and applies fixes. Includes Google/Stripe/Meta code review culture, DORA velocity metrics (5 metrics incl. reliability), SLSA supply chain verification, AI-assisted review guardrails, and automated tooling integration."
+version: 3.0.0
 author: Hermes Agent
 license: MIT
 platforms: [linux, macos, windows]
 metadata:
   hermes:
-    tags: [sdlc, code-review, pr-review, adversarial, multi-agent, security, architecture, google, stripe, dora, semgrep, codeql]
+    tags: [sdlc, code-review, pr-review, adversarial, multi-agent, security, architecture, google, stripe, dora, semgrep, codeql, slsa, supply-chain, sbom, sigstore, ai-review]
     related_skills: [sdlc-architecture-design, sdlc-testing-qa, github-code-review, github-pr-workflow]
 ---
 
@@ -50,6 +50,42 @@ trivy fs --scanners vuln,secret,misconfig .
 | Semgrep | Fast | Medium | Security patterns, code standards, banned APIs |
 | CodeQL | Slow | Deep | Cross-function taint analysis, SQLi/XSS/SSRF |
 | Trivy | Fast | Medium | Dependency CVEs, exposed secrets, IaC misconfig |
+| cosign/Sigstore | Fast | Low | Artifact signature verification, provenance |
+
+### SLSA Supply Chain Review (Step 0b)
+
+Verify supply chain integrity before code review. SLSA (Supply-chain Levels for Software Artifacts) framework: https://slsa.dev/
+
+| SLSA Level | Requirement | Review Action |
+|------------|-------------|---------------|
+| L0 | No guarantees | Flag as risk — no provenance |
+| L1 | Provenance exists | Verify build provenance attestation present |
+| L2 | Hosted build platform | Verify builds run on hosted CI (not dev machines) |
+| L3 | Hardened builds | Verify isolated, ephemeral build environments |
+
+```bash
+# Verify SLSA provenance (GitHub Actions)
+gh attestation verify <artifact> --owner <org>
+
+# SBOM verification — check all dependencies are declared
+# Syft generates SBOM, Grype scans it
+syft dir:. -o spdx-json > sbom.spdx.json
+grype sbom:sbom.spdx.json
+
+# Sigstore/cosign — verify container/artifact signatures
+cosign verify --certificate-identity=<workflow> --certificate-oidc-issuer=https://token.actions.githubusercontent.com <image>
+```
+
+**Review checklist — supply chain:**
+- [ ] SBOM present and up-to-date (SPDX or CycloneDX format)
+- [ ] All dependencies pinned by hash, not mutable tags
+- [ ] Build provenance attestation exists (SLSA L1+)
+- [ ] No unpinned GitHub Actions (use `@sha256` not `@v1`)
+- [ ] No `curl | bash` install patterns
+- [ ] No typosquatting-susceptible dependency names
+- [ ] Lockfile committed and verified in CI
+- [ ] Container images signed (Sigstore/cosign)
+- [ ] No dependency confusion vectors (private registry scoped)
 
 ## Step 1: Spawn 3 Reviewers in Parallel
 
@@ -82,7 +118,7 @@ Reference: C4 model for system context, hexagonal architecture for dependency di
 9. Supply chain — typosquatting, compromised packages
 
 Report findings with severity and suggested fix.
-Reference: OWASP Top 10 2021, CWE/SANS Top 25.""",
+Reference: OWASP Top 10 2025 (https://owasp.org/Top10/), CWE/SANS Top 25.""",
         "toolsets": ["terminal", "file"]
     },
     {
@@ -95,6 +131,8 @@ Reference: OWASP Top 10 2021, CWE/SANS Top 25.""",
 5. Comments — explain WHY, not WHAT
 6. Error handling — comprehensive? Graceful degradation?
 7. Performance — N+1 queries, unnecessary allocations, blocking I/O?
+8. Documentation — API docs, inline docs, README updated for public changes? (DORA 2024: docs quality differentiates high performers)
+9. PR description — clear what/why/how/testing sections?
 
 Report findings with severity and suggested fix.
 Reference: Google eng-practices review standards.""",
@@ -161,6 +199,8 @@ After fixes, push and verify CI passes. All automated checks must pass before me
 - [ ] Performance considered (no N+1, no blocking I/O)
 - [ ] Comments explain WHY, not WHAT
 - [ ] PR size <400 LOC (or justified)
+- [ ] Documentation updated (inline docs, API docs, README if public interface changed)
+- [ ] CHANGELOG entry added (if user-facing change)
 ```
 
 ## DORA Velocity Metrics
@@ -173,12 +213,16 @@ Track review velocity against DORA benchmarks:
 | PR review to merge | <1 day | <3 days | <1 week | >1 week |
 | PR size | <400 LOC | <800 LOC | <1500 LOC | >1500 LOC |
 | PR lifetime | <1 day | <3 days | <1 week | >1 week |
+| Reliability (DORA 2024 5th metric) | >99.99% | >99.9% | >99% | <99% |
 
 **Key findings from DORA research:**
 - Elite performers review in hours, not days
 - Long review queues correlate with lower deployment frequency
 - Small batch size (small PRs) enables fastest review cycles
 - WIP limits on PRs-in-review improve throughput
+- **DORA 2024 adds Reliability as 5th metric** — operational reliability (SLIs/SLOs met) predicts software delivery performance; review must validate changes don't degrade reliability posture
+- **Documentation quality correlates with high performance** (DORA 2024) — teams with high-quality docs ship faster with fewer defects; review should verify docs updated alongside code
+- **AI-assisted review/testing yields better outcomes than AI for generation alone** (DORA 2024) — use AI tools for review, test generation, and analysis before relying on them for code generation
 
 ## Code Review Culture
 
@@ -310,6 +354,31 @@ ghstack submit
 | GitHub Copilot PR review | Native GitHub integration | https://github.com/features/copilot |
 
 **Pattern:** AI handles first pass (style, obvious bugs, boilerplate). Humans focus on architecture, logic, design decisions.
+
+### AI-Assisted Review Guardrails (DORA 2024)
+
+DORA 2024 finding: AI for review/testing outperforms AI for code generation alone. Use AI as review multiplier, not replacement.
+
+**Use AI for:**
+- First-pass code review (style, obvious bugs, boilerplate)
+- Test generation and coverage gap analysis
+- Security pattern detection (SAST augmentation)
+- Documentation generation and consistency checks
+- Dependency vulnerability triage and prioritization
+
+**Don't use AI for:**
+- Final architectural decisions (human judgment required)
+- Security-critical approval (human sign-off mandatory)
+- Acceptance of AI suggestions without reading (anti-pattern: rubber stamping AI output)
+- Blind trust of AI-generated tests (tests must verify behavior, not just pass)
+
+**Guardrails:**
+- All AI-generated code/review comments need human approval before merge
+- Track AI suggestion acceptance rate — low rate = tool mismatch, high rate = possible rubber stamping
+- AI review findings are advisory; human reviewer retains final authority
+- Require human reviewer for security-sensitive changes regardless of AI review quality
+- Document which AI tools were used in review (auditability)
+- Validate AI suggestions against project conventions — AI may suggest idioms that conflict with codebase style
 
 ## Advanced: Review Metrics
 
