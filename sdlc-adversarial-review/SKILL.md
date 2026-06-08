@@ -1,13 +1,13 @@
 ---
 name: sdlc-adversarial-review
-description: "Multi-agent PR review: 3 specialized reviewers (architecture, security, quality) run in parallel, orchestrator synthesizes findings and applies fixes. Includes Google/Stripe/Meta code review culture, DORA velocity metrics (5 metrics incl. reliability), SLSA supply chain verification, AI-assisted review guardrails, automated tooling integration, advanced threat modeling (attack trees, kill chain, MITRE ATT&CK), secure code review patterns, compliance-aware review (SOC2/GDPR/HIPAA), AI/ML model review, performance review patterns, OWASP API Security Top 10 2023, supply chain security (SLSA levels/SolarWinds/npm/PyPI), LLM/AI security (OWASP LLM Top 10), container security scanning, IaC security scanning, and secret detection."
-version: 4.0.0
+description: "Multi-agent PR review: 3 specialized reviewers (architecture, security, quality) run in parallel, orchestrator synthesizes findings and applies fixes. Includes Google/Stripe/Meta code review culture, DORA velocity metrics (5 metrics incl. reliability), SLSA supply chain verification, AI-assisted review guardrails, automated tooling integration, advanced threat modeling (attack trees, kill chain, MITRE ATT&CK), secure code review patterns, compliance-aware review (SOC2/GDPR/HIPAA), AI/ML model review, performance review patterns, OWASP API Security Top 10 2023, supply chain security (SLSA levels/SolarWinds/npm/PyPI), LLM/AI security (OWASP LLM Top 10), container security scanning, IaC security scanning, secret detection, SOC2 Trust Services Criteria (5 categories/9 control families), GDPR technical implementation (6 data subject rights/CMP/DPIA), HIPAA technical safeguards (AES-256/audit logging/break-glass), ISO 27001 for engineering (ISMS/Annex A 93 controls), and policy as code (OPA/Kyverno/Sentinel/Cloud Custodian)."
+version: 4.1.0
 author: Hermes Agent
 license: MIT
 platforms: [linux, macos, windows]
 metadata:
   hermes:
-    tags: [sdlc, code-review, pr-review, adversarial, multi-agent, security, architecture, google, stripe, dora, semgrep, codeql, slsa, supply-chain, sbom, sigstore, ai-review, threat-modeling, mitre-attack, kill-chain, attack-trees, crypto-review, compliance, soc2, gdpr, hipaa, ai-ml-review, performance-review, concurrency, owasp-api, api-security, llm-security, container-security, iac-security, secret-detection, trivy, grype, snyk, checkov, tfsec, kics, trufflehog, detect-secrets]
+    tags: [sdlc, code-review, pr-review, adversarial, multi-agent, security, architecture, google, stripe, dora, semgrep, codeql, slsa, supply-chain, sbom, sigstore, ai-review, threat-modeling, mitre-attack, kill-chain, attack-trees, crypto-review, compliance, soc2, gdpr, hipaa, iso27001, policy-as-code, ai-ml-review, performance-review, concurrency, owasp-api, api-security, llm-security, container-security, iac-security, secret-detection, trivy, grype, snyk, checkov, tfsec, kics, trufflehog, detect-secrets, opa, rego, kyverno, sentinel, cloud-custodian, vanta, drata, cmp, tcfs]
     related_skills: [sdlc-architecture-design, sdlc-testing-qa, github-code-review, github-pr-workflow]
 ---
 
@@ -2286,4 +2286,1062 @@ jobs:
           pip install detect-secrets
           detect-secrets scan --baseline .secrets.baseline
           detect-secrets audit .secrets.baseline --fail-on-unaudited
+```
+
+## Step 31: SOC 2 Compliance — Trust Services Criteria
+
+SOC 2 (Service Organization Control 2) based on AICPA Trust Services Criteria. Review code and infrastructure for controls that satisfy auditor evidence requirements.
+
+### Trust Services Criteria — 5 Categories
+
+| Category | Focus | Key Controls |
+|----------|-------|--------------|
+| **CC — Common Criteria** (base for all) | Governance, risk, monitoring | CC1.0–CC9.0: control environment, communication, risk assessment, monitoring, control activities, logical/physical access, system operations, change management, risk mitigation |
+| **A — Availability** | System uptime, DR, capacity | A1.1–A1.3: capacity planning, backup/recovery, DR testing |
+| **PI — Processing Integrity** | Accurate, authorized processing | PI1.1–PI1.5: input validation, processing accuracy, output completeness, error handling, data quality |
+| **C — Confidentiality** | Protect confidential data | C1.1–C1.2: identify confidential data, restrict access, encrypt, retain/dispose |
+| **P — Privacy** | Personal data handling | P1.0–P8.1: notice, consent, collection, use/retention/disposal, access, disclosure, quality, monitoring |
+
+### 9 Control Families (Common Criteria)
+
+| Family | CC Reference | Engineering Focus |
+|--------|-------------|-------------------|
+| Control Environment | CC1.0 | Code of conduct, org structure, security policies in repo |
+| Communication & Information | CC2.0 | Security docs, incident comms, SLA/SLO definitions |
+| Risk Assessment | CC3.0 | Threat modeling, vulnerability scanning, risk registers |
+| Monitoring Activities | CC4.0 | Alerting, log aggregation, anomaly detection, audit reviews |
+| Control Activities | CC5.0 | SDLC controls, code review gates, deployment approvals |
+| Logical Access | CC6.0 | AuthN/AuthZ, MFA, least privilege, access reviews, termination |
+| System Operations | CC7.0 | Incident detection, response playbooks, backup verification |
+| Change Management | CC8.0 | PR-based changes, approval workflows, rollback capability |
+| Risk Mitigation | CC9.0 | Vendor risk, BCP, insurance, residual risk acceptance |
+
+### Audit Preparation Checklist
+
+```
+Evidence collection for SOC 2 Type II audit:
+- [ ] Control matrix mapped: each control → code/config/infra evidence
+- [ ] Access review reports (quarterly): who has access to what
+- [ ] Change logs: all production changes with approvals (git log + CI records)
+- [ ] Incident response records: detection time, response time, resolution
+- [ ] Vulnerability scan reports: scan date, findings, remediation timeline
+- [ ] Employee onboarding/offboarding: access provisioning/deprovisioning evidence
+- [ ] Encryption evidence: at-rest (KMS configs), in-transit (TLS configs)
+- [ ] Backup/restore test results: date, success, RTO/RPO met
+- [ ] Vendor management: BAAs/DPAs signed, vendor security assessments
+- [ ] Policy documents: security policy, acceptable use, data classification
+- [ ] Training records: security awareness training completion
+- [ ] Risk assessment: annual risk register with mitigation plans
+```
+
+### Continuous Compliance Automation
+
+| Tool | Approach | Integration | Pricing |
+|------|----------|-------------|---------|
+| **Vanta** | Agent + API integrations | GitHub, AWS, GCP, Azure, Okta, Jamf, 200+ integrations | Per-employee |
+| **Drata** | Agent + API integrations | GitHub, AWS, GCP, Azure, Okta, 150+ integrations | Per-employee |
+| **Sprinto** | API-first | Cloud-native focus, 100+ integrations | Per-employee |
+| **Secureframe** | Agent + API | GitHub, cloud providers, HRIS | Per-employee |
+| **Custom (Open Policy Agent)** | Policy-as-code | CI/CD pipeline integration | Free (build cost) |
+
+```yaml
+# Vanta continuous compliance — evidence collection
+# Automated checks run daily, evidence auto-collected
+controls:
+  - id: CC6.1
+    name: "Logical access security"
+    automated_check: true
+    evidence:
+      - source: okta
+        type: mfa_enrollment_report
+        frequency: daily
+      - source: github
+        type: branch_protection_rules
+        frequency: daily
+      - source: aws
+        type: iam_password_policy
+        frequency: daily
+  - id: CC8.1
+    name: "Change management"
+    automated_check: true
+    evidence:
+      - source: github
+        type: pr_approval_log
+        query: "merged:>={audit_period_start} review:approved"
+      - source: github
+        type: branch_protection
+        verify: "required_approving_review_count >= 2"
+```
+
+```python
+# SOC 2 evidence generation — automated access review
+from datetime import datetime, timedelta
+
+def generate_access_review_report(review_period_days: int = 90) -> AccessReview:
+    """Generate quarterly access review evidence for SOC 2 CC6.2."""
+    cutoff = datetime.utcnow() - timedelta(days=review_period_days)
+
+    # Pull current access from all systems
+    current_access = {
+        "github": github_client.get_team_members(),
+        "aws": iam_client.list_users_with_roles(),
+        "production_db": db_client.list_users(),
+        "monitoring": datadog_client.get_users(),
+    }
+
+    # Pull HR data for joiners/movers/leavers
+    hr_events = hr_client.get_events_since(cutoff)
+
+    # Cross-reference: access without matching employee = finding
+    findings = []
+    for system, users in current_access.items():
+        for user in users:
+            if not hr_client.is_active_employee(user.email):
+                findings.append(Finding(
+                    severity="high",
+                    control="CC6.2",
+                    description=f"Orphaned access: {user.email} in {system}",
+                    action="Revoke immediately",
+                ))
+
+    return AccessReview(
+        review_date=datetime.utcnow(),
+        period=review_period_days,
+        systems_reviewed=list(current_access.keys()),
+        findings=findings,
+        reviewer=get_current_user(),
+    )
+```
+
+## Step 32: GDPR Technical Implementation
+
+EU General Data Protection Regulation — implement data subject rights APIs, consent management, data minimization, and DPIA processes.
+
+### Data Subject Rights — 6 Rights with API Patterns
+
+| Right | Article | HTTP Endpoint | Implementation |
+|-------|---------|---------------|----------------|
+| **Right of Access** | Art. 15 | `GET /api/v1/users/{id}/data-export` | Returns all personal data in machine-readable format (JSON/CSV) within 30 days |
+| **Right to Rectification** | Art. 16 | `PATCH /api/v1/users/{id}/personal-data` | Update personal data, propagate to all downstream systems |
+| **Right to Erasure** | Art. 17 | `DELETE /api/v1/users/{id}/personal-data` | Cascade deletion across all stores, confirm within 30 days |
+| **Right to Restrict Processing** | Art. 18 | `POST /api/v1/users/{id}/restrict-processing` | Set processing flag, stop PII processing, continue non-PII ops |
+| **Right to Data Portability** | Art. 20 | `GET /api/v1/users/{id}/data-portability` | Export in structured, machine-readable format (JSON, CSV, XML) |
+| **Right to Object** | Art. 21 | `POST /api/v1/users/{id}/object-processing` | Halt specific processing activities (profiling, marketing) |
+
+```python
+# GDPR data subject rights API — unified handler
+from enum import Enum
+from typing import Optional
+from pydantic import BaseModel
+
+class GDPRRight(str, Enum):
+    ACCESS = "access"
+    RECTIFICATION = "rectification"
+    ERASURE = "erasure"
+    RESTRICT_PROCESSING = "restrict_processing"
+    PORTABILITY = "portability"
+    OBJECT = "object"
+
+class DataSubjectRequest(BaseModel):
+    request_id: str
+    subject_id: str
+    right: GDPRRight
+    details: Optional[str] = None
+    verification_token: str  # Identity verification before processing
+
+class GDPRComplianceService:
+    """Handle all GDPR data subject rights requests."""
+
+    def __init__(self, data_stores: list[DataStore], audit_log: AuditLog):
+        self.data_stores = data_stores
+        self.audit_log = audit_log
+
+    async def process_request(self, request: DataSubjectRequest) -> GDPRResponse:
+        # Verify identity before processing (Art. 12(6))
+        if not await self._verify_identity(request.subject_id, request.verification_token):
+            raise IdentityVerificationError("Cannot verify data subject identity")
+
+        # Log the request (without exposing PII)
+        self.audit_log.record(
+            action=f"gdpr_{request.right.value}",
+            subject_hash=hash_subject(request.subject_id),
+            request_id=request.request_id,
+        )
+
+        handler = {
+            GDPRRight.ACCESS: self._handle_access,
+            GDPRRight.RECTIFICATION: self._handle_rectification,
+            GDPRRight.ERASURE: self._handle_erasure,
+            GDPRRight.RESTRICT_PROCESSING: self._handle_restriction,
+            GDPRRight.PORTABILITY: self._handle_portability,
+            GDPRRight.OBJECT: self._handle_objection,
+        }[request.right]
+
+        return await handler(request)
+
+    async def _handle_erasure(self, request: DataSubjectRequest) -> GDPRResponse:
+        """Art. 17 — Right to erasure (cascade deletion)."""
+        erasure_manifest = []
+        legal_holds = []
+
+        for store in self.data_stores:
+            if store.has_legal_hold(request.subject_id):
+                legal_holds.append(LegalHold(
+                    store=store.name,
+                    reason=store.get_hold_reason(request.subject_id),
+                    article="Art. 17(3)",  # Exceptions to erasure
+                ))
+            else:
+                await store.erase_subject(request.subject_id)
+                erasure_manifest.append(store.name)
+
+        return GDPRResponse(
+            request_id=request.request_id,
+            status="completed" if not legal_holds else "partial",
+            data_stores_erased=erasure_manifest,
+            legal_holds=legal_holds,
+            completion_date=datetime.utcnow(),
+        )
+
+    async def _handle_access(self, request: DataSubjectRequest) -> GDPRResponse:
+        """Art. 15 — Right of access (compile all personal data)."""
+        all_data = {}
+        for store in self.data_stores:
+            subject_data = await store.export_subject_data(request.subject_id)
+            if subject_data:
+                all_data[store.name] = subject_data
+
+        return GDPRResponse(
+            request_id=request.request_id,
+            status="completed",
+            export_data=all_data,  # Machine-readable format
+            format="json",
+        )
+```
+
+### Consent Management (CMP + TCF 2.0)
+
+```
+Consent Management Platform (CMP) requirements:
+┌─────────────────────────────────────────────────────┐
+│  TCF 2.0 (Transparency & Consent Framework)        │
+│                                                     │
+│  Purposes (10):                                     │
+│    1. Store/access info on device                   │
+│    2. Basic ads                                     │
+│    3. Personalised ads                              │
+│    4. Personalised content                          │
+│    5. Measurement                                   │
+│    6. Improve products                              │
+│    7. Market research                               │
+│    8. Data sharing (special feature)                │
+│    9. Data linking (special feature)                │
+│   10. Precise geolocation (special feature)         │
+│                                                     │
+│  Legal Bases:                                       │
+│    - Consent (Art. 6(1)(a))                         │
+│    - Legitimate Interest (Art. 6(1)(f))             │
+│                                                     │
+│  Vendors register with IAB, get vendor ID           │
+│  Consent string format: TCF v2 consent string       │
+│  Stored: first-party cookie or localStorage         │
+└─────────────────────────────────────────────────────┘
+```
+
+```javascript
+// TCF 2.0 consent checking pattern
+function canProcessData(purposeId, vendorId) {
+  const consentString = getTCConsentString(); // From CMP
+  const tcModel = TCString.decode(consentString);
+
+  // Check purpose consent
+  if (!tcModel.purposeConsents.has(purposeId)) {
+    return false; // No consent for this purpose
+  }
+
+  // Check vendor consent
+  if (!tcModel.vendorConsents.has(vendorId)) {
+    return false; // No consent for this vendor
+  }
+
+  // Check legitimate interest (if applicable)
+  // LI requires: purpose + vendor LI allowed + no objection
+  if (tcModel.purposeLegitimateInterests.has(purposeId) &&
+      tcModel.vendorLegitimateInterests.has(vendorId) &&
+      !tcModel.publisherRestrictions[purposeId]?.includes(vendorId)) {
+    return true;
+  }
+
+  return tcModel.purposeConsents.has(purposeId);
+}
+
+// Server-side consent verification
+// POST /api/v1/consent/verify
+// { "purpose": "personalised_ads", "subject_id": "hashed_id" }
+// Returns: { "allowed": true, "legal_basis": "consent", "consent_date": "..." }
+```
+
+### Data Minimization Review
+
+```python
+# Data minimization enforcement — schema validation
+class DataMinimizationValidator:
+    """Validate that only necessary data is collected per Art. 5(1)(c)."""
+
+    REQUIRED_PURPOSES = {
+        "registration": ["email", "name"],
+        "payment": ["email", "billing_address", "payment_token"],
+        "analytics": ["session_id", "page_views"],  # No PII
+        "support": ["email", "support_ticket_id"],
+    }
+
+    def validate_collection(self, purpose: str, fields: dict) -> list[Finding]:
+        findings = []
+        allowed = self.REQUIRED_PURPOSES.get(purpose, [])
+
+        for field_name in fields:
+            if field_name not in allowed:
+                findings.append(Finding(
+                    severity="high",
+                    article="Art. 5(1)(c)",
+                    description=f"Unnecessary data collection: '{field_name}' "
+                                f"not required for purpose '{purpose}'",
+                    recommendation=f"Remove '{field_name}' or document legal basis",
+                ))
+
+        return findings
+```
+
+### DPIA (Data Protection Impact Assessment)
+
+```
+DPIA required when processing (Art. 35):
+- [ ] Systematic, extensive profiling with significant effects
+- [ ] Large-scale processing of special category data (Art. 9)
+- [ ] Systematic monitoring of public areas (CCTV, tracking)
+- [ ] New technology deployment with high privacy risk
+- [ ] Automated decision-making with legal/significant effects
+- [ ] Cross-border data transfers without adequacy decision
+- [ ] Processing data of vulnerable individuals (children, employees)
+
+DPIA document structure:
+1. Description of processing operations and purposes
+2. Assessment of necessity and proportionality
+3. Assessment of risks to individuals' rights and freedoms
+4. Measures to address risks (technical + organizational)
+5. Consultation with DPO and stakeholders
+6. Review date (annual or on significant change)
+```
+
+## Step 33: HIPAA Technical Safeguards
+
+US Health Insurance Portability and Accountability Act — implement technical safeguards for Protected Health Information (PHI).
+
+### Encryption Standards
+
+| Layer | Standard | Implementation | Key Management |
+|-------|----------|----------------|----------------|
+| **At Rest** | AES-256 | Database-level encryption, filesystem encryption (LUKS, BitLocker) | KMS (AWS KMS, GCP KMS, Azure Key Vault) with auto-rotation (90 days) |
+| **In Transit** | TLS 1.2+ | All HTTP endpoints, database connections, inter-service communication | Certificate management (cert-manager, ACM), pin TLS 1.2 minimum |
+| **Application-level** | Field-level AES-256-GCM | PHI fields encrypted before storage | Per-field keys derived from master key + field identifier |
+| **Backups** | AES-256 | Same standard as primary data | Separate key from production, documented recovery procedure |
+| **Archives** | AES-256 | Cold storage encryption | Key escrow documented, recovery tested quarterly |
+
+```python
+# HIPAA-compliant field-level encryption
+from cryptography.hazmat.primitives.ciphers.aead import AESGCM
+import os
+
+class PHIEncryption:
+    """AES-256-GCM field-level encryption for PHI. §164.312(a)(2)(iv)"""
+
+    def __init__(self, kms_client):
+        self.kms = kms_client
+        self._master_key = None
+
+    def _get_master_key(self) -> bytes:
+        """Retrieve master key from KMS (cached, auto-rotated)."""
+        if self._master_key is None:
+            self._master_key = self.kms.get_key(
+                key_id="phi-master-key",
+                key_spec="AES_256",
+            )
+        return self._master_key
+
+    def encrypt_field(self, plaintext: str, field_name: str) -> bytes:
+        """Encrypt a PHI field. Returns nonce + ciphertext + tag."""
+        # Derive field-specific key from master key
+        field_key = self._derive_key(self._get_master_key(), field_name)
+
+        aesgcm = AESGCM(field_key)
+        nonce = os.urandom(12)  # 96-bit nonce per NIST SP 800-38D
+
+        ciphertext = aesgcm.encrypt(
+            nonce,
+            plaintext.encode("utf-8"),
+            field_name.encode("utf-8"),  # Additional authenticated data
+        )
+        return nonce + ciphertext  # Prepend nonce for decryption
+
+    def decrypt_field(self, ciphertext_with_nonce: bytes, field_name: str) -> str:
+        """Decrypt a PHI field."""
+        nonce = ciphertext_with_nonce[:12]
+        ciphertext = ciphertext_with_nonce[12:]
+
+        field_key = self._derive_key(self._get_master_key(), field_name)
+        aesgcm = AESGCM(field_key)
+
+        plaintext = aesgcm.decrypt(nonce, ciphertext, field_name.encode("utf-8"))
+        return plaintext.decode("utf-8")
+
+    def _derive_key(self, master_key: bytes, context: str) -> bytes:
+        """HKDF key derivation for field-specific keys."""
+        from cryptography.hazmat.primitives.kdf.hkdf import HKDF
+        from cryptography.hazmat.primitives import hashes
+
+        hkdf = HKDF(
+            algorithm=hashes.SHA256(),
+            length=32,
+            salt=None,
+            info=f"phi-field-{context}".encode(),
+        )
+        return hkdf.derive(master_key)
+```
+
+### Audit Logging (6-Year Retention)
+
+```
+HIPAA §164.312(b) — Audit Controls:
+- Log ALL access to PHI (read, write, delete)
+- Include: user ID, timestamp, action, resource, fields accessed, purpose
+- Immutable: append-only storage, no delete API
+- Tamper-evident: cryptographic chain or WORM storage
+- Retention: minimum 6 years from date of creation or last effective date
+- Availability: auditors must be able to query within 24 hours
+```
+
+```python
+# HIPAA audit logging — immutable, 6-year retention
+import json
+import hashlib
+from datetime import datetime
+from typing import Literal
+
+class HIPAAAuditLog:
+    """Immutable PHI access audit log. §164.312(b)"""
+
+    RETENTION_YEARS = 6
+
+    def __init__(self, storage_backend: WORMStorage):
+        # WORM (Write Once Read Many) storage — no delete capability
+        self.storage = storage_backend
+        self._previous_hash = self.storage.get_last_hash()
+
+    def record_access(
+        self,
+        user_id: str,
+        action: Literal["read", "write", "delete", "export"],
+        resource_type: str,
+        resource_id: str,
+        fields_accessed: list[str],
+        purpose: str,
+        ip_address: str,
+        user_agent: str,
+        success: bool,
+        denial_reason: str | None = None,
+    ) -> str:
+        """Record PHI access event. Returns event hash."""
+
+        event = {
+            "event_id": generate_ulid(),
+            "timestamp": datetime.utcnow().isoformat() + "Z",
+            "user_id": user_id,
+            "action": action,
+            "resource_type": resource_type,
+            "resource_id_hash": hashlib.sha256(resource_id.encode()).hexdigest()[:16],
+            "fields_accessed": fields_accessed,
+            "purpose": purpose,
+            "ip_address": ip_address,
+            "user_agent": user_agent,
+            "success": success,
+            "denial_reason": denial_reason,
+            "previous_event_hash": self._previous_hash,  # Chain for tamper detection
+        }
+
+        # Compute hash for integrity chain
+        event_bytes = json.dumps(event, sort_keys=True).encode()
+        event_hash = hashlib.sha256(event_bytes).hexdigest()
+        event["event_hash"] = event_hash
+
+        # Write to WORM storage (cannot be modified or deleted)
+        self.storage.append(event)
+
+        # Update chain
+        self._previous_hash = event_hash
+
+        return event_hash
+
+    def verify_chain_integrity(self) -> bool:
+        """Verify audit log chain has not been tampered with."""
+        events = self.storage.read_all()
+        previous_hash = None
+
+        for event in events:
+            if event.get("previous_event_hash") != previous_hash:
+                return False  # Chain broken — tampering detected
+
+            # Verify event hash
+            stored_hash = event.pop("event_hash")
+            computed = hashlib.sha256(
+                json.dumps(event, sort_keys=True).encode()
+            ).hexdigest()
+
+            if computed != stored_hash:
+                return False  # Event modified — tampering detected
+
+            previous_hash = stored_hash
+            event["event_hash"] = stored_hash  # Restore
+
+        return True
+```
+
+### Access Controls (MFA, RBAC, Break-Glass)
+
+```python
+# HIPAA access control model
+from enum import Enum
+from dataclasses import dataclass
+
+class PHIRole(Enum):
+    """RBAC roles for PHI access. §164.312(a)(1)"""
+    PHYSICIAN = "physician"          # Full PHI access for assigned patients
+    NURSE = "nurse"                  # PHI access for current care episode
+    PHARMACIST = "pharmacist"        # Medication-related PHI only
+    BILLING = "billing"              # Billing-related PHI only (no clinical)
+    ADMIN = "admin"                  # System admin (no PHI access by default)
+    RESEARCHER = "researcher"        # De-identified data only (IRB approved)
+    EMERGENCY = "emergency"          # Break-glass access (logged, reviewed)
+
+@dataclass
+class BreakGlassAccess:
+    """Emergency PHI access (break-glass procedure). §164.312(a)(2)(ii)"""
+    access_id: str
+    user_id: str
+    reason: str
+    started_at: datetime
+    expires_at: datetime  # Auto-revoke after 4 hours
+    reviewed_by: str | None = None  # Must be reviewed within 24 hours
+    review_status: str = "pending"
+
+class HIPAAAccessControl:
+    """HIPAA-compliant RBAC with MFA and break-glass."""
+
+    # Field-level access by role
+    FIELD_ACCESS = {
+        PHIRole.PHYSICIAN: {"*"},  # All fields for assigned patients
+        PHIRole.NURSE: {"demographics", "vitals", "medications", "allergies"},
+        PHIRole.PHARMACIST: {"medications", "allergies", "prescriptions"},
+        PHIRole.BILLING: {"demographics", "insurance", "billing_codes"},
+        PHIRole.ADMIN: set(),  # No PHI access
+        PHIRole.RESEARCHER: set(),  # De-identified only
+        PHIRole.EMERGENCY: {"*"},  # Full access during emergency (logged)
+    }
+
+    def check_access(
+        self,
+        user: User,
+        patient_id: str,
+        fields: list[str],
+        purpose: str,
+    ) -> AccessDecision:
+        """Check if user can access specific PHI fields for patient."""
+
+        # Step 1: Verify MFA (§164.312(a)(2)(i))
+        if not user.mfa_verified:
+            return AccessDecision(
+                allowed=False,
+                denial_reason="MFA required for PHI access",
+                control="§164.312(a)(2)(i)",
+            )
+
+        # Step 2: Check role-based field access
+        allowed_fields = self.FIELD_ACCESS.get(user.role, set())
+        unauthorized = []
+        for field in fields:
+            if "*" not in allowed_fields and field not in authorized_fields:
+                unauthorized.append(field)
+
+        if unauthorized:
+            return AccessDecision(
+                allowed=False,
+                denial_reason=f"Role '{user.role.value}' cannot access: {unauthorized}",
+                control="§164.312(a)(1)",
+            )
+
+        # Step 3: Verify care relationship (minimum necessary)
+        if not self._has_care_relationship(user.id, patient_id):
+            return AccessDecision(
+                allowed=False,
+                denial_reason="No care relationship — minimum necessary violation",
+                control="§164.502(b)",
+            )
+
+        # Step 4: Check for active break-glass (overrides care relationship)
+        if user.role == PHIRole.EMERGENCY:
+            break_glass = self._get_active_break_glass(user.id)
+            if not break_glass:
+                return AccessDecision(
+                    allowed=False,
+                    denial_reason="Break-glass access not activated",
+                    control="§164.312(a)(2)(ii)",
+                )
+
+        # Step 5: Auto-logoff check (§164.312(a)(2)(iii))
+        if user.last_activity < datetime.utcnow() - timedelta(minutes=15):
+            return AccessDecision(
+                allowed=False,
+                denial_reason="Session expired (15 min idle timeout)",
+                control="§164.312(a)(2)(iii)",
+            )
+
+        return AccessDecision(allowed=True, fields_authorized=fields)
+
+    def activate_break_glass(self, user: User, reason: str) -> BreakGlassAccess:
+        """Activate emergency PHI access (break-glass). §164.312(a)(2)(ii)"""
+        access = BreakGlassAccess(
+            access_id=generate_ulid(),
+            user_id=user.id,
+            reason=reason,
+            started_at=datetime.utcnow(),
+            expires_at=datetime.utcnow() + timedelta(hours=4),
+        )
+
+        # Immediate notification to security team
+        self.alert_security_team(
+            f"BREAK-GLASS ACTIVATED: {user.name} ({user.id}) — {reason}"
+        )
+
+        # Schedule auto-revocation
+        self.scheduler.schedule_revoke(access.access_id, access.expires_at)
+
+        # Schedule mandatory review (24 hours)
+        self.scheduler.schedule_review(access.access_id, timedelta(hours=24))
+
+        self.audit_log.record_access(
+            user_id=user.id,
+            action="break_glass_activated",
+            resource_type="phi_access",
+            resource_id="*",
+            fields_accessed=["*"],
+            purpose=f"emergency: {reason}",
+            ip_address=user.current_ip,
+            user_agent=user.current_ua,
+            success=True,
+        )
+
+        return access
+```
+
+## Step 34: ISO 27001 for Engineering
+
+ISO/IEC 27001:2022 — Information Security Management System (ISMS) requirements mapped to engineering practices.
+
+### ISMS Clauses (4–10)
+
+| Clause | Requirement | Engineering Mapping |
+|--------|------------|---------------------|
+| **4** Context of the Organization | Identify scope, interested parties, ISMS boundaries | Define in-scope systems/services, data classification, service boundaries |
+| **5** Leadership | Top management commitment, security policy | Security policy in repo, CISO sign-off, security champions program |
+| **6** Planning | Risk assessment, risk treatment, objectives | Threat model for each service, risk register, security OKRs |
+| **7** Support | Resources, competence, awareness, communication | Security training, tool budgets, incident comms channels |
+| **8** Operation | Risk assessment execution, controls implementation | CI/CD security gates, SAST/DAST, access reviews, change management |
+| **9** Performance Evaluation | Monitoring, measurement, internal audits | Security metrics dashboard, quarterly internal audits, vulnerability SLAs |
+| **10** Improvement | Nonconformity, corrective action, continual improvement | Post-incident reviews, control effectiveness reviews, maturity progression |
+
+### Risk Assessment Framework
+
+```python
+# ISO 27001 risk assessment — asset-threat-control mapping
+from dataclasses import dataclass
+from enum import IntEnum
+
+class Likelihood(IntEnum):
+    RARE = 1
+    UNLIKELY = 2
+    POSSIBLE = 3
+    LIKELY = 4
+    ALMOST_CERTAIN = 5
+
+class Impact(IntEnum):
+    NEGLIGIBLE = 1
+    MINOR = 2
+    MODERATE = 3
+    MAJOR = 4
+    CATASTROPHIC = 5
+
+@dataclass
+class Risk:
+    asset: str
+    threat: str
+    vulnerability: str
+    likelihood: Likelihood
+    impact: Impact
+    inherent_risk: float  # likelihood * impact
+    controls: list[str]
+    residual_likelihood: Likelihood
+    residual_impact: Impact
+    residual_risk: float
+    risk_owner: str
+    treatment: str  # accept, mitigate, transfer, avoid
+
+def calculate_risk_matrix():
+    """ISO 27001 risk matrix — 5x5."""
+    matrix = {}
+    for l in Likelihood:
+        for i in Impact:
+            score = l * i
+            if score <= 4:
+                level = "low"
+            elif score <= 9:
+                level = "medium"
+            elif score <= 16:
+                level = "high"
+            else:
+                level = "critical"
+            matrix[(l, i)] = {"score": score, "level": level}
+    return matrix
+```
+
+### Annex A Controls — 4 Themes, 93 Controls (2022 Edition)
+
+| Theme | Controls | Engineering Focus |
+|-------|----------|-------------------|
+| **A.5 Organizational** (37 controls) | A.5.1–A.5.37 | Policies, roles, segregation of duties, threat intelligence, supplier management |
+| **A.6 People** (8 controls) | A.6.1–A.6.8 | Screening, terms of employment, awareness training, disciplinary process, termination |
+| **A.7 Physical** (14 controls) | A.7.1–A.7.14 | Secure areas, equipment security, clean desk, cabling, media handling |
+| **A.8 Technological** (34 controls) | A.8.1–A.8.34 | Endpoint, privileged access, source code, malware, backup, logging, networking, secure coding |
+
+### Engineering-Specific Controls (A.8.25–A.8.34)
+
+| Control | Name | Engineering Implementation |
+|---------|------|---------------------------|
+| **A.8.25** | Secure development lifecycle | SAST/DAST in CI, code review required, security champions, threat modeling |
+| **A.8.26** | Application security requirements | Security requirements in user stories, OWASP Top 10 coverage, abuse cases |
+| **A.8.27** | Secure system architecture/engineering | Security architecture review, defense-in-depth, least privilege design |
+| **A.8.28** | Secure coding | Coding standards (CWE Top 25), approved libraries, input validation, output encoding |
+| **A.8.29** | Security testing in development/dev acceptance | SAST (Semgrep/CodeQL), DAST (OWASP ZAP), SCA (Trivy), fuzzing, pen testing |
+| **A.8.30** | Outsourced development | Vendor security assessment, code ownership, security requirements in contracts |
+| **A.8.31** | Separation of development/test/production | Separate environments, no prod data in dev, different access controls per env |
+| **A.8.32** | Change management | PR-based changes, approval gates, rollback capability, change advisory board |
+| **A.8.33** | Test information | No real PII/PHI in tests, synthetic data generators, data masking for test envs |
+| **A.8.34** | Protection of test data | Test data classification, automated scrubbing, retention limits on test data |
+
+```yaml
+# ISO 27001 control implementation evidence — CI/CD pipeline
+# Maps pipeline stages to Annex A controls
+stages:
+  pre-commit:
+    controls: [A.8.28, A.8.25]
+    checks:
+      - secret-scanning (trufflehog)
+      - linting (security rules)
+      - commit message validation
+
+  pull-request:
+    controls: [A.8.25, A.8.29, A.8.32]
+    checks:
+      - code-review (minimum 2 approvers)
+      - sast (semgrep --config=auto)
+      - sca (trivy fs --scanners vuln)
+      - license-compliance (fossa)
+
+  build:
+    controls: [A.8.27, A.8.29, A.8.31]
+    checks:
+      - container-scanning (trivy image)
+      - sbom-generation (syft)
+      - image-signing (cosign)
+      - no-prod-credentials (environment isolation)
+
+  deploy:
+    controls: [A.8.31, A.8.32]
+    checks:
+      - infrastructure-as-code-validation (checkov)
+      - deployment-approval (separate from code author)
+      - rollback-tested (canary/blue-green)
+      - configuration-drift-detection
+```
+
+### ISO 27001 Audit Readiness Checklist
+
+```
+Internal audit evidence for engineering:
+- [ ] Security policy published and acknowledged by all engineers
+- [ ] Risk register maintained per service (asset → threat → control → residual risk)
+- [ ] Threat models documented for all internet-facing services
+- [ ] Security training completed (annual, with completion records)
+- [ ] Access reviews conducted quarterly (evidence of review + remediation)
+- [ ] Vulnerability management: scan → triage → remediate within SLA
+- [ ] Change management evidence: PR logs, approval records, deployment logs
+- [ ] Incident response: documented procedure, tested annually, post-incident reviews
+- [ ] Business continuity: RTO/RPO defined, DR tested, backup restoration tested
+- [ ] Supplier security: vendor assessments, contracts with security clauses
+- [ ] Asset inventory: all systems, data stores, and their classification
+- [ ] Metrics: security KPIs tracked (mean time to patch, % code reviewed, vuln aging)
+```
+
+## Step 35: Policy as Code
+
+Define, enforce, and audit security/compliance policies using code instead of manual processes. Compare major tools and integrate at every enforcement point.
+
+### Tool Comparison
+
+| Feature | OPA (Rego) | Kyverno | Sentinel | Cloud Custodian |
+|---------|-----------|---------|----------|-----------------|
+| **Language** | Rego (Datalog-inspired) | YAML (Kubernetes-native) | HCL (HashiCorp) | YAML (declarative rules) |
+| **Platform** | Kubernetes, Terraform, APIs, any | Kubernetes only | Terraform, Vault, Nomad, Consu | AWS, Azure, GCP, OCI |
+| **Learning curve** | High (new language) | Low (YAML) | Medium (HCL) | Low (YAML) |
+| **Flexibility** | Very high (general-purpose) | Medium (K8s-focused) | High (HashiCorp ecosystem) | Medium (cloud resource focus) |
+| **Mutating webhooks** | No (external only) | Yes (generate/mutate) | No | No |
+| **Testing** | `opa test` (built-in) | `kyverno test` (built-in) | `sentinel test` (built-in) | Manual/CI |
+| **Best for** | Complex policies, multi-platform | K8s admission control | Terraform/IaC governance | Cloud resource hygiene |
+| **License** | Apache 2.0 | Apache 2.0 | BSL (HashiCorp) | Apache 2.0 |
+
+### OPA/Rego Policy Examples
+
+```rego
+# OPA — Require image signing in Kubernetes
+package kubernetes.admission
+
+deny[msg] {
+    input.request.kind.kind == "Pod"
+    container := input.request.object.spec.containers[_]
+    not startswith(container.image, "registry.example.com/")
+    msg := sprintf("Container '%s' must come from approved registry", [container.name])
+}
+
+deny[msg] {
+    input.request.kind.kind == "Pod"
+    container := input.request.object.spec.containers[_]
+    not contains(container.image, "@sha256:")
+    msg := sprintf("Container '%s' must use digest pinning (@sha256:), not tags", [container.name])
+}
+
+# OPA — Terraform: require encryption on S3 buckets
+package terraform.aws.s3
+
+deny[msg] {
+    resource := input.resource_changes[_]
+    resource.type == "aws_s3_bucket"
+    not resource.change.after.server_side_encryption_configuration
+    msg := sprintf("S3 bucket '%s' must have server-side encryption enabled", [resource.name])
+}
+
+deny[msg] {
+    resource := input.resource_changes[_]
+    resource.type == "aws_s3_bucket"
+    resource.change.after.acl == "public-read"
+    msg := sprintf("S3 bucket '%s' must not have public-read ACL", [resource.name])
+}
+```
+
+### Kyverno Policy Examples
+
+```yaml
+# Kyverno — Require resource limits on all containers
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: require-resource-limits
+spec:
+  validationFailureAction: Enforce
+  background: true
+  rules:
+    - name: check-container-resources
+      match:
+        any:
+          - resources:
+              kinds: ["Pod"]
+      validate:
+        message: "All containers must have CPU and memory limits defined"
+        pattern:
+          spec:
+            containers:
+              - resources:
+                  limits:
+                    memory: "?*"
+                    cpu: "?*"
+                  requests:
+                    memory: "?*"
+                    cpu: "?*"
+
+---
+# Kyverno — Mutate: add security context defaults
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: add-security-context
+spec:
+  rules:
+    - name: add-defaults
+      match:
+        any:
+          - resources:
+              kinds: ["Pod"]
+      mutate:
+        patchStrategicMerge:
+          spec:
+            containers:
+              - (name): "*"
+                securityContext:
+                  runAsNonRoot: true
+                  readOnlyRootFilesystem: true
+                  allowPrivilegeEscalation: false
+                  capabilities:
+                    drop: ["ALL"]
+```
+
+### Sentinel Policy Example
+
+```hcl
+# Sentinel — Terraform: enforce tagging policy
+import "tfplan/v2" as tfplan
+import "strings"
+
+mandatory_tags = ["Environment", "Owner", "CostCenter", "DataClassification"]
+
+main = rule {
+  all tfplan.resource_changes as _, rc {
+    rc.type not in ["random_id", "random_password"] or
+    all mandatory_tags as tag {
+      rc.change.after.tags contains tag and
+      length(rc.change.after.tags[tag]) > 0
+    }
+  }
+}
+```
+
+### Cloud Custodian Policy Example
+
+```yaml
+# Cloud Custodian — AWS resource hygiene
+policies:
+  - name: s3-encryption-required
+    resource: aws.s3
+    filters:
+      - type: encryption
+        state: false
+    actions:
+      - type: set-encryption
+        crypto: AES256
+
+  - name: ec2-stop-untagged
+    resource: aws.ec2
+    filters:
+      - "tag:Environment": absent
+      - "tag:Owner": absent
+    actions:
+      - type: stop
+
+  - name: rds-public-snapshot-alert
+    resource: aws.rds-snapshot
+    filters:
+      - type: public-snapshot
+    actions:
+      - type: notify
+        to: security-team@example.com
+        subject: "Public RDS snapshot detected"
+        transport:
+          type: sqs
+          queue: security-alerts
+```
+
+### Integration Patterns — 4 Enforcement Points
+
+```
+Enforcement Pipeline:
+┌─────────────┐    ┌──────────────┐    ┌───────────────┐    ┌──────────────┐
+│  Pre-commit │───>│   CI/CD      │───>│  Admission    │───>│   Runtime    │
+│   (shift    │    │   Pipeline   │    │  Controller   │    │  (continuous)│
+│    left)    │    │   (gate)     │    │  (enforce)    │    │  (monitor)   │
+└─────────────┘    └──────────────┘    └───────────────┘    └──────────────┘
+     │                   │                    │                    │
+  OPA eval          OPA/Kyverno          Kyverno/OPA         Cloud Custodian
+  on commit         policy check         admission            resource sweep
+  (.rego files)     (plan/output)        webhook              (scheduled)
+```
+
+```yaml
+# Pre-commit — OPA policy evaluation
+# .pre-commit-config.yaml
+repos:
+  - repo: local
+    hooks:
+      - id: opa-terraform-lint
+        name: OPA Terraform policy check
+        entry: opa eval --data policy/ -i terraform.plan.json
+        language: system
+        files: \.tf$
+      - id: opa-k8s-lint
+        name: OPA Kubernetes manifest check
+        entry: opa eval --data policy/ -i
+        language: system
+        files: \.yaml$
+
+# CI/CD — Policy gate
+# .github/workflows/policy-check.yml
+name: Policy Check
+on: [pull_request]
+jobs:
+  opa-terraform:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Terraform Plan
+        run: terraform plan -out=tfplan -json > tfplan.json
+      - name: OPA Policy Evaluation
+        run: |
+          opa eval --data policy/terraform/ \
+            --input tfplan.json \
+            'data.terraform.deny[msg]' \
+            --format pretty | tee violations.txt
+          if [ -s violations.txt ] && [ "$(cat violations.txt)" != "[]" ]; then
+            echo "Policy violations found!"
+            exit 1
+          fi
+
+  kyverno-k8s:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Kyverno Policy Check
+        uses: kyverno/action-install-cli@v0.2
+        with:
+          release: v1.11.0
+      - run: kyverno test policy/
+
+# Admission Controller — Kyverno in cluster
+# Deploy: kubectl apply -f https://github.com/kyverno/kyverno/releases/latest/download/install.yaml
+# Policies applied as Kubernetes CRDs (see Kyverno examples above)
+
+# Runtime — Cloud Custodian scheduled sweep
+# custodian run -s output/ -p policy.yaml --region us-east-1
+# Run via cron or EventBridge schedule
+```
+
+### Policy as Code Review Checklist
+
+```
+- [ ] Policies version-controlled in same repo as infrastructure code
+- [ ] Policies tested before deployment (`opa test`, `kyverno test`, `sentinel test`)
+- [ ] Policy violations block PR merge (not just warn)
+- [ ] Admission controller enforces policies at deploy time
+- [ ] Runtime policies sweep for drift (Cloud Custodian or equivalent)
+- [ ] Policy exceptions documented with approval and expiration date
+- [ ] Alert on policy violations (Slack/PagerDuty/email)
+- [ ] Policy coverage metrics tracked (% of resources covered by policies)
+- [ ] Regular policy review: are rules still relevant? False positive rate?
+- [ ] Breaking-glass procedure: how to temporarily bypass policy (with audit trail)
+- [ ] Policy-as-code included in threat model (what if policies are bypassed?)
+- [ ] Compliance mapping: each policy mapped to regulatory control (SOC2/ISO/GDPR)
 ```

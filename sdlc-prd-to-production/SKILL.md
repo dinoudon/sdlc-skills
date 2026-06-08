@@ -1,13 +1,13 @@
 ---
 name: sdlc-prd-to-production
-description: "End-to-end workflow: PRD → design doc → implementation → code review → testing → deployment → monitoring → retrospective. Includes Ship/Show/Ask branching, design doc templates, PRD patterns (YC, Amazon Working Backwards), ephemeral environments, DORA 2024 insights, Score spec, AI-augmented development, technical specification templates, GitOps automation, documentation-as-code pipelines, metrics-driven development, production readiness reviews, launch strategies, post-launch monitoring, stakeholder communication templates, and product-engineering alignment."
-version: 4.0.0
+description: "End-to-end workflow: PRD → design doc → implementation → code review → testing → deployment → monitoring → retrospective. Includes Ship/Show/Ask branching, design doc templates, PRD patterns (YC, Amazon Working Backwards), ephemeral environments, DORA 2024 insights, Score spec, AI-augmented development, technical specification templates, GitOps automation, documentation-as-code pipelines, metrics-driven development, production readiness reviews, launch strategies, post-launch monitoring, stakeholder communication templates, product-engineering alignment, continuous discovery habits, product-led growth, technical debt management, engineering metrics, and incident management."
+version: 4.1.0
 author: Hermes Agent
 license: MIT
 platforms: [linux, macos, windows]
 metadata:
   hermes:
-    tags: [sdlc, prd, design-doc, rfc, ship-show-ask, workflow, end-to-end, product-development, yc, amazon-working-backwards, ephemeral-envs, score-spec, dora, ai-augmented, gitops, metrics-driven, docs-as-code, tech-spec, production-readiness, launch-strategy, post-launch, stakeholder-comms, okr, ab-testing]
+    tags: [sdlc, prd, design-doc, rfc, ship-show-ask, workflow, end-to-end, product-development, yc, amazon-working-backwards, ephemeral-envs, score-spec, dora, ai-augmented, gitops, metrics-driven, docs-as-code, tech-spec, production-readiness, launch-strategy, post-launch, stakeholder-comms, okr, ab-testing, continuous-discovery, plg, product-led-growth, tech-debt, devex, incident-management, pagerduty]
     related_skills: [sdlc-requirements-engineering, sdlc-architecture-design, sdlc-cicd-pipeline, sdlc-deployment, sdlc-retrospective]
 ---
 
@@ -1667,6 +1667,682 @@ metrics:
   minimum_sample_size: 30000
   minimum_duration: 7d
 ```
+
+## Step 14: Continuous Discovery Habits
+
+Source: Teresa Torres — *Continuous Discovery Habits*.
+
+Weekly customer touchpoints + structured assumption testing = better product decisions.
+
+### Weekly Customer Touchpoints
+
+**Rule: talk to customers every single week, no exceptions.**
+
+```
+# Weekly discovery cadence
+
+| Day       | Activity                          | Duration | Output              |
+|-----------|-----------------------------------|----------|---------------------|
+| Monday    | Review last week's interview notes | 30 min   | Insight summary     |
+| Tuesday   | Customer interview (1:1)          | 30 min   | Interview notes     |
+| Wednesday | Analyze feedback + update OST     | 45 min   | Updated opportunity |
+| Thursday  | Prototype test with user          | 30 min   | Test results        |
+| Friday    | Share discovery insights w/ team  | 15 min   | Slack update/doc    |
+```
+
+**Interview question framework (opportunity-based):**
+```
+1. Context: "Tell me about the last time you [did task]..."
+2. Struggle: "What was hardest about that?"
+3. Workaround: "How do you deal with that today?"
+4. Ideal: "If you could wave a magic wand, what would happen?"
+5. Priority: "On a scale of 1-10, how important is fixing this?"
+```
+
+### Opportunity Solution Tree (OST)
+
+Visual map: desired outcome → opportunities → solutions → experiments.
+
+```
+                    ┌─────────────────┐
+                    │  Desired Outcome │
+                    │ (Increase trial  │
+                    │  → paid by 20%)  │
+                    └────────┬────────┘
+               ┌─────────────┼─────────────┐
+               ▼             ▼             ▼
+        ┌──────────┐  ┌──────────┐  ┌──────────┐
+        │Onboarding│  │Feature   │  │Pricing   │
+        │too complex│  │discover- │  │confusion │
+        │          │  │ability   │  │          │
+        └────┬─────┘  └────┬─────┘  └────┬─────┘
+        ┌────┼────┐   ┌────┼────┐   ┌────┼────┐
+        ▼    ▼    ▼   ▼    ▼    ▼   ▼    ▼    ▼
+      [S1] [S2] [S3] [S4] [S5] [S6] [S7] [S8] [S9]
+
+S = Solution experiment (assumption test)
+```
+
+**OST maintenance rules:**
+- Update weekly after customer touchpoints
+- Max 3-5 opportunities per outcome (forced prioritization)
+- Each opportunity maps to 2-4 solution experiments
+- Prune dead branches monthly
+
+### Assumption Testing Framework
+
+**Four types of assumptions to test before building:**
+
+```
+| Assumption Type | Question                        | Test Method              |
+|-----------------|---------------------------------|--------------------------|
+| Desirability    | Do users want this?             | Fake door test, survey   |
+| Viability       | Will this drive business value? | Wizard of Oz, concierge  |
+| Feasibility     | Can we build this?              | Prototype, spike         |
+| Usability       | Can users use this?             | Usability test, 5-second |
+```
+
+**Assumption test template:**
+```yaml
+assumption:
+  statement: "Users will invite teammates during onboarding"
+  type: desirability          # desirability | viability | feasibility | usability
+  risk_level: high            # high = test first
+  confidence: low             # low | medium | high
+  test:
+    method: "Fake door test"
+    metric: "% of users clicking 'Invite Team' button"
+    threshold: ">= 15% click rate"
+    duration: "5 days, 200 users"
+  result:
+    observed: "8% click rate"
+    verdict: invalidated       # validated | invalidated | inconclusive
+    next_action: "Redesign invite flow, test new placement"
+```
+
+**Testing cadence:**
+- Test highest-risk assumption first
+- Run 1-2 tests per week
+- Timebox each test (max 5 business days)
+- Kill or pivot on invalidated assumptions — don't rationalize
+
+---
+
+## Step 15: Product-Led Growth (PLG)
+
+Source: Wes Bush — *Product-Led Growth*.
+
+Let the product sell itself. Users experience value before paying.
+
+### Self-Serve Onboarding
+
+**Goal: time-to-value (TTV) < 5 minutes. No sales call required.**
+
+```
+# Onboarding funnel stages
+
+1. Sign-up        → < 30 seconds (SSO, magic link, no credit card)
+2. Activation     → First meaningful action within 2 minutes
+3. Aha moment     → User sees core value (milestone varies by product)
+4. Habit loop     → User returns 3+ times in first week
+
+# Activation examples by product type:
+| Product Type   | Activation Event                    | Target TTV |
+|----------------|-------------------------------------|------------|
+| SaaS tool      | Create first project/dashboard      | 2 min      |
+| API product    | First successful API call           | 5 min      |
+| Data platform  | First query returns results         | 3 min      |
+| Collaboration  | Invite first teammate               | 1 min      |
+```
+
+**Onboarding checklist (in-product):**
+```yaml
+onboarding:
+  steps:
+    - id: create_workspace
+      label: "Create your workspace"
+      required: true
+      skip_if: "workspace exists"
+    - id: import_data
+      label: "Import your data"
+      required: false
+      help_text: "Connect CSV, API, or database"
+    - id: first_action
+      label: "Create your first [core object]"
+      required: true
+      tooltip: "This is where the magic happens"
+    - id: invite_team
+      label: "Invite your team"
+      required: false
+      incentive: "Unlock collaboration features"
+  progress_bar: true
+  skip_option: true  # let power users bypass
+```
+
+### Usage-Based Pricing
+
+**Align cost with value delivered. Users pay as they grow.**
+
+```
+# Pricing tiers (example)
+
+| Tier       | Price        | Included         | Overage   | Target Segment    |
+|------------|--------------|------------------|-----------|-------------------|
+| Free       | $0/mo        | 1K API calls     | N/A       | Evaluation        |
+| Starter    | $29/mo       | 50K API calls    | $0.001/ea | Small teams       |
+| Growth     | $99/mo       | 500K API calls   | $0.0008/ea| Growing companies |
+| Enterprise | Custom       | Unlimited        | Volume    | Large orgs        |
+
+# Usage metrics to price on:
+- API calls, events processed, seats, storage, compute minutes
+- Pick metric that correlates with customer value received
+- Avoid pricing on metric users will optimize away (e.g., don't price on log volume if users will log less)
+```
+
+### Viral Loops
+
+**Built-in sharing mechanics that drive organic growth.**
+
+```
+# Viral loop types
+
+1. Collaboration invite    → "Invite teammate to edit" (Slack, Figma)
+2. Shareable output        → "Share dashboard link" (Notion, Amplitude)
+3. Embed/widget            → "Powered by [Product]" badges
+4. Referral program        → "Give $X, get $X" credit
+5. Template sharing        → "Publish template to marketplace"
+
+# Viral coefficient (k-factor):
+k = (invites sent per user) × (conversion rate per invite)
+Target: k > 1.0 for exponential growth
+
+Example: avg user sends 3 invites, 40% sign up → k = 1.2 ✓
+```
+
+### Product-Qualified Lead (PQL) Metrics
+
+**Users who've experienced product value — better than MQLs.**
+
+```
+# PQL definition template
+
+pql_criteria:
+  must_match:
+    - "Completed onboarding (activation event)"
+    - "Used core feature 3+ times in 7 days"
+  scoring:
+    - action: "Created workspace"       points: 10
+    - action: "Invited teammate"        points: 15
+    - action: "Used API integration"    points: 20
+    - action: "Hit usage limit"         points: 25
+    - action: "Viewed pricing page"     points: 10
+  threshold: 40  # PQL when score >= 40
+  handoff: "Route to sales with product usage context"
+```
+
+**PQL funnel metrics to track:**
+```
+| Metric                  | Definition                          | Target    |
+|-------------------------|-------------------------------------|-----------|
+| Sign-up → Activation    | % completing activation event       | > 60%     |
+| Activation → PQL        | % reaching PQL score threshold      | > 25%     |
+| PQL → Conversion        | % converting to paid                | > 15%     |
+| Free → Paid (overall)   | % of sign-ups converting            | > 5%      |
+| Time to PQL             | Median days from sign-up to PQL     | < 14 days |
+```
+
+---
+
+## Step 16: Technical Debt Management
+
+Source: Martin Fowler — Technical Debt Quadrant.
+
+Not all debt is equal. Classify, quantify, remediate strategically.
+
+### Fowler's Debt Quadrant
+
+```
+                    Deliberate                Inadvertent
+                ┌─────────────────────┬─────────────────────┐
+   Reckless     │ "We don't have      │ "What's layered     │
+                │  time for design"   │  architecture?"     │
+                │                     │                     │
+                │  DANGER: ships fast │  DANGER: unaware    │
+                │  but compounds      │  of the mess        │
+                ├─────────────────────┼─────────────────────┤
+   Prudent      │ "We must ship now   │ "Now we know how    │
+                │  and deal with      │  we should have     │
+                │  consequences"      │  done it"           │
+                │                     │                     │
+                │  ACCEPTABLE: aware  │  VALUABLE: learning │
+                │  tradeoff           │  happened           │
+                └─────────────────────┴─────────────────────┘
+```
+
+**Classification action matrix:**
+```
+| Quadrant             | Action                                | Priority        |
+|----------------------|---------------------------------------|-----------------|
+| Reckless + Deliberate| STOP. Escalate. Refuse to ship.       | P0 — block      |
+| Reckless + Inadvertent| Educate team. Add architecture review | P1 — urgent     |
+| Prudent + Deliberate | Track in debt register. Schedule fix. | P2 — planned    |
+| Prudent + Inadvertent| Document. Fix opportunistically.      | P3 — background |
+```
+
+### Quantifying Technical Debt: Principal vs Interest
+
+```
+# Debt tracking template
+
+debt_item:
+  id: TD-042
+  name: "Monolith order service — no boundary isolation"
+  quadrant: prudent_deliberate
+  principal:
+    effort_to_fix: "3-4 sprints (2 engineers)"
+    affected_files: 47
+    affected_services: 3
+  interest:
+    monthly_cost:
+      extra_development_time: "15% slower feature delivery"
+      incidents: "1-2 cross-service failures per month"
+      cognitive_load: "All 8 engineers must understand order flow"
+    annualized_cost: "$180K (based on engineer time × incident hours)"
+  decision:
+    status: tracked        # tracked | fixing | resolved
+    scheduled_fix: "Q3 2026"
+    accepted_because: "Revenue-critical feature taking priority"
+```
+
+**Debt register rules:**
+- Every debt item has principal + interest estimates
+- Review quarterly: interest growing? Fix faster.
+- If interest > cost to fix → fix immediately
+- Track debt ratio: debt sprint points / total sprint points
+
+### Remediation Strategies
+
+**1. Boy Scout Rule — "Leave code better than you found it"**
+```
+# PR template addition:
+- [ ] If I touched a file, I improved:
+      - [ ] Naming / readability
+      - [ ] Removed dead code
+      - [ ] Added missing test
+      - [ ] Extracted magic numbers to constants
+Timebox: max 30 min per PR on cleanup. Don't refactor entire module.
+```
+
+**2. Strangler Fig Pattern — Incrementally replace legacy systems**
+```
+# Migration strategy:
+
+Phase 1: Identify boundaries (1 week)
+  └─ Map all inputs/outputs of legacy component
+
+Phase 2: Build facade (1-2 weeks)
+  └─ New component routes to old + new based on feature flag
+
+Phase 3: Migrate incrementally (ongoing)
+  └─ Move one route/endpoint at a time to new component
+  └─ Each migration = 1 small PR, independently deployable
+
+Phase 4: Remove old (when traffic = 0)
+  └─ Delete legacy code. Celebrate.
+
+# Routing example:
+if feature_flag("use-new-order-service", user_id):
+    return new_order_service.handle(req)   # ← new
+else:
+    return legacy_order_service.handle(req) # ← old
+```
+
+**3. 20% Sprints — Dedicated debt reduction capacity**
+```
+# Sprint allocation:
+| Capacity        | Percentage | Purpose                          |
+|-----------------|------------|----------------------------------|
+| Feature work    | 70%        | Product features + improvements  |
+| Tech debt       | 20%        | Planned debt reduction           |
+| Innovation      | 10%        | Spikes, experiments, tooling     |
+
+# Rules:
+- 20% is non-negotiable — don't borrow from it for features
+- Debt items selected from register based on interest cost
+- Track: sprint velocity on debt items (trend should be stable/increasing)
+- Demo debt work in sprint review (visibility = accountability)
+```
+
+---
+
+## Step 17: Engineering Metrics Beyond DORA
+
+DORA metrics (deploy frequency, lead time, MTTR, change failure rate) are necessary but not sufficient.
+
+### Code Health Trends
+
+```yaml
+# Code health dashboard metrics
+
+complexity:
+  metric: "Cyclomatic complexity per function"
+  tool: "radon (Python), complexity-report (JS), lizard (multi-lang)"
+  threshold: "avg < 10, max < 20 per function"
+  trend: "Track monthly — should be stable or decreasing"
+
+duplication:
+  metric: "Duplicated lines %"
+  tool: "jscpd, PMD CPD"
+  threshold: "< 3% of codebase"
+  trend: "Increasing = architecture problem"
+
+dead_code:
+  metric: "Unreachable code / unused exports"
+  tool: "vulture (Python), ts-prune (TS), deadcode (Go)"
+  threshold: "0 new dead code per quarter"
+  trend: "Should decrease over time"
+
+file_size:
+  metric: "Lines per file"
+  threshold: "< 500 lines (warn), < 1000 (error)"
+  trend: "Watch for files growing beyond threshold"
+```
+
+### Dependency Freshness
+
+```yaml
+# Dependency health tracking
+
+freshness:
+  metric: "Days since last dependency update"
+  tool: "Renovate, Dependabot, pip-audit, npm audit"
+  thresholds:
+    critical: "Dependencies > 180 days old"
+    warning: "Dependencies > 90 days old"
+    healthy: "Dependencies < 30 days old"
+  policy: "Update patch versions automatically, minor versions in PR, major versions manually"
+
+vulnerability_sla:
+  critical: "Fix within 24 hours"
+  high: "Fix within 7 days"
+  medium: "Fix within 30 days"
+  low: "Fix within 90 days"
+
+license_compliance:
+  tool: "FOSSA, license-checker, pip-licenses"
+  banned: ["GPL-3.0", "AGPL-3.0"]  # adjust per org policy
+  check: "CI pipeline blocks on banned license"
+```
+
+### Test Coverage Trends
+
+```yaml
+# Coverage tracking (absolute numbers less important than trends)
+
+overall_coverage:
+  metric: "Line coverage %"
+  tool: "coverage.py, istanbul/nyc, go cover"
+  minimum: "No new code below 80%"
+  trend: "Must not decrease month-over-month"
+
+differential_coverage:
+  metric: "Coverage of changed lines only"
+  tool: "diff-cover, Codecov patch coverage"
+  minimum: "> 90% of changed lines covered"
+  enforcement: "CI fails if differential coverage < threshold"
+
+test_health:
+  flaky_test_rate: "< 2% of test runs"
+  test_duration:
+    unit: "< 5 minutes total"
+    integration: "< 15 minutes total"
+    e2e: "< 30 minutes total"
+  quarantine: "Flaky tests moved to quarantine suite, fixed within 2 weeks or deleted"
+```
+
+### Developer Experience (DevEx)
+
+Source: DX (dx.dev) framework — measure what developers feel, not just what tools measure.
+
+```yaml
+# DevEx metrics framework
+
+# Quantitative metrics (from tooling):
+cycle_time:
+  metric: "PR open → merge"
+  target: "< 24 hours"
+  tool: "LinearB, Sleuth, Jellyfish"
+
+pr_review_wait:
+  metric: "Time to first review"
+  target: "< 4 hours (business hours)"
+  tool: "GitHub Insights, LinearB"
+
+build_time:
+  metric: "CI pipeline duration"
+  target: "< 10 minutes for main branch"
+  tool: "CI platform analytics"
+
+environment_setup:
+  metric: "New dev → first successful build"
+  target: "< 1 hour"
+  tool: "Track manually, optimize with devcontainer/Nix"
+
+# Qualitative metrics (from surveys — quarterly):
+survey_dimensions:
+  - name: "Ease of shipping"
+    question: "How easy is it to get changes to production?"
+    scale: "1-5 Likert"
+  - name: "Codebase health"
+    question: "How confident are you making changes to unfamiliar code?"
+    scale: "1-5 Likert"
+  - name: "Tooling satisfaction"
+    question: "How satisfied are you with dev tools and CI/CD?"
+    scale: "1-5 Likert"
+  - name: "Cognitive load"
+    question: "How much context do you need to make a simple change?"
+    scale: "1-5 Likert"
+  - name: "Onboarding experience"
+    question: "How quickly could you contribute in your first week?"
+    scale: "1-5 Likert"
+```
+
+**Engineering productivity dashboard:**
+```
+┌──────────────────────────────────────────────────────────────┐
+│                 Engineering Metrics Dashboard                 │
+├──────────────┬──────────────┬──────────────┬─────────────────┤
+│  DORA        │  Code Health │  Dep Fresh   │  DevEx          │
+│              │              │              │                 │
+│  Deploy: 2/d │  Complexity: │  Avg age:    │  Cycle time:    │
+│  Lead: 3h    │    avg 7.2   │    23 days   │    18h ✓        │
+│  MTTR: 45m   │  Dup: 1.8%   │  Vulns: 0    │  Review wait:   │
+│  CFR: 2.1%   │    ✓        │    critical  │    2.5h ✓       │
+│              │  Dead: -3%   │    ✓        │  Build: 8m ✓    │
+│              │    ✓        │              │  Survey: 4.1/5  │
+└──────────────┴──────────────┴──────────────┴─────────────────┘
+```
+
+---
+
+## Step 18: Incident Management
+
+Source: PagerDuty Incident Response, Google SRE book.
+
+Structured incident response = faster resolution + better learning.
+
+### PagerDuty Severity Levels
+
+```
+| Level | Name     | Definition                                        | Response Time  | Examples                                      |
+|-------|----------|---------------------------------------------------|----------------|-----------------------------------------------|
+| SEV1  | Critical | Service fully down, data loss, security breach    | < 15 min       | Production down, data breach, payment failure |
+| SEV2  | Major    | Major feature broken, significant user impact     | < 30 min       | Checkout broken, API errors > 5%, data lag    |
+| SEV3  | Minor    | Minor feature degraded, workaround available      | < 2 hours      | Slow page load, minor UI bug, non-critical    |
+| SEV4  | Low      | Cosmetic issue, no user impact                    | Next business  | Typo, minor visual glitch, dev env issue      |
+
+# Escalation rules:
+SEV1: Auto-page on-call + engineering manager + VP Eng immediately
+SEV2: Auto-page on-call, escalate if not acked in 15 min
+SEV3: Create ticket, on-call triages during business hours
+SEV4: Create ticket, assign to team backlog
+```
+
+### Response Lifecycle: Detect → Respond → Triage → Mitigate → Resolve → Review
+
+```
+# Incident response phases
+
+1. DETECT
+   Sources: monitoring alert, customer report, status page check
+   Actions:
+   - Acknowledge alert in PagerDuty (< 5 min)
+   - Open incident channel (#inc-YYYY-MM-DD-brief-description)
+   - Post initial status: "Investigating — [service] showing [symptom]"
+
+2. RESPOND
+   Actions:
+   - Incident commander (IC) assigned (on-call or first responder)
+   - IC declares severity level
+   - IC assigns roles: communications lead, technical lead
+   - IC posts to status page: "Investigating [service] issues"
+
+3. TRIAGE
+   Actions:
+   - Identify blast radius (which users, which services, which regions)
+   - Determine root cause hypothesis
+   - Check recent deployments (last 2 hours)
+   - Check dependency health (upstream services, databases, third-party)
+   - Update incident channel with findings
+
+4. MITIGATE
+   Actions:
+   - Stop the bleeding (rollback, feature flag off, scale up, failover)
+   - Mitigation may not be a fix — just stop user impact
+   - Document every action taken with timestamp
+   - Update status page: "Mitigating — we've [action] to reduce impact"
+
+5. RESOLVE
+   Actions:
+   - Confirm metrics returned to normal (SLIs green)
+   - Update status page: "Resolved — [root cause summary]"
+   - Close incident channel (post-mortem moves to separate doc)
+   - Notify stakeholders: "Resolved, post-mortem scheduled"
+
+6. REVIEW (Post-Mortem)
+   Actions:
+   - Schedule post-mortem within 48 hours (blameless)
+   - Write post-mortem doc using template (below)
+   - Identify action items with owners and due dates
+   - Share post-mortem with organization
+   - Track action items to completion
+```
+
+### Communication Templates
+
+**Incident channel message (initial):**
+```
+🚨 INCIDENT — SEV[X] — [Brief Description]
+
+**Status:** Investigating
+**Impact:** [What's broken, who's affected]
+**IC:** @[name]
+**Started:** [timestamp]
+**Channel:** #inc-YYYY-MM-DD-slug
+
+Updates every [15 min for SEV1/2, 30 min for SEV3].
+```
+
+**Status page update:**
+```
+[Investigating / Identified / Monitoring / Resolved]
+
+We are investigating reports of [description of issue].
+Some users may experience [specific impact].
+We are actively working on a resolution.
+
+Next update: [time]
+```
+
+**Stakeholder email (SEV1/2):**
+```
+Subject: [SEV{X}] {Service} Incident — {Date}
+
+Summary:
+{One paragraph: what happened, impact, current status}
+
+Impact:
+- Duration: {start time} to {end time} ({duration})
+- Affected users: {number or percentage}
+- Affected services: {list}
+
+Timeline:
+{HH:MM} — {event}
+{HH:MM} — {event}
+{HH:MM} — {event}
+
+Root Cause:
+{Brief technical explanation}
+
+Mitigation:
+{What we did to stop the bleeding}
+
+Resolution:
+{Permanent fix, or planned fix with timeline}
+
+Action Items:
+- [ ] {Action} — Owner: {name} — Due: {date}
+- [ ] {Action} — Owner: {name} — Due: {date}
+```
+
+**Post-mortem template:**
+```markdown
+# Post-Mortem: {Title}
+
+| Field          | Value                          |
+|----------------|--------------------------------|
+| Date           | YYYY-MM-DD                     |
+| Severity       | SEV{X}                         |
+| Duration       | {start} → {end} ({duration})   |
+| Impact         | {users affected, revenue impact}|
+| IC             | {name}                         |
+| Author         | {name}                         |
+
+## Summary
+{2-3 sentence summary}
+
+## Timeline (UTC)
+| Time  | Event |
+|-------|-------|
+| HH:MM | {event} |
+
+## Root Cause
+{Technical explanation of what went wrong and why}
+
+## Contributing Factors
+- {Factor 1}
+- {Factor 2}
+
+## What Went Well
+- {Thing 1}
+- {Thing 2}
+
+## What Went Poorly
+- {Thing 1}
+- {Thing 2}
+
+## Action Items
+| # | Action | Owner | Due Date | Priority |
+|---|--------|-------|----------|----------|
+| 1 | {action} | @name | YYYY-MM-DD | P1 |
+| 2 | {action} | @name | YYYY-MM-DD | P2 |
+
+## Lessons Learned
+- {Lesson 1}
+- {Lesson 2}
+```
+
+---
 
 ## Pitfalls
 

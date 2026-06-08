@@ -1,13 +1,13 @@
 ---
 name: sdlc-observability
-description: "Observability: OpenTelemetry 2024, GenAI semantic conventions, eBPF (Cilium/Hubble/Tetragon), sidecar-less mesh, profiling signal, structured logging, SLIs/SLOs/SLAs, error budgets, burn-rate alerting, Grafana LGTM, distributed tracing, cost optimization, serverless observability, LLM/AI observability, edge observability, OTel Collector deployment patterns, microservices golden signals, log aggregation (ELK/Loki/ClickHouse), metrics aggregation, alert design patterns, observability maturity model."
-version: 4.0.0
+description: "Observability: OpenTelemetry 2024, GenAI semantic conventions, eBPF (Cilium/Hubble/Tetragon), sidecar-less mesh, profiling signal, structured logging, SLIs/SLOs/SLAs, error budgets, burn-rate alerting, Grafana LGTM, distributed tracing, cost optimization, serverless observability, LLM/AI observability, edge observability, OTel Collector deployment patterns, microservices golden signals, log aggregation (ELK/Loki/ClickHouse), metrics aggregation, alert design patterns, observability maturity model, LLM platform comparison, ML model monitoring, AI agent observability, MLOps observability."
+version: 4.1.0
 author: Hermes Agent
 license: MIT
 platforms: [linux, macos, windows]
 metadata:
   hermes:
-    tags: [sdlc, observability, opentelemetry, prometheus, grafana, loki, jaeger, sli, slo, error-budget, tracing, logging, sre, ebpf, cilium, genai, profiling, serverless, lambda, cloudwatch, emf, edge, llm, ai, collector, daemonset, sidecar, gateway, golden-signals, elk, clickhouse, alerting, maturity-model]
+    tags: [sdlc, observability, opentelemetry, prometheus, grafana, loki, jaeger, sli, slo, error-budget, tracing, logging, sre, ebpf, cilium, genai, profiling, serverless, lambda, cloudwatch, emf, edge, llm, ai, collector, daemonset, sidecar, gateway, golden-signals, elk, clickhouse, alerting, maturity-model, langsmith, langfuse, helicone, arize, ml-monitoring, drift-detection, agent-observability, mlops, mlflow, kubeflow]
     related_skills: [sdlc-deployment, sdlc-cicd-pipeline, sdlc-testing-qa]
 ---
 
@@ -33,6 +33,10 @@ Trigger when user:
 |- Configures metrics aggregation (recording rules, federation, long-term storage)
 |- Designs alert routing and escalation policies
 |- Assesses observability maturity
+- Compares LLM observability platforms (LangSmith, Langfuse, Helicone, Arize Phoenix)
+- Monitors ML model drift and degradation (Evidently, WhyLabs, NannyML)
+- Instruments AI agents for cost/latency/reasoning visibility
+- Tracks ML experiments and pipelines (MLflow, Kubeflow)
 
 ## Step 1: OpenTelemetry (OTEL)
 
@@ -1638,3 +1642,625 @@ firing → acknowledged → investigating → resolved
 [ ] Continuous profiling on critical services
 [ ] Error budget policy drives deployment decisions
 ```
+
+## Step 26: LLM/AI Observability Platforms
+
+### Platform Comparison
+
+| Platform | Open Source | Tracing | Cost Tracking | Eval Metrics | Self-Hosted | OTel Export |
+|----------|-----------|---------|---------------|-------------|-------------|-------------|
+| **LangSmith** | No | ✅ Full LLM call tree | ✅ Per-run token cost | ✅ Custom evals, pairwise | No (SaaS) | ✅ OTLP |
+| **Langfuse** | ✅ Apache-2.0 | ✅ Traces + sessions | ✅ Per-model cost calc | ✅ LLM-as-judge, human eval | ✅ Docker/K8s | ✅ OTLP |
+| **Helicone** | ✅ MIT | ✅ Request logging + replay | ✅ Real-time cost dashboard | ✅ Custom feedback scores | ✅ Docker | ❌ (proxied) |
+| **Arize Phoenix** | ✅ Apache-2.0 | ✅ Full trace graph | ✅ Token + latency cost | ✅ Evals, embeddings viz | ✅ Python | ✅ OTLP |
+
+**Selection criteria:**
+- **LangSmith:** Best for LangChain/LangGraph teams. Deep integration with framework. SaaS-only (self-hosted enterprise).
+- **Langfuse:** Best for multi-framework (LlamaIndex, Haystack, OpenAI SDK). Self-hostable. Strong community.
+- **Helicone:** Best for proxy-based capture. Drop-in reverse proxy intercepts all LLM calls. Minimal code change.
+- **Arize Phoenix:** Best for eval-centric workflows. Embedding visualization, drift detection on LLM outputs. Notebook-first.
+
+### OpenTelemetry GenAI Conventions (Full)
+
+OTel GenAI semantic conventions (stable 2024+) standardize LLM telemetry across providers:
+
+```python
+from opentelemetry import trace
+from opentelemetry.sdk.trace import TracerProvider
+from opentelemetry.sdk.trace.export import BatchSpanProcessor
+from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import OTLPSpanExporter
+
+provider = TracerProvider()
+provider.add_span_processor(BatchSpanProcessor(OTLPSpanExporter("http://otel-collector:4317")))
+trace.set_tracer_provider(provider)
+tracer = trace.get_tracer("genai.application")
+
+def traced_llm_call(prompt: str, model: str = "gpt-4o"):
+    with tracer.start_as_current_span("gen_ai.chat") as span:
+        # Required GenAI attributes
+        span.set_attribute("gen_ai.system", "openai")
+        span.set_attribute("gen_ai.operation.name", "chat")
+        span.set_attribute("gen_ai.request.model", model)
+        span.set_attribute("gen_ai.request.max_tokens", 4096)
+        span.set_attribute("gen_ai.request.temperature", 0.7)
+
+        response = client.chat.completions.create(
+            model=model,
+            messages=[{"role": "user", "content": prompt}],
+        )
+
+        # Response attributes
+        span.set_attribute("gen_ai.usage.input_tokens", response.usage.prompt_tokens)
+        span.set_attribute("gen_ai.usage.output_tokens", response.usage.completion_tokens)
+        span.set_attribute("gen_ai.response.finish_reason", response.choices[0].finish_reason.value)
+        span.set_attribute("gen_ai.response.model", response.model)
+        span.set_attribute("gen_ai.response.id", response.id)
+
+        # Custom cost calculation
+        cost = calculate_cost(model, response.usage)
+        span.set_attribute("gen_ai.usage.cost_usd", cost)
+
+        return response
+```
+
+**Key GenAI attributes (stable):**
+
+| Attribute | Type | Description |
+|-----------|------|-------------|
+| `gen_ai.system` | string | Provider (openai, anthropic, cohere, vertex_ai) |
+| `gen_ai.operation.name` | string | chat, text_completion, embeddings, image_generation |
+| `gen_ai.request.model` | string | Requested model name |
+| `gen_ai.request.max_tokens` | int | Max output tokens |
+| `gen_ai.request.temperature` | float | Sampling temperature |
+| `gen_ai.usage.input_tokens` | int | Prompt token count |
+| `gen_ai.usage.output_tokens` | int | Completion token count |
+| `gen_ai.usage.cost_usd` | float | Computed cost (custom, not in OTel spec) |
+| `gen_ai.response.finish_reason` | string | stop, length, content_filter |
+| `gen_ai.response.model` | string | Actual model used |
+| `gen_ai.response.id` | string | Provider request ID |
+
+Source: https://opentelemetry.io/docs/specs/semconv/gen-ai/
+
+### Cost Tracking Per Model
+
+```python
+# Token pricing table (update as prices change)
+MODEL_PRICING = {
+    "gpt-4o":       {"input": 2.50 / 1_000_000, "output": 10.00 / 1_000_000},
+    "gpt-4o-mini":  {"input": 0.15 / 1_000_000, "output": 0.60 / 1_000_000},
+    "claude-3.5-sonnet": {"input": 3.00 / 1_000_000, "output": 15.00 / 1_000_000},
+    "claude-3-haiku":    {"input": 0.25 / 1_000_000, "output": 1.25 / 1_000_000},
+}
+
+def calculate_cost(model: str, usage) -> float:
+    pricing = MODEL_PRICING.get(model, MODEL_PRICING["gpt-4o"])
+    return (usage.prompt_tokens * pricing["input"]
+            + usage.completion_tokens * pricing["output"])
+```
+
+**PromQL cost dashboard:**
+```promql
+# Hourly cost per model
+sum(rate(gen_ai_usage_cost_usd_sum[1h])) by (gen_ai_request_model)
+
+# Daily cost breakdown
+sum(increase(gen_ai_usage_cost_usd_sum[24h])) by (gen_ai_request_model)
+
+# Cost per user (if user_id in span attributes)
+sum(rate(gen_ai_usage_cost_usd_sum[1h])) by (user_id)
+```
+
+### Eval Metrics Integration
+
+**Langfuse example — LLM-as-judge:**
+```python
+from langfuse import Langfuse
+langfuse = Langfuse()
+
+# Score a generation with custom eval
+langfuse.score(
+    trace_id="trace-123",
+    name="relevance",
+    value=0.85,
+    comment="Response directly addresses the query"
+)
+
+# Score with LLM-as-judge
+langfuse.score(
+    trace_id="trace-123",
+    name="faithfulness",
+    value=1,  # 0 or 1 for binary
+    source="model:claude-3-sonnet"
+)
+```
+
+**Key eval categories:**
+- **Relevance:** Does response address the query?
+- **Faithfulness:** Is response grounded in retrieved context (RAG)?
+- **Toxicity:** Does output contain harmful content?
+- **Latency cost ratio:** Quality per dollar spent
+
+## Step 27: ML Model Monitoring
+
+### Data Drift Detection
+
+Drift = production data distribution differs from training data. Causes silent model degradation.
+
+**Kolmogorov-Smirnov (KS) Test — continuous features:**
+```python
+from scipy.stats import ks_2samp
+
+stat, p_value = ks_2samp(reference_data["feature_1"], production_data["feature_1"])
+drifted = p_value < 0.05  # reject null: distributions differ
+# stat: max distance between CDFs (0 = identical, 1 = no overlap)
+```
+
+**Population Stability Index (PSI) — categorical or binned continuous:**
+```python
+def psi(reference, production, bins=10):
+    """PSI > 0.2 = significant drift, 0.1-0.2 = moderate, < 0.1 = stable"""
+    ref_pct = np.histogram(reference, bins=bins)[0] / len(reference)
+    prod_pct = np.histogram(production, bins=np.histogram(reference, bins=bins)[1])[0] / len(production)
+    prod_pct = np.where(prod_pct == 0, 0.0001, prod_pct)  # avoid log(0)
+    ref_pct = np.where(ref_pct == 0, 0.0001, ref_pct)
+    return np.sum((prod_pct - ref_pct) * np.log(prod_pct / ref_pct))
+
+# Usage
+psi_score = psi(train_data["age"], prod_data["age"])
+if psi_score > 0.2:
+    alert("Significant drift in age feature")
+```
+
+### Concept Drift Detection
+
+Concept drift = relationship between features and target changes over time.
+
+**ADWIN (Adaptive Windowing):**
+```python
+from river import drift
+
+adwin = drift.ADWIN(delta=0.002)  # delta = sensitivity
+for i, prediction_error in enumerate(error_stream):
+    adwin.update(prediction_error)
+    if adwin.drift_detected:
+        print(f"Drift detected at index {i}, window size: {adwin.width}")
+        # Trigger model retraining
+```
+
+**DDM (Drift Detection Method):**
+```python
+from river import drift
+
+ddm = drift.DDM()
+for i, y_true, y_pred in zip(range(n), y_true_stream, y_pred_stream):
+    error = int(y_true != y_pred)
+    ddm.update(error)
+    if ddm.drift_detected:
+        print(f"DDM drift at index {i}")
+    elif ddm.warning_detected:
+        print(f"DDM warning at index {i} — start collecting new training data")
+```
+
+**Comparison:**
+
+| Method | Type | Mechanism | Best For |
+|--------|------|-----------|----------|
+| KS Test | Data drift | Statistical test on feature distributions | Continuous features |
+| PSI | Data drift | Binned distribution shift | Categorical, batch monitoring |
+| ADWIN | Concept drift | Adaptive sliding window on error rates | Streaming, non-stationary |
+| DDM | Concept drift | Error rate + std deviation thresholds | Binary classification streams |
+| Page-Hinkley | Concept drift | Cumulative sum of deviations | Mean shift detection |
+
+### Model Degradation Patterns
+
+| Pattern | Symptom | Detection | Mitigation |
+|---------|---------|-----------|------------|
+| **Gradual drift** | Accuracy slowly decreases over weeks | PSI trending up, rolling accuracy declining | Scheduled retraining (weekly) |
+| **Sudden drift** | Accuracy drops after external event | DDM/ADWIN alarm | Emergency retrain + fallback to previous model |
+| **Recurring patterns** | Seasonal accuracy swings | Year-over-year comparison | Retrain with seasonal features |
+| **Feature drift** | Input distribution shifts but labels unknown | KS test on features per batch | Retrain with recent data, feature engineering |
+| **Label drift** | Target distribution changes | Monitor prediction distribution vs baseline | Collect new labeled data |
+| **Upstream data break** | Nulls, schema changes, stale data | Schema validation, freshness checks | Fix pipeline, data quality gates |
+
+### Monitoring Tools Comparison
+
+| Feature | Evidently | WhyLabs | NannyML |
+|---------|-----------|---------|---------|
+| Open Source | ✅ Apache-2.0 | ❌ (WhyLabs OSS profile only) | ✅ Apache-2.0 |
+| Data Drift | ✅ KS, PSI, Wasserstein, Jensen-Shannon | ✅ Custom profiles | ✅ Univariate + multivariate |
+| Concept Drift | ✅ (via model perf metrics) | ❌ (indirect) | ✅ CBPE (no ground truth needed) |
+| Target-free monitoring | ❌ (needs reference + production) | ✅ | ✅ CBPE estimates perf without labels |
+| Dashboard | ✅ HTML reports | ✅ SaaS platform | ✅ HTML reports |
+| Integration | Python lib, Evidently Cloud | Python SDK, SaaS | Python library |
+| Real-time | Batch + streaming | Streaming | Batch |
+| Alerting | Via API/webhooks | ✅ Built-in | Via API |
+
+**Evidently example:**
+```python
+from evidently import ColumnMapping
+from evidently.report import Report
+from evidently.metric_preset import DataDriftPreset, DataQualityPreset
+from evidently.test_suite import TestSuite
+from evidently.tests import TestShareOfDriftedColumns
+
+# Generate drift report
+report = Report(metrics=[DataDriftPreset()])
+report.run(reference_data=ref_df, current_data=prod_df)
+report.save_html("drift_report.html")
+
+# Automated test suite (CI/CD integration)
+suite = TestSuite(tests=[TestShareOfDriftedColumns(lt=0.3)])
+suite.run(reference_data=ref_df, current_data=prod_df)
+assert suite.as_dict()["tests"][0]["status"] == "Success"
+```
+
+**NannyML CBPE (no ground truth):**
+```python
+import nannyml as nml
+
+cbpe = nml.CBPE(
+    y_pred_proba="predicted_probability",
+    y_pred="prediction",
+    y_true="target",
+    problem_type="classification_binary",
+    metrics=["roc_auc", "f1"],
+)
+cbpe.fit(reference_df)
+estimates = cbpe.estimate(production_df)
+estimates.plot().show()  # estimated performance over time
+```
+
+## Step 28: AI Agent Observability
+
+### Agent Run Anatomy
+
+AI agents (LangChain, CrewAI, AutoGen, custom) involve multi-step reasoning, tool calls, and LLM invocations. Each run needs:
+
+```
+agent_run (trace)
+├── llm_call: plan next action (span)
+│   ├── gen_ai.usage.input_tokens = 450
+│   └── gen_ai.usage.output_tokens = 80
+├── tool_call: search_database (span)
+│   ├── tool.name = "search_database"
+│   ├── tool.input = {"query": "..."}
+│   ├── tool.output = "..."
+│   └── db.duration_ms = 45
+├── llm_call: synthesize results (span)
+│   ├── gen_ai.usage.input_tokens = 1200
+│   └── gen_ai.usage.output_tokens = 300
+├── tool_call: send_email (span)
+│   ├── tool.name = "send_email"
+│   └── tool.duration_ms = 230
+└── llm_call: final answer (span)
+    ├── gen_ai.usage.input_tokens = 800
+    └── gen_ai.usage.output_tokens = 150
+```
+
+### Instrumenting Agent Traces
+
+```python
+from opentelemetry import trace
+
+tracer = trace.get_tracer("ai.agent")
+
+def run_agent(user_query: str):
+    with tracer.start_as_current_span("agent.run") as root_span:
+        root_span.set_attribute("agent.query", user_query)
+        root_span.set_attribute("agent.name", "customer-support")
+        root_span.set_attribute("agent.model", "gpt-4o")
+
+        total_input_tokens = 0
+        total_output_tokens = 0
+        total_cost = 0.0
+        step = 0
+
+        while not done:
+            # Trace each reasoning step
+            with tracer.start_as_current_span(f"agent.step.{step}") as step_span:
+                step_span.set_attribute("agent.step_number", step)
+
+                # LLM call within step
+                with tracer.start_as_current_span("gen_ai.chat") as llm_span:
+                    llm_span.set_attribute("gen_ai.system", "openai")
+                    llm_span.set_attribute("gen_ai.request.model", "gpt-4o")
+                    response = call_llm(messages)
+                    tokens_in = response.usage.prompt_tokens
+                    tokens_out = response.usage.completion_tokens
+                    total_input_tokens += tokens_in
+                    total_output_tokens += tokens_out
+                    llm_span.set_attribute("gen_ai.usage.input_tokens", tokens_in)
+                    llm_span.set_attribute("gen_ai.usage.output_tokens", tokens_out)
+
+                # Tool call within step
+                if should_call_tool(response):
+                    with tracer.start_as_current_span("tool.call") as tool_span:
+                        tool_span.set_attribute("tool.name", tool_name)
+                        tool_span.set_attribute("tool.input", str(tool_input))
+                        tool_result = execute_tool(tool_name, tool_input)
+                        tool_span.set_attribute("tool.output", str(tool_result)[:500])
+
+                step += 1
+
+        # Final attributes on root span
+        root_span.set_attribute("agent.total_steps", step)
+        root_span.set_attribute("agent.total_input_tokens", total_input_tokens)
+        root_span.set_attribute("agent.total_output_tokens", total_output_tokens)
+        root_span.set_attribute("agent.total_cost_usd", total_cost)
+        root_span.set_attribute("agent.success", done_successfully)
+```
+
+### Latency Breakdown
+
+```promql
+# Total agent run duration p50/p99
+histogram_quantile(0.5, sum(rate(agent_run_duration_seconds_bucket[5m])) by (le, agent_name))
+histogram_quantile(0.99, sum(rate(agent_run_duration_seconds_bucket[5m])) by (le, agent_name))
+
+# Time spent in LLM calls vs tool calls vs orchestration
+sum(rate(agent_llm_duration_seconds_sum[5m])) by (agent_name)
+sum(rate(agent_tool_duration_seconds_sum[5m])) by (agent_name)
+
+# LLM latency vs tool latency ratio
+sum(rate(agent_llm_duration_seconds_sum[5m])) by (agent_name)
+/
+sum(rate(agent_run_duration_seconds_sum[5m])) by (agent_name)
+# Result: % of run time spent waiting for LLM
+
+# Slowest tool calls
+histogram_quantile(0.95, sum(rate(agent_tool_duration_seconds_bucket[5m])) by (le, tool_name))
+```
+
+### Cost Attribution Per Agent Run
+
+```promql
+# Average cost per agent run
+sum(rate(agent_total_cost_usd_sum[1h])) by (agent_name)
+/
+sum(rate(agent_run_total[1h])) by (agent_name)
+
+# Cost breakdown: LLM vs tool vs total
+sum(rate(agent_llm_cost_usd_sum[1h])) by (agent_name)
+
+# Most expensive runs (top 10)
+topk(10, agent_total_cost_usd_sum)
+
+# Cost by model within agent
+sum(rate(gen_ai_usage_cost_usd_sum[1h])) by (gen_ai_request_model, agent_name)
+```
+
+### Agent Observability Anti-Patterns
+
+| Anti-Pattern | Problem | Fix |
+|-------------|---------|-----|
+| Logging only final output | Can't debug reasoning failures | Trace every step + tool call |
+| No cost attribution | Surprise LLM bills | Tag every span with cost, alert on threshold |
+| Infinite agent loops | Agent retries tool forever | Set max_steps on root span, alert on step_count > N |
+| No tool input/output logging | Can't reproduce tool failures | Log tool I/O (truncated) in span attributes |
+| Single monolithic span | Can't identify bottleneck | Separate spans for llm_call, tool_call, orchestration |
+| Missing timeout on LLM calls | Hung agent, wasted cost | Set per-call timeout, record timeout as error span |
+
+## Step 29: MLOps Observability
+
+### MLflow Tracking
+
+```python
+import mlflow
+import mlflow.sklearn
+
+mlflow.set_tracking_uri("http://mlflow-server:5000")
+mlflow.set_experiment("fraud-detection-v2")
+
+with mlflow.start_run(run_name="xgboost-hyperopt"):
+    # Log parameters
+    mlflow.log_params({
+        "model": "xgboost",
+        "n_estimators": 500,
+        "max_depth": 6,
+        "learning_rate": 0.1,
+        "subsample": 0.8,
+    })
+
+    model = train_model(X_train, y_train, params)
+
+    # Log metrics
+    mlflow.log_metrics({
+        "roc_auc": 0.95,
+        "f1": 0.87,
+        "precision": 0.89,
+        "recall": 0.85,
+        "train_time_sec": 342,
+    })
+
+    # Log model artifact
+    mlflow.sklearn.log_model(
+        model,
+        artifact_path="model",
+        registered_model_name="fraud-detection",
+    )
+
+    # Log data profile as artifact
+    mlflow.log_artifact("data_profile.html")
+```
+
+**MLflow + OTel integration (emit MLflow events as OTel spans):**
+```python
+from opentelemetry import trace
+import mlflow
+
+tracer = trace.get_tracer("mlops.tracking")
+
+def tracked_training_run(params, X_train, y_train):
+    with tracer.start_as_current_span("mlflow.training_run") as span:
+        span.set_attribute("mlflow.experiment", "fraud-detection-v2")
+        with mlflow.start_run():
+            mlflow.log_params(params)
+            model = train_model(X_train, y_train, params)
+            metrics = evaluate(model)
+            mlflow.log_metrics(metrics)
+            span.set_attribute("ml.metrics.roc_auc", metrics["roc_auc"])
+            span.set_attribute("ml.metrics.f1", metrics["f1"])
+```
+
+### Kubeflow Pipeline Metrics
+
+```python
+# Kubeflow Pipelines — emit metrics from components
+from kfp import dsl
+from kfp.dsl import Output, Metrics
+
+@dsl.component
+def evaluate_model(
+    model_path: str,
+    test_data: str,
+    metrics: Output[Metrics],
+):
+    model = load_model(model_path)
+    X_test, y_test = load_data(test_data)
+    predictions = model.predict(X_test)
+
+    auc = roc_auc_score(y_test, predictions)
+    f1 = f1_score(y_test, predictions)
+
+    # Log to Kubeflow UI + MLflow
+    metrics.log_metric("roc_auc", auc)
+    metrics.log_metric("f1_score", f1)
+```
+
+**Kubeflow pipeline monitoring:**
+```yaml
+# Prometheus metrics from Kubeflow
+# kfp-server exposes pipeline run metrics
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: kubeflow-pipelines
+spec:
+  selector:
+    matchLabels:
+      app: ml-pipeline
+  endpoints:
+    - port: http
+      path: /metrics
+      interval: 30s
+```
+
+**Key Kubeflow metrics:**
+- `kfp_run_duration_seconds` — total pipeline run time
+- `kfp_step_duration_seconds` — per-step duration (training, preprocessing, eval)
+- `kfp_run_status_total` — success/failure count by pipeline
+
+### Feature Store Monitoring
+
+```python
+# Feast feature store — monitor feature freshness + drift
+from feast import FeatureStore
+from evidently.report import Report
+from evidently.metric_preset import DataDriftPreset
+
+store = FeatureStore(repo_path=".")
+
+# Get feature values from online store
+features = store.get_online_features(
+    features=["user_features:age", "user_features:income", "user_features:transaction_count"],
+    entity_rows=[{"user_id": 123}]
+).to_dict()
+
+# Monitor feature freshness (time since last materialization)
+feature_views = store.list_feature_views()
+for fv in feature_views:
+    stats = store.registry.list_entity_stats()  # freshness per entity
+    alert_on_stale_features(fv.name, max_age_hours=24)
+
+# Monitor feature drift between training and serving
+training_features = store.get_historical_features(
+    entity_df=entities,
+    features=["user_features:age", "user_features:income"],
+).to_df()
+
+report = Report(metrics=[DataDriftPreset()])
+report.run(reference_data=training_features, current_data=serving_features)
+report.save_html("feature_drift.html")
+```
+
+**Feature store alerting:**
+```yaml
+# Prometheus alert on stale features
+- alert: StaleFeatures
+  expr: feature_store_last_materialization_age_hours > 24
+  for: 1h
+  labels:
+    severity: page
+  annotations:
+    summary: "Feature store {{ $labels.feature_view }} stale for {{ $value }}h"
+
+# Feature distribution shift
+- alert: FeatureDrift
+  expr: feature_store_psi_score > 0.2
+  for: 30m
+  labels:
+    severity: warn
+  annotations:
+    summary: "Feature {{ $labels.feature_name }} PSI={{ $value }} (drifted)"
+```
+
+### Model Registry Lineage
+
+Track full lineage: data → features → training → model → deployment → predictions.
+
+```
+[Raw Data] → [Feature Pipeline] → [Feature Store] → [Training] → [Model Registry] → [Serving]
+     │              │                    │              │              │                │
+     └── data_version    └── feature_version  └── run_id      └── model_version  └── deployment_id
+         freshness            drift_metrics       params             artifacts          predictions
+         schema_hash          null_rate           metrics            approval_status    latency
+```
+
+**MLflow model registry lineage:**
+```python
+import mlflow
+from mlflow import MlflowClient
+
+client = MlflowClient("http://mlflow-server:5000")
+
+# Get model version details
+model_version = client.get_model_version("fraud-detection", version=3)
+print(f"Run ID: {model_version.run_id}")
+print(f"Source: {model_version.source}")
+print(f"Status: {model_version.status}")  # PENDING_REVIEW, READY, ARCHIVED
+
+# Get training run details for lineage
+run = client.get_run(model_version.run_id)
+print(f"Training data: {run.data.params.get('training_data_path')}")
+print(f"Git commit: {run.data.tags.get('mlflow.source.name')}")
+print(f"Metrics: {run.data.metrics}")
+
+# Transition model stage (staging → production)
+client.transition_model_version_stage(
+    name="fraud-detection",
+    version=3,
+    stage="Production",
+    archive_existing_versions=True,
+)
+
+# Log deployment event as OTel span
+with tracer.start_as_current_span("model.deploy") as span:
+    span.set_attribute("model.name", "fraud-detection")
+    span.set_attribute("model.version", 3)
+    span.set_attribute("model.stage", "Production")
+    span.set_attribute("model.run_id", model_version.run_id)
+```
+
+**Lineage tracking OTel attributes:**
+
+| Attribute | Description | Example |
+|-----------|-------------|---------|
+| `ml.pipeline.name` | Pipeline identifier | fraud-detection-v2 |
+| `ml.pipeline.run_id` | Specific pipeline run | run-abc123 |
+| `ml.model.name` | Registered model name | fraud-detection |
+| `ml.model.version` | Model version | 3 |
+| `ml.model.stage` | Registry stage | Staging, Production |
+| `ml.data.version` | Training data version | dataset-2024-06 |
+| `ml.feature.store_version` | Feature store snapshot | feast-v2-materialized |
+| `ml.metric.roc_auc` | Training metric | 0.95 |
+| `ml.training.git_commit` | Source code version | abc123f |
