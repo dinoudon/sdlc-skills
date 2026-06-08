@@ -1,13 +1,13 @@
 ---
 name: sdlc-developer-tooling
-description: "Modern dev tooling: Python (uv, Ruff, pytest, mypy), JS/TS (pnpm, Bun, Vitest, Biome, Playwright), Go (golangci-lint, go test -race), Rust (cargo). Cross-cutting: just, mise, direnv, Docker Compose, Dev Containers, Nix. Includes LSP/DAP patterns, AI-assisted dev, green software tooling, CI/CD advanced patterns, build caching, artifact management."
-version: 4.6.0
+description: "Modern dev tooling: Python (uv, Ruff, pytest, mypy), JS/TS (pnpm, Bun, Vitest, Biome, Playwright), Go (golangci-lint, go test -race), Rust (cargo). Cross-cutting: just, mise, direnv, Docker Compose, Dev Containers, Nix. Includes LSP/DAP patterns, AI-assisted dev, green software tooling, CI/CD advanced patterns, build caching, artifact management, monorepo tooling (Nx, Turborepo, Bazel, Pants), polyrepo patterns, repository structure, conventional commits, semver automation."
+version: 4.7.0
 author: Hermes Agent
 license: MIT
 platforms: [linux, macos, windows]
 metadata:
   hermes:
-    tags: [sdlc, tooling, developer-experience, python, typescript, go, rust, docker, devex, lsp, dap, nix, bun, ai-assisted, green-software, mise, uv, ci-cd, caching, artifacts, sbom]
+    tags: [sdlc, tooling, developer-experience, python, typescript, go, rust, docker, devex, lsp, dap, nix, bun, ai-assisted, green-software, mise, uv, ci-cd, caching, artifacts, sbom, monorepo, polyrepo, conventional-commits, semver]
     related_skills: [sdlc-architecture-design, sdlc-cicd-pipeline, sdlc-testing-qa, sdlc-adversarial-review]
 ---
 
@@ -3758,3 +3758,991 @@ Red flags: developers can't explain system architecture, high bus factor,
 | Cognitive load      | ≥ 3.5/5       | Quarterly survey      |
 | Satisfaction        | ≥ 7/10        | Quarterly survey      |
 ```
+
+## Step 26: Monorepo Tooling Deep Dive
+
+### Nx Affected
+Source: https://nx.dev/
+
+Smart, fast monorepo build system. Core mechanism: **affected** — only runs tasks on projects changed since a baseline (typically `main`).
+
+**Dependency graph:**
+```bash
+# Visualize project dependency graph
+npx nx graph
+# Export graph as JSON for custom analysis
+npx nx graph --file=output.json
+```
+
+Nx builds a project graph from:
+- `package.json` dependencies/peerDependencies
+- `tsconfig.json` path mappings
+- Explicit `project.json` / `nx.json` dependency declarations
+- Import analysis (TypeScript, JS, etc.)
+
+**File hashing & computation caching:**
+```bash
+# Nx hashes inputs per task: source files, deps, runtime config, env vars
+# Cache stored in .nx/cache by default
+# View cache hits
+npx nx run myapp:build  # "Nx read the output from cache"
+npx nx run myapp:build --skip-nx-cache  # force re-run
+# Affected detection: compares current git diff against base
+npx nx affected --target=test --base=origin/main --head=HEAD
+npx nx affected --target=build --all  # ignore affected, run all
+```
+
+Hash composition:
+```
+hash = f(
+  project source files (content hash),
+  runtimeHash (Node version, env vars),
+  runtimeInputs (explicitly declared),
+  implicitDependencies (global files like .eslintrc),
+  taskRunnerOptions (cacheableOperations, etc.)
+)
+```
+
+**Nx Cloud distributed execution:**
+```jsonc
+// nx.json
+{
+  "tasksRunnerOptions": {
+    "default": {
+      "runner": "@nrwl/nx-cloud",
+      "options": {
+        "accessToken": "secret-from-nx-cloud",
+        "cacheableOperations": ["build", "test", "lint"],
+        "parallel": 3
+      }
+    }
+  }
+}
+```
+
+Distributed execution splits affected tasks across CI agents:
+- Agent coordination via Nx Cloud (or DTE with self-hosted)
+- Each agent pulls from a shared task queue
+- Results uploaded to remote cache — next agent skips
+- `npx nx-cloud start-ci-run --distribute-on="3 linux-medium"` — declarative agent allocation
+
+### Turborepo Caching
+Source: https://turbo.build/
+
+**Local + remote caching:**
+```bash
+# Local cache: .turbo/cache/ (content-addressable, gzip-compressed artifacts)
+# Remote cache: Vercel, or self-hosted (S3, custom HTTP API)
+
+# Configure remote cache
+turbo login
+turbo link  # link repo to remote cache
+
+# Run with cache
+turbo run build  # "FULL TURBO" when all hits
+turbo run build --force  # bypass cache
+turbo run build --dry-run  # show what would run
+```
+
+Cache key composition:
+```
+hash = f(
+  file contents of package (glob-matched inputs),
+  topological dependencies (upstream packages' hashes),
+  env vars (declared in turbo.json),
+  CLI args,
+  turbo version
+)
+```
+
+**turbo.json pipeline config:**
+```json
+{
+  "$schema": "https://turbo.build/schema.json",
+  "globalDependencies": ["**/.env.*local"],
+  "globalEnv": ["CI"],
+  "tasks": {
+    "build": {
+      "dependsOn": ["^build"],
+      "outputs": ["dist/**", ".next/**"],
+      "env": ["NODE_ENV"]
+    },
+    "test": {
+      "dependsOn": ["build"],
+      "outputs": [],
+      "cache": true
+    },
+    "lint": {
+      "outputs": []
+    },
+    "dev": {
+      "cache": false,
+      "persistent": true
+    }
+  }
+}
+```
+
+Key patterns:
+- `^build` — run upstream (dependency) build tasks first
+- `outputs` — files to cache (glob patterns). Empty array = cache nothing on disk
+- `env` / `globalEnv` — env vars baked into hash (transparent caching)
+- `cache: false` — disable cache for dev/watch tasks
+
+### Bazel Remote Cache
+Source: https://bazel.build/
+
+**Hermetic builds:**
+- All inputs declared explicitly (BUILD files, rule deps, toolchains)
+- Sandboxed execution: no network, no implicit file access
+- Reproducible: same inputs → same outputs, always
+- Language-agnostic: Java, C++, Python, Go, Rust, JS — all via rules
+
+**Remote cache via gRPC Remote Execution API (REAPI):**
+```bash
+# .bazelrc
+build --remote_cache=grpcs://cache.example.com
+build --remote_header=x-api-key=SECRET
+build --remote_timeout=60
+build --remote_upload_local_results=true
+build --experimental_remote_cache_compression
+
+# Remote execution (distribute builds across workers)
+build --remote_executor=grpcs://executor.example.com
+build --jobs=100  # parallelism across remote workers
+```
+
+REAPI protocol (open standard, used by Bazel, Buck2, Pants):
+```
+ContentAddressableStorage → upload/download blobs by hash
+ActionCache → store action results (input hash → output hash)
+Execution → submit actions to remote workers
+Capabilities → discover server features
+```
+
+Popular REAPI servers: BuildBuddy, EngFlow, Buildfarm (open source), NativeLink (Rust-based).
+
+**BUILD files (language-agnostic):**
+```python
+# BUILD.bazel
+load("@rules_python//python:defs.bzl", "py_binary", "py_test")
+load("@aspect_rules_js//js:defs.bzl", "js_binary")
+
+py_binary(
+    name = "server",
+    srcs = ["server.py"],
+    deps = [
+        "//libs/auth:auth_py",
+        "@pypi//flask",
+    ],
+)
+
+js_binary(
+    name = "frontend",
+    entry_point = "index.ts",
+    deps = ["//libs/ui:components"],
+)
+```
+
+### Pants Build System
+Source: https://www.pantsbuild.org/
+
+Python-first build system (successor to PANTS from Twitter). Forked from Bazel concepts but optimized for Python/Go ecosystems.
+
+**Dependency inference:**
+```bash
+# pants.toml
+[GLOBAL]
+pants_version = "2.22.0"
+backend_packages = [
+  "pants.backend.python",
+  "pants.backend.python.lint.ruff",
+  "pants.backend.python.typecheck.mypy",
+]
+
+[python]
+interpreter_constraints = [">=3.11"]
+```
+
+```python
+# BUILD file — dependencies inferred automatically from imports
+python_sources()   # auto-discovers .py files, infers deps from import statements
+python_tests()     # auto-discovers test_*.py
+pex_binary(name="server", entry_point="server.py")
+```
+
+```bash
+# Run with automatic dependency inference
+pants dependencies src/app/server.py  # shows inferred + explicit deps
+pants test src/app/                   # only tests affected by changes
+pants --changed-since=origin/main test  # affected-only testing
+```
+
+**File-level caching:**
+```bash
+# Pants caches at process level (like Bazel) but also file-level
+# Cache stored in ~/.cache/pants/lmdb_store (LMDB key-value store)
+# Remote cache support via REAPI
+pants --remote-cache-address=grpc://cache.example.com test ::
+```
+
+Pants advantages for Python:
+- Automatic `requirements.txt` / `pyproject.toml` parsing
+- Lockfile generation (`pants generate-lockfiles`)
+- Per-target interpreter constraints
+- Fine-grained pytest caching (individual test functions)
+
+## Step 27: Monorepo Pitfalls & Solutions
+
+### Dependency Hell
+
+**Single lockfile enforcement:**
+```bash
+# pnpm: single lockfile at root (pnpm-lock.yaml)
+# Enforce via pnpm-workspace.yaml
+packages:
+  - "packages/*"
+  - "apps/*"
+
+# Lockfile hoisting behavior
+# .npmrc (pnpm)
+shamefully-hoist=false        # strict: no phantom deps
+auto-install-peers=true       # auto-install peer deps
+strict-peer-dependencies=true # fail on peer dep conflicts
+```
+
+**Phantom dependencies (pnpm fix):**
+```
+Problem (npm/yarn classic hoisted node_modules):
+  App depends on: [express]
+  express depends on: [lodash]
+  lodash is hoisted to node_modules/lodash
+  App can import lodash directly (phantom dep)
+  → Breaks when express upgrades lodash or removes it
+
+Solution (pnpm isolated node_modules):
+  node_modules/
+    .pnpm/
+      express@4.18.0/
+        node_modules/express/      ← only express sees its deps
+        node_modules/lodash/       ← not accessible from root
+    express → .pnpm/express@4.18.0/node_modules/express
+  App CANNOT import lodash (not in its dep tree)
+```
+
+```bash
+# Find phantom dependencies in existing project
+npx depcheck  # finds unused and missing deps
+npx knip      # more thorough: finds unused exports, types, files
+```
+
+**Version conflicts & cascading upgrades:**
+```bash
+# Find version conflicts across monorepo
+pnpm why lodash  # shows which packages depend on lodash and versions
+pnpm dedupe      # deduplicate compatible versions
+
+# Renovate cascading upgrades config (renovate.json)
+{
+  "extends": ["config:base"],
+  "packageRules": [
+    {
+      "matchUpdateTypes": ["minor", "patch"],
+      "groupName": "minor-patch",
+      "automerge": true
+    },
+    {
+      "matchPackagePatterns": ["^@aws-sdk/"],
+      "groupName": "aws-sdk"
+    }
+  ],
+  "schedule": ["before 6am on monday"]
+}
+```
+
+**Monorepo dependency policies:**
+```bash
+# Enforce version alignment with syncpack
+npx syncpack list-mismatches    # find version mismatches
+npx syncpack fix-mismatches     # auto-align versions
+
+# Or with pnpm overrides (pnpm-workspace.yaml or package.json)
+{
+  "pnpm": {
+    "overrides": {
+      "lodash": "^4.17.21"  // force single version everywhere
+    }
+  }
+}
+```
+
+### CI Scaling for Monorepos
+
+**Affected-only CI:**
+```yaml
+# GitHub Actions: Nx affected
+name: CI
+on:
+  push:
+    branches: [main]
+  pull_request:
+jobs:
+  affected:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # full history for affected detection
+      - uses: nrwl/nx-set-shas@v4
+      - run: npx nx affected -t lint test build --base=${{ env.NX_BASE }} --head=${{ env.NX_HEAD }}
+
+# Turborepo affected
+      - run: npx turbo run build test lint --filter=...[origin/main]
+```
+
+**Remote caching (avoid redundant CI work):**
+```yaml
+# Turborepo remote cache
+- run: npx turbo run build --cache-dir=.turbo
+  env:
+    TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
+    TURBO_TEAM: my-team
+
+# Nx Cloud
+- run: npx nx affected -t build
+  env:
+    NX_CLOUD_ACCESS_TOKEN: ${{ secrets.NX_CLOUD_ACCESS_TOKEN }}
+```
+
+**Distributed execution:**
+```yaml
+# Nx Cloud distributed task execution
+- run: npx nx-cloud start-ci-run --distribute-on="5 linux-medium-js"
+# 5 agents, each pulls tasks from shared queue
+# Results shared via remote cache
+
+# Turborepo (manual distribution via matrix)
+strategy:
+  matrix:
+    shard: [1, 2, 3, 4]
+- run: npx turbo run test --filter=...[origin/main] --shard=${{ matrix.shard }}/4
+```
+
+**Autoscaling runners:**
+```yaml
+# GitHub Actions: self-hosted with autoscaling
+# Use Kubernetes-based runner controller
+# Runs on: [self-hosted, linux, x64]
+# Scale: based on pending workflow jobs
+# Alternative: RunsOn (EC2 autoscaling), WarpBuild, Depot
+```
+
+### Code Ownership
+
+**CODEOWNERS file:**
+```gitignore
+# .github/CODEOWNERS (GitHub) or CODEOWNERS (GitLab)
+
+# Default owners for everything
+*                       @org/platform-team
+
+# Granular ownership
+/packages/frontend/     @org/frontend-team
+/packages/api/          @org/backend-team
+/packages/shared/lib/   @org/platform-team @org/leads
+/infra/                 @org/infra-team
+/docs/                  @org/docs-team
+
+# File-level patterns
+*.tf                    @org/infra-team
+Dockerfile*             @org/platform-team
+.github/                @org/devops-team
+pnpm-lock.yaml          @org/platform-team
+
+# Fallback reviewers (when no code owner matches)
+* @techlead-alice @techlead-bob
+```
+
+**Enforce ownership review:**
+```yaml
+# GitHub: require CODEOWNERS review
+# Branch protection → "Require review from Code Owners"
+# GitLab: protected branches → "Require approval from code owners"
+```
+
+**Ownership tooling:**
+```bash
+# Find who owns a file
+gh api repos/OWNER/REPO/contents/FILE --jq '.content' | base64 -d
+
+# Generate ownership report
+git log --format='%an' --since='6 months' -- packages/api/ | sort | uniq -c | sort -rn
+# Top committers = likely owners
+
+# Backstage: ownership via catalog-info.yaml
+# kind: Component
+# spec:
+#   owner: team-backend
+```
+
+### Build Time Growth Mitigation
+
+```
+Common monorepo build time explosion causes:
+1. Full rebuild on every CI run (not using affected)
+2. No remote caching (each CI run rebuilds from scratch)
+3. Large dependency graph (transitive deps pull in everything)
+4. Test bloat (running all tests for small change)
+5. Docker layer invalidation (COPY . . kills cache)
+
+Mitigations (priority order):
+1. Affected-only CI         → 10-50x speedup for small PRs
+2. Remote caching            → near-instant for cache hits
+3. Distributed execution     → parallelize across agents
+4. Incremental TypeScript    → tsc --build with project references
+5. Module federation         → don't rebuild unchanged micro-frontends
+6. Bazel/Pants hermetic      → precise invalidation, no full rebuilds
+7. Docker layer optimization → COPY package*.json first, then COPY src/
+```
+
+```bash
+# TypeScript project references (incremental builds)
+# tsconfig.json
+{
+  "references": [
+    { "path": "../shared/tsconfig.json" },
+    { "path": "../ui/tsconfig.json" }
+  ],
+  "compilerOptions": { "composite": true }
+}
+# Build incrementally
+tsc --build  # only recompiles changed projects + dependents
+```
+
+## Step 28: Polyrepo Patterns
+
+### Shared Libraries Across Repositories
+
+**Private registry publishing:**
+```bash
+# npm: publish to private registry
+# .npmrc
+@myorg:registry=https://npm.pkg.github.com
+//npm.pkg.github.com/:_authToken=${NPM_TOKEN}
+
+# Python: publish to private PyPI
+# pyproject.toml
+[project]
+name = "myorg-shared-utils"
+version = "2.3.1"
+
+[tool.poetry]
+repository = "https://pypi.mycompany.com/simple"
+```
+
+```bash
+# Tag + publish workflow (npm)
+git tag v2.3.1
+git push origin v2.3.1
+# GitHub Action: on tag push → npm publish
+```
+
+**Independent vs coordinated versioning:**
+```
+Independent versioning (recommended for most polyrepos):
+  shared-auth:   v1.2.0 → v1.3.0 (added feature)
+  shared-utils:  v3.0.0 → v3.0.1 (bugfix)
+  Each library releases independently based on its own changes
+  Consumers pin exact versions in their lockfiles
+
+Coordinated versioning (when libs are tightly coupled):
+  shared-auth:   v2.0.0
+  shared-utils:  v2.0.0
+  shared-types:  v2.0.0
+  All bump together on a "release train" schedule
+  Consumers use same major version across all shared libs
+  Tools: Lerna fixed mode, Changesets with fixed groups
+```
+
+**Automated dependency updates with Renovate:**
+```jsonc
+// renovate.json
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": ["config:recommended"],
+  "packageRules": [
+    {
+      "matchPackagePatterns": ["^@myorg/"],
+      "groupName": "internal-packages",
+      "automerge": false,
+      "reviewers": ["team:platform"]
+    }
+  ],
+  "vulnerabilityAlerts": { "enabled": true },
+  "schedule": ["before 9am on weekdays"]
+}
+```
+
+### API Contracts Between Services
+
+**Contract-first development:**
+```protobuf
+// auth/v1/auth_service.proto (protobuf contract)
+syntax = "proto3";
+package auth.v1;
+
+service AuthService {
+  rpc ValidateToken(ValidateTokenRequest) returns (ValidateTokenResponse);
+}
+
+message ValidateTokenRequest {
+  string token = 1;
+}
+
+message ValidateTokenResponse {
+  bool valid = 1;
+  string user_id = 2;
+  repeated string roles = 3;
+}
+```
+
+**Backward compatibility enforcement:**
+```bash
+# buf: protobuf linting + breaking change detection
+# buf.yaml
+version: v2
+breaking:
+  use:
+    - FILE  # compare against previous version
+deps:
+  - buf.build/acme/paymentapis
+
+# Check for breaking changes in CI
+buf breaking --against ".git#branch=main"
+# Fails if: field removed, field number changed, type changed, etc.
+
+# OpenAPI: oasdiff for breaking change detection
+oasdiff breaking old-spec.yaml new-spec.yaml
+# Fails if: endpoint removed, required param added, response type changed
+```
+
+**Contract testing (Pact):**
+```javascript
+// Consumer test (provider: payment-service, consumer: order-service)
+import { Pact } from '@pact-foundation/pact';
+
+const provider = new Pact({
+  consumer: 'order-service',
+  provider: 'payment-service',
+  dir: './pacts',
+});
+
+await provider.addInteraction({
+  state: 'user has sufficient balance',
+  uponReceiving: 'a charge request',
+  withRequest: {
+    method: 'POST',
+    path: '/v1/charges',
+    body: { amount: 1000, currency: 'USD' },
+  },
+  willRespondWith: {
+    status: 201,
+    body: { id: like('charge-123'), status: 'succeeded' },
+  },
+});
+
+await provider.verify(); // generates pact JSON
+// Publish to Pact Broker: npx pact-broker publish ./pacts
+```
+
+```bash
+# Provider verification (payment-service CI)
+npx pact-verify \
+  --provider-base-url http://localhost:3000 \
+  --pact-url https://pact-broker.example.com/pacts/provider/payment-service/consumer/order-service/latest
+```
+
+### Version Management Strategies
+
+**Independent versioning (per-package):**
+```bash
+# semantic-release per package
+# packages/auth/.releaserc.json
+{
+  "branches": ["main"],
+  "plugins": [
+    "@semantic-release/commit-analyzer",
+    "@semantic-release/release-notes-generator",
+    "@semantic-release/npm",
+    "@semantic-release/github"
+  ]
+}
+# Each package has its own release pipeline
+# CI: path filter → trigger release only for changed packages
+```
+
+**Lockstep versioning (coordinated releases):**
+```jsonc
+// Changesets: fixed groups (packages/mylib/.changeset/config.json)
+{
+  "$schema": "https://unpkg.com/@changesets/config/schema.json",
+  "changelog": "@changesets/changelog-github",
+  "fixed": [
+    ["@myorg/auth", "@myorg/utils", "@myorg/types"]
+  ],
+  "linked": [],
+  "access": "public"
+}
+// All packages in "fixed" group bump together
+```
+
+**Pre-release workflows:**
+```bash
+# Changesets pre-release mode
+npx changeset pre enter alpha   # enter alpha mode
+npx changeset version           # creates 1.0.0-alpha.0
+npx changeset publish           # publishes to npm with alpha tag
+npx changeset pre exit          # back to normal mode
+
+# npm dist-tags
+npm publish --tag next          # publish as @next
+npm publish --tag canary        # publish as @canary
+npm install @myorg/pkg@next     # consumers opt-in to pre-release
+```
+
+## Step 29: Repository Structure & Release Automation
+
+### Conventional Commits
+Source: https://www.conventionalcommits.org/
+
+**Format:** `type(scope): description`
+
+```
+Types:
+  feat:     new feature (bumps MINOR)
+  fix:      bug fix (bumps PATCH)
+  docs:     documentation only
+  style:    formatting, no code change
+  refactor: code change that neither fixes bug nor adds feature
+  perf:     performance improvement (bumps PATCH with BREAKING note)
+  test:     adding/fixing tests
+  build:    build system or external deps
+  ci:       CI configuration
+  chore:    maintenance tasks
+  revert:   reverts a previous commit
+
+Scope: optional, e.g. feat(auth):, fix(api):, docs(readme):
+
+BREAKING CHANGE: footer in commit body, or ! after type: feat!: redesign API
+```
+
+**Commitlint enforcement:**
+```bash
+# Install
+pnpm add -D @commitlint/cli @commitlint/config-conventional husky
+
+# commitlint.config.js
+module.exports = {
+  extends: ['@commitlint/config-conventional'],
+  rules: {
+    'type-enum': [2, 'always', [
+      'feat', 'fix', 'docs', 'style', 'refactor',
+      'perf', 'test', 'build', 'ci', 'chore', 'revert'
+    ]],
+    'subject-max-length': [2, 'always', 72],
+    'body-max-line-length': [2, 'always', 100],
+  },
+};
+```
+
+```bash
+# Git hook via husky
+npx husky init
+echo 'npx --no -- commitlint --edit $1' > .husky/commit-msg
+
+# Validate in CI
+echo "feat(api): add health check endpoint" | npx commitlint
+echo "bad commit" | npx commitlint  # fails with error
+```
+
+### Semantic Versioning (Semver)
+
+**Format:** `MAJOR.MINOR.PATCH`
+
+```
+MAJOR: incompatible API changes (feat!:, BREAKING CHANGE: footer)
+MINOR: backward-compatible new functionality (feat:)
+PATCH: backward-compatible bug fixes (fix:, perf:)
+
+Pre-release: 1.0.0-alpha.1, 1.0.0-beta.2, 1.0.0-rc.1
+Build metadata: 1.0.0+build.123 (ignored in precedence)
+
+Version ranges (npm):
+  ^1.2.3  → >=1.2.3 <2.0.0  (caret: compatible with minor+patch)
+  ~1.2.3  → >=1.2.3 <1.3.0  (tilde: compatible with patch only)
+  1.2.3   → exactly 1.2.3    (pinned)
+```
+
+### Changelog Automation
+
+**conventional-changelog:**
+```bash
+pnpm add -D conventional-changelog-cli
+# Generate CHANGELOG.md from conventional commits
+npx conventional-changelog -p angular -i CHANGELOG.md -s
+# Angular preset: maps feat→Features, fix→Bug Fixes, etc.
+```
+
+**release-please (Google):**
+```yaml
+# GitHub Action: creates release PR automatically
+name: Release
+on:
+  push:
+    branches: [main]
+permissions:
+  contents: write
+  pull-requests: write
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: googleapis/release-please-action@v4
+        with:
+          release-type: node  # or python, rust, go, etc.
+          changelog-types: '[{"type":"feat","section":"Features"},{"type":"fix","section":"Bug Fixes"}]'
+```
+
+How release-please works:
+1. Commits merged to `main` → bot creates/updates a "release PR"
+2. PR contains: version bump in files + CHANGELOG.md updates
+3. Maintainer merges PR → creates GitHub Release + git tag
+4. Optional: trigger npm publish on tag push
+
+**semantic-release:**
+```bash
+pnpm add -D semantic-release
+
+# .releaserc.json
+{
+  "branches": ["main"],
+  "plugins": [
+    "@semantic-release/commit-analyzer",
+    "@semantic-release/release-notes-generator",
+    "@semantic-release/changelog",
+    "@semantic-release/npm",
+    "@semantic-release/github",
+    ["@semantic-release/git", {
+      "assets": ["CHANGELOG.md", "package.json"],
+      "message": "chore(release): ${nextRelease.version} [skip ci]"
+    }]
+  ]
+}
+```
+
+semantic-release workflow:
+1. Analyze commits since last tag → determine version bump
+2. Generate release notes
+3. Update CHANGELOG.md, package.json version
+4. Publish to npm
+5. Create GitHub Release + git tag
+6. Commit updated files back to repo
+
+**Changesets (monorepo-friendly):**
+```bash
+pnpm add -D @changesets/cli
+npx changeset init  # creates .changeset/ directory
+
+# Developer workflow:
+# 1. Make changes
+# 2. Add changeset: npx changeset → selects packages + semver bump type + summary
+# 3. Commit changeset file (.changeset/cool-feature.md)
+# 4. PR merged → changeset bot creates "Version Packages" PR
+# 5. Merge version PR → publishes updated packages
+```
+
+```yaml
+# GitHub Action: changeset bot
+name: Release
+on:
+  push:
+    branches: [main]
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - run: pnpm install
+      - run: pnpm changeset status  # validate changesets
+      - uses: changesets/action@v1
+        with:
+          publish: pnpm changeset publish
+          title: "chore: version packages"
+          commit: "chore: version packages"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+```
+
+### Monorepo Directory Structure
+
+**Standard layout (pnpm workspaces):**
+```
+monorepo/
+├── apps/                    # deployable applications
+│   ├── web/                 # frontend app
+│   │   ├── package.json
+│   │   └── src/
+│   ├── api/                 # backend service
+│   │   ├── package.json
+│   │   └── src/
+│   └── worker/              # background job processor
+│       ├── package.json
+│       └── src/
+├── packages/                # shared libraries
+│   ├── ui/                  # UI component library
+│   │   ├── package.json
+│   │   └── src/
+│   ├── utils/               # shared utilities
+│   │   ├── package.json
+│   │   └── src/
+│   ├── config/              # shared configs (eslint, tsconfig)
+│   │   └── package.json
+│   └── tsconfig/            # base TypeScript configs
+│       ├── base.json
+│       ├── react.json
+│       └── node.json
+├── tools/                   # build scripts, generators
+│   └── scripts/
+├── pnpm-workspace.yaml
+├── package.json             # root: scripts, devDeps
+├── turbo.json               # or nx.json
+├── tsconfig.json            # root references
+└── .github/
+    └── CODEOWNERS
+```
+
+**pnpm-workspace.yaml:**
+```yaml
+packages:
+  - "apps/*"
+  - "packages/*"
+  - "tools/*"
+```
+
+**Root package.json (workspace scripts):**
+```json
+{
+  "name": "@myorg/monorepo",
+  "private": true,
+  "scripts": {
+    "build": "turbo run build",
+    "test": "turbo run test",
+    "lint": "turbo run lint",
+    "dev": "turbo run dev",
+    "format": "prettier --write \"**/*.{ts,tsx,md}\"",
+    "changeset": "changeset",
+    "version-packages": "changeset version"
+  },
+  "devDependencies": {
+    "turbo": "^2.0.0",
+    "@changesets/cli": "^2.27.0",
+    "prettier": "^3.0.0"
+  },
+  "packageManager": "pnpm@9.0.0"
+}
+```
+
+**Bazel monorepo structure:**
+```
+monorepo/
+├── apps/
+│   ├── web/
+│   │   ├── BUILD.bazel
+│   │   └── src/
+│   └── api/
+│       ├── BUILD.bazel
+│       └── src/
+├── libs/
+│   ├── auth/
+│   │   ├── BUILD.bazel
+│   │   └── src/
+│   └── utils/
+│       ├── BUILD.bazel
+│       └── src/
+├── third_party/             # vendored deps
+├── WORKSPACE                # repo root declaration
+├── MODULE.bazel             # bzlmod dependency management
+└── .bazelrc                 # shared build flags
+```
+
+### Trunk-Based Development
+Source: https://trunkbaseddevelopment.com/
+
+```
+Core principle: one main branch (trunk/main), short-lived feature branches
+
+Rules:
+1. Main branch is always deployable
+2. Feature branches live < 2 days (ideally hours)
+3. No long-lived release branches (use tags instead)
+4. All changes go through PR review → merge to main
+5. CI gates: lint, test, type-check, build — must pass
+
+Release strategies:
+  Continuous:  deploy main to prod on every merge (feature flags gate features)
+  Scheduled:   tag main weekly → deploy tagged commit
+  Hotfix:      commit to main → deploy immediately
+
+Feature flags (required for trunk-based):
+  - LaunchDarkly, Unleash, Flagsmith (SaaS/self-hosted)
+  - Custom: environment variables, config files
+  - Pattern: merge incomplete features behind flag → test in prod → enable gradually
+```
+
+**Branch protection for trunk-based:**
+```yaml
+# GitHub branch protection rules
+branches:
+  - name: main
+    protection:
+      required_pull_request_reviews:
+        required_approving_review_count: 1
+        require_code_owner_reviews: true
+      required_status_checks:
+        strict: true  # require branches up-to-date before merge
+        contexts: ["lint", "test", "build", "typecheck"]
+      enforce_admins: true
+      required_linear_history: true  # no merge commits (squash or rebase)
+      allow_force_pushes: false
+      allow_deletions: false
+```
+
+**Short-lived branch hygiene:**
+```bash
+# Auto-delete merged branches (GitHub setting)
+# Settings → General → "Automatically delete head branches"
+
+# Clean up stale local branches
+git branch --merged main | grep -v main | xargs git branch -d
+
+# CI for feature branches: run full suite
+# CI for main: run full suite + deploy
+# No "release branch CI" — tags trigger release
+```
+
+## Appendix: Decision Matrix
+
+| Scenario | Recommendation |
+|----------|---------------|
+| Python project setup | uv + Ruff + pytest + mypy |
+| JS/TS monorepo | pnpm + Turborepo + Vitest + Biome |
+| Large polyglot monorepo | Bazel or Pants + remote cache |
+| Microservices (5-20 repos) | Independent repos + shared libraries via registry |
+| Monorepo CI optimization | Affected-only + remote cache + distributed execution |
+| Contract management | buf (protobuf) + oasdiff (OpenAPI) + Pact |
+| Release automation | release-please (simple) or Changesets (monorepo) |
+| Developer onboarding | Dev Containers + justfile + Backstage catalog |
+| Green software | Kepler + Scaphandre + cloud carbon tools |
+| Build performance | Turborepo cache → Nx Cloud → Bazel (escalating complexity) |

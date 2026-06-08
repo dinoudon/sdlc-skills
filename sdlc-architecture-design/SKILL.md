@@ -1,7 +1,7 @@
 ---
 name: sdlc-architecture-design
 description: "System design, C4 diagrams, API design (REST/GraphQL/gRPC), database schema, code architecture (Clean/Hexagonal/DDD), ADRs, branching strategies, code review, dependency management, DDIA patterns. Includes architecture fitness functions, DDD context mapping, platform engineering, Gateway API, green software, API governance, serverless architecture, edge computing, multi-cloud patterns, resilience patterns, distributed consensus, eventual consistency, idempotency, OAuth2/OIDC, JWT, authorization (RBAC/ABAC/ReBAC), rate limiting, API versioning, GraphQL Federation, Kafka patterns, database sharding, caching strategies, data pipelines, message queue comparison, 12-Factor App extended, microservices decomposition (Strangler Fig, DDD), service mesh comparison, API gateway comparison, serverless patterns, edge computing patterns, database migration tools, polyglot persistence, event sourcing war stories, CQRS implementation, CDC production patterns, data mesh, distributed monolith detection, service coupling anti-patterns, saga pattern deep dive, service discovery."
-version: 4.6.0
+version: 4.7.0
 author: Hermes Agent
 license: MIT
 platforms: [linux, macos, windows]
@@ -3833,3 +3833,566 @@ service {
 - **Don't skip health checks** — stale instances in registry cause 500s
 - **Don't mix discovery methods** — pick one per environment (Consul OR K8s DNS)
 - **Don't forget deregistration** — graceful shutdown must deregister (SIGTERM handler)
+
+## Step 56: API Versioning Strategies (Deep Dive)
+
+### URL Path Versioning
+
+```
+GET /v1/users
+GET /v2/users
+```
+
+**Pros:** explicit, cacheable, simple routing, easy to document in OpenAPI.
+**Cons:** URL proliferation, clients must update URLs, resource identity changes.
+**Best for:** public APIs, APIs with large external consumer base (Twilio, Stripe).
+
+### Header Versioning (Media Type / Content Negotiation)
+
+```
+GET /users
+Accept: application/vnd.myapi.v2+json
+```
+
+or vendor media type:
+
+```
+Accept: application/vnd.github.v3+json
+```
+
+**Pros:** clean URLs, true content negotiation, multiple versions on same endpoint.
+**Cons:** hard to test in browser, caching needs `Vary: Accept` header, opaque to casual inspection.
+**Best for:** internal APIs, APIs where URL stability matters.
+
+### Query Parameter Versioning
+
+```
+GET /users?api-version=2024-01-01
+```
+
+**Pros:** easy to test, visible, simple to implement.
+**Cons:** cache key pollution (CDNs treat different versions as different resources), not RESTful.
+**Best for:** Azure-style APIs, quick prototyping.
+
+### Content Negotiation (Media Type Versioning)
+
+Version embedded in media type, negotiation at HTTP level:
+
+```
+GET /orders
+Accept: application/order.v3+json
+```
+
+Server responds with:
+```
+Content-Type: application/order.v3+json
+```
+
+**Pros:** clean separation of resource identity and representation.
+**Cons:** custom media types confuse tooling, limited ecosystem support.
+
+### Comparison Table
+
+| Strategy | URL Clean | Cacheable | Browser-Testable | Client Migration Cost | Discoverability |
+|----------|-----------|-----------|------------------|----------------------|-----------------|
+| URL Path | No | Yes | Yes | High (URL change) | High |
+| Header | Yes | Vary header | No | Medium (header change) | Medium |
+| Query Param | No | Cache key issue | Yes | Low (param add) | High |
+| Media Type | Yes | Vary header | No | Medium (Accept change) | Medium |
+
+### Google Cloud Guidance
+
+Google Cloud API design guide recommends:
+- **Calendar versioning** for breaking changes: `2024-01-01`, `2024-06-15`
+- Embed version in media type or URL path
+- Use `google.api.http` annotations for routing
+- Announce deprecation 1 year in advance
+- Use `X-Goog-Api-Version` header for internal APIs
+
+```
+# Google-style: date-based versions
+GET /v1/projects                          # stable v1
+GET /v2beta/projects                      # beta
+GET /2024-01-01/projects                  # calendar versioning
+```
+
+**Rule:** only bump major version for breaking changes. New fields, endpoints, optional params are non-breaking.
+
+## Step 57: API Rate Limiting (Deep Dive)
+
+### Token Bucket (Detailed)
+
+```
+Parameters:
+  bucket_size  = max burst capacity
+  refill_rate  = tokens per second (sustained throughput)
+
+On request:
+  if tokens >= 1: consume 1 token, allow
+  else: reject (429)
+
+Refill:
+  tokens = min(bucket_size, tokens + refill_rate * elapsed)
+```
+
+**Burst + throttle pattern:** allow short bursts (bucket_size), enforce sustained rate (refill_rate).
+
+**Redis Lua script (atomic):**
+```lua
+-- KEYS[1] = rate_limit:<client_id>
+-- ARGV[1] = bucket_size, ARGV[2] = refill_rate, ARGV[3] = now, ARGV[4] = cost
+
+local key = KEYS[1]
+local bucket_size = tonumber(ARGV[1])
+local refill_rate = tonumber(ARGV[2])
+local now = tonumber(ARGV[3])
+local cost = tonumber(ARGV[4])
+
+local data = redis.call('HMGET', key, 'tokens', 'last_refill')
+local tokens = tonumber(data[1]) or bucket_size
+local last_refill = tonumber(data[2]) or now
+
+local elapsed = now - last_refill
+tokens = math.min(bucket_size, tokens + elapsed * refill_rate)
+
+if tokens >= cost then
+  tokens = tokens - cost
+  redis.call('HMSET', key, 'tokens', tokens, 'last_refill', now)
+  redis.call('EXPIRE', key, math.ceil(bucket_size / refill_rate) * 2)
+  return {1, tokens}  -- allowed, remaining
+else
+  redis.call('HMSET', key, 'tokens', tokens, 'last_refill', now)
+  redis.call('EXPIRE', key, math.ceil(bucket_size / refill_rate) * 2)
+  return {0, tokens}  -- rejected, remaining
+end
+```
+
+### Sliding Window Log (Detailed)
+
+```
+Store every request timestamp in Redis sorted set.
+Count requests in window, reject if >= limit.
+
+ZADD   rate_limit:<id> <now> <unique_id>
+ZREMRANGEBYSCORE rate_limit:<id> 0 <now - window>
+ZCARD  rate_limit:<id>
+```
+
+**Pros:** exact count, no boundary issues.
+**Cons:** O(n) memory per client (one entry per request), expensive at high traffic.
+**Best for:** low-traffic precise limiting, per-user quotas.
+
+### Sliding Window Counter (Detailed)
+
+```
+Combine current + weighted previous window count:
+
+count = current_count + prev_count * overlap_ratio
+overlap_ratio = (window_size - elapsed_in_current) / window_size
+
+Example (60s window, limit 100):
+  prev_count=80, current_count=40, 20s into current window
+  overlap_ratio = (60-20)/60 = 0.67
+  count = 40 + 80*0.67 = 40 + 53.6 ≈ 94 → allow
+```
+
+**Memory:** O(1) per client (2 counters).
+**Cloudflare implementation:** blog.cloudflare.com/counting-things-a-lot-of-different-things
+
+### Leaky Bucket
+
+```
+Requests enter FIFO queue (bucket).
+Processed at fixed output rate.
+Queue full → reject.
+
+Smooths traffic to constant rate.
+Does NOT allow bursts.
+```
+
+**Use:** nginx `limit_req` module. Good for protecting downstream with strict rate requirements.
+
+### Fixed Window
+
+```
+Divide time into fixed windows (e.g., 00:00-00:60).
+Count requests per window. Reset at boundary.
+
+Problem: client can send limit requests at :59, then limit at :01
+         → 2x limit in 2 seconds at window boundary.
+```
+
+**Mitigation:** use sliding window counter instead, or add sub-windows.
+
+### Redis Patterns for Rate Limiting
+
+```python
+# Per-user key
+key = f"ratelimit:{endpoint}:{user_id}"
+# Sliding window with sorted sets
+pipe = redis.pipeline()
+pipe.zremrangebyscore(key, 0, now - window)
+pipe.zadd(key, {f"{request_id}": now})
+pipe.zcard(key)
+pipe.expire(key, window)
+_, _, count, _ = pipe.execute()
+
+# Token bucket with hash
+pipe.hgetall(key)
+# ... refill logic ...
+pipe.hset(key, mapping={"tokens": new_tokens, "ts": now})
+pipe.expire(key, ttl)
+```
+
+### IETF RateLimit Headers (draft-ietf-httpapi-ratelimit-headers)
+
+```
+RateLimit-Limit: 1000, 1000;w=60
+RateLimit-Remaining: 999
+RateLimit-Reset: 5    # seconds until reset
+Retry-After: 5        # seconds to wait (when rejected)
+```
+
+**Format:** `limit;w=window_size` (window in seconds).
+**Status:** draft standard, adopted by GitHub, Shopify, IETF working group.
+
+### Pitfalls
+- **Don't use fixed window for high-traffic APIs** — boundary burst problem
+- **Don't rate limit without returning headers** — clients can't back off
+- **Don't forget to rate limit by IP + user** — botnets bypass user-only limits
+- **Don't use exact same limits for all endpoints** — search is expensive, health check is cheap
+
+## Step 58: API Pagination (Deep Dive)
+
+### Offset-Based Pagination
+
+```
+GET /orders?offset=100&limit=20
+
+SQL: SELECT * FROM orders ORDER BY id LIMIT 20 OFFSET 100
+```
+
+**Pros:** simple, supports page-jump (go to page 5), works with any sort.
+**Cons:** O(n) seek at high offsets (DB scans then skips), unstable under inserts/deletes (items shift).
+**Best for:** admin UIs, small datasets, search results.
+
+### Cursor-Based Pagination
+
+```
+GET /orders?cursor=eyJpZCI6MTAwfQ&limit=20
+
+Response:
+{
+  "data": [...],
+  "next_cursor": "eyJpZCI6MTIwfQ",
+  "has_more": true
+}
+```
+
+**Cursor:** opaque base64-encoded token (contains last seen ID or composite key).
+**SQL:** `WHERE id > <decoded_cursor> ORDER BY id LIMIT 20`
+
+**Pros:** O(1) seek with index, stable under mutations, no offset drift, opaque to client.
+**Cons:** no random page access, cursor can become stale, complex for multi-column sorts.
+**Best for:** infinite scroll, mobile apps, real-time feeds.
+
+### Keyset Pagination
+
+```
+GET /orders?created_after=2024-01-15T10:30:00Z&id_after=12345&limit=20
+
+SQL: SELECT * FROM orders
+     WHERE (created_at, id) > ('2024-01-15T10:30:00Z', 12345)
+     ORDER BY created_at, id LIMIT 20
+```
+
+**Pros:** index-friendly (composite index on sort columns), O(1) seek, no opaque encoding.
+**Cons:** exposed keys leak data model, requires composite index, complex for dynamic sorts.
+**Best for:** APIs where performance matters, internal services, log/event streaming.
+
+### Relay Connection Specification (GraphQL)
+
+```graphql
+{
+  orders(first: 10, after: "cursor123") {
+    edges {
+      node { id, status, total }
+      cursor
+    }
+    pageInfo {
+      hasNextPage
+      hasPreviousPage
+      startCursor
+      endCursor
+    }
+    totalCount
+  }
+}
+```
+
+**Structure:**
+- `edges`: array of {node, cursor} pairs
+- `node`: the actual entity
+- `pageInfo`: pagination metadata
+- `cursor`: opaque, base64-encoded
+
+**Mapping to REST cursor pagination:**
+```
+GraphQL pageInfo.hasNextPage  →  REST has_more: true
+GraphQL edges[-1].cursor      →  REST next_cursor
+GraphQL pageInfo.endCursor    →  REST next_cursor
+```
+
+### Range Headers (RFC 7233-style)
+
+```
+GET /orders
+Range: items=0-19
+
+Response:
+HTTP/1.1 206 Partial Content
+Content-Range: items 0-19/500
+Accept-Ranges: items
+```
+
+**Pros:** HTTP-native, works with CDNs, supports byte-range analogy.
+**Cons:** limited tooling support, less common in REST APIs.
+**Best for:** binary resources, large datasets, download resumption.
+
+### Comparison Table
+
+| Method | Performance at Scale | Random Access | Stable Under Mutation | Complexity | Best For |
+|--------|---------------------|---------------|----------------------|------------|----------|
+| Offset | O(n) at high offset | Yes | No (drift) | Low | Admin UI, small data |
+| Cursor | O(1) | No | Yes | Medium | Infinite scroll, mobile |
+| Keyset | O(1) | No | Yes | Medium-High | High-perf APIs, logs |
+| Relay | O(1) (uses cursor) | No | Yes | High | GraphQL APIs |
+| Range  | O(1) (with index) | Partial | No | Medium | Binary resources |
+
+### Pitfalls
+- **Don't use offset for deep pagination** — performance degrades past ~10K rows
+- **Don't expose raw row IDs as cursors** — encode/encrypt to prevent enumeration
+- **Don't forget to index sort columns** — pagination queries need covering indexes
+- **Don't return inconsistent data** — use snapshot isolation or stable sort key
+- **Don't mix pagination strategies** — pick one per API, document it clearly
+
+## Step 59: API Error Handling (Deep Dive)
+
+### RFC 9457: Problem Details for HTTP APIs (supersedes RFC 7807)
+
+```json
+{
+  "type": "https://api.example.com/errors/out-of-stock",
+  "title": "Out of Stock",
+  "status": 409,
+  "detail": "Item SKU-12345 is out of stock, restock expected 2024-02-01",
+  "instance": "/orders/abc-123",
+  "errors": [
+    {"field": "quantity", "reason": "exceeds available stock (3 remaining)"}
+  ]
+}
+```
+
+**Content-Type:** `application/problem+json`
+
+**Fields:**
+| Field | Required | Description |
+|-------|----------|-------------|
+| `type` | Yes | URI reference identifying problem type (docs link) |
+| `title` | Yes | Human-readable summary (same for all instances of this type) |
+| `status` | No | HTTP status code (redundant but convenient) |
+| `detail` | No | Human-readable explanation specific to this occurrence |
+| `instance` | No | URI reference identifying specific occurrence |
+
+**Key changes from RFC 7807:**
+- `type` is now required (was optional)
+- `errors` extension for field-level validation errors
+- IANA registry for common problem types
+
+**Implementation:**
+```python
+from fastapi import HTTPException
+from fastapi.responses import JSONResponse
+
+class ProblemException(HTTPException):
+    def __init__(self, type_uri: str, title: str, status: int,
+                 detail: str, instance: str = None, errors: list = None):
+        self.problem = {
+            "type": type_uri,
+            "title": title,
+            "status": status,
+            "detail": detail,
+        }
+        if instance: self.problem["instance"] = instance
+        if errors: self.problem["errors"] = errors
+        super().__init__(status_code=status)
+
+@app.exception_handler(ProblemException)
+async def problem_handler(request, exc):
+    return JSONResponse(
+        status_code=exc.problem["status"],
+        content=exc.problem,
+        headers={"Content-Type": "application/problem+json"}
+    )
+```
+
+### Error Codes Taxonomy
+
+**Two-layer model:**
+1. **HTTP status code** — transport-level error category (4xx, 5xx)
+2. **Domain error code** — application-level specific error
+
+```json
+{
+  "status": 400,
+  "code": "INVALID_CARD_EXPIRY",
+  "message": "Card expiry date must be in the future",
+  "request_id": "req_abc123",
+  "doc_url": "https://docs.example.com/errors#INVALID_CARD_EXPIRY"
+}
+```
+
+**Stripe pattern:**
+```
+type: "card_error" | "invalid_request_error" | "authentication_error" | "api_error"
+code: "card_declined" | "expired_card" | "incorrect_cvc" | ...
+param: "exp_month" (which field)
+message: human-readable
+doc_url: link to docs
+```
+
+**Google Cloud pattern:**
+```json
+{
+  "error": {
+    "code": 400,
+    "message": "Invalid value at 'email'",
+    "status": "INVALID_ARGUMENT",
+    "details": [
+      {"@type": "BadRequest", "fieldViolations": [{"field": "email", "description": "invalid format"}]}
+    ]
+  }
+}
+```
+
+**Microsoft pattern:**
+```json
+{
+  "error": {
+    "code": "InvalidEmailFormat",
+    "message": "The email address is not valid",
+    "innerError": {
+      "code": "ValidationFailed",
+      "innerError": {"code": "FormatCheckFailed"}
+    }
+  }
+}
+```
+
+### Error Budgets (SRE Concept)
+
+```
+Error budget = 1 - SLO target
+
+Example:
+  SLO = 99.9% availability
+  Error budget = 0.1% = 43.8 minutes/month downtime
+
+Burn rate = actual_error_rate / (1 - SLO)
+  1x burn rate = budget exhausted in 30 days (normal)
+  2x burn rate = budget exhausted in 15 days (alert)
+  14.4x burn rate = budget exhausted in 5 days (page immediately)
+```
+
+**Multi-window burn rate alerting (Google SRE book):**
+```
+Short window (1h): burn_rate > 14.4x AND
+Long window (6h):  burn_rate > 3x
+→ Page on-call (budget exhausted in ~5 days)
+
+Short window (6h): burn_rate > 6x AND
+Long window (3d):  burn_rate > 1x
+→ Ticket for investigation
+```
+
+**Implementation with Prometheus:**
+```promql
+# Error rate (5xx responses)
+rate(http_requests_total{status=~"5.."}[1h])
+/
+rate(http_requests_total[1h])
+
+# Burn rate
+error_rate / (1 - 0.999)
+
+# Alert rule
+groups:
+  - name: error_budget
+    rules:
+      - alert: HighBurnRate
+        expr: |
+          (
+            rate(http_requests_total{status=~"5.."}[1h])
+            / rate(http_requests_total[1h]) / 0.001
+          ) > 14.4
+          and
+          (
+            rate(http_requests_total{status=~"5.."}[6h])
+            / rate(http_requests_total[6h]) / 0.001
+          ) > 3
+        for: 2m
+        labels:
+          severity: critical
+```
+
+### Error Handling Best Practices
+
+**Consistent envelope:**
+```json
+{
+  "error": {
+    "code": "RESOURCE_NOT_FOUND",
+    "message": "Order not found",
+    "status": 404,
+    "request_id": "req_abc123",
+    "doc_url": "https://api.example.com/docs/errors#RESOURCE_NOT_FOUND",
+    "timestamp": "2024-01-15T10:30:00Z"
+  }
+}
+```
+
+**Always include:**
+- `request_id` — trace ID for debugging, link to logs
+- `doc_url` — link to error documentation
+- `code` — machine-readable error identifier
+- `message` — human-readable (never expose stack traces)
+
+**HTTP status code guidelines:**
+| Code | Meaning | When to Use |
+|------|---------|-------------|
+| 400 | Bad Request | Validation errors, malformed input |
+| 401 | Unauthorized | Missing or invalid authentication |
+| 403 | Forbidden | Authenticated but not authorized |
+| 404 | Not Found | Resource doesn't exist |
+| 409 | Conflict | State conflict (duplicate, version mismatch) |
+| 422 | Unprocessable | Semantically invalid (valid JSON, bad business logic) |
+| 429 | Too Many Requests | Rate limited |
+| 500 | Internal Server Error | Unexpected server error |
+| 502 | Bad Gateway | Upstream service failure |
+| 503 | Service Unavailable | Maintenance, overloaded |
+| 504 | Gateway Timeout | Upstream timeout |
+
+**Never:**
+- Return 200 with error body (use proper status codes)
+- Expose internal paths, stack traces, SQL errors
+- Use generic "Something went wrong" for every error
+- Leak implementation details (database, framework, version)
+
+**Security:** sanitize error messages, strip file paths and internal identifiers before returning to clients.
+
+### Pitfalls
+- **Don't return raw exception messages** — sanitize for production
+- **Don't use 500 for client errors** — 4xx for bad input, 5xx for server bugs
+- **Don't omit request_id** — makes debugging impossible in distributed systems
+- **Don't create too many error codes** — group related errors, keep under ~100 per API
+- **Don't ignore error budgets** — track burn rate, alert before budget exhaustion

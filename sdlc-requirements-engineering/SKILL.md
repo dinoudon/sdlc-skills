@@ -1,19 +1,19 @@
 ---
 name: sdlc-requirements-engineering
-description: "Requirements: user story mapping (Jeff Patton), BDD/Gherkin (Cucumber, pytest-bdd), acceptance criteria (Given/When/Then), impact mapping (Gojko Adzic), example mapping, specification by example (Gojko Adzic), JTBD framework, RICE scoring, WSJF prioritization, user story splitting, NFR patterns, requirements traceability, OKR alignment (Doerr), design thinking, Lean UX (Gothelf), design sprint (Knapp), dual-track agile (Cagan), AI/ML requirements, STRIDE security, OWASP ASVS, WCAG 2.2 AA accessibility, event storming (Brandolini), domain storytelling (Hofer), platform team requirements, cost of delay (Reinertsen), requirements elicitation techniques, ATDD."
-version: 4.6.0
+description: "Requirements: user story mapping (Jeff Patton), BDD/Gherkin (Cucumber, pytest-bdd), acceptance criteria (Given/When/Then), impact mapping (Gojko Adzic), example mapping, specification by example (Gojko Adzic), JTBD framework, RICE scoring, WSJF prioritization, user story splitting, NFR patterns, requirements traceability, OKR alignment (Doerr), design thinking, Lean UX (Gothelf), design sprint (Knapp), dual-track agile (Cagan), AI/ML requirements, STRIDE security, OWASP ASVS, WCAG 2.2 AA accessibility, event storming (Brandolini), domain storytelling (Hofer), platform team requirements, cost of delay (Reinertsen), requirements elicitation techniques, ATDD, strategic DDD (bounded contexts, context mapping, ubiquitous language), tactical DDD (entities, value objects, aggregates, domain events, repositories, domain services, factories), event storming workshop (6-phase, process+design level), domain storytelling workshop (notation, discovery patterns)."
+version: 4.7.0
 author: Hermes Agent
 license: MIT
 platforms: [linux, macos, windows]
 metadata:
   hermes:
-    tags: [sdlc, requirements, user-stories, bdd, gherkin, acceptance-criteria, impact-mapping, example-mapping, specification-by-example, jtbd, rice-scoring, wsjf, story-splitting, nfr, traceability, okr, design-thinking, lean-ux, design-sprint, dual-track-agile, ai-ml, stride, owasp-asvs, wcag-2.2, accessibility, event-storming, domain-storytelling, platform-teams, cost-of-delay, elicitation, atdd]
-    related_skills: [sdlc-architecture-design, sdlc-testing-qa, sdlc-prd-to-production]
+    tags: [sdlc, requirements, user-stories, bdd, gherkin, acceptance-criteria, impact-mapping, example-mapping, specification-by-example, jtbd, rice-scoring, wsjf, story-splitting, nfr, traceability, okr, design-thinking, lean-ux, design-sprint, dual-track-agile, ai-ml, stride, owasp-asvs, wcag-2.2, accessibility, event-storming, domain-storytelling, platform-teams, cost-of-delay, elicitation, atdd, strategic-ddd, tactical-ddd, bounded-contexts, context-mapping, ubiquitous-language, domain-events, aggregates, value-objects, event-storming-workshop, domain-storytelling-workshop]
+    related_skills: [sdlc-architecture-design, sdlc-testing-qa, sdlc-prd-to-production, sdlc-domain-driven-design]
 ---
 
 # Requirements Engineering
 
-User story mapping, BDD/Gherkin, acceptance criteria, impact mapping, example mapping, specification by example, JTBD, RICE scoring, WSJF, user story splitting, NFR patterns, requirements traceability, OKR alignment, design thinking, Lean UX, design sprint, dual-track agile, AI/ML requirements, STRIDE security, OWASP ASVS, WCAG 2.2 AA accessibility, event storming (Brandolini), domain storytelling (Hofer), platform team requirements, cost of delay analysis (Reinertsen), requirements elicitation techniques, ATDD.
+User story mapping, BDD/Gherkin, acceptance criteria, impact mapping, example mapping, specification by example, JTBD, RICE scoring, WSJF, user story splitting, NFR patterns, requirements traceability, OKR alignment, design thinking, Lean UX, design sprint, dual-track agile, AI/ML requirements, STRIDE security, OWASP ASVS, WCAG 2.2 AA accessibility, event storming (Brandolini), domain storytelling (Hofer), platform team requirements, cost of delay analysis (Reinertsen), requirements elicitation techniques, ATDD, strategic DDD (bounded contexts, context mapping, ubiquitous language), tactical DDD (entities, value objects, aggregates, domain events, repositories, domain services, factories), event storming workshop (6-phase, process+design level), domain storytelling workshop (notation, discovery patterns).
 
 ## When to Use
 
@@ -33,8 +33,14 @@ Trigger when user:
 - Defines requirements for AI/ML features (data, metrics, bias)
 - Maps security requirements using STRIDE or OWASP ASVS
 - Specifies accessibility requirements under WCAG 2.2 AA
-- Runs event storming workshops (domain events, commands, aggregates)
-- Creates domain storytelling diagrams (actors, work objects, processes)
+- Runs event storming workshops (domain events, commands, aggregates, 6-phase process)
+- Creates domain storytelling diagrams (actors, work objects, processes, notation-based)
+- Designs bounded contexts and context maps for complex domains
+- Applies DDD strategic patterns (partnership, customer-supplier, conformist, ACL, OHS, shared kernel)
+- Models domain with tactical DDD (entities, value objects, aggregates, domain events, repositories)
+- Defines ubiquitous language within bounded contexts
+- Runs event storming at process-level and design-level
+- Uses domain storytelling to discover bounded contexts, aggregates, and events
 - Defines platform team requirements (API contracts, SLAs, developer experience)
 - Analyzes cost of delay using CD3 or WSJF prioritization
 - Conducts requirements elicitation (interviews, surveys, observation, prototyping, brainstorming)
@@ -45,6 +51,10 @@ Trigger when user:
 - Aligns requirements to OKRs and traces KRs to user stories
 - Scopes via impact mapping (Goal→Actor→Impact→Deliverable, cutting deliverables)
 - Formalizes specification by example (6 practices, BDD at scale, living documentation)
+- Models strategic DDD (bounded contexts, context mapping, ubiquitous language)
+- Applies tactical DDD (entities, value objects, aggregates, domain events, repositories, domain services, factories)
+- Facilitates event storming workshops (6-phase: chaotic exploration → aggregates)
+- Uses domain storytelling to discover domain boundaries and aggregates
 
 ## Step 1: User Story Mapping
 
@@ -3165,6 +3175,18 @@ Event Storming (domain events, commands, aggregates)
 Domain Storytelling (actors, work objects, processes)
     │
     ▼
+Strategic DDD (bounded contexts, context mapping, ubiquitous language)
+    │
+    ▼
+Tactical DDD (entities, value objects, aggregates, domain events, repositories)
+    │
+    ▼
+Event Storming Workshop (6-phase: chaotic → aggregates, process + design level)
+    │
+    ▼
+Domain Storytelling Workshop (notation, expert/modeler/audience, discover BCs)
+    │
+    ▼
 OKR Alignment (Objectives → Key Results)
     │
     ▼
@@ -3208,6 +3230,949 @@ AI/ML Requirements (data, metrics, bias) - if applicable
     │
     ▼
 OKR Feedback Loop (KR results → next cycle objectives)
+```
+
+## Step 26: Strategic Domain-Driven Design (DDD)
+
+Source: Eric Evans, "Domain-Driven Design" (2003); Vaughn Vernon, "Implementing Domain-Driven Design" (2013)
+
+Strategic DDD focuses on discovering and defining bounded contexts, mapping their relationships, and establishing ubiquitous language. Used when domain complexity is high and teams need clear ownership boundaries.
+
+### Bounded Contexts
+
+```
+BOUNDED CONTEXT DEFINITION
+==========================
+
+A bounded context is an explicit boundary within which a domain model exists.
+Each bounded context has its own:
+  - Ubiquitous language (terms mean specific things here)
+  - Model (entities, value objects, aggregates)
+  - Team ownership
+  - Database/schema (ideally)
+
+IDENTIFYING BOUNDED CONTEXTS:
+  1. Business Capability Boundaries
+     - Each capability = potential bounded context
+     - Example: "Ordering", "Shipping", "Billing", "Inventory"
+     - Aligns with business departments or value streams
+
+  2. Same-Term-Different-Meaning Heuristic
+     - If same word means different things in different contexts → separate BCs
+     - "Customer" in Sales = lead/prospect
+     - "Customer" in Billing = account with payment method
+     - "Customer" in Shipping = delivery address recipient
+     - Each is a different model in a different BC
+
+  3. Language Boundaries
+     - Where ubiquitous language changes → bounded context boundary
+     - Walk through conversations: when does vocabulary shift?
+
+  4. Organizational Boundaries
+     - Conway's Law: system structure mirrors org structure
+     - Team ownership = natural BC boundary
+     - But don't force it — org changes, domains persist
+```
+
+```
+BOUNDED CONTEXT EXAMPLE: E-Commerce
+====================================
+
+┌─────────────────────────────────────────────────────────┐
+│                    E-COMMERCE SYSTEM                     │
+│                                                         │
+│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐  │
+│  │   CATALOG    │  │   ORDERING   │  │   SHIPPING   │  │
+│  │              │  │              │  │              │  │
+│  │ Product      │  │ Order        │  │ Shipment     │  │
+│  │ Category     │  │ LineItem     │  │ Package      │  │
+│  │ Price (list) │  │ Cart         │  │ Tracking     │  │
+│  │ SKU          │  │ Price (sale) │  │ Carrier      │  │
+│  │ Description  │  │ Discount     │  │ DeliveryDate │  │
+│  └──────────────┘  └──────────────┘  └──────────────┘  │
+│                                                         │
+│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐  │
+│  │   BILLING    │  │  INVENTORY   │  │    IDENTITY  │  │
+│  │              │  │              │  │              │  │
+│  │ Invoice      │  │ StockLevel   │  │ User         │  │
+│  │ Payment      │  │ Warehouse    │  │ Role         │  │
+│  │ Account      │  │ Reservation  │  │ Permission   │  │
+│  │ Receipt      │  │ ReorderPoint │  │ Credential   │  │
+│  └──────────────┘  └──────────────┘  └──────────────┘  │
+└─────────────────────────────────────────────────────────┘
+
+NOTE: "Price" exists in Catalog (list price) and Ordering (sale price/discount)
+      Same word, different meanings → confirms separate BCs
+```
+
+### Context Mapping
+
+```
+CONTEXT MAPPING PATTERNS
+========================
+
+CONTEXT MAP = visual showing all BCs + relationship patterns between them.
+
+RELATIONSHIP PATTERNS:
+
+1. PARTNERSHIP
+   Two teams/BCs with mutual dependency, joint planning.
+   - Teams succeed or fail together
+   - Synchronized releases, shared planning
+   - Use when: tight integration needed, willing to coordinate
+   - Example: Ordering ↔ Inventory (order must check stock)
+
+2. CUSTOMER-SUPPLIER
+   Upstream (supplier) provides, downstream (customer) consumes.
+   - Customer can request features but supplier decides priority
+   - Upstream has more power in relationship
+   - Use when: one team serves another
+   - Example: Catalog (supplier) → Ordering (customer)
+
+3. CONFORMIST
+   Downstream conforms to upstream's model with no influence.
+   - No negotiation — take it or leave it
+   - Use when: external system, third-party API
+   - Example: Payment Gateway (upstream) → Billing (conformist)
+
+4. ANTICORRUPTION LAYER (ACL)
+   Downstream builds a translation layer to protect its model.
+   - Adapter translates upstream model into downstream model
+   - Isolates downstream BC from upstream changes
+   - Use when: integrating legacy or external systems
+   - Example: Legacy ERP ──[ACL]──> Modern Inventory BC
+
+5. OPEN HOST SERVICE + PUBLISHED LANGUAGE
+   Upstream exposes protocol/API with well-defined language.
+   - Open Host Service: standardized API (REST, gRPC, events)
+   - Published Language: shared schema (Avro, Protobuf, OpenAPI)
+   - Use when: many consumers need access
+   - Example: Catalog API with OpenAPI spec + product schema
+
+6. SHARED KERNEL
+   Two BCs share a subset of the model.
+   - Shared code/schema must be agreed upon by both teams
+   - Changes require consent from both sides
+   - Use when: overlap is small and stable
+   - Example: Shared Address value object used by Billing + Shipping
+   - DANGER: can become a ball-and-chain; use sparingly
+
+7. SEPARATE WAYS
+   No integration — each BC solves its own problem independently.
+   - No shared model, no API, no events
+   - Use when: integration cost > benefit
+   - Example: Internal HR system ≠ Customer-facing app
+```
+
+```
+CONTEXT MAP DIAGRAM: E-Commerce
+================================
+
+                    ┌─────────┐
+         partnership│ CATALOG │
+        ┌───────────│         │
+        │           └────┬────┘
+        │                │ customer-supplier
+        │                ▼
+   ┌────┴─────┐    ┌──────────┐    ┌──────────┐
+   │ INVENTORY│◄───│ ORDERING │───►│ SHIPPING │
+   │          │    │          │    │          │
+   └──────────┘    └─────┬────┘    └──────────┘
+                   partnership      │
+                        │           │ customer-supplier
+                        ▼           ▼
+                  ┌──────────┐ ┌──────────┐
+                  │ BILLING  │ │  COURIER │
+                  │          │ │ (conform)│
+                  └─────┬────┘ └──────────┘
+                        │ ACL
+                        ▼
+                  ┌──────────┐
+                  │ LEGACY   │
+                  │ ERP      │
+                  └──────────┘
+```
+
+### Ubiquitous Language
+
+```
+UBIQUITOUS LANGUAGE
+===================
+
+Shared vocabulary within a bounded context. Every term has ONE meaning.
+Code, conversations, docs, and UI all use the same words.
+
+PRINCIPLES:
+  1. One term = one meaning within BC
+     - "Order" in Ordering BC means: customer's purchase intent
+     - Do NOT reuse "Order" to mean "internal restock request" in Inventory BC
+
+  2. Code reflects language
+     - Class/method names match domain terms
+     - If domain says "place an order", code has Order.place()
+     - If domain says "shipment dispatched", event is ShipmentDispatched
+
+  3. Language evolves with understanding
+     - When experts correct you, update the language AND the code
+     - Glossary is living document, not one-time artifact
+
+  4. Not everyone uses same language globally
+     - Each BC has its own ubiquitous language
+     - Same concept in different BCs gets different names
+
+BUILDING THE GLOSSARY:
+  ┌────────────────┬───────────────────────────────────────┐
+  │ Term           │ Definition (within Ordering BC)       │
+  ├────────────────┼───────────────────────────────────────┤
+  │ Order          │ Customer's intent to purchase items   │
+  │ Cart           │ Temporary collection before ordering  │
+  │ LineItem       │ Single product + quantity in order    │
+  │ Place Order    │ Convert cart into confirmed order     │
+  │ Cancel Order   │ Void order before fulfillment starts  │
+  │ Order Total    │ Sum of line item prices minus discount│
+  └────────────────┴───────────────────────────────────────┘
+
+ANTI-PATTERNS:
+  - Using generic terms: "data", "object", "item", "record"
+  - Using technical terms in domain discussions: "table", "row", "endpoint"
+  - Same word, different meanings within one BC
+  - Different words, same meaning within one BC (synonyms)
+```
+
+## Step 27: Tactical Domain-Driven Design (DDD)
+
+Source: Eric Evans, "Domain-Driven Design" (2003); Vaughn Vernon, "Implementing Domain-Driven Design" (2013)
+
+Tactical DDD provides building blocks for modeling within a bounded context. These are the code-level patterns that make the ubiquitous language executable.
+
+### Entities
+
+```
+ENTITIES
+========
+
+Objects defined by their identity, not their attributes.
+Two entities are equal if they have the same ID, even if all other fields differ.
+
+CHARACTERISTICS:
+  - Identity-based equality: order #1234 is always order #1234
+  - Mutable: fields can change, identity persists
+  - Lifecycle: created, modified, potentially archived
+  - Has a unique identifier (UUID, auto-increment, natural key)
+
+EXAMPLES:
+  ┌─────────────────────────────────────────────┐
+  │ ENTITY: Order                               │
+  │                                             │
+  │ Identity: orderId (UUID)                    │
+  │ Attributes:                                 │
+  │   - customerId: UUID                        │
+  │   - status: Draft | Placed | Shipped | ...  │
+  │   - placedAt: DateTime (nullable)           │
+  │   - shippingAddress: Address (value object)  │
+  │                                             │
+  │ Equality: orderA == orderB iff same orderId │
+  │                                             │
+  │ Behavior:                                   │
+  │   - place() → sets status, placedAt         │
+  │   - cancel() → sets status to Cancelled     │
+  │   - addItem(product, qty) → adds line item  │
+  └─────────────────────────────────────────────┘
+
+  ┌─────────────────────────────────────────────┐
+  │ ENTITY: Customer                            │
+  │                                             │
+  │ Identity: customerId (UUID)                 │
+  │ Attributes:                                 │
+  │   - name: String                            │
+  │   - email: Email (value object)             │
+  │   - tier: Bronze | Silver | Gold            │
+  │                                             │
+  │ Equality: same customerId = same customer   │
+  │ Mutable: name, email, tier can change       │
+  └─────────────────────────────────────────────┘
+
+WHEN TO USE ENTITY vs VALUE OBJECT:
+  - Does it have a lifecycle? → Entity
+  - Would two with same attributes be identical? → Value Object
+  - Do I need to track changes over time? → Entity
+```
+
+### Value Objects
+
+```
+VALUE OBJECTS
+=============
+
+Objects defined by their attributes, not identity.
+Two value objects are equal if all their attributes are equal.
+Immutable — to "change" a value object, create a new one.
+
+CHARACTERISTICS:
+  - Attribute-based equality: Money(10, "USD") == Money(10, "USD")
+  - Immutable: no setters, operations return new instances
+  - No identity: no ID field
+  - Self-validating: constructor enforces invariants
+
+EXAMPLES:
+  ┌─────────────────────────────────────────────┐
+  │ VALUE OBJECT: Money                         │
+  │                                             │
+  │ Attributes:                                 │
+  │   - amount: Decimal (not float!)            │
+  │   - currency: String (ISO 4217)             │
+  │                                             │
+  │ Equality: same amount + same currency       │
+  │ Immutable:                                  │
+  │   - add(other): returns new Money           │
+  │     (asserts same currency)                 │
+  │   - multiply(factor): returns new Money     │
+  │                                             │
+  │ Invariants:                                 │
+  │   - amount >= 0 (or specify if negative OK) │
+  │   - currency is 3-letter ISO code           │
+  │   - amount precision matches currency       │
+  │     (JPY=0 decimals, USD=2 decimals)        │
+  └─────────────────────────────────────────────┘
+
+  ┌─────────────────────────────────────────────┐
+  │ VALUE OBJECT: Address                       │
+  │                                             │
+  │ Attributes:                                 │
+  │   - street: String                          │
+  │   - city: String                            │
+  │   - state: String                           │
+  │   - postalCode: String                      │
+  │   - country: String (ISO 3166)              │
+  │                                             │
+  │ Equality: all fields match                  │
+  │ Immutable: change = new Address             │
+  │                                             │
+  │ Why value object?                           │
+  │   - Two addresses with same fields = same   │
+  │   - No lifecycle tracking needed            │
+  │   - Can be shared/reused safely             │
+  └─────────────────────────────────────────────┘
+
+  ┌─────────────────────────────────────────────┐
+  │ VALUE OBJECT: DateRange                     │
+  │                                             │
+  │ Attributes:                                 │
+  │   - start: LocalDate                        │
+  │   - end: LocalDate                          │
+  │                                             │
+  │ Invariants:                                 │
+  │   - end >= start                            │
+  │                                             │
+  │ Operations:                                 │
+  │   - contains(date): boolean                 │
+  │   - overlaps(other): boolean                │
+  │   - duration(): Duration                    │
+  │   - extend(days): new DateRange             │
+  └─────────────────────────────────────────────┘
+
+VALUE OBJECT BENEFITS:
+  - Simpler (no identity management)
+  - Safer (immutable, no side effects)
+  - Reusable (can be shared across aggregates)
+  - Testable (equality is deterministic)
+```
+
+### Aggregates
+
+```
+AGGREGATES
+==========
+
+A cluster of entities and value objects treated as a single unit for data changes.
+One entity is the AGGREGATE ROOT — the only entry point from outside.
+
+CHARACTERISTICS:
+  - Transactional boundary: all changes within aggregate are atomic
+  - Reference by ID only: other aggregates reference this one by root ID
+  - Keep small: fewer entities = less contention, simpler transactions
+  - Root enforces invariants: consistency rules enforced at root level
+
+STRUCTURE:
+  ┌─────────────────────────────────────────────────────┐
+  │ AGGREGATE: Order (root: Order entity)               │
+  │                                                     │
+  │  ┌─────────────┐                                    │
+  │  │ Order (ROOT)│ ← Only entry point from outside    │
+  │  │             │                                    │
+  │  │ orderId     │                                    │
+  │  │ customerId  │ ← Reference by ID (not object ref) │
+  │  │ status      │                                    │
+  │  └──────┬──────┘                                    │
+  │         │ contains                                  │
+  │         ▼                                           │
+  │  ┌──────────────┐  ┌──────────────┐                 │
+  │  │  LineItem 1  │  │  LineItem 2  │                 │
+  │  │              │  │              │                 │
+  │  │ lineItemId   │  │ lineItemId   │                 │
+  │  │ productId    │  │ productId    │ ← ID reference  │
+  │  │ quantity     │  │ quantity     │                 │
+  │  │ unitPrice:   │  │ unitPrice:   │                 │
+  │  │   Money(VO)  │  │   Money(VO)  │                 │
+  │  └──────────────┘  └──────────────┘                 │
+  │                                                     │
+  │  INVARIANTS (enforced by root):                     │
+  │   - Order total = sum of line item subtotals        │
+  │   - Cannot add items to shipped order               │
+  │   - At least 1 line item to place order             │
+  └─────────────────────────────────────────────────────┘
+
+RULES:
+  1. Reference other aggregates by ID only
+     Order has customerId (not Customer object)
+     LineItem has productId (not Product object)
+
+  2. One transaction modifies one aggregate
+     Cross-aggregate = eventual consistency via domain events
+
+  3. Keep aggregates small
+     If aggregate has > 5-7 entities, consider splitting
+     Smaller = less lock contention, better performance
+
+  4. Delete cascade within aggregate
+     Deleting Order deletes its LineItems
+     But NOT across aggregate boundaries
+```
+
+### Domain Events
+
+```
+DOMAIN EVENTS
+=============
+
+Something that happened in the domain that domain experts care about.
+Named in past tense. Immutable facts. Used for cross-aggregate and cross-BC communication.
+
+CHARACTERISTICS:
+  - Past tense: OrderPlaced (not PlaceOrder — that's a command)
+  - Immutable: events happened, cannot be unhappened
+  - Contains: what happened, when, involved aggregate IDs
+  - Cross-BC consistency: events bridge bounded contexts
+
+STRUCTURE:
+  ┌─────────────────────────────────────────────┐
+  │ DOMAIN EVENT: OrderPlaced                   │
+  │                                             │
+  │ eventId: UUID (unique event identifier)     │
+  │ occurredAt: DateTime (when it happened)     │
+  │ orderId: UUID (which aggregate)             │
+  │ customerId: UUID (who)                      │
+  │ items: List<{productId, quantity, price}>   │
+  │ totalAmount: Money                          │
+  │                                             │
+  │ Published to: message bus / event store     │
+  │ Consumers:                                  │
+  │   - Inventory BC: reserve stock             │
+  │   - Billing BC: create invoice draft        │
+  │   - Analytics: update sales metrics         │
+  └─────────────────────────────────────────────┘
+
+EVENT NAMING:
+  Domain:    OrderPlaced, PaymentProcessed, ShipmentDispatched
+  Technical: OrderCreatedEvent, OnPaymentSuccess (avoid these)
+
+CROSS-BC CONSISTENCY (Eventual):
+  Order BC                    Inventory BC
+  ─────────                   ─────────────
+  OrderPlaced ────event────►  ReserveStock
+                              (eventually consistent,
+                               may fail → compensation)
+
+EVENT SOURCING (optional extension):
+  - Store events instead of current state
+  - Rebuild state by replaying events
+  - Full audit trail, temporal queries
+  - Not always necessary — start with state-based, add events when needed
+```
+
+### Repositories
+
+```
+REPOSITORIES
+============
+
+Collection-like interface for accessing aggregates.
+One repository per aggregate root. Hides persistence details.
+
+CHARACTERISTICS:
+  - One per aggregate root: OrderRepository, CustomerRepository
+  - In-memory collection metaphor: findById(), save(), remove()
+  - Returns fully-loaded aggregates (no lazy loading across boundaries)
+  - Hides database details: callers don't know if SQL, NoSQL, or in-memory
+
+INTERFACE:
+  ┌─────────────────────────────────────────────┐
+  │ REPOSITORY: OrderRepository                 │
+  │                                             │
+  │ findById(orderId: UUID): Order | null       │
+  │   - Load complete aggregate with all        │
+  │     contained entities and value objects    │
+  │                                             │
+  │ save(order: Order): void                    │
+  │   - Insert new or update existing           │
+  │   - Persists entire aggregate atomically    │
+  │                                             │
+  │ remove(order: Order): void                  │
+  │   - Delete aggregate and contained entities │
+  │                                             │
+  │ findByCustomerId(customerId: UUID): Order[] │
+  │   - Query method (use carefully)            │
+  │   - Returns full aggregates                 │
+  └─────────────────────────────────────────────┘
+
+ANTI-PATTERNS:
+  - Repository per entity (not per aggregate)
+  - Leaking persistence details (SQL in domain layer)
+  - Lazy loading across aggregate boundaries
+  - Generic repository (Repository<T>) — too abstract, loses domain meaning
+```
+
+### Domain Services
+
+```
+DOMAIN SERVICES
+===============
+
+Stateless operations that don't naturally belong to any entity or value object.
+Used for cross-aggregate operations or calculations involving multiple BCs.
+
+WHEN TO USE:
+  - Operation spans multiple aggregates
+  - Operation doesn't belong to any single entity
+  - Operation requires access to external services (via ports)
+  - Pure calculation involving multiple value objects
+
+EXAMPLE:
+  ┌─────────────────────────────────────────────┐
+  │ DOMAIN SERVICE: PricingService              │
+  │                                             │
+  │ calculateTotal(                             │
+  │   items: LineItem[],                        │
+  │   customer: Customer,                       │
+  │   discountCode: DiscountCode | null         │
+  │ ): Money                                    │
+  │                                             │
+  │ Logic:                                      │
+  │   - Sum line item subtotals                 │
+  │   - Apply customer tier discount            │
+  │   - Apply discount code if valid            │
+  │   - Apply tax based on shipping address     │
+  │                                             │
+  │ Why service? Spans Order + Customer + Code  │
+  │ Doesn't belong to any single aggregate      │
+  └─────────────────────────────────────────────┘
+
+RULES:
+  - Stateless: no instance fields that change
+  - Named after domain operation: PricingService, not CalculationHelper
+  - Lives in domain layer, not application layer
+  - No infrastructure dependencies (inject via ports)
+```
+
+### Factories
+
+```
+FACTORIES
+=========
+
+Encapsulate complex creation logic for aggregates and value objects.
+Ensure created objects satisfy all invariants.
+
+WHEN TO USE:
+  - Aggregate creation involves multiple steps
+  - Construction requires data from multiple sources
+  - Reconstitution from persistence (different from creation)
+  - Creation logic is complex enough to warrant encapsulation
+
+EXAMPLE:
+  ┌─────────────────────────────────────────────┐
+  │ FACTORY: OrderFactory                       │
+  │                                             │
+  │ createFromCart(cart: Cart, customer:         │
+  │   Customer): Order                          │
+  │                                             │
+  │ Steps:                                      │
+  │   1. Validate cart is not empty             │
+  │   2. Create Order entity                    │
+  │   3. Convert cart items to LineItems        │
+  │   4. Apply customer tier pricing            │
+  │   5. Set shipping address from customer     │
+  │   6. Calculate total                        │
+  │   7. Return fully-formed Order aggregate    │
+  │                                             │
+  │ reconstitute(data: OrderData): Order        │
+  │   - Rebuild from persistence (no events)    │
+  │   - Used by repository internally           │
+  └─────────────────────────────────────────────┘
+
+FACTORY PLACEMENT:
+  - Static method on aggregate root: Order.createFromCart()
+  - Separate factory class: OrderFactory (if complex)
+  - Factory method on repository: for reconstitution
+```
+
+## Step 28: Event Storming Workshop
+
+Source: Alberto Brandolini, "Introducing EventStorming" (2021), https://www.eventstorming.com/
+
+Structured workshop format using colored sticky notes to discover domain behavior collaboratively. Goes beyond basic event storming (Step 13) with explicit 6-phase process and both process-level and design-level variants.
+
+### Sticky Note Colors
+
+```
+EVENT STORMING STICKY NOTE COLORS
+===================================
+
+ORANGE stickies = DOMAIN EVENTS (past tense)
+  - "Order was placed"
+  - "Payment was processed"
+  - "Inventory was reserved"
+  - "Shipment was dispatched"
+  - Something that happened, observable, indisputable
+
+YELLOW stickies = COMMANDS (actions/decisions)
+  - "Place Order"
+  - "Process Payment"
+  - "Cancel Subscription"
+  - Triggered by actors or systems
+  - Cause domain events to happen
+
+BLUE stickies = ACTORS (people, roles, systems)
+  - "Customer"
+  - "Warehouse Manager"
+  - "Payment Gateway" (external system)
+  - "Cron Job" (automated trigger)
+  - Who or what triggers commands
+
+PURPLE stickies = POLICIES / BUSINESS RULES
+  - "When payment fails, cancel order"
+  - "When stock < threshold, trigger reorder"
+  - "When order placed, start 30-min payment timer"
+  - Reactive logic: "When [event], then [command]"
+  - Can be automated or manual processes
+
+RED stickies = HOT SPOTS / PAIN POINTS
+  - "Why does this take 3 days?"
+  - "Nobody knows who owns this"
+  - "This breaks every Black Friday"
+  - Disagreements, bottlenecks, unknowns
+  - Mark anything contentious or problematic
+
+GREEN stickies = READ MODELS / VIEWS (design level)
+  - "Order Summary" (for customer dashboard)
+  - "Inventory Report" (for warehouse ops)
+  - "Sales Dashboard" (for management)
+  - Data needed to make decisions or display UI
+
+PINK stickies = EXTERNAL SYSTEMS
+  - "Stripe" (payment processor)
+  - "Twilio" (SMS provider)
+  - "FedEx API" (carrier)
+  - Systems outside your control
+```
+
+### Six Workshop Phases
+
+```
+EVENT STORMING 6-PHASE WORKSHOP
+================================
+
+PHASE 1: CHAOTIC EXPLORATION (15-30 min)
+  Goal: Dump all domain events on the wall
+  Rules:
+    - Everyone writes orange stickies simultaneously
+    - No discussion yet — just write
+    - One event per sticky, past tense
+    - Place on timeline (roughly left to right)
+    - No filtering, no judgment
+  Output: Wall covered in orange stickies
+  Energy: High — lots of activity, some chaos
+
+PHASE 2: ENFORCE THE TIMELINE (30-45 min)
+  Goal: Put events in chronological order
+  Rules:
+    - Walk along timeline left to right
+    - Discuss: "Does this happen before or after that?"
+    - Resolve contradictions between experts
+    - Merge duplicates, split overloaded events
+    - Add missing events discovered during discussion
+    - Mark hot spots (red) for contentious items
+  Output: Ordered timeline of domain events
+  Energy: Medium — focused discussion
+
+PHASE 3: EXPLICIT WALK-THROUGH (30-45 min)
+  Goal: Walk through the timeline with concrete scenarios
+  Rules:
+    - Pick a real scenario (e.g., "Customer buys last item")
+    - Walk through events in order
+    - Verify: "Does this always happen?"
+    - Find alternative paths and exceptions
+    - Mark hot spots where scenario breaks
+  Output: Validated event timeline with alternatives
+  Energy: Medium — narrative, collaborative
+
+PHASE 4: PEOPLE AND SYSTEMS (15-30 min)
+  Goal: Identify who and what triggers events
+  Rules:
+    - Add blue stickies (actors) above events
+    - Add pink stickies (external systems) where relevant
+    - Identify: who initiates? who receives? what system?
+    - Note handoffs between people/departments
+  Output: Events attributed to actors and systems
+  Energy: Lower — organizational mapping
+
+PHASE 5: POLICIES AND COMMANDS (30-45 min)
+  Goal: Add reactive logic and triggering commands
+  Rules:
+    - Add yellow stickies (commands) before events
+    - Add purple stickies (policies) connecting events to commands
+    - Pattern: "When [event], then [policy], triggers [command]"
+    - Identify automated vs manual policies
+    - Find missing commands and policies
+  Output: Full chain: Actor → Command → Aggregate → Event → Policy → Command
+  Energy: Medium-High — modeling intensifies
+
+PHASE 6: AGGREGATES (20-30 min)
+  Goal: Identify consistency boundaries
+  Rules:
+    - Group command + event clusters
+    - Each cluster suggests an aggregate
+    - Mark aggregate boundaries with large stickies or boxes
+    - Validate: "Is this a valid transactional boundary?"
+    - Identify bounded context boundaries (where language shifts)
+  Output: Aggregates identified, bounded contexts emerging
+  Energy: Medium — architectural decisions
+```
+
+```
+WORKSHOP TIMELINE EXAMPLE
+==========================
+
+TIME →→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→
+
+ACTOR:    [Customer]          [System]         [Warehouse]
+            │                    │                   │
+CMD:      [Place Order]    [Process Payment]  [Pick & Pack]
+            │                    │                   │
+AGGREGATE:  │                   │                   │
+          ┌─┴───────┐    ┌─────┴─────┐      ┌─────┴─────┐
+          │  Order   │    │  Payment  │      │Inventory  │
+          └─┬───────┘    └─────┬─────┘      └─────┬─────┘
+EVENT:      │                  │                   │
+        [OrderPlaced]   [PaymentSucceeded]  [StockReserved]
+            │                  │                   │
+POLICY:     │            [When payment OK,        │
+            │             confirm order]           │
+            │                  │                   │
+            ▼                  ▼                   ▼
+        [OrderConfirmed] [ShipmentRequested] [ItemPicked]
+
+HOT SPOT: [RED] "What if payment gateway is down?"
+HOT SPOT: [RED] "Race condition on last item in stock"
+```
+
+### Process-Level vs Design-Level Event Storming
+
+```
+PROCESS-LEVEL vs DESIGN-LEVEL
+==============================
+
+PROCESS-LEVEL (Big Picture):
+  - Who: Entire team + stakeholders
+  - Duration: 2-4 hours
+  - Focus: Business process end-to-end
+  - Granularity: High-level events, actors, pain points
+  - Output: Shared understanding, pain points, bounded context hints
+  - Stickies: Orange (events), Red (hot spots), Blue (actors)
+  - No code concepts: no aggregates, no commands, no read models
+  - When: Early discovery, before committing to architecture
+
+DESIGN-LEVEL (Deep Dive):
+  - Who: Dev team + 1-2 domain experts per BC
+  - Duration: 2-4 hours per bounded context
+  - Focus: Single bounded context internals
+  - Granularity: Commands, aggregates, policies, read models
+  - Output: Aggregate design, domain events, integration points
+  - Stickies: All colors (orange, yellow, blue, purple, green, red)
+  - Code-concepts OK: aggregates are code candidates
+  - When: After bounded contexts identified, before implementation
+
+PROGRESSION:
+  Process-Level → identifies bounded contexts
+                 → each BC gets Design-Level session
+                   → each Design-Level → aggregate/event/code design
+```
+
+## Step 29: Domain Storytelling Workshop
+
+Source: Stefan Hofer, "Domain Storytelling" (2021), https://www.domainstorytelling.org/
+
+Workshop technique where domain experts narrate how they work while modelers draw using standardized pictographic notation. Stories reveal domain concepts, workflows, and boundaries.
+
+### Notation
+
+```
+DOMAIN STORYTELLING NOTATION
+=============================
+
+PERSON (Actor):
+  ┌──────────┐
+  │  👤 Name │  = Person who does work
+  └──────────┘
+  Examples: Customer, Warehouse Manager, Sales Rep
+
+RECTANGLE (Work Object):
+  ┌──────────┐
+  │  📄 Name │  = Document, data, or physical item
+  └──────────┘
+  Examples: Order, Invoice, Package, Report
+
+COMPUTER (System):
+  ┌──────────┐
+  │  💻 Name │  = Software system or tool
+  └──────────┘
+  Examples: ERP, Payment Gateway, CRM, Warehouse App
+
+ARROW (Activity):
+  ────verb────▶     = Actor performs action on work object
+  (numbered: 1., 2., 3., ...)
+
+READING PATTERN:
+  Actor ──verb──▶ Work Object ──verb──▶ Actor
+  "Customer creates Order"
+  "Order is sent to Warehouse Worker"
+  "Warehouse Worker picks Items"
+
+COMPOSITION:
+  Person ──creates──▶ Rectangle ──sent to──▶ Person
+  Person ──uses──▶ Computer ──processes──▶ Rectangle
+  Computer ──generates──▶ Rectangle ──sent to──▶ Person
+
+GROUPING:
+  [Team Name]
+  ┌─────────────────────────────┐
+  │  👤 Person1  👤 Person2     │  = Group/Team
+  │  👤 Person3                 │
+  └─────────────────────────────┘
+```
+
+### Reading Pattern
+
+```
+READING A DOMAIN STORY
+========================
+
+Each story reads like a sentence:
+  Step N: [Actor] ──[verb]──▶ [Work Object]
+
+EXAMPLE:
+  1. 👤 Customer ──creates───▶ 📄 Order
+  2. 📄 Order ────received by──▶ 👤 Sales Rep
+  3. 👤 Sales Rep ──validates──▶ 📄 Order
+  4. 👤 Sales Rep ──sends──────▶ 📄 ConfirmedOrder
+  5. 📄 ConfirmedOrder ──sent──▶ 👤 Warehouse Worker
+  6. 👤 Warehouse Worker ──picks──▶ 📦 Items
+  7. 👤 Warehouse Worker ──packs──▶ 📦 Package
+  8. 👤 Warehouse Worker ──creates─▶ 📄 ShippingLabel
+  9. 📦 Package + 📄 ShippingLabel ──sent──▶ 👤 Courier
+  10. 👤 Courier ──delivers───▶ 📦 Package ──to──▶ 👤 Customer
+
+READING RULES:
+  - Each numbered step = one action
+  - Arrow direction = flow of work object or action
+  - Multiple arrows in one step = parallel or combined action
+  - Story tells WHO does WHAT with WHICH object
+```
+
+### Workshop Process
+
+```
+DOMAIN STORYTELLING WORKSHOP
+=============================
+
+ROLES:
+  - Expert: Domain expert who tells the story (1-2 people)
+  - Modeler: Draws the story as it's told (1 person)
+  - Audience: Observers who verify and ask questions (3-10 people)
+
+PROCESS:
+  1. EXPERT TELLS
+     - Expert picks a concrete scenario (last Thursday, not "in general")
+     - Narrates step by step: "First I do this, then that..."
+     - Uses their own words (domain language)
+
+  2. MODELER DRAWS
+     - Draws each step as expert narrates
+     - Uses standard notation (person, rectangle, computer, arrow)
+     - Numbers each step
+     - Asks: "What happens next?" "Who does that go to?"
+     - Pauses to confirm: "So you create an order and send it to...?"
+
+  3. AUDIENCE VERIFIES
+     - Audience watches and listens
+     - Asks: "Does this always happen?" (find variations)
+     - Asks: "What if this fails?" (find exceptions)
+     - Points out: "I do it differently" (find inconsistencies)
+     - No interrupting the expert mid-sentence
+
+  4. ITERATE
+     - Walk through story backward (step N → step 1)
+     - Add alternative paths
+     - Add exception handling
+     - Compare stories from different experts
+
+DURATION: 30-90 minutes per story
+OUTPUT: Numbered pictographic diagram of workflow
+```
+
+### Discover Domain Patterns
+
+```
+DOMAIN STORYTELLING → DDD DISCOVERY
+====================================
+
+EXTRACT BOUNDED CONTEXTS:
+  - Where actors change → potential BC boundary
+  - Where work objects transform → different model needed
+  - Where language shifts → separate BC
+  - Example: Steps 1-4 (Sales language) vs Steps 5-9 (Warehouse language)
+
+EXTRACT AGGREGATES:
+  - Work objects that are created, modified, and passed around → aggregates
+  - Objects that maintain consistency → aggregate root
+  - Objects always grouped together → same aggregate
+  - Example: Order + LineItems always together → Order aggregate
+
+EXTRACT DOMAIN EVENTS:
+  - Each handoff between actors → potential domain event
+  - State changes mentioned in narration → domain events
+  - "When X happens, then Y" → event + policy
+  - Example: "When order is confirmed, warehouse gets notified"
+           → OrderConfirmed event → NotifyWarehouse policy
+
+EXTRACT COMMANDS:
+  - Actions that trigger state changes → commands
+  - "I place the order" → PlaceOrder command
+  - "We process the payment" → ProcessPayment command
+
+EXTRACT REPOSITORIES:
+  - "I look up the order" → OrderRepository.findById()
+  - "I check if customer exists" → CustomerRepository.exists()
+
+EXAMPLE EXTRACTION:
+  Domain Story: "Sales Rep validates Order, sends ConfirmedOrder to Warehouse"
+  → BC: Ordering (Sales Rep, Order, ConfirmedOrder)
+  → BC: Inventory (Warehouse Worker, Items, Package)
+  → Aggregate: Order (contains: status, lineItems)
+  → Event: OrderConfirmed
+  → Command: ConfirmOrder
+  → Policy: When OrderConfirmed, notify Warehouse
+  → Handoff: Ordering BC → Inventory BC (via domain event)
 ```
 
 ## NFR Patterns (Performance Budgets, Accessibility, i18n, ISO 25010)
@@ -3492,3 +4457,11 @@ MAPPING TO REQUIREMENTS:
 35. **Don't treat AI fairness as optional** — demographic parity and equalized odds are measurable; Model Cards and Datasheets are documented requirements
 36. **Don't ignore WCAG 2.2 new criteria** — Focus Not Obscured, Target Size, Dragging Movements are new AA requirements
 37. **Don't skip EU AI Act compliance for high-risk AI** — Article 9 mandates risk management, data governance, human oversight; penalties up to EUR 35M
+38. **Don't skip strategic DDD for complex domains** — bounded contexts prevent monolithic confusion; same-term-different-meaning heuristic catches hidden boundaries
+39. **Don't model aggregates too large** — keep aggregates small (5-7 entities max); large aggregates cause contention and slow transactions
+40. **Don't use technical terms in domain discussions** — ubiquitous language means domain terms in code, not "table", "row", "endpoint"
+41. **Don't skip event storming phases** — chaotic exploration before design level; process-level before aggregates; each phase builds on previous
+42. **Don't confuse entities with value objects** — entities have identity and lifecycle; value objects are immutable and defined by attributes (Money, Address)
+43. **Don't reference aggregates by object** — always reference by ID across aggregate boundaries; object references leak transactional boundaries
+44. **Don't skip domain storytelling notation** — standard pictographic notation enables shared understanding; freeform diagrams cause confusion
+45. **Don't mix ubiquitous languages across BCs** — same word in different BCs should have different models; shared kernel is dangerous, use sparingly
