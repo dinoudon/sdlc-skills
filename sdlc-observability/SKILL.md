@@ -1,7 +1,7 @@
 ---
 name: sdlc-observability
 description: "Observability: OpenTelemetry 2024, GenAI semantic conventions, eBPF (Cilium/Hubble/Tetragon), sidecar-less mesh, profiling signal, structured logging, SLIs/SLOs/SLAs, error budgets, burn-rate alerting, Grafana LGTM, distributed tracing, cost optimization, serverless observability, LLM/AI observability, edge observability."
-version: 3.1.0
+version: 3.2.0
 author: Hermes Agent
 license: MIT
 platforms: [linux, macos, windows]

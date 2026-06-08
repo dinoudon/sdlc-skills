@@ -1,14 +1,14 @@
 ---
 name: sdlc-architecture-design
 description: "System design, C4 diagrams, API design (REST/GraphQL/gRPC), database schema, code architecture (Clean/Hexagonal/DDD), ADRs, branching strategies, code review, dependency management, DDIA patterns. Includes architecture fitness functions, DDD context mapping, platform engineering, Gateway API, green software, API governance, serverless architecture, edge computing, and multi-cloud patterns."
-version: 3.1.0
+version: 3.2.0
 author: Hermes Agent
 license: MIT
 platforms: [linux, macos, windows]
 metadata:
   hermes:
     tags: [sdlc, architecture, c4, api-design, database, clean-architecture, ddd, code-review, branching, adr, ddia, fitness-functions, context-mapping, platform-engineering, gateway-api, green-software, api-governance, service-mesh, serverless, edge-computing, multi-cloud, faas]
-    related_skills: [sdlc-requirements-engineering, sdlc-cicd-pipeline, architecture-blueprint, api-design, sdlc-cloud-deployment]
+    related_skills: [sdlc-requirements-engineering, sdlc-cicd-pipeline, architecture-blueprint, api-design, sdlc-deployment]
 ---
 
 # Architecture, Design & Development

@@ -1,7 +1,7 @@
 ---
 name: sdlc-prd-to-production
 description: "End-to-end workflow: PRD → design doc → implementation → code review → testing → deployment → monitoring → retrospective. Includes Ship/Show/Ask branching, design doc templates, PRD patterns (YC, Amazon Working Backwards), ephemeral environments, DORA 2024 insights, Score spec, AI-augmented development, technical specification templates, GitOps automation, documentation-as-code pipelines, and metrics-driven development."
-version: 3.1.0
+version: 3.2.0
 author: Hermes Agent
 license: MIT
 platforms: [linux, macos, windows]
