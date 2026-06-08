@@ -1,13 +1,13 @@
 ---
 name: sdlc-cicd-pipeline
-description: "CI/CD pipeline design with GitHub Actions and GitLab CI. Docker multi-stage builds, caching, matrix builds, test sharding, security scanning, GitOps, DORA metrics, trunk-based development, anti-patterns. SLSA L3 supply chain, SBOM generation, Green CI/CD, AI in pipelines, GitHub Actions hardening. Serverless CI/CD (SAM/CDK/Serverless Framework), preview environments, multi-platform builds, advanced dependency caching. Pipeline security hardening, build reproducibility, pipeline observability, monorepo CI patterns, pipeline cost optimization. FinOps for CI/CD, Green CI/CD (SCI), pipeline governance."
-version: 4.2.0
+description: "CI/CD pipeline design with GitHub Actions and GitLab CI. Docker multi-stage builds, caching, matrix builds, test sharding, security scanning, GitOps, DORA metrics, trunk-based development, anti-patterns. SLSA L3 supply chain, SBOM generation, Green CI/CD, AI in pipelines, GitHub Actions hardening. Serverless CI/CD (SAM/CDK/Serverless Framework), preview environments, multi-platform builds, advanced dependency caching. Pipeline security hardening, build reproducibility, pipeline observability, monorepo CI patterns, pipeline cost optimization. FinOps for CI/CD, Green CI/CD (SCI), pipeline governance. Deployment at scale (Spinnaker/Argo Rollouts/Flagger), multi-environment management, database CI/CD, progressive delivery."
+version: 4.4.0
 author: Hermes Agent
 license: MIT
 platforms: [linux, macos, windows]
 metadata:
   hermes:
-    tags: [sdlc, ci-cd, github-actions, gitlab-ci, docker, devops, pipeline, gitops, dora, accelerate, trunk-based, slsa, sbom, supply-chain, green-ci, security-hardening, serverless, preview-environments, multi-platform, ai-cicd, oidc, secrets-rotation, audit-logging, reproducible-builds, hermetic-builds, build-provenance, build-observability, monorepo-ci, cost-optimization, finops, green-cicd, sci, pipeline-governance, compliance-gates]
+    tags: [sdlc, ci-cd, github-actions, gitlab-ci, docker, devops, pipeline, gitops, dora, accelerate, trunk-based, slsa, sbom, supply-chain, green-ci, security-hardening, serverless, preview-environments, multi-platform, ai-cicd, oidc, secrets-rotation, audit-logging, reproducible-builds, hermetic-builds, build-provenance, build-observability, monorepo-ci, cost-optimization, finops, green-cicd, sci, pipeline-governance, compliance-gates, deployment-at-scale, spinnaker, argo-rollouts, flagger, progressive-delivery, canary-deployments, database-cicd, schema-migration, multi-environment, environment-as-code]
     related_skills: [sdlc-architecture-design, sdlc-testing-qa, sdlc-deployment, github-pr-workflow]
 ---
 
@@ -2578,3 +2578,1044 @@ deploy_production:
 - [ ] Audit logs retained per regulatory requirements
 - [ ] Quarterly review of governance policies for relevance
 - [ ] Emergency bypass documented with mandatory post-mortem
+
+## Step 28: Deployment at Scale
+
+Source: https://www.spinnaker.io/, https://argoproj.github.io/rollouts/, https://flagger.app/
+
+### Spinnaker vs Argo Rollouts vs Flagger
+
+| Feature | Spinnaker | Argo Rollouts | Flagger |
+|---------|-----------|---------------|---------|
+| **Scope** | Full CD platform (build, deploy, manage) | K8s-native rollout controller | Progressive delivery controller (Istio/Linkerd/NGINX/Gloo) |
+| **Overhead** | Heavy — requires dedicated infra (GCP/AWS services, Redis, Clouddriver) | Lightweight — single CRD + controller in-cluster | Lightweight — single controller + metrics provider |
+| **Canary** | Native canary stages with manual/auto judgement | Native Rollout CRD with weight-based traffic splitting | Native with automated metric analysis |
+| **Analysis** | Manual gates or Kayenta (automated metric analysis) | RolloutAnalysis with Prometheus metrics | Built-in AnalysisTemplate with PromQL, Datadog, CloudWatch, New Relic |
+| **Traffic Mgmt** | Integrated load balancers (AWS ALB/NLB, GCP LB) | Istio/NGINX/ALB traffic splitting via header/weight | Istio VirtualService, Linkerd TrafficSplit, NGINX Ingress annotations, Gloo Upstream |
+| **GitOps** | External (Halyard config, not GitOps-native) | Native ArgoCD integration (same project) | Works with Flux or ArgoCD |
+| **Multi-cloud** | First-class — AWS, GCP, Azure, K8s, Titus | K8s-only | K8s-only |
+| **UI** | Rich built-in dashboard | Argo Rollouts UI (optional), ArgoCD integration | Grafana dashboards (no built-in UI) |
+| **Learning Curve** | Steep — complex architecture | Moderate — CRD-based, familiar to K8s users | Moderate — requires metrics provider setup |
+| **Best For** | Large orgs needing full CD platform with multi-cloud | Teams already on ArgoCD wanting K8s-native canary | Teams wanting automated metric-based promotion with existing service mesh |
+
+### Decision Guide
+
+```
+Need multi-cloud CD platform?
+  YES → Spinnaker (or evaluate ArgoCD + Rollouts + Workflows)
+  NO  ↓
+Already using ArgoCD?
+  YES → Argo Rollouts (native integration, same project)
+  NO  ↓
+Have service mesh (Istio/Linkerd)?
+  YES → Flagger (best mesh integration)
+  NO  ↓
+Want simplest setup?
+  Argo Rollouts (CRD-only, no mesh required with NGINX Ingress)
+  OR Flagger with NGINX Ingress (no mesh needed)
+```
+
+**When to pick each:**
+- **Spinnaker:** 50+ microservices, multi-cloud, need deployment pipelines with approval stages, bake stages, manual judgement. Worth the infra cost at scale.
+- **Argo Rollouts:** K8s-first, already using ArgoCD, want GitOps-native progressive delivery. Best ecosystem fit for modern K8s shops.
+- **Flagger:** Metric-driven promotion is priority, already have Istio/Linkerd. Minimal config for automated canary with metric analysis.
+
+### Argo Rollouts Quick Start
+
+```yaml
+apiVersion: argoproj.io/v1alpha1
+kind: Rollout
+metadata:
+  name: myapp
+spec:
+  replicas: 5
+  strategy:
+    canary:
+      steps:
+        - setWeight: 20
+        - pause: { duration: 5m }
+        - setWeight: 40
+        - pause: { duration: 5m }
+        - setWeight: 60
+        - pause: { duration: 5m }
+        - setWeight: 80
+        - pause: { duration: 5m }
+      analysis:
+        templates:
+          - templateName: success-rate
+        startingStep: 1
+        args:
+          - name: service-name
+            value: myapp
+  selector:
+    matchLabels:
+      app: myapp
+  template:
+    metadata:
+      labels:
+        app: myapp
+    spec:
+      containers:
+        - name: myapp
+          image: myapp:canary
+```
+
+### Flagger Canary with Istio
+
+```yaml
+apiVersion: flagger.app/v1beta1
+kind: Canary
+metadata:
+  name: myapp
+spec:
+  targetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: myapp
+  progressDeadlineSeconds: 600
+  service:
+    port: 80
+    targetPort: 8080
+    gateways:
+      - public-gateway.istio-system.svc.cluster.local
+    hosts:
+      - myapp.example.com
+  analysis:
+    interval: 1m
+    threshold: 5
+    maxWeight: 50
+    stepWeight: 10
+    metrics:
+      - name: request-success-rate
+        thresholdRange:
+          min: 99
+        interval: 1m
+      - name: request-duration
+        thresholdRange:
+          max: 500
+        interval: 1m
+```
+
+## Step 29: Multi-Environment Management
+
+Source: https://kustomize.io/, https://argoproj.github.io/application-set/
+
+### Environment-as-Code Patterns
+
+#### Directory-per-Environment
+
+```
+k8s/
+├── base/
+│   ├── deployment.yaml
+│   ├── service.yaml
+│   └── kustomization.yaml
+├── overlays/
+│   ├── dev/
+│   │   ├── kustomization.yaml
+│   │   └── patch-replicas.yaml
+│   ├── staging/
+│   │   ├── kustomization.yaml
+│   │   └── patch-replicas.yaml
+│   └── production/
+│       ├── kustomization.yaml
+│       ├── patch-replicas.yaml
+│       └── hpa.yaml
+```
+
+#### Kustomize Overlays
+
+```yaml
+# base/kustomization.yaml
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - deployment.yaml
+  - service.yaml
+commonLabels:
+  app: myapp
+
+# overlays/dev/kustomization.yaml
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - ../../base
+namePrefix: dev-
+namespace: dev
+patches:
+  - path: patch-replicas.yaml
+
+# overlays/dev/patch-replicas.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: myapp
+spec:
+  replicas: 1
+  template:
+    spec:
+      containers:
+        - name: myapp
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 200m
+              memory: 256Mi
+
+# overlays/production/kustomization.yaml
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - ../../base
+  - hpa.yaml
+namePrefix: prod-
+namespace: production
+patches:
+  - path: patch-replicas.yaml
+
+# overlays/production/patch-replicas.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: myapp
+spec:
+  replicas: 3
+  template:
+    spec:
+      containers:
+        - name: myapp
+          resources:
+            requests:
+              cpu: 500m
+              memory: 512Mi
+            limits:
+              cpu: "1"
+              memory: 1Gi
+```
+
+#### ArgoCD ApplicationSets
+
+```yaml
+# One ApplicationSet generates ArgoCD Applications for all environments
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: myapp
+spec:
+  generators:
+    - list:
+        elements:
+          - env: dev
+            cluster: https://dev-cluster
+            namespace: dev
+            replicas: "1"
+          - env: staging
+            cluster: https://staging-cluster
+            namespace: staging
+            replicas: "2"
+          - env: production
+            cluster: https://prod-cluster
+            namespace: production
+            replicas: "3"
+  template:
+    metadata:
+      name: 'myapp-{{env}}'
+    spec:
+      project: default
+      source:
+        repoURL: https://github.com/org/k8s-manifests
+        targetRevision: main
+        path: 'apps/myapp/overlays/{{env}}'
+      destination:
+        server: '{{cluster}}'
+        namespace: '{{namespace}}'
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+```
+
+#### Git Generator (branch-per-env)
+
+```yaml
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: myapp
+spec:
+  generators:
+    - git:
+        repoURL: https://github.com/org/k8s-manifests
+        revision: HEAD
+        directories:
+          - path: 'apps/myapp/overlays/*'
+  template:
+    metadata:
+      name: 'myapp-{{path.basename}}'
+    spec:
+      source:
+        path: '{{path}}'
+      destination:
+        server: https://kubernetes.default.svc
+        namespace: '{{path.basename}}'
+```
+
+### Dev/Staging/Prod Parity
+
+**Parity spectrum — what to match vs what to differ:**
+
+| Aspect | Dev | Staging | Prod |
+|--------|-----|---------|------|
+| Container image | Same (same tag/sha) | Same | Same |
+| Config/secrets | Dev values | Prod-like values | Real values |
+| Resource limits | Minimal (100m/128Mi) | Medium (500m/512Mi) | Full (1/1Gi+) |
+| Replicas | 1 | 2 | 3+ |
+| Database | Local/minimal | Prod-like schema + anonymized data | Real data |
+| TLS/ingress | Self-signed or none | Valid cert | Valid cert + WAF |
+| Monitoring | Basic | Full (same dashboards) | Full + alerts |
+| Feature flags | All enabled | Prod flags | Prod flags |
+
+**Parity rules:**
+- Same container image across all environments — only config differs
+- Staging must run same health checks, readiness probes as production
+- Schema migrations tested against staging before production
+- Same ingress controller and configuration (except hostname)
+- Staging should mirror production topology (not a reduced subset)
+
+### Ephemeral Preview Environments
+
+```yaml
+# ArgoCD ApplicationSet for PR-based preview environments
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: preview-envs
+spec:
+  generators:
+    - pullRequest:
+        github:
+          owner: org
+          repo: myapp
+          tokenRef:
+            secretName: github-token
+            key: token
+          labels:
+            - preview
+  template:
+    metadata:
+      name: 'preview-{{number}}'
+    spec:
+      project: preview
+      source:
+        repoURL: https://github.com/org/k8s-manifests
+        targetRevision: main
+        path: apps/myapp/overlays/preview
+        helm:
+          parameters:
+            - name: image.tag
+              value: '{{head_sha}}'
+            - name: ingress.host
+              value: 'pr-{{number}}.preview.example.com'
+      destination:
+        server: https://kubernetes.default.svc
+        namespace: 'preview-{{number}}'
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+```
+
+**Preview env lifecycle:**
+1. PR opened with `preview` label → ApplicationSet creates ArgoCD Application
+2. Namespace `preview-{PR#}` created, app deployed with PR's commit SHA
+3. Ingress routes `pr-{PR#}.preview.example.com` to namespace
+4. Bot comments preview URL on PR
+5. New commits to PR → auto-sync updates preview
+6. PR merged/closed → ApplicationSet removes Application → namespace deleted
+7. TTL controller (72h) catches missed cleanup events
+
+**Preview env best practices:**
+- Use lightweight infra (reduced replicas, no HPA, small resource limits)
+- Share external service dependencies (databases, caches) via namespaced prefixes
+- Anonymize/seed test data for preview databases
+- Limit concurrent preview envs per org (cost cap)
+- Auto-destroy stale previews (>72h without PR activity)
+
+## Step 30: Database CI/CD
+
+Source: https://www.liquibase.com/, https://flywaydb.org/, https://atlasgo.io/
+
+### Schema Testing
+
+#### Ephemeral Database (for CI testing)
+
+```yaml
+# GitHub Actions — spin up DB, run migrations, test, destroy
+jobs:
+  db-test:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: myapp_test
+          POSTGRES_PASSWORD: test
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - uses: actions/checkout@v4
+      - run: npm ci
+      # Run all migrations against ephemeral DB
+      - run: npx prisma migrate deploy
+        env:
+          DATABASE_URL: postgresql://postgres:test@localhost:5432/myapp_test
+      # Seed test data
+      - run: npx prisma db seed
+        env:
+          DATABASE_URL: postgresql://postgres:test@localhost:5432/myapp_test
+      # Run integration tests
+      - run: npm test -- --testPathPattern=integration
+        env:
+          DATABASE_URL: postgresql://postgres:test@localhost:5432/myapp_test
+```
+
+#### Shadow Database (migration validation)
+
+Separate database used to diff current schema against desired state.
+
+```yaml
+# Prisma shadow DB pattern
+- run: |
+    # Create shadow database
+    PGPASSWORD=test psql -h localhost -U postgres -c "CREATE DATABASE myapp_shadow;"
+    # Generate migration SQL without applying
+    npx prisma migrate diff \
+      --from-schema-datamodel prisma/schema.prisma \
+      --to-schema-datamodel prisma/schema.prisma \
+      --shadow-database-url "postgresql://postgres:test@localhost:5432/myapp_shadow" \
+      --script > migration.sql
+    # Review generated SQL
+    cat migration.sql
+    # Validate against shadow DB
+    npx prisma migrate deploy
+```
+
+**Atlas (declarative schema diffing):**
+```yaml
+# Atlas — compare desired schema against running DB
+- run: |
+    atlas schema diff \
+      --from "postgres://postgres:test@localhost:5432/myapp_test" \
+      --to "file://schema.hcl" \
+      --dev-url "docker://postgres/16"
+```
+
+### Migration Verification
+
+#### Migration Linting
+
+```yaml
+# Atlas lint — detect dangerous migrations
+- run: |
+    atlas migrate lint \
+      --dir "file://migrations" \
+      --dev-url "docker://postgres/16" \
+      --latest 1 \
+      --format '{{ range .Diagnostics }}{{ .Text }}{{ endl }}{{ end }}'
+
+# Squawk — PostgreSQL linting (detects unsafe ALTER TABLE)
+- run: |
+    npm install -g squawk-cli
+    squawk --.pg-version 16 migrations/*.sql
+
+# SQLFluff — general SQL linting
+- run: |
+    pip install sqlfluff
+    sqlfluff lint migrations/ --dialect postgres
+```
+
+**Dangerous patterns detected by linting:**
+- `ALTER TABLE ... ADD COLUMN ... NOT NULL` without DEFAULT (locks table)
+- `DROP TABLE` without backup confirmation
+- `ALTER TYPE ... ADD VALUE` (can't be rolled back in transaction)
+- Missing index on foreign key column
+- `CREATE INDEX` without `CONCURRENTLY` (locks table)
+
+#### Dry-Run Verification
+
+```yaml
+# Flyway — dry-run mode
+- run: |
+    flyway migrate \
+      -url=jdbc:postgresql://localhost:5432/myapp_shadow \
+      -dryRunOutput=dry-run.sql \
+      -locations=filesystem:migrations
+    # Review SQL that would execute
+    cat dry-run.sql
+
+# golang-migrate — validate SQL syntax
+- run: |
+    migrate -database "postgres://postgres:test@localhost:5432/myapp_test?sslmode=disable" \
+      -path ./migrations \
+      validate
+
+# Liquibase — preview SQL
+- run: |
+    liquibase updateSQL --changelog-file=changelog.xml > preview.sql
+```
+
+### Rollback Strategies
+
+#### Expand-Contract Pattern (Zero-Downtime)
+
+Safe schema changes without downtime. Three phases:
+
+```
+Phase 1: EXPAND (backward compatible)
+  - Add new column (nullable or with default)
+  - Add new table
+  - Add new index CONCURRENTLY
+  - Deploy code that writes to BOTH old and new columns
+
+Phase 2: MIGRATE DATA
+  - Backfill new column from old column
+  - Deploy code that reads from NEW column
+  - Verify data consistency
+
+Phase 3: CONTRACT (cleanup)
+  - Remove old column
+  - Remove old table
+  - Remove dual-write code
+```
+
+**Example: Rename column safely**
+```sql
+-- Phase 1: Expand
+ALTER TABLE users ADD COLUMN email_address TEXT;
+-- Backfill
+UPDATE users SET email_address = email WHERE email_address IS NULL;
+-- Code: write to both columns, read from email_address
+
+-- Phase 2: Code reads/writes only email_address
+
+-- Phase 3: Contract
+ALTER TABLE users DROP COLUMN email;
+```
+
+**Example: Add NOT NULL column**
+```sql
+-- Phase 1: Expand (nullable + default)
+ALTER TABLE orders ADD COLUMN status TEXT DEFAULT 'pending';
+-- Backfill existing rows
+UPDATE orders SET status = 'pending' WHERE status IS NULL;
+-- Phase 2: Add NOT NULL constraint (after all rows have value)
+ALTER TABLE orders ALTER COLUMN status SET NOT NULL;
+```
+
+#### Compensating Migrations
+
+Forward-only migrations with compensating logic for rollback.
+
+```yaml
+# Migration file structure
+migrations/
+├── 001_add_status_column.sql        # Forward
+├── 001_add_status_column_rollback.sql  # Compensating
+├── 002_create_audit_table.sql
+├── 002_create_audit_table_rollback.sql
+```
+
+```yaml
+# Atlas — reversible migrations
+- run: |
+    atlas migrate diff add_status_column \
+      --dir "file://migrations" \
+      --to "file://schema.hcl" \
+      --dev-url "docker://postgres/16"
+
+# Flyway — undo migrations (commercial feature)
+# Liquibase — rollback by tag
+- run: liquibase rollback-count --count=1 --changelog-file=changelog.xml
+```
+
+**Compensating migration patterns:**
+```sql
+-- Forward: add column
+ALTER TABLE users ADD COLUMN display_name TEXT;
+-- Rollback: drop column
+ALTER TABLE users DROP COLUMN IF EXISTS display_name;
+
+-- Forward: create index
+CREATE INDEX CONCURRENTLY idx_users_email ON users(email);
+-- Rollback: drop index
+DROP INDEX CONCURRENTLY IF EXISTS idx_users_email;
+
+-- Forward: create table + seed data
+CREATE TABLE roles (id SERIAL PRIMARY KEY, name TEXT NOT NULL);
+INSERT INTO roles (name) VALUES ('admin'), ('user'), ('viewer');
+-- Rollback: drop table (data lost — document this)
+DROP TABLE IF EXISTS roles CASCADE;
+```
+
+**Database CI/CD checklist:**
+- [ ] Every migration runs against ephemeral DB in CI
+- [ ] Migrations linted for dangerous operations (table locks, missing defaults)
+- [ ] Dry-run verification before production apply
+- [ ] Expand-contract for zero-downtime column/table changes
+- [ ] Compensating migrations for every forward migration
+- [ ] Migration files version-controlled alongside application code
+- [ ] Staging runs production migration before production
+- [ ] Backup verified before production migration
+
+## Step 31: Progressive Delivery Detailed
+
+Source: https://argoproj.github.io/rollouts/features/analysis/, https://docs.flagger.app/
+
+### Canary Analysis
+
+#### AnalysisTemplate with PromQL
+
+```yaml
+apiVersion: argoproj.io/v1alpha1
+kind: AnalysisTemplate
+metadata:
+  name: success-rate
+spec:
+  args:
+    - name: service-name
+    - name: namespace
+      value: default
+  metrics:
+    - name: success-rate
+      interval: 1m
+      count: 5
+      successCondition: result[0] >= 0.99
+      failureLimit: 2
+      provider:
+        prometheus:
+          address: http://prometheus.monitoring:9090
+          query: |
+            sum(rate(http_requests_total{
+              service="{{args.service-name}}",
+              namespace="{{args.namespace}}",
+              status=~"2.."
+            }[5m]))
+            /
+            sum(rate(http_requests_total{
+              service="{{args.service-name}}",
+              namespace="{{args.namespace}}"
+            }[5m]))
+    - name: latency-p99
+      interval: 1m
+      count: 5
+      successCondition: result[0] <= 500
+      failureLimit: 2
+      provider:
+        prometheus:
+          address: http://prometheus.monitoring:9090
+          query: |
+            histogram_quantile(0.99,
+              sum(rate(http_request_duration_seconds_bucket{
+                service="{{args.service-name}}",
+                namespace="{{args.namespace}}"
+              }[5m])) by (le)
+            ) * 1000
+    - name: error-rate
+      interval: 1m
+      count: 5
+      successCondition: result[0] <= 0.01
+      failureLimit: 1
+      provider:
+        prometheus:
+          address: http://prometheus.monitoring:9090
+          query: |
+            sum(rate(http_requests_total{
+              service="{{args.service-name}}",
+              namespace="{{args.namespace}}",
+              status=~"5.."
+            }[5m]))
+            /
+            sum(rate(http_requests_total{
+              service="{{args.service-name}}",
+              namespace="{{args.namespace}}"
+            }[5m]))
+    - name: pod-restarts
+      interval: 1m
+      count: 3
+      successCondition: result[0] == 0
+      failureLimit: 0
+      provider:
+        prometheus:
+          address: http://prometheus.monitoring:9090
+          query: |
+            sum(kube_pod_container_status_restarts_total{
+              namespace="{{args.namespace}}",
+              pod=~"{{args.service-name}}-canary.*"
+            })
+```
+
+**Datadog analysis (alternative to Prometheus):**
+```yaml
+    - name: dd-request-success-rate
+      interval: 1m
+      count: 5
+      successCondition: result >= 0.99
+      provider:
+        datadog:
+          address: https://api.datadoghq.com
+          query: |
+            sum:http.requests{service:{{args.service-name}},status_code:2xx}.as_rate() /
+            sum:http.requests{service:{{args.service-name}}}.as_rate()
+```
+
+### Automated Rollback
+
+#### Rollback Triggers
+
+```yaml
+# AnalysisTemplate with strict failure conditions
+apiVersion: argoproj.io/v1alpha1
+kind: AnalysisTemplate
+metadata:
+  name: strict-analysis
+spec:
+  metrics:
+    # Immediate abort on critical error rate spike
+    - name: critical-error-rate
+      interval: 30s
+      count: 2
+      successCondition: result[0] <= 0.001
+      failureLimit: 0           # Zero tolerance — immediate rollback
+      provider:
+        prometheus:
+          address: http://prometheus.monitoring:9090
+          query: |
+            sum(rate(http_requests_total{
+              service="{{args.service-name}}",
+              status=~"5.."
+            }[1m])) / sum(rate(http_requests_total{
+              service="{{args.service-name}}"
+            }[1m]))
+
+    # Abort on high latency
+    - name: latency-p95
+      interval: 1m
+      count: 3
+      successCondition: result[0] <= 1000
+      failureLimit: 1
+      provider:
+        prometheus:
+          address: http://prometheus.monitoring:9090
+          query: |
+            histogram_quantile(0.95,
+              sum(rate(http_request_duration_seconds_bucket{
+                service="{{args.service-name}}"
+              }[5m])) by (le)
+            ) * 1000
+
+    # Abort on pod crashes
+    - name: crash-loop
+      interval: 30s
+      count: 3
+      successCondition: result[0] == 0
+      failureLimit: 0
+      provider:
+        prometheus:
+          address: http://prometheus.monitoring:9090
+          query: |
+            sum(kube_pod_container_status_waiting_reason{
+              namespace="{{args.namespace}}",
+              reason="CrashLoopBackOff"
+            })
+```
+
+#### Alerting on Rollback
+
+```yaml
+# Argo Rollouts — notify on rollback
+apiVersion: argoproj.io/v1alpha1
+kind: Rollout
+metadata:
+  name: myapp
+spec:
+  strategy:
+    canary:
+      analysis:
+        templates:
+          - templateName: strict-analysis
+      # Notification on analysis failure
+      metadata:
+        annotations:
+          notifications.argoproj.io/subscribe.on-rollout-aborted.slack: |
+            "ops-alerts"
+```
+
+```yaml
+# Flagger — alerting configuration
+apiVersion: flagger.app/v1beta1
+kind: AlertProvider
+metadata:
+  name: slack
+spec:
+  type: slack
+  address: https://hooks.slack.com/services/xxx/yyy/zzz
+---
+apiVersion: flagger.app/v1beta1
+kind: Canary
+metadata:
+  name: myapp
+spec:
+  analysis:
+    alerts:
+      - name: slack-alert
+        severity: error
+        providerRef:
+          name: slack
+```
+
+### Traffic Management
+
+#### Header-Based Routing
+
+```yaml
+# Route specific headers to canary (testing with internal users)
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: myapp
+spec:
+  hosts:
+    - myapp.example.com
+  http:
+    - match:
+        - headers:
+            x-canary:
+              exact: "true"
+      route:
+        - destination:
+            host: myapp
+            subset: canary
+    - route:
+        - destination:
+            host: myapp
+            subset: stable
+          weight: 100
+```
+
+```yaml
+# Argo Rollouts — header-based routing with Istio
+apiVersion: argoproj.io/v1alpha1
+kind: Rollout
+metadata:
+  name: myapp
+spec:
+  strategy:
+    canary:
+      canaryMetadata:
+        labels:
+          role: canary
+      stableMetadata:
+        labels:
+          role: stable
+      trafficRouting:
+        istio:
+          virtualServices:
+            - name: myapp-vsvc
+              routes:
+                - primary
+      steps:
+        - setWeight: 0
+        - setHeaderRoute:
+            name: canary-header
+            match:
+              - headerName: x-canary
+                headerValue:
+                  exact: "true"
+        - pause: { duration: 10m }
+```
+
+#### Weight-Based Routing
+
+```yaml
+# Progressive traffic shifting
+steps:
+  - setWeight: 10       # 10% to canary
+  - pause: { duration: 5m }
+  - analysis:
+      templates:
+        - templateName: success-rate
+  - setWeight: 25       # 25% to canary
+  - pause: { duration: 5m }
+  - analysis:
+      templates:
+        - templateName: success-rate
+  - setWeight: 50       # 50% to canary
+  - pause: { duration: 10m }
+  - analysis:
+      templates:
+        - templateName: success-rate
+  - setWeight: 75       # 75% to canary
+  - pause: { duration: 5m }
+  - setWeight: 100      # Full promotion
+```
+
+#### Traffic Mirroring (Shadow Traffic)
+
+Send production traffic copy to canary without affecting users.
+
+```yaml
+# Istio — mirror traffic to canary
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: myapp
+spec:
+  hosts:
+    - myapp.example.com
+  http:
+    - route:
+        - destination:
+            host: myapp
+            subset: stable
+      mirror:
+        host: myapp
+        subset: canary
+      mirrorPercentage:
+        value: 100.0
+```
+
+```yaml
+# Argo Rollouts — mirror step
+steps:
+  - mirror:
+      percentage: 100
+      duration: 10m
+      # Traffic copied to canary, responses discarded
+  - analysis:
+      templates:
+        - templateName: success-rate
+  - setWeight: 10
+  - pause: { duration: 5m }
+```
+
+### Progressive Delivery Lifecycle (7 Steps)
+
+```
+1. BUILD → container image built, tagged with SHA
+   |
+2. DEPLOY CANARY → canary pods created alongside stable
+   |
+3. MIRROR/HEADER-ROUTE → test canary with shadow traffic or internal headers
+   |
+4. ANALYZE → AnalysisTemplate evaluates PromQL/metrics
+   |  ├─ PASS → proceed to next step weight
+   |  └─ FAIL → automated rollback, alert team
+   |
+5. SHIFT WEIGHT → incrementally increase canary traffic (10% → 25% → 50% → 75%)
+   |
+6. PROMOTE → canary becomes stable, old stable scaled down
+   |
+7. OBSERVE → post-deployment monitoring (error rate, latency, saturation)
+```
+
+**Full Rollout with all 7 phases:**
+```yaml
+apiVersion: argoproj.io/v1alpha1
+kind: Rollout
+metadata:
+  name: myapp
+spec:
+  replicas: 5
+  revisionHistoryLimit: 3
+  strategy:
+    canary:
+      # Anti-affinity: canary and stable on different nodes
+      antiAffinity:
+        preferredDuringSchedulingIgnoredDuringExecution:
+          weight: 100
+      canaryService: myapp-canary
+      stableService: myapp-stable
+      trafficRouting:
+        istio:
+          virtualServices:
+            - name: myapp-vsvc
+              routes:
+                - primary
+      steps:
+        # Step 1-2: Deploy canary, no traffic
+        - setWeight: 0
+        - pause: { duration: 30s }
+
+        # Step 3: Mirror traffic to canary
+        - mirror:
+            percentage: 100
+            duration: 5m
+
+        # Step 4: Analyze mirrored results
+        - analysis:
+            templates:
+              - templateName: success-rate
+
+        # Step 5: Progressive weight shifting with analysis
+        - setWeight: 10
+        - pause: { duration: 5m }
+        - analysis:
+            templates:
+              - templateName: full-analysis
+
+        - setWeight: 25
+        - pause: { duration: 5m }
+        - analysis:
+            templates:
+              - templateName: full-analysis
+
+        - setWeight: 50
+        - pause: { duration: 10m }
+        - analysis:
+            templates:
+              - templateName: full-analysis
+
+        - setWeight: 75
+        - pause: { duration: 5m }
+        - analysis:
+            templates:
+              - templateName: full-analysis
+
+        # Step 6: Full promotion (100% handled automatically)
+
+        # Step 7: Post-deploy monitoring via background analysis
+      analysis:
+        templates:
+          - templateName: post-deploy-monitor
+        startingStep: 1
+        args:
+          - name: service-name
+            value: myapp
+  selector:
+    matchLabels:
+      app: myapp
+  template:
+    metadata:
+      labels:
+        app: myapp
+    spec:
+      containers:
+        - name: myapp
+          image: myapp:canary
+```
+
+**Progressive delivery checklist:**
+- [ ] AnalysisTemplate defined for success rate, latency, error rate, pod restarts
+- [ ] failureLimit set per metric (0 for critical errors, 1-2 for performance)
+- [ ] Header-based routing for internal testing before weight shift
+- [ ] Traffic mirroring to validate canary with real traffic patterns
+- [ ] Automated rollback triggers on any analysis failure
+- [ ] Alerting configured (Slack/PagerDuty) on rollback events
+- [ ] Post-deployment background analysis runs for 30+ minutes after promotion
+- [ ] Rollout history retained (revisionHistoryLimit >= 3) for quick rollback

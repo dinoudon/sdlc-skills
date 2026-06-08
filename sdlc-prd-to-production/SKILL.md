@@ -1,13 +1,14 @@
 ---
 name: sdlc-prd-to-production
-description: "End-to-end workflow: PRD → design doc → implementation → code review → testing → deployment → monitoring → retrospective. Includes Ship/Show/Ask branching, design doc templates, PRD patterns (YC, Amazon Working Backwards), ephemeral environments, DORA 2024 insights, Score spec, AI-augmented development, technical specification templates, GitOps automation, documentation-as-code pipelines, metrics-driven development, production readiness reviews, launch strategies, post-launch monitoring, stakeholder communication templates, product-engineering alignment, continuous discovery habits, product-led growth, technical debt management, engineering metrics, incident management, engineering leadership, developer onboarding, and inner source patterns."
-version: 4.3.0
+description: "End-to-end workflow: PRD → design doc → implementation → code review → testing → deployment → monitoring → retrospective. Includes Ship/Show/Ask branching, design doc templates, PRD patterns (YC, Amazon Working Backwards), ephemeral environments, DORA 2024 insights, Score spec, AI-augmented development, technical specification templates, GitOps automation, documentation-as-code pipelines, metrics-driven development, production readiness reviews, launch strategies, post-launch monitoring, stakeholder communication templates, product-engineering alignment, continuous discovery habits, product-led growth, technical debt management, engineering metrics, incident management, engineering leadership, developer onboarding, inner source patterns, product analytics, A/B testing at scale, feature flag experimentation, and product metrics frameworks."
+version: 4.4.0
 author: Hermes Agent
 license: MIT
 platforms: [linux, macos, windows]
 metadata:
   hermes:
     tags: [sdlc, prd, design-doc, rfc, ship-show-ask, workflow, end-to-end, product-development, yc, amazon-working-backwards, ephemeral-envs, score-spec, dora, ai-augmented, gitops, metrics-driven, docs-as-code, tech-spec, production-readiness, launch-strategy, post-launch, stakeholder-comms, okr, ab-testing, continuous-discovery, plg, product-led-growth, tech-debt, devex, incident-management, pagerduty, engineering-leadership, developer-onboarding, inner-source]
+    tags: [sdlc, prd, design-doc, rfc, ship-show-ask, workflow, end-to-end, product-development, yc, amazon-working-backwards, ephemeral-envs, score-spec, dora, ai-augmented, gitops, metrics-driven, docs-as-code, tech-spec, production-readiness, launch-strategy, post-launch, stakeholder-comms, okr, ab-testing, continuous-discovery, plg, product-led-growth, tech-debt, devex, incident-management, pagerduty, engineering-leadership, developer-onboarding, inner-source, product-analytics, amplitude, mixpanel, posthog, feature-flags, launchdarkly, unleash, statsig, flipt, flagsmith, aarrar, north-star-metric, heart-framework, experiment-platform]
     related_skills: [sdlc-requirements-engineering, sdlc-architecture-design, sdlc-cicd-pipeline, sdlc-deployment, sdlc-retrospective]
 ---
 
@@ -2806,6 +2807,471 @@ Costs and risks:
   Phase 3 (1 month): Pilot inner-source with 2-3 contributing teams
   Phase 4 (ongoing): Measure dedup, contributor satisfaction, review SLA
   Phase 5: Expand to more repos, formalize GIG process
+```
+
+---
+
+## Step 22: Product Analytics
+
+### Tool Selection: Amplitude vs Mixpanel vs PostHog
+
+```
+# Product analytics platform comparison — 2024/2025 state
+
+| Dimension       | Amplitude                        | Mixpanel                         | PostHog                           |
+|-----------------|----------------------------------|----------------------------------|-----------------------------------|
+| Type            | Cloud SaaS                       | Cloud SaaS                       | Open-source / self-host or cloud  |
+| Core Strength   | Behavioral cohorts, predictive   | Funnel/retention, simplicity     | All-in-one (analytics, flags,     |
+|                 | analytics, experimentation       |                                  | session replay, surveys)          |
+| Pricing Model   | MTU-based (free tier: 50K MTU)   | Events-based (free: 20M/mo)     | Events-based (free: 1M/mo self-  |
+|                 | Enterprise: $$$                  | Growth: $20+/mo                  | hosted). Cloud: $0.00005/event    |
+| Privacy         | US-hosted, SOC2, HIPAA (ent.)    | US-hosted, SOC2, GDPR           | Self-host option = full data      |
+|                 |                                  |                                  | control. EU cloud available.      |
+| Best For        | B2C at scale, growth teams,      | Mid-market SaaS, quick setup,    | Privacy-first orgs, startups,     |
+|                 | advanced experimentation         | event-driven products            | teams wanting unified stack       |
+
+# Decision guide:
+
+1. Need self-hosting or data sovereignty? -> PostHog
+2. Need advanced behavioral cohorts + ML predictions? -> Amplitude
+3. Need fastest time-to-value with clean UI? -> Mixpanel
+4. Want analytics + feature flags + replays in one tool? -> PostHog
+5. Already on GCP/AWS with enterprise budget? -> Amplitude
+
+# Implementation checklist:
+  - Define event taxonomy BEFORE instrumenting (avoid event sprawl)
+  - Use tracking plan with schema validation (Amplitude Taxonomy, Mixpanel Lexicon)
+  - Instrument server-side for revenue/auth events (client-side blocks by ad blockers)
+  - Set up identity resolution (anonymous -> identified user merge)
+  - Create 5-10 core dashboards: activation funnel, retention cohorts, feature adoption,
+    revenue by segment, experiment results
+  - Add data governance: naming conventions, PII scrubbing, retention policies
+  - Weekly data quality audit: check for duplicate events, schema drift, missing properties
+```
+
+### Event Taxonomy Template
+
+```
+# Standard event naming: [noun].[verb] or [object]_[action]
+
+# Examples:
+user.signup
+user.login
+feature.activated
+checkout.started
+checkout.completed
+subscription.upgraded
+subscription.cancelled
+
+# Properties (standard across all events):
+  user_id        - authenticated user ID
+  anonymous_id   - device/session ID
+  timestamp      - ISO 8601
+  platform       - web | ios | android | api
+  app_version    - semver
+  experiment_*   - active experiment variants (for attribution)
+
+# Anti-patterns:
+  - camelCase vs snake_case inconsistency
+  - Usernames or emails in event names
+  - Events tied to UI element names (button_clicked_v2)
+  - Missing properties on conversion events
+```
+
+---
+
+## Step 23: A/B Testing at Scale
+
+### Industry Experimentation Platforms
+
+```
+# How the biggest tech companies run experiments at scale
+
+# NETFLIX — XP (Experimentation Platform)
+# Scale: 250+ concurrent experiments at any time
+# Key innovations:
+  - Causal inference methods for observational data
+  - "Cell-based" randomization: users assigned to cells, experiments
+    assigned to cells (avoids interaction effects)
+  - Per-metric confidence intervals (not just p-values)
+  - Guardrail metrics: every experiment must not degrade latency,
+    error rates, or engagement baseline
+  - Culture: nearly every product change is A/B tested before full rollout
+
+# MICROSOFT — ExP (Experimentation Platform)
+# Scale: 10,000+ experiments/year across Bing, Office, Azure, etc.
+# Key innovations:
+  - OEC (Overall Evaluation Criterion): single metric combining
+    short-term + long-term value (prevents metric gaming)
+  - Variance reduction: CUPED (Controlled-experiment Using Pre-Experiment Data)
+    reduces variance by 50%, enabling smaller sample sizes
+  - Trustworthy Online Controlled Experiments (book by Tang et al.)
+  - SRM (Sample Ratio Mismatch) detection: automatic alerts when
+    treatment/control split deviates from expected
+
+# GOOGLE — Overlapping Experiments Framework
+# Scale: thousands of concurrent experiments on search, ads, etc.
+# Key innovations:
+  - Layered experiment framework: each traffic layer is independently
+    randomized. Experiments in different layers don't interact.
+  - Domain-level isolation: one experiment can't affect another's results
+  - Traffic splitting: fractional factorial designs for interaction testing
+  - Bayesian + frequentist hybrid approaches
+
+# Common lessons across all three:
+
+  1. GUARDRAIL METRICS are non-negotiable
+     - Every experiment checks latency, error rate, engagement floor
+     - If guardrail breaks, experiment auto-stops or blocks launch
+     - Prevents "win on primary metric, lose on everything else"
+
+  2. SRM (Sample Ratio Mismatch) detection
+     - If you expect 50/50 split but get 49.2/50.8, something is wrong
+     - Common causes: different cookie persistence, bot traffic, AAU issues
+     - Always check SRM before analyzing results (invalidates experiment otherwise)
+
+  3. Sequential testing
+     - Don't peek at results and stop early (inflates false positive rate)
+     - Use sequential methods: always-valid p-values, mSPRT, or Bayesian
+     - Allows valid early stopping when effect is obvious
+     - Netflix uses always-valid confidence sequences
+
+  4. Multiple testing correction
+     - 20 metrics × 4 variants = 80 comparisons. Expect 4 false positives.
+     - Use Benjamini-Hochberg FDR or hierarchical testing
+     - Pre-register primary metric to avoid garden of forking paths
+
+  5. Long-term holdouts
+     - Keep 5-10% control group for weeks/months to measure lasting impact
+     - Short-term wins (novelty effect) vs. long-term value differ
+     - Microsoft requires holdouts for all major changes
+
+  6. Experimentation maturity model:
+     Level 0: No experiments, ship by opinion
+     Level 1: Occasional A/B test for big features
+     Level 2: Most features tested, basic tooling
+     Level 3: Platform team, standard tooling, guardrails enforced
+     Level 4: Culture of experimentation, every change tested, advanced stats
+```
+
+### Experiment Design Template
+
+```
+# Experiment Brief
+
+Hypothesis: [If we change X, then Y metric will improve by Z% because reason]
+Primary metric: [one metric that decides go/no-go]
+Guardrail metrics: [metrics that must not degrade]
+Target population: [who is eligible]
+Variant split: [e.g., 50/50 or 90/10]
+Sample size needed: [from power analysis — use Evan Miller calculator or similar]
+Minimum detectable effect (MDE): [smallest change worth detecting]
+Duration: [based on sample size + weekly traffic]
+Pre-registration: [link to analysis plan written BEFORE experiment starts]
+
+# Analysis plan (write BEFORE running):
+  - Primary analysis: [metric, statistical test, significance level]
+  - Segmentation: [dimensions to cut results by — device, geo, tenure]
+  - Guardrail checks: [automated alerts if any guardrail degrades >X%]
+  - SRM check: [chi-squared test on assignment ratios]
+  - Multiple testing correction: [method if >1 primary metric]
+
+# Launch criteria:
+  - Primary metric significant at p < 0.05 (or Bayesian equivalent)
+  - No guardrail metric degraded beyond threshold
+  - No SRM detected
+  - Effect validated in at least 2 key segments
+  - Long-term holdout plan (if applicable)
+```
+
+---
+
+## Step 24: Feature Flag Experimentation
+
+### Platform Comparison
+
+```
+# Feature flag + experimentation platform comparison
+
+| Dimension      | LaunchDarkly          | Unleash              | Statsig             | Flipt              | Flagsmith           |
+|----------------|-----------------------|----------------------|---------------------|--------------------|---------------------|
+| Type           | Cloud SaaS            | Open-source / cloud  | Cloud SaaS          | Open-source        | Open-source / cloud |
+| Flags          | Yes (best-in-class)   | Yes                  | Yes                 | Yes                | Yes                 |
+| Experimentation| A/B, multivariate     | Basic (via plugins)  | Advanced (Bayesian) | Basic (via API)    | Basic (A/B only)    |
+| Analytics      | Built-in + integrations| Requires integration | Built-in stats engine| Requires integration| Requires integration|
+| Pricing        | $$ (seat-based,       | Free self-host.      | Generous free tier. | Free self-host.    | Free self-host.     |
+|                | enterprise $$$)       | Cloud: €€/mo         | Pay per event       | Cloud: $$          | Cloud: $$           |
+| Self-Host      | No                    | Yes                  | No                  | Yes                | Yes                 |
+| SDK Languages  | 20+                   | 12+                  | 10+                 | 15+ (server only)  | 12+                 |
+| Best For       | Enterprise, complex   | Privacy-first,       | Data-driven teams,  | Lightweight,       | Budget-conscious,   |
+|                | targeting at scale    | self-host priority   | full experimentation| minimal infra      | basic needs         |
+
+# Decision guide:
+
+1. Need advanced experimentation + built-in stats? -> Statsig
+2. Need enterprise-grade flags with complex targeting? -> LaunchDarkly
+3. Must self-host everything? -> Unleash or Flipt
+4. Want simplest possible setup? -> Flipt (single binary)
+5. Need mobile SDKs + remote config? -> LaunchDarkly or Flagsmith
+```
+
+### Architecture Pattern: SDK -> Exposure -> Analysis -> Guardrails
+
+```
+# Feature flag experimentation architecture
+
+┌─────────────┐     ┌──────────────┐     ┌───────────────┐
+│  Client SDK  │────>│  Flag Service │────>│  Assignment   │
+│  (evaluate   │     │  (rules,     │     │  Logger       │
+│   flags)     │     │   targeting) │     │  (who got     │
+└─────────────┘     └──────────────┘     │   what)       │
+                                          └───────┬───────┘
+                                                  │
+                                                  v
+┌─────────────┐     ┌──────────────┐     ┌───────────────┐
+│  Product     │<────│  Analysis    │<────│  Event        │
+│  Dashboard   │     │  Pipeline    │     │  Pipeline     │
+│  (decisions) │     │  (stats,     │     │  (outcomes,   │
+│              │     │   CUPED,     │     │   metrics)    │
+│              │     │   SRM check) │     │               │
+└─────────────┘     └──────────────┘     └───────────────┘
+       │
+       v
+┌─────────────┐
+│  Guardrail   │
+│  Monitor     │──> Auto-rollback if guardrail breaks
+│  (latency,   │
+│   errors)    │
+└─────────────┘
+
+# Key design principles:
+
+1. ASSIGNMENT LOGGING IS CRITICAL
+   - Log every flag evaluation with: user_id, flag_key, variant, timestamp
+   - Without assignment logs, you can't attribute outcomes to variants
+   - Server-side logging preferred (client can lose events)
+
+2. SEPARATE ASSIGNMENT FROM OUTCOME
+   - Assignment: who got which variant (logged at evaluation time)
+   - Outcome: what they did (logged via analytics pipeline)
+   - Join on user_id + timestamp for analysis
+   - This separation prevents biases from late-arriving data
+
+3. STICKINESS
+   - Same user must always get same variant (hash-based assignment)
+   - Use: hash(user_id + flag_key) % 100 < percentage
+   - Never use random() on each request (non-sticky = useless for experiments)
+
+4. GUARDRAIL INTEGRATION
+   - Every flag rollout has automatic guardrail checks
+   - Guardrails: p99 latency, error rate, core engagement metrics
+   - If guardrail breaks: auto-disable flag, alert on-call
+   - Think of guardrails as circuit breakers for experiments
+
+5. FLAG HYGIENE
+   - Every flag has an owner and expiry date
+   - Stale flag cleanup: flags older than 90 days with 100% rollout -> remove
+   - Flag naming convention: [team]-[feature]-[purpose]
+     e.g., growth-checkout-redesign-experiment
+   - Archive completed experiments (don't just leave flags around)
+```
+
+### Implementation Checklist
+
+```
+# Rolling out feature flag experimentation:
+
+Phase 1 (1-2 weeks): Flag infrastructure
+  [ ] Choose platform (evaluate with pilot team)
+  [ ] Install SDKs (server-side first — most reliable)
+  [ ] Define flag naming conventions and taxonomy
+  [ ] Set up flag management UI access for PMs
+
+Phase 2 (2-3 weeks): Experimentation plumbing
+  [ ] Implement assignment logging (server-side)
+  [ ] Connect assignment logs to analytics pipeline
+  [ ] Build SRM check (automated, runs daily)
+  [ ] Create experiment analysis template/dashboard
+
+Phase 3 (2-4 weeks): Guardrails and process
+  [ ] Define guardrail metrics per service
+  [ ] Set up auto-rollback triggers
+  [ ] Write experiment review checklist (template above)
+  [ ] Train team on experiment design (power analysis, MDE)
+
+Phase 4 (ongoing): Culture
+  [ ] Every feature launch goes through flag -> experiment -> rollout
+  [ ] Monthly experiment review (what shipped, what killed, what learned)
+  [ ] Quarterly flag cleanup (remove stale flags)
+  [ ] Share experiment wins/losses in team demos
+```
+
+---
+
+## Step 25: Product Metrics Frameworks
+
+### AARRR (Pirate Metrics)
+
+```
+# AARRR — Dave McClure's framework for startup metrics
+# Maps the full user journey into 5 stages
+
+ACQUISITION — How do users find you?
+  Metrics: traffic sources, CAC (cost per acquisition), signup rate,
+           channel breakdown (organic, paid, referral, direct)
+  Question: "Which channels bring users who actually convert?"
+
+ACTIVATION — Do users have a great first experience?
+  Metrics: time to first value, onboarding completion rate,
+           "aha moment" completion (e.g., Facebook's 7 friends in 10 days)
+  Question: "What action predicts long-term retention?"
+
+RETENTION — Do users come back?
+  Metrics: DAU/MAU ratio, cohort retention curves (D1, D7, D30),
+           feature-specific retention (not just login)
+  Question: "Are we building a habit or a one-time use?"
+
+REVENUE — Do users pay?
+  Metrics: ARPU, LTV, conversion to paid, expansion revenue,
+           churn rate, net revenue retention
+  Question: "Is the business model sustainable?"
+
+REFERRAL — Do users tell others?
+  Metrics: viral coefficient (K-factor), NPS, referral conversion rate,
+           invite rate, organic share rate
+  Question: "Does growth compound or require constant input?"
+```
+
+### North Star Metric
+
+```
+# North Star Metric — one metric that captures core value delivery
+# Every team optimizes toward this. Other metrics are input levers.
+
+# Examples by company:
+
+Airbnb         -> Nights booked
+Spotify        -> Time spent listening
+Slack          -> Messages sent in channels (weekly)
+Facebook       -> Daily Active Users (DAU)
+Uber           -> Rides completed per week
+Dropbox        -> Files saved
+Amazon         -> Purchase frequency (orders per customer per year)
+Zoom           -> Weekly hosted meetings
+Netflix        -> Viewing hours per subscriber
+Stripe         -> Total payment volume processed
+Notion         -> Weekly active editors
+Discord        -> Messages sent per DAU
+Figma          -> Files edited per week
+
+# How to choose your North Star:
+
+1. It must reflect value delivered to the customer (not revenue)
+2. It must be a LEADING indicator of revenue (revenue is lagging)
+3. It must be measurable and attributable
+4. It must be actionable — teams can move it by building features
+5. It should capture frequency AND depth of engagement
+
+# Anti-patterns:
+  - Revenue as North Star (lagging indicator, not directly actionable)
+  - Vanity metrics (total signups without retention context)
+  - Too complex (composite of 10 things = nobody understands it)
+  - Not connected to daily product decisions
+
+# North Star + Input Metrics:
+
+North Star: Weekly Active Editors (Notion)
+  Input lever 1: New user activation rate
+  Input lever 2: Template usage rate
+  Input lever 3: Collaboration features adoption
+  Input lever 4: Mobile app DAU
+  Input lever 5: Time to first edit
+
+# Each team owns 1-2 input levers. Improving inputs moves the North Star.
+```
+
+### HEART Framework (Google)
+
+```
+# HEART — Google's framework for user-centered metrics at scale
+# Designed for measuring UX quality, not just business outcomes
+
+HAPPINESS — How do users feel about the product?
+  Metrics: NPS, CSAT, SUS (System Usability Scale), survey ratings
+  When to use: after major UX changes, quarterly surveys
+  Example: "NPS improved from 32 to 45 after redesign"
+
+ENGAGEMENT — How much are users interacting?
+  Metrics: sessions per week, actions per session, feature usage depth,
+           time in product, content created
+  When to use: measuring stickiness and habit formation
+  Example: "Average 4.2 sessions/week (up from 3.1)"
+
+ADOPTION — Are new users starting to use the product/feature?
+  Metrics: new user signups, feature adoption rate, first action completion,
+           trial-to-paid conversion
+  When to use: new feature launches, growth measurement
+  Example: "38% of existing users tried new search within 2 weeks"
+
+RETENTION — Are users coming back over time?
+  Metrics: cohort retention curves, churn rate, reactivation rate,
+           feature-level retention (not just account-level)
+  When to use: long-term product health measurement
+  Example: "D30 retention improved from 22% to 31% for cohort"
+
+TASK SUCCESS — Can users accomplish what they came to do?
+  Metrics: task completion rate, time on task, error rate,
+           search success rate, support ticket rate per task
+  When to use: measuring efficiency of core workflows
+  Example: "Checkout completion rate: 68% (target: 75%)"
+
+# How to use HEART:
+  1. Pick 2-3 HEART categories most relevant to current goals
+  2. Define specific signals for each category
+  3. Convert signals into measurable metrics
+  4. Set targets and track over time
+  5. Don't try to optimize all 5 simultaneously — focus on weakest
+```
+
+### Choosing a Framework
+
+```
+# Framework selection guide:
+
+┌────────────────────┬──────────────────────────────────────────────┐
+│ Situation          │ Recommended Framework                        │
+├────────────────────┼──────────────────────────────────────────────┤
+│ Early-stage startup│ AARRR (focus on activation + retention)      │
+│ Scaling startup    │ North Star + AARRR inputs                    │
+│ Enterprise product │ HEART + North Star                           │
+│ UX redesign        │ HEART (happiness + task success)             │
+│ Growth team        │ AARRR (acquisition + referral) + experiments │
+│ Platform/product   │ North Star (usage frequency) + HEART         │
+│ B2B SaaS           │ North Star + AARRR (retention + revenue)     │
+│ Consumer app       │ AARRR (activation + retention + referral)    │
+└────────────────────┴──────────────────────────────────────────────┘
+
+# You can combine frameworks. Common combos:
+
+1. North Star (company level) + AARRR (team level)
+   - Company rallies around one metric
+   - Each team owns one AARRR stage as their primary focus
+
+2. AARRR (funnel health) + HEART (UX quality)
+   - AARRR tells you if the business is working
+   - HEART tells you if users are happy
+   - You can have great AARRR with terrible HEART (short-term growth, long-term churn)
+
+3. North Star (outcome) + Input Metrics (leading indicators)
+   - North Star is what you optimize
+   - Input metrics are what teams can directly change
+   - Weekly review: "did our input levers move? did North Star follow?"
+
+# Metrics review cadence:
+  Daily: operational metrics (errors, latency, uptime)
+  Weekly: product metrics (North Star, key AARRR metrics, experiment results)
+  Monthly: business metrics (revenue, churn, CAC, LTV)
+  Quarterly: strategic metrics (HEART scores, market share, NPS trend)
 ```
 
 ---

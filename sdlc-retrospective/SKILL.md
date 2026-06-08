@@ -1,13 +1,13 @@
 ---
 name: sdlc-retrospective
-description: "Retrospective formats: Start/Stop/Continue, 4Ls, Mad/Sad/Glad, Sailboat, Kaizen PDCA cycle, Toyota Kata (Mike Rother), blameless postmortems, incident deep-dive (Swiss cheese model), continuous improvement patterns. DORA metrics integration, DORA capability assessment, SPACE framework productivity metrics, Team Topologies awareness, team cognitive load measurement, Value Stream Mapping, flow metrics (lead time, cycle time, flow efficiency, WIP limits), anti-patterns, remote retro patterns, psychological safety measurement, action item tracking, green software retrospective, FinOps retrospective, platform engineering retrospective."
-version: 4.2.0
+description: "Retrospective formats: Start/Stop/Continue, 4Ls, Mad/Sad/Glad, Sailboat, Kaizen PDCA cycle, Toyota Kata (Mike Rother), blameless postmortems, incident deep-dive (Swiss cheese model), continuous improvement patterns. DORA metrics integration, DORA capability assessment, SPACE framework productivity metrics, Team Topologies awareness, team cognitive load measurement, Value Stream Mapping, flow metrics (lead time, cycle time, flow efficiency, WIP limits), anti-patterns, remote retro patterns, psychological safety measurement, action item tracking, green software retrospective, FinOps retrospective, platform engineering retrospective, Toyota Kata practice, Lean Software Development (7 wastes), Theory of Constraints (5 focusing steps, thinking processes), DORA transformation patterns (24 capabilities, 4 tiers)."
+version: 4.4.0
 author: Hermes Agent
 license: MIT
 platforms: [linux, macos, windows]
 metadata:
   hermes:
-    tags: [sdlc, retrospective, kaizen, continuous-improvement, postmortem, agile, dora-metrics, team-topologies, value-stream-mapping, psychological-safety, space-framework, toyota-kata, flow-metrics, cognitive-load, incident-deepdive, dora-capabilities, green-software, finops, platform-engineering, sustainable-engineering, cloud-cost-optimization, developer-experience]
+    tags: [sdlc, retrospective, kaizen, continuous-improvement, postmortem, agile, dora-metrics, team-topologies, value-stream-mapping, psychological-safety, space-framework, toyota-kata, flow-metrics, cognitive-load, incident-deepdive, dora-capabilities, green-software, finops, platform-engineering, sustainable-engineering, cloud-cost-optimization, developer-experience, lean-software-development, theory-of-constraints, dora-transformation, seven-wastes, throughput-accounting]
     related_skills: [sdlc-prd-to-production, sdlc-requirements-engineering]
 ---
 
@@ -2407,3 +2407,651 @@ Golden paths = recommended, well-supported ways to build and run services.
 
 Source: https://platformengineering.org/blog/what-is-platform-engineering
 Team Topologies platform team: https://teamtopologies.com/key-concepts-content/what-is-a-platform-team
+
+## Step 27: Toyota Kata Practice
+
+Source: https://www.amazon.com/Toyota-Kata-Managing-Improvement-Adaptiveness/dp/0071635238 | https://www-personal.umich.edu/~mrother/Homepage.html
+
+Toyota Kata is behavioral practice, not a tool or methodology. Two kata (routines) form the system: Improvement Kata and Coaching Kata. Goal: develop scientific thinking as daily habit, not periodic events.
+
+### Improvement Kata (4 Steps)
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│  IMPROVEMENT KATA                                               │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                 │
+│  Step 1: Understand the Direction                               │
+│  ├── What is the long-term vision / challenge?                  │
+│  ├── What business or organizational goal drives this?          │
+│  └── How does this team's work contribute?                      │
+│                                                                 │
+│  Step 2: Grasp the Current Condition                           │
+│  ├── What is happening now? (data, facts, not opinions)         │
+│  ├── What are the actual process conditions?                    │
+│  ├── Where is the process in relation to the target?            │
+│  └── Map current value stream, identify obstacles               │
+│                                                                 │
+│  Step 3: Establish the Next Target Condition                    │
+│  ├── What should the process look like next?                    │
+│  ├── Define specific measurable target (not the final goal)     │
+│  ├── What is the next step toward the direction?                │
+│  └── Target must be beyond current capability (stretch)         │
+│                                                                 │
+│  Step 4: Experiment Toward the Target                           │
+│  ├── What obstacles prevent reaching target condition?           │
+│  ├── Which obstacle are we addressing now?                      │
+│  ├── What is our hypothesis?                                    │
+│  ├── What do we expect?                                         │
+│  ├── How will we test it? (short PDCA cycle)                    │
+│  └── What did we learn?                                         │
+│                                                                 │
+│  → Then repeat from Step 4 (next obstacle, next experiment)     │
+│                                                                 │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+### Coaching Kata (5 Questions)
+
+Manager asks these 5 questions in regular coaching cycles (daily or every few days):
+
+| # | Question | Purpose |
+|---|----------|---------|
+| 1 | What is the target condition? | Clarity on next goal |
+| 2 | What is the actual condition now? | Fact-based awareness |
+| 3 | What obstacles are you working on now? | Focus on one at a time |
+| 4 | What is your next experiment? | Scientific thinking |
+| 5 | When can we see what we learned? | Commitment to PDCA cycle |
+
+**Key rule:** Coach does NOT give answers. Coach asks questions. Learner experiments and learns.
+
+### PDCA Experiments in Kata Context
+
+Each experiment is a single PDCA cycle:
+
+```
+Plan:   Predict outcome of one specific change
+  ↓
+Do:     Run experiment (short, safe-to-fail)
+  ↓
+Check:  Compare actual result to prediction
+  ↓
+Act:    Decide next step based on what learned
+  ↓
+  (back to Plan for next experiment)
+```
+
+**Experiment design rules:**
+- One change at a time (scientific method)
+- Predict before you act (forces learning)
+- Short cycles (hours to 1-2 days, not weeks)
+- Document prediction vs actual (surfacing mental models)
+- Failure is information, not blame
+
+### Behavioral Routine vs Tool
+
+**Critical distinction:** Toyota Kata is NOT a tool you apply. It is a behavioral routine you practice daily.
+
+| Aspect | Tool Mindset (wrong) | Kata Mindset (correct) |
+|--------|----------------------|------------------------|
+| When to use | When problems arise | Every day, routine practice |
+| Who does it | Improvement specialists | Everyone, especially leaders |
+| Goal | Solve this problem | Develop scientific thinking |
+| How long | One-off event | Continuous routine |
+| Failure | Avoid it | Learn from it |
+| Coaching | Give advice | Ask questions |
+| Measurement | Outcome only | Process adherence + outcome |
+
+**Implementing Kata in retrospectives:**
+1. Use retro to set next target condition (Step 3)
+2. Between retros, run daily coaching cycles (5 questions)
+3. Each retro: report on experiments run, what learned
+4. Track: how many PDCA cycles this sprint? (aim for 5-10+)
+5. Retrospective reviews the practice, not just the results
+
+### Kata Practice Board
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│  KATA BOARD                                                     │
+├────────────────┬──────────────┬──────────────┬─────────────────┤
+│  Direction     │ Current      │ Target       │ Experiments     │
+│  (Challenge)   │ Condition    │ Condition    │                 │
+├────────────────┼──────────────┼──────────────┼─────────────────┤
+│ Long-term      │ Where we     │ Where we     │ Obstacle 1      │
+│ challenge      │ are now      │ want to be   │ → Hypothesis    │
+│                │ (data/facts) │ next         │ → Test          │
+│                │              │              │ → Result        │
+│                │              │              │ → Learning      │
+│                │              │              │                 │
+│                │              │              │ Obstacle 2      │
+│                │              │              │ → ...           │
+└────────────────┴──────────────┴──────────────┴─────────────────┘
+```
+
+### Kata Maturity Levels
+
+| Level | Description | Indicators |
+|-------|-------------|------------|
+| **1: Awareness** | Team knows Kata exists | Has read the book, tried once |
+| **2: Practice** | Regular coaching cycles | 5 questions used weekly, experiments documented |
+| **3: Routine** | Kata is how we work | Daily coaching, >5 experiments/sprint, prediction tracking |
+| **4: Culture** | Scientific thinking is default | Kata language natural, self-coaching emerging |
+
+Source: Toyota Kata by Mike Rother, 2009 | https://www-personal.umich.edu/~mrother/Homepage.html
+
+## Step 28: Lean Software Development (7 Wastes)
+
+Source: https://www.amazon.com/Lean-Software-Development-Agile-Toolkit/dp/0321150783 | Mary & Tom Poppendieck
+
+Adapted from Toyota Production System's 7 wastes (muda) to software context. Use in retrospectives to identify systemic waste and improve flow.
+
+### 7 Wastes of Software Development
+
+| # | Waste | Definition | Software Examples | Detection Signal |
+|---|-------|-----------|-------------------|------------------|
+| 1 | **Overproduction** | Building features no one uses | Gold plating, unused features, speculative features | Low feature adoption, low usage analytics |
+| 2 | **Extra Processing** | Doing more work than needed | Over-engineering, unnecessary approvals, excessive documentation, redundant testing | Long cycle times for simple changes |
+| 3 | **Waiting** | Idle time between steps | Waiting for review, waiting for deploy, waiting for decisions, blocked PRs | Queue buildup, aging tickets |
+| 4 | **Motion** | Unnecessary movement of people/context | Context switching, excessive meetings, knowledge silos requiring handoffs | Low flow efficiency, frequent interruptions |
+| 5 | **Inventory** | Partially done work (WIP) | Unmerged branches, unfinished stories, accumulated backlogs | High WIP count, stale PRs |
+| 6 | **Transportation** | Unnecessary handoffs/movement of work | Multi-team approvals, ticket bouncing, passing work between silos | Long lead times, handoff delays |
+| 7 | **Defects** | Work that must be redone | Bugs in production, rework, escaped defects, regressions | Defect rate, rework percentage |
+
+### Waste Detection in Retrospectives
+
+**Gather Data phase waste audit:**
+```
+For each waste type, collect data:
+
+1. OVERPRODUCTION
+   - Features shipped last quarter with <10% adoption
+   - Stories completed but never deployed
+   - Metrics: feature usage rate, shelf-ware ratio
+
+2. EXTRA PROCESSING
+   - Changes that took >5x expected time
+   - Documents/reviews that added no value
+   - Metrics: cycle time vs complexity scatter plot
+
+3. WAITING
+   - Average PR review wait time
+   - Average time waiting for environments
+   - Metrics: queue age distribution, wait:work ratio
+
+4. MOTION
+   - Context switches per day per developer
+   - Time spent in meetings vs coding
+   - Metrics: flow efficiency = value-add time / total lead time
+
+5. INVENTORY
+   - Current WIP count vs WIP limit
+   - Age of oldest unmerged branch
+   - Metrics: WIP aging chart, inventory carrying cost
+
+6. TRANSPORTATION
+   - Number of handoffs from idea to production
+   - Teams involved in a single feature delivery
+   - Metrics: handoff count, cross-team dependency count
+
+7. DEFECTS
+   - Defect escape rate (production bugs / total changes)
+   - Rework percentage (time fixing vs building)
+   - Metrics: defect density, MTTR, rework ratio
+```
+
+### Value Stream Mapping (VSM) for Waste Identification
+
+Map the entire flow from idea to production, marking:
+- **Process steps** (what happens)
+- **Wait times** (how long between steps)
+- **Value-add time** (time actually creating value)
+- **Waste type** at each wait/inefficiency
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│  SOFTWARE VALUE STREAM MAP                                      │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                 │
+│  Idea → [Backlog] → [Design] → [Code] → [Review] → [Test]     │
+│   VA:  0  VA: 0h   VA: 2h    VA: 4h    VA: 1h    VA: 2h       │
+│   Wait: 5d  Wait: 2d  Wait: 0.5d  Wait: 1d  Wait: 2d          │
+│                                                                 │
+│  → [Staging] → [Approve] → [Deploy] → [Monitor]               │
+│   VA: 0.5h    VA: 0.5h    VA: 0.25h  VA: 0.25h                │
+│   Wait: 3d    Wait: 2d    Wait: 0.5d  Wait: 0d                │
+│                                                                 │
+│  Total Lead Time: ~16 days                                      │
+│  Total Value-Add Time: ~10.5 hours                              │
+│  Flow Efficiency: 10.5h / (16 × 8h) = 8.2%                    │
+│                                                                 │
+│  Major wastes:                                                  │
+│  - Backlog wait (5d): inventory waste                           │
+│  - Approve wait (2d): extra processing (unnecessary gate)       │
+│  - Test wait (2d): waiting (environment contention)             │
+│  - Staging wait (3d): transportation (handoff to QA team)       │
+│                                                                 │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+### Flow Efficiency Calculation
+
+```
+Flow Efficiency = (Value-Add Time) / (Total Lead Time) × 100%
+
+Typical software teams: 5-15% flow efficiency
+Good: 25-40%
+Excellent: >40%
+Manufacturing benchmark: 50-80%
+
+Improvement lever: Reduce wait times (wastes 3, 5, 6)
+Not: Work faster at each step (diminishing returns)
+```
+
+### Waste Prioritization Matrix
+
+| Waste | Impact on Lead Time | Fix Difficulty | Priority |
+|-------|-------------------|----------------|----------|
+| Waiting (PR reviews) | High | Low (set SLAs) | **Fix first** |
+| Inventory (high WIP) | High | Medium (WIP limits) | **Fix second** |
+| Transportation (handoffs) | High | High (org change) | Plan long-term |
+| Defects (rework) | Medium | Medium (test automation) | **Fix third** |
+| Extra Processing | Medium | Low (remove gates) | Quick win |
+| Overproduction | Low (hidden cost) | High (product discipline) | Plan long-term |
+| Motion | Low-Medium | Medium (tooling/automation) | Opportunistic |
+
+### Lean Principles Applied to Retrospectives
+
+| Lean Principle | Retro Application |
+|---------------|-------------------|
+| **Eliminate waste** | Retro identifies the 7 wastes in current process |
+| **Amplify learning** | Retro is itself a learning mechanism (short feedback loops) |
+| **Decide late** | Keep options open, avoid premature commitment |
+| **Deliver fast** | Short iterations, frequent delivery, reduce batch size |
+| **Empower team** | Team identifies and fixes own waste, not management-imposed |
+| **Build integrity in** | Quality built into process, not inspected in |
+| **Optimize the whole** | Look at entire value stream, not local optimizations |
+
+Source: Lean Software Development: An Agile Toolkit by Mary & Tom Poppendieck, 2003
+Implementing Lean Software Development: From Concept to Cash by Mary & Tom Poppendieck, 2006
+
+## Step 29: Theory of Constraints (TOC)
+
+Source: https://www.amazon.com/Goal-Process-Ongoing-Improvement/dp/0884271781 | Eliyahu M. Goldratt
+
+Core principle: Every system has one constraint (bottleneck) that limits throughput. Improving anything that is NOT the constraint is waste. Focus all improvement effort on the constraint.
+
+### 5 Focusing Steps
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│  TOC 5 FOCUSING STEPS (Process of Ongoing Improvement)         │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                 │
+│  1. IDENTIFY the constraint                                     │
+│     - What limits the system's throughput?                      │
+│     - Where is the bottleneck?                                  │
+│     - Only one constraint at a time (by definition)             │
+│                                                                 │
+│  2. EXPLOIT the constraint                                      │
+│     - Maximize throughput at the constraint                     │
+│     - Ensure constraint never wastes time                       │
+│     - No idle time, no waiting, no defects at bottleneck        │
+│     - Quick wins without new investment                         │
+│                                                                 │
+│  3. SUBORDINATE everything else to the constraint               │
+│     - Non-constraint processes adjust to match constraint pace  │
+│     - Non-constraints may appear "inefficient" (this is OK)     │
+│     - Buffer before constraint to protect it from starvation    │
+│     - Pace non-constraints to constraint throughput rate         │
+│                                                                 │
+│  4. ELEVATE the constraint                                      │
+│     - Invest to increase constraint capacity                    │
+│     - Add people, tooling, automation                           │
+│     - Only after exploit and subordinate are exhausted          │
+│     - This costs money; justify with throughput increase         │
+│                                                                 │
+│  5. REPEAT (prevent inertia)                                    │
+│     - Once constraint moves, old constraint becomes non-issue   │
+│     - Find new constraint, start over                           │
+│     - Continuous process, never "done"                          │
+│                                                                 │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+### Software Delivery Bottleneck Identification
+
+Common constraints in software delivery:
+
+| Constraint Type | Where It Shows | How to Detect | Exploit Ideas |
+|----------------|----------------|---------------|---------------|
+| **Code review** | Long PR queue, aging PRs | PR wait time > 4h | Review SLA, pair programming, smaller PRs |
+| **Testing** | QA bottleneck, staging contention | Test cycle time vs dev cycle time | Parallel testing, test automation, shift-left |
+| **Deployment** | Release trains, change approval | Deploy frequency, deploy lead time | CI/CD automation, feature flags, trunk-based |
+| **Environment** | Waiting for test/staging envs | Environment provisioning time | Ephemeral environments, IaC |
+| **Knowledge** | Silos, key-person dependency | Bus factor, knowledge distribution | Pairing, documentation, cross-training |
+| **Decision-making** | Waiting for approvals | Decision lead time | Delegation, clear decision rights |
+| **Product** | Undefined requirements, changing scope | Rework rate, scope churn | Discovery sprints, prototypes |
+
+### Identifying the Constraint in Retrospectives
+
+**Questions to ask:**
+1. "If we could magically fix one thing, what would double our throughput?"
+2. "Where does work pile up waiting?"
+3. "What process step has the longest queue?"
+4. "If we added capacity everywhere except one place, where would it still back up?"
+5. "What are we waiting for most often?"
+
+**Constraint detection data:**
+```
+Step          | Process Time | Wait Time | Queue Length | Utilization
+---------------------------------------------------------------------------
+Backlog       | 0h           | 5d        | 45 items     | N/A
+Design        | 2h           | 1d        | 3 items      | 60%
+Coding        | 4h           | 0.5d      | 1 item       | 75%
+Code Review   | 1h           | 3d        | 12 items     | 95% ← CONSTRAINT
+Testing       | 2h           | 2d        | 5 items      | 80%
+Deploy        | 0.25h        | 1d        | 3 items      | 50%
+
+Constraint indicator: Longest wait time, highest utilization, largest queue
+```
+
+### Thinking Processes
+
+TOC provides structured thinking tools for complex problems:
+
+#### Current Reality Tree (CRT)
+
+Maps cause-and-effect from undesirable effects (UDEs) to root causes:
+
+```
+         ┌───────────────┐
+         │ Long lead time│
+         └───────┬───────┘
+                 │ caused by
+        ┌────────┴────────┐
+        │                 │
+┌───────┴───────┐  ┌──────┴──────┐
+│  Too much WIP │  │ Slow reviews│
+└───────┬───────┘  └──────┬──────┘
+        │ caused by        │ caused by
+┌───────┴───────┐  ┌──────┴──────┐
+│ Start too many│  │ Complex PRs │
+│   things      │  │             │
+└───────┬───────┘  └──────┬──────┘
+        │ caused by        │ caused by
+        └────────┬─────────┘
+                 │
+       ┌─────────┴─────────┐
+       │ ROOT CAUSE: No WIP│
+       │ limit, no PR size │
+       │ standard          │
+       └───────────────────┘
+```
+
+**How to build CRT in retro:**
+1. List 5-10 Undesirable Effects (UDEs) the team experiences
+2. For each UDE, ask "what causes this?" (sufficiency logic)
+3. Connect causes to effects with arrows
+4. Find common root causes (nodes with many outgoing arrows)
+5. Those root causes are where to intervene
+
+#### Evaporating Cloud (Conflict Resolution)
+
+Surfaces and resolves conflicts that block improvement:
+
+```
+        ┌─────────────┐          ┌─────────────┐
+        │  Need: Speed │          │ Need: Quality│
+        └──────┬──────┘          └──────┬──────┘
+               │                        │
+        ┌──────┴──────┐          ┌──────┴──────┐
+        │ Requirement:│          │ Requirement:│
+        │ Ship fast   │          │ Test fully  │
+        └──────┬──────┘          └──────┬──────┘
+               │                        │
+               └────────┐  ┌────────────┘
+                        │  │
+                 ┌──────┴──┴──────┐
+                 │   CONFLICT:    │
+                 │ Can't do both  │
+                 │ simultaneously │
+                 └────────┬───────┘
+                          │
+                 ┌────────┴────────┐
+                 │ CHALLENGE:      │
+                 │ What assumption │
+                 │ makes this a    │
+                 │ conflict?       │
+                 └─────────────────┘
+
+Hidden assumption: "Testing must happen after coding, in full"
+Injection: Shift-left testing, automated tests, CI → resolves conflict
+```
+
+**How to use in retro:**
+1. Identify the conflict blocking improvement (speed vs quality, autonomy vs consistency, etc.)
+2. Map it as evaporating cloud diagram
+3. Surface the hidden assumption
+4. Challenge: "What would make both needs achievable?"
+5. Find injection (solution) that breaks the assumption
+
+### Throughput Accounting
+
+TOC accounting (vs traditional cost accounting) focuses on throughput:
+
+| Metric | Definition | Formula |
+|--------|------------|---------|
+| **Throughput (T)** | Rate of generating money through sales | Revenue - Truly Variable Costs |
+| **Inventory (I)** | Money tied up in goods for sale | Raw materials, WIP, unsold products |
+| **Operating Expense (OE)** | Money spent to convert inventory to throughput | All fixed costs (salaries, tools, infra) |
+
+**Software adaptations:**
+
+| TOC Metric | Software Equivalent | Retro Measurement |
+|-----------|-------------------|-------------------|
+| Throughput (T) | Features delivered to customers per sprint | Deployed features count, business value delivered |
+| Inventory (I) | Unreleased work (WIP, unreleased branches) | WIP count, unreleased story points |
+| Operating Expense (OE) | Cost of running the team | Team cost, infrastructure cost |
+
+**Goal:** Increase T, reduce I, reduce OE (in that priority order).
+
+**Retro questions using throughput accounting:**
+- "What is our throughput this sprint? (features deployed to users)"
+- "What is our inventory? (work started but not delivering value)"
+- "Are we increasing throughput or just reducing cost?" (throughput > cost cutting)
+- "What investment would increase throughput the most?" (elevate the constraint)
+
+**Net Profit = T - OE**
+**ROI = (T - OE) / I**
+
+In software: ROI = (value delivered - team cost) / investment in WIP and tooling
+
+### TOC in Retrospective Agenda
+
+| Retro Phase | TOC Activity |
+|-------------|-------------|
+| Set the Stage | State current constraint (identified last retro) |
+| Gather Data | Measure throughput at constraint, queue lengths, wait times |
+| Generate Insights | Build CRT from UDEs, map evaporating cloud for conflicts |
+| Decide What to Do | Exploit or elevate constraint, one specific action |
+| Close | State constraint status, predict throughput change |
+
+Source: The Goal by Eliyahu M. Goldratt, 1984 | https://www.amazon.com/Goal-Process-Ongoing-Improvement/dp/0884271781
+Thinking Processes: https://en.wikipedia.org/wiki/Thinking_processes_(Theory_of_Constraints)
+
+## Step 30: DORA Transformation Patterns
+
+Source: https://dora.dev/ | Accelerate by Nicole Forsgren, Jez Humble, Gene Kim | https://dora.dev/research/
+
+DORA research identifies 24 capabilities that drive software delivery performance. Teams progress through 4 performance tiers. Transformation follows predictable patterns: foundation → acceleration → optimization. Technical and culture practices co-evolve.
+
+### DORA Performance Tiers
+
+| Tier | Deployment Frequency | Lead Time | Change Failure Rate | Time to Restore Service |
+|------|---------------------|-----------|--------------------|-----------------------|
+| **Elite** | On-demand (multiple/day) | < 1 hour | 0-15% | < 1 hour |
+| **High** | Weekly to monthly | 1 week to 1 month | 16-30% | < 1 day |
+| **Medium** | Monthly to quarterly | 1 month to 6 months | 16-30% | 1 week to 1 month |
+| **Low** | Less than quarterly | > 6 months | 16-30% | > 6 months |
+
+**Distribution (approximate, DORA 2023):** Elite 19%, High 37%, Medium 29%, Low 15%
+
+### DORA 24 Capabilities
+
+#### Technical Capabilities
+
+| # | Capability | Description | Key Practices |
+|---|-----------|-------------|---------------|
+| 1 | **Version control** | Everything in version control | Code, config, infrastructure, tests, scripts |
+| 2 | **Deployment automation** | Automated deployment process | One-click deploy, CI/CD pipeline |
+| 3 | **Continuous integration** | Merge to trunk daily, automated build + test | Trunk-based dev, feature branches < 1 day |
+| 4 | **Trunk-based development** | Short-lived branches, merge to main frequently | Branch lifetime < 1 day |
+| 5 | **Test automation** | Automated tests at multiple levels | Unit, integration, acceptance tests |
+| 6 | **Test data management** | Easy to get test data | On-demand test data, synthetic data |
+| 7 | **Shift left on security** | Security integrated early in dev | SAST, DAST, dependency scanning in CI |
+| 8 | **Continuous delivery** | Code always in deployable state | Automated deploy pipeline, feature flags |
+| 9 | **Database change management** | Database changes version-controlled | Migration scripts, automated schema updates |
+| 10 | **Deployment automation (infra)** | Infrastructure changes automated | IaC, automated provisioning |
+| 11 | **Loosely coupled architecture** | Teams can deploy independently | Microservices, decoupled services, API contracts |
+| 12 | **Empowered teams** | Teams choose own tools and approaches | Autonomy in tooling decisions |
+| 13 | **Monitoring and observability** | Production monitoring + alerting | Metrics, logs, traces, dashboards |
+| 14 | **Proactive failure notification** | Detect issues before users report | Synthetic monitoring, anomaly detection |
+| 15 | **Telemetry in CI/CD** | Pipeline metrics visible | Build times, deploy frequency, failure rates |
+
+#### Management Capabilities
+
+| # | Capability | Description | Key Practices |
+|---|-----------|-------------|---------------|
+| 16 | **Change approval processes** | Lightweight, peer-based review | Peer review, automated checks vs CAB |
+| 17 | **Release management** | Frequent, low-risk releases | Feature flags, canary, blue-green |
+| 18 | **Product management** | Small batch, outcome-focused | MVP, continuous discovery, A/B testing |
+| 19 | **Lean product management** | Limit WIP, work in small batches | WIP limits, flow efficiency focus |
+
+#### Cultural Capabilities
+
+| # | Capability | Description | Key Practices |
+|---|-----------|-------------|---------------|
+| 20 | **Westrum organizational culture** | Generative culture (learning-focused) | Blameless postmortems, psychological safety |
+| 21 | **Job satisfaction** | Team members satisfied with work | Autonomy, mastery, purpose |
+| 22 | **Learning culture** | Invest in learning, allow time for it | 20% time, learning days, conference budgets |
+| 23 | **Transformational leadership** | Leaders who inspire and support change | Vision, intellectual stimulation, supportive |
+| 24 | **Psychological safety** | Safe to take risks, fail, learn | No blame, experimentation encouraged |
+
+### Transformation Path
+
+Teams don't jump from Low to Elite. They follow a predictable path:
+
+```
+Phase 1: FOUNDATION (Low → Medium)
+├── Version control for everything
+├── Basic CI (automated build)
+├── Automated unit tests
+├── Deployment automation (at least staging)
+├── Monitoring basics (error tracking, uptime)
+├── Postmortem practice (blameless)
+├── Change approval: lightweight peer review
+└── Cultural: shift from blame to learning
+
+Phase 2: ACCELERATION (Medium → High)
+├── Trunk-based development
+├── Full CI/CD pipeline
+├── Comprehensive test automation
+├── Infrastructure as Code
+├── Feature flags for release management
+├── Observability (metrics, logs, traces)
+├── Loosely coupled architecture
+├── Security shift-left
+├── Cultural: psychological safety established
+└── Cultural: learning culture (dedicated time)
+
+Phase 3: OPTIMIZATION (High → Elite)
+├── On-demand deployment
+├── Sub-hour lead time
+├── Change failure rate < 15%
+├── Sub-hour recovery time
+├── Empowered teams (choose own tools)
+├── Telemetry in CI/CD (pipeline analytics)
+├── Proactive failure detection
+├── Database change management automated
+├── Cultural: transformational leadership
+└── Cultural: continuous improvement routine
+```
+
+### Technical + Culture Co-Evolution
+
+**Key finding:** Technical practices and cultural practices must co-evolve. Neither alone drives high performance.
+
+```
+Technical Alone (fails):
+├── Implement CI/CD but still have blame culture
+├── Result: Faster delivery of broken code, fear of deploying
+└── Plateaus at Medium tier
+
+Culture Alone (fails):
+├── Great psychological safety but manual processes
+├── Result: Happy team delivering slowly with high error rate
+└── Plateaus at Medium tier
+
+Co-Evolution (succeeds):
+├── CI/CD + blameless postmortems → fast recovery, continuous improvement
+├── Trunk-based dev + psychological safety → safe to merge frequently
+├── Feature flags + empowered teams → team controls release timing
+└── Achieves High → Elite performance
+```
+
+**Co-evolution pairs:**
+
+| Technical Practice | Cultural Pair | Why They Co-Evolve |
+|-------------------|--------------|-------------------|
+| Trunk-based dev | Psychological safety | Safe to merge small changes frequently |
+| Feature flags | Empowered teams | Team decides when to enable features |
+| CI/CD | Blameless postmortems | Fast recovery requires learning from failure |
+| Monitoring | Learning culture | Data drives continuous improvement |
+| Loosely coupled | Team autonomy | Independent deploy = independent decisions |
+| Shift-left security | Shared responsibility | Everyone owns security, not just security team |
+
+### Assessing Current Tier and Next Steps
+
+```
+Current State Assessment:
+
+1. Deployment frequency:  _________ → maps to tier: _________
+2. Lead time:            _________ → maps to tier: _________
+3. Change failure rate:  _________ → maps to tier: _________
+4. Time to restore:      _________ → maps to tier: _________
+
+Overall tier = lowest of 4 metrics (bottleneck thinking)
+
+Next improvement:
+├── Identify which metric is holding back tier advancement
+├── Find the capability gap that affects that metric
+├── Check: is it technical or cultural gap?
+├── If cultural: address first (culture enables technical)
+├── If technical: implement with cultural support
+└── Reassess in 4-8 weeks
+```
+
+### DORA Capability Priority by Phase
+
+| Phase | Priority 1 | Priority 2 | Priority 3 |
+|-------|------------|------------|------------|
+| **Foundation** | Version control | CI (automated build) | Blameless postmortems |
+| **Acceleration** | Trunk-based dev | Test automation | Psychological safety |
+| **Optimization** | Telemetry in CI/CD | Proactive monitoring | Transformational leadership |
+
+### Retrospective Integration
+
+| Retro Phase | DORA Activity |
+|-------------|--------------|
+| Set the Stage | State current DORA tier and target tier |
+| Gather Data | DORA metrics (4 key metrics), capability checklist scores |
+| Generate Insights | Identify which capability gap limits tier advancement |
+| Decide What to Do | One capability improvement, technical or cultural (check co-evolution pair) |
+| Close | Reassess target tier, celebrate progress |
+
+**Retro question:** "Are we improving technical capability and cultural capability together, or neglecting one?"
+
+Source: Accelerate by Nicole Forsgren, Jez Humble, Gene Kim, 2018 | https://dora.dev/research/
+DORA State of DevOps Report: https://dora.dev/research/ | https://cloud.google.com/devops/state-of-devops
+24 Capabilities: https://dora.dev/capabilities/
