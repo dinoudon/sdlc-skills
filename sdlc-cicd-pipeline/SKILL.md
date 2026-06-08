@@ -408,6 +408,95 @@ Source: https://dora.dev/research/ (State of DevOps Reports)
     fail-on-severity: high
 ```
 
+## Step 10: Supply Chain Security
+
+### Sigstore / Cosign — Artifact Signing
+Source: https://www.sigstore.dev/
+
+Keyless artifact signing. No long-lived keys.
+
+**Components:**
+- **cosign:** signs and verifies OCI images, blobs, attestations
+- **fulcio:** free CA that issues short-lived certs tied to OIDC identity
+- **rekor:** transparency log (append-only, public) for all signatures
+
+```yaml
+# GitHub Actions
+- uses: sigstore/cosign-installer@v3
+- run: cosign sign --yes ${{ env.REGISTRY }}/${{ env.IMAGE }}@${{ steps.build.outputs.digest }}
+  env:
+    COSIGN_EXPERIMENTAL: "1"
+```
+
+### SLSA Framework
+Source: https://slsa.dev/
+
+Supply-chain Levels for Software Artifacts. Google-originated, now OpenSSF.
+
+| Level | Guarantees |
+|-------|-----------|
+| L0 | No guarantees |
+| L1 | Provenance exists (who built it, how) |
+| L2 | Hosted build platform, provenance is signed |
+| L3 | Hardened build platform, non-falsifiable provenance |
+
+```yaml
+# SLSA L3 provenance generator
+- uses: slsa-framework/slsa-github-generator/generator_container_slsa3.yml@v2
+  with:
+    image: ghcr.io/org/image
+    digest: ${{ steps.build.outputs.digest }}
+  permissions:
+    id-token: write
+```
+
+### SBOM Generation
+Source: https://github.com/anchore/syft
+
+```yaml
+# Syft — generates SPDX and CycloneDX SBOMs
+- uses: anchore/sbom-action@v0
+  with:
+    image: ${{ env.IMAGE }}
+    format: spdx-json
+    output-file: sbom.spdx.json
+```
+
+**Attach SBOM to image:**
+```bash
+cosign attest --predicate sbom.spdx.json --type spdx IMAGE
+```
+
+### Dependency Review
+```yaml
+# Block PRs on known vulnerabilities
+- uses: actions/dependency-review-action@v4
+  with:
+    fail-on-severity: high
+    deny-licenses: GPL-3.0, AGPL-3.0
+    comment-summary-in-pr: always
+```
+
+### Secret Management in CI
+
+**HashiCorp Vault (OIDC auth):**
+```yaml
+- uses: hashicorp/vault-action@v3
+  with:
+    url: https://vault.example.com
+    method: jwt
+    role: ci-deployer
+    secrets: |
+      secret/data/ci token | CI_TOKEN
+```
+
+**Cloud native:**
+- AWS: OIDC provider + IAM role
+- GCP: Workload Identity Federation
+- Azure: Federated credentials
+
+Source: https://developer.hashicorp.com/vault/docs/github-actions
+
 ## Pitfalls
 
 1. **Don't run everything in one job** — split lint, test, build, deploy

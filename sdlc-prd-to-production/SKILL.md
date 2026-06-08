@@ -272,6 +272,48 @@ See `sdlc-retrospective` for full retrospective formats.
 □ Stakeholders notified
 ```
 
+## Step 10: Platform Engineering
+
+### Internal Developer Platforms (IDP)
+
+Source: https://tag-app-delivery.cncf.io/whitepapers/platforms/
+
+IDP = self-service abstraction layer between infra and devs. Reduces cognitive load.
+
+**Key components:**
+- Service catalog (what exists, who owns it)
+- Self-service provisioning (databases, queues, envs)
+- Golden path templates (best practices built-in)
+- Observability portal (logs, metrics, traces linked to services)
+- RBAC + policy-as-code (OPA/Kyverno gates)
+
+### Backstage (Spotify)
+Source: https://backstage.io/docs/
+
+CNCF Incubating. Developer portal + scaffolder + catalog.
+
+**Core features:**
+- **Software Catalog:** register all services, APIs, data pipelines
+- **Software Templates:** scaffolder creates new services from templates
+- **TechDocs:** docs-as-code rendered in portal
+- **Plugins:** 100+ community plugins (K8s, ArgoCD, Grafana, PagerDuty)
+
+Source: https://github.com/backstage/backstage
+
+### Ephemeral Environments
+
+PR-based preview environments:
+
+```
+1. PR opened → CI builds image, tags with PR number
+2. ApplicationSet PR generator detects new PR
+3. Renders Application pointing to PR-specific overlay
+4. ArgoCD syncs new namespace (pr-123.myapp.staging.example.com)
+5. PR merged → namespace deleted, Application removed
+```
+
+**Tools:** Argo CD ApplicationSets, Garden.io, Uffizzi, Loft vCluster
+
 ## Pitfalls
 
 1. **Don't skip PRD** — even one-pager prevents scope creep

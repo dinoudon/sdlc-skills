@@ -314,6 +314,98 @@ pyroscope.Start(pyroscope.Config{
 | Vendor lock-in | Can't switch observability tools | OTel Collector as abstraction layer |
 | No correlation IDs | Can't trace request across services | trace_id in every log and span |
 
+## Step 9: Distributed Tracing Advanced Patterns
+
+### W3C Trace Context
+Source: https://www.w3.org/TR/trace-context/
+
+- `traceparent` header: version-traceId-spanId-traceFlags
+- `tracestate`: vendor-specific key-value pairs
+
+### W3C Baggage
+Source: https://www.w3.org/TR/baggage/
+
+Key-value pairs propagated across service boundaries independent of trace. Used for business context (tenant-id, user-tier, feature-flags).
+
+### Advanced Patterns
+- **Span links:** relate spans from different traces (e.g., batch processor linking to producer spans)
+- **Baggage-driven sampling:** use baggage to force-include high-value requests
+- **Cross-process propagation:** through message queues (Kafka, RabbitMQ) — explicit inject/extract at boundaries
+
+Source: https://opentelemetry.io/docs/concepts/context-propagation/
+
+## Step 10: Observability-Driven Development (ODD)
+
+Source: https://www.honeycomb.io/blog/observability-driven-development
+
+"If I can't observe it, I can't ship it."
+
+- During design: define RED metrics (Rate, Errors, Duration) for each endpoint
+- During impl: add semantic spans with business-meaningful attributes before writing unit tests
+- During review: PR checklist includes "did you add instrumentation?"
+- SLO-driven: define SLI → SLO → error budget before deploy
+
+## Step 11: Incident Management
+
+| Tool | Focus | Source |
+|------|-------|--------|
+| PagerDuty | Event-driven, auto-escalation | https://developer.pagerduty.com/ |
+| Opsgenie | Atlassian-integrated, on-call scheduling | https://docs.opsgenie.com/docs/api-overview |
+| incident.io | Slack-native, incident roles | https://incident.io/docs/api |
+
+**Best practices:**
+- Severity classification (SEV1-SEV5) with defined response times
+- Blameless postmortems: timeline, root cause, action items
+- Runbooks attached to alerts
+- Incident retrospectives feed back into SLO definitions
+
+## Step 12: AIOps and Anomaly Detection
+
+**Techniques:**
+- Time-series anomaly detection: z-score, STL decomposition, isolation forest, autoencoders
+- Metric correlation: auto-correlate spikes across services
+- Log pattern mining: unsupervised clustering of log templates
+- Trace anomaly: compare span duration distributions to baseline
+
+**Tools:**
+- Datadog Watchdog: auto-detect anomalies across metrics/logs/traces
+- Dynatrace Davis AI: deterministic + AI root cause analysis
+- Grafana ML: forecast, outlier detection
+- Open source: LinkedIn ThirdEye, Salesforce Merlion
+
+Source: https://github.com/linkedin/thirdeye, https://github.com/salesforce/Merlion
+
+## Step 13: Observability as Code
+
+### Grafana Dashboards as Code
+- Grafonnet (Jsonnet): https://github.com/grafana/grafonnet
+- Terraform `grafana_dashboard`: https://registry.terraform.io/providers/grafana/grafana/latest/docs/resources/dashboard
+
+### Terraform for Monitoring
+- Grafana provider: dashboards, alert rules, data sources
+- Datadog provider: monitors, dashboards, SLOs
+- PagerDuty provider: services, schedules, escalation policies
+
+### GitOps for Observability
+- Dashboards/alerts/rules in Git, applied via CI pipeline
+- PR review for alert threshold changes
+- Drift detection: terraform plan catches manual changes
+
+## Step 14: Cost Optimization
+
+### Sampling Strategies
+- **Head-based:** decision at trace start, simple but loses tail data
+- **Tail-based:** decision after trace completes, retains errors/slow traces
+- **Rate limiting:** cap traces per service per second
+
+Source: https://opentelemetry.io/docs/collector/configuration/#processors
+
+### Tiered Storage
+- **Hot:** 1-7 days, full resolution, fast queries
+- **Warm:** 7-30 days, aggregated or sampled
+- **Cold:** 30-365 days, object storage (S3/GCS)
+- **Archive:** >1yr, compliance retention
+
 ## Pitfalls
 
 1. **Don't skip OpenTelemetry** — it's the standard, use auto-instrumentation
