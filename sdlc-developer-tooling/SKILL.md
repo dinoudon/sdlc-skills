@@ -1,7 +1,7 @@
 ---
 name: sdlc-developer-tooling
 description: "Modern dev tooling: Python (uv, Ruff, pytest, mypy), JS/TS (pnpm, Bun, Vitest, Biome, Playwright), Go (golangci-lint, go test -race), Rust (cargo). Cross-cutting: just, mise, direnv, Docker Compose, Dev Containers, Nix. Includes LSP/DAP patterns, AI-assisted dev, green software tooling, CI/CD advanced patterns, build caching, artifact management."
-version: 4.4.0
+version: 4.5.0
 author: Hermes Agent
 license: MIT
 platforms: [linux, macos, windows]
@@ -2884,4 +2884,877 @@ SPDX (Linux Foundation): JSON/YAML/RDF, ISO standard (5962:2021),
 grype sbom:sbom.cdx.json
 # Exit non-zero if critical/high vulns found
 grype sbom:sbom.cdx.json --fail-on critical
+```
+
+## Step 22: Backstage Plugins Deep Dive
+
+### Plugin Architecture
+
+Backstage plugins follow a dual architecture: **frontend plugins** (React/TypeScript) and **backend plugins** (Node.js/TypeScript). Frontend plugins render UI in the Backstage app shell; backend plugins expose REST APIs consumed by frontend or external clients.
+
+```typescript
+// Frontend plugin structure (plugin-my-feature)
+import { createPlugin, createRouteRef, createRoutableExtension } from '@backstage/core-plugin-api';
+
+export const rootRouteRef = createRouteRef({ id: 'my-feature' });
+
+export const myFeaturePlugin = createPlugin({
+  id: 'my-feature',
+  routes: { root: rootRouteRef },
+});
+
+export const MyFeaturePage = myFeaturePlugin.provide(
+  createRoutableExtension({
+    name: 'MyFeaturePage',
+    component: () => import('./components/MyFeaturePage').then(m => m.MyFeaturePage),
+    mountPoint: rootRouteRef,
+  }),
+);
+```
+
+```typescript
+// Backend plugin structure (plugin-my-feature-backend)
+import { createRouter } from '@backstage/backend-common';
+import express from 'express';
+import { Logger } from 'winston';
+
+export interface RouterOptions {
+  logger: Logger;
+  config: Config;
+}
+
+export async function createRouter(options: RouterOptions): Promise<express.Router> {
+  const { logger, config } = options;
+  const router = Router();
+  router.get('/health', (_, res) => res.json({ status: 'ok' }));
+  return router;
+}
+```
+
+**Plugin communication:** Frontend plugins use `@backstage/core-plugin-api` for routing and shared state. Backend plugins register via `createBackendModule` in the new backend system. Cross-plugin data sharing uses `EntityProvider` interfaces and the Software Catalog API.
+
+### Key Plugin Categories
+
+**CI/CD:**
+- `@backstage/plugin-github-actions` — GitHub workflow status, triggers
+- `@backstage/plugin-jenkins` — Jenkins build history, stages
+- `@backstage/plugin-argo-cd` — Argo CD sync status, rollback
+- `@backstage/plugin-tekton` — Tekton pipeline visualization
+
+**Monitoring & Observability:**
+- `@backstage/plugin-prometheus` — embedded Prometheus graphs per entity
+- `@backstage/plugin-grafana` — Grafana dashboard links per entity
+- `@backstage/plugin-pagerduty` — on-call schedules, incidents
+- `@backstage/plugin-sentry` — error tracking per service
+
+**Security:**
+- `@backstage/plugin-security-insights` — GitHub Dependabot alerts
+- `@backstage/plugin-sonarqube` — code quality gates per entity
+- `@backstage/plugin-snyk` — vulnerability dashboard per entity
+- `roadiehq/backstage-plugin-security-hub` — aggregated security posture
+
+**Infrastructure:**
+- `@backstage/plugin-kubernetes` — pod status, deployments per entity
+- `@backstage/plugin-terraform` — Terraform Cloud run status
+- `@backstage/plugin-aws-lambda` — Lambda function metrics
+- `@backstage/plugin-cost-insights` — cloud cost per team/service
+
+### Custom Plugin Pattern
+
+```bash
+# Generate scaffold
+npx @backstage/create-app@latest --template-path ./my-plugin-template
+# Or use the CLI
+npx @backstage/cli new --select plugin
+```
+
+```typescript
+// Custom plugin with catalog entity integration
+import { useEntity } from '@backstage/plugin-catalog-react';
+import { Entity } from '@backstage/catalog-model';
+
+export const MyCustomCard = () => {
+  const { entity } = useEntity();
+  const myAnnotation = entity.metadata.annotations?.['my-org.com/custom-data'];
+
+  return (
+    <InfoCard title="Custom Data">
+      {myAnnotation ? <Content data={myAnnotation} /> : <MissingAnnotationEmptyState annotation="my-org.com/custom-data" />}
+    </InfoCard>
+  );
+};
+```
+
+**Best practices:**
+- Keep plugins focused: one concern per plugin
+- Use `@backstage/plugin-catalog-react` hooks (`useEntity`, `useAsyncEntity`) for entity data
+- Prefer backend-for-frontend pattern: frontend plugin calls its own backend plugin, backend plugin calls external APIs
+- Use `@backstage/backend-plugin-api` (new backend system) for backend plugins
+- Export a `createPlugin` or `createBackendModule` — no side effects at import time
+
+### Catalog Best Practices
+
+**Entity hierarchy (4 levels):**
+
+```yaml
+# Domain — groups related systems
+apiVersion: backstage.io/v1alpha1
+kind: Domain
+metadata:
+  name: payments
+  description: Payment processing domain
+spec:
+  owner: team-payments
+
+---
+# System — cohesive set of components
+apiVersion: backstage.io/v1alpha1
+kind: System
+metadata:
+  name: payment-processing
+spec:
+  owner: team-payments
+  domain: payments
+
+---
+# Component — deployable unit
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: payment-api
+  annotations:
+    github.com/project-slug: org/payment-api
+    jenkins.io/job-name: payment-api/main
+    backstage.io/techdocs-ref: dir:.
+spec:
+  type: service
+  lifecycle: production
+  owner: team-payments
+  system: payment-processing
+  providesApis: [payment-api]
+  dependsOn: [component:payment-db]
+
+---
+# Resource — infrastructure dependency
+apiVersion: backstage.io/v1alpha1
+kind: Resource
+metadata:
+  name: payment-db
+spec:
+  type: database
+  owner: team-payments
+  system: payment-processing
+```
+
+**Auto-discovery:**
+
+```yaml
+# app-config.yaml — entity providers for auto-discovery
+catalog:
+  providers:
+    github:
+      providerId:
+        organization: 'my-org'
+        catalogPath: '/catalog-info.yaml'
+        filters:
+          branch: 'main'
+          repository: '.*'  # regex
+    gitlab:
+      providerId:
+        host: gitlab.com
+        group: my-org
+        catalogPath: '/.backstage/catalog-info.yaml'
+    kubernetes:
+      providerId:
+        cluster: production
+```
+
+**Annotations that unlock plugin integrations:**
+```yaml
+annotations:
+  github.com/project-slug: org/repo          # GitHub Actions plugin
+  jenkins.io/job-name: my-job                 # Jenkins plugin
+  argocd/app-name: my-app                     # Argo CD plugin
+  grafana/dashboard-url: https://grafana/...  # Grafana plugin
+  pagerduty.com/service-id: P1234             # PagerDuty plugin
+  sonarqube.org/project-key: my-project       # SonarQube plugin
+  kubernetes.io/app-name: my-deploy           # K8s plugin
+```
+
+### Software Templates (Golden Path Pattern)
+
+Templates scaffold new projects or infrastructure via `cookiecutter` or `nunjucks` templating.
+
+```yaml
+# template.yaml
+apiVersion: scaffolder.backstage.io/v1beta3
+kind: Template
+metadata:
+  name: create-node-service
+  title: Create Node.js Service
+  description: Golden path template for Node.js microservices
+  tags: [node, typescript, microservice]
+spec:
+  owner: platform-team
+  type: service
+  parameters:
+    - title: Service Details
+      required: [name, owner, description]
+      properties:
+        name:
+          title: Service Name
+          type: string
+          pattern: '^[a-z0-9-]+$'
+        owner:
+          title: Owner
+          type: string
+          ui:field: OwnerPicker
+        description:
+          title: Description
+          type: string
+        useTypescript:
+          title: Use TypeScript
+          type: boolean
+          default: true
+  steps:
+    - id: fetch
+      name: Fetch Template
+      action: fetch:template
+      input:
+        url: ./skeleton  # cookiecutter or nunjucks template dir
+        targetPath: ${{ parameters.name }}
+        values:
+          name: ${{ parameters.name }}
+          owner: ${{ parameters.owner }}
+          description: ${{ parameters.description }}
+          useTypescript: ${{ parameters.useTypescript }}
+    - id: publish
+      name: Publish to GitHub
+      action: github:repo:create
+      input:
+        repoUrl: github.com?owner=my-org&repo=${{ parameters.name }}
+        defaultBranch: main
+    - id: register
+      name: Register in Catalog
+      action: catalog:register
+      input:
+        repoContentsUrl: ${{ steps.publish.output.repoContentsUrl }}
+        catalogInfoPath: /catalog-info.yaml
+```
+
+**Cookiecutter vs Nunjucks:**
+```
+Cookiecutter: Python-based, uses {{ cookiecutter.var }} syntax,
+  cookiecutter.json for defaults. Better for Python projects.
+
+Nunjucks: JS-based, uses {{ parameters.var }} syntax,
+  native to Backstage scaffolder. Better for Node/TS projects.
+  Supports conditionals: {% if parameters.useTypescript %}...{% endif %}
+```
+
+## Step 23: Developer Onboarding
+
+### Time-to-First-Commit Benchmarks
+
+Time-to-first-commit (TTFC) measures how quickly a new developer can make a meaningful code contribution.
+
+```
+Elite:    < 1 day    — pre-configured dev env, clear docs, good first issues tagged
+Good:     1-3 days   — setup script exists, onboarding docs current, buddy assigned
+Average:  3-7 days   — manual setup, docs partially outdated, some tribal knowledge
+Below:    > 7 days   — broken setup, missing docs, no onboarding process
+```
+
+**Measuring TTFC:**
+```bash
+# GitHub: find first commit date per author
+gh api graphql -f query='
+{
+  repository(owner: "org", name: "repo") {
+    ref(qualifiedName: "main") {
+      target {
+        ... on Commit {
+          history(first: 1, author: {email: "newdev@org.com"}) {
+            nodes { committedDate }
+          }
+        }
+      }
+    }
+  }
+}'
+
+# Git: first commit by author after start date
+git log --author="newdev@org.com" --after="2025-01-15" --format="%H %ai" --reverse | head -1
+```
+
+### Tiered Onboarding Checklist
+
+**Week 1 — Environment & First Contribution:**
+- [ ] Dev environment setup via `make setup` or Dev Container
+- [ ] Clone repo, run tests locally, verify green
+- [ ] Read ARCHITECTURE.md, CONTRIBUTING.md, ADRs
+- [ ] Shadow a code review (observe, don't review)
+- [ ] Complete "Day 1 Pull Request" (see below)
+- [ ] Meet onboarding buddy (30 min daily standup)
+- [ ] Access: source control, CI, monitoring, incident tooling
+- [ ] Join team channels, sprint ceremonies
+
+**Weeks 2-4 — Domain & Ownership:**
+- [ ] Pick up 2-3 "good first issues" from backlog
+- [ ] Attend at least 1 design review
+- [ ] Write or update 1 piece of documentation
+- [ ] Deploy to staging independently
+- [ ] Pair with team member on a non-trivial feature
+- [ ] Understand team's on-call rotation, shadow 1 shift
+- [ ] Review team's tech radar / tech debt backlog
+
+**Month 2 — Autonomy:**
+- [ ] Own and ship a small feature end-to-end
+- [ ] Review 3+ PRs from peers
+- [ ] Participate in retro, propose 1 improvement
+- [ ] Write an ADR or RFC for a design decision
+- [ ] Present a tech talk to the team (5-10 min)
+
+**Month 3 — Full Productivity:**
+- [ ] On-call rotation (with backup)
+- [ ] Mentor next new hire (reverse mentoring)
+- [ ] Contribute to platform/tooling improvement
+- [ ] Own a service or subsystem
+
+### Day 1 Pull Request Pattern
+
+Every new developer should merge a PR on their first day. Purpose: learn the full workflow (branch, code, test, review, merge, deploy) before tackling real work.
+
+**Good Day 1 PR tasks:**
+```markdown
+# Example Day 1 PR ideas
+- Fix a typo in README.md
+- Add yourself to CODEOWNERS or team.md
+- Update a stale comment in code
+- Add a missing test for a simple function
+- Improve an error message
+- Add a missing type annotation
+- Update a dependency in a lockfile
+```
+
+**Template issue for Day 1 PR:**
+```markdown
+## Welcome to the team! 🎉
+
+Your first task: make a small improvement to any repository.
+
+### Steps
+1. Fork/branch from `main`
+2. Make a change (typo fix, doc update, test improvement)
+3. Run `make check` locally
+4. Open a PR, request review from your buddy
+5. Address feedback, merge
+
+### Success criteria
+- PR merged within first day
+- You ran CI locally and it passed
+- You experienced the full PR lifecycle
+```
+
+### Onboarding Buddy System
+
+Each new hire gets an onboarding buddy (not their manager, not their interviewer).
+
+**Buddy responsibilities:**
+- 30 min daily check-in for first 2 weeks
+- Answer "dumb questions" without judgment
+- Review Day 1 PR and first 3-5 PRs
+- Introduce to key people across teams
+- Share tribal knowledge (deployment quirks, naming conventions, "why we do X this way")
+- Escalate blockers to tech lead if onboarding stalls
+
+**Buddy selection criteria:**
+- Same team, 6+ months tenure
+- Good communicator, patient
+- Not currently on-call or in incident response rotation
+- Volunteer, not assigned by default
+
+### Reverse Mentoring
+
+Pair new hires with senior engineers where the new hire teaches, not learns. New hires bring fresh perspectives on:
+- Tooling friction (what's broken in the dev setup?)
+- Documentation gaps (what's unclear or missing?)
+- Process inefficiencies (what feels unnecessary?)
+- Modern practices from previous role (what worked well elsewhere?)
+
+**Structured reverse mentoring:**
+```markdown
+## Reverse Mentoring Session (30 min, month 2)
+
+Agenda:
+1. New hire demos their "fresh eyes" findings (10 min)
+2. Categorized: friction, confusion, delight (5 min)
+3. Discussion: which findings warrant action? (10 min)
+4. Assign follow-ups to platform/team (5 min)
+```
+
+## Step 24: API Developer Experience
+
+### OpenAPI Best Practices
+
+**Use `$ref` for DRY schemas:**
+```yaml
+# openapi.yaml
+paths:
+  /users/{id}:
+    get:
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '404':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+
+components:
+  schemas:
+    User:
+      type: object
+      required: [id, email, createdAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+        email:
+          type: string
+          format: email
+        createdAt:
+          type: string
+          format: date-time
+        links:
+          $ref: '#/components/schemas/Links'
+
+    ProblemDetail:  # RFC 9457
+      type: object
+      required: [type, title, status]
+      properties:
+        type:
+          type: string
+          format: uri
+          example: https://api.example.com/errors/not-found
+        title:
+          type: string
+          example: Resource Not Found
+        status:
+          type: integer
+          example: 404
+       detail:
+          type: string
+          example: User with id 'abc' not found
+        instance:
+          type: string
+          format: uri
+```
+
+**problem+json (RFC 9457):**
+```
+Use application/problem+json for all error responses.
+Consistent error shape across all endpoints.
+Clients parse errors uniformly — no guessing field names.
+
+Key fields: type (URI to error docs), title (human summary),
+  status (HTTP code), detail (specific instance info),
+  instance (URI to this specific error occurrence).
+```
+
+**API versioning strategies:**
+```
+URL path:    /v1/users  — most visible, easy to route
+Header:      Accept: application/vnd.myapi.v2+json — cleaner URLs
+Query param: /users?version=2 — least preferred, easy to ignore
+
+Recommendation: URL path versioning for public APIs.
+  Major versions only (/v1, /v2). Minor changes are backward-compatible.
+  Never break v1 — deprecate with Sunset header (RFC 8594).
+```
+
+**Pagination (cursor-based preferred):**
+```yaml
+# Cursor-based pagination schema
+PaginationParams:
+  type: object
+  properties:
+    cursor:
+      type: string
+      description: Opaque cursor from previous response
+    limit:
+      type: integer
+      minimum: 1
+      maximum: 100
+      default: 20
+
+PaginatedResponse:
+  type: object
+  properties:
+    data:
+      type: array
+      items:
+        $ref: '#/components/schemas/User'
+    pagination:
+      type: object
+      properties:
+        nextCursor:
+          type: string
+          nullable: true
+        prevCursor:
+          type: string
+          nullable: true
+        hasMore:
+          type: boolean
+```
+
+```
+Cursor vs offset pagination:
+Cursor: stable under inserts/deletes, no skip performance issues.
+  Best for infinite scroll, mobile, high-write APIs.
+Offset: simpler, supports "go to page N". OK for admin UIs.
+  Breaks if rows inserted/deleted between pages.
+```
+
+### SDK Generation
+
+**OpenAPI Generator (open-source):**
+```bash
+# Install
+npm install @openapitools/openapi-generator-cli -g
+
+# Generate TypeScript SDK
+openapi-generator-cli generate \
+  -i openapi.yaml \
+  -g typescript-fetch \
+  -o ./sdk/typescript \
+  --additional-properties=supportsES6=true,npmName=my-api-sdk
+
+# Generate Python SDK
+openapi-generator-cli generate \
+  -i openapi.yaml \
+  -g python \
+  -o ./sdk/python \
+  --package-name=my_api_sdk
+
+# Generate Go client
+openapi-generator-cli generate \
+  -i openapi.yaml \
+  -g go \
+  -o ./sdk/go \
+  --package-name=myapi
+```
+
+**Speakeasy (commercial, high-quality):**
+```bash
+# Install
+brew install speakeasy-api/tap/speakeasy
+
+# Generate SDK with retry logic, pagination helpers, type-safe models
+speakeasy generate sdk \
+  --schema openapi.yaml \
+  --lang typescript \
+  --out ./sdk/typescript
+
+# Features: automatic retries, OAuth token refresh, pagination helpers,
+# idiomatic code per language, GitHub Action for auto-regeneration
+```
+
+**Stainless (commercial, API-company focused):**
+```bash
+# Generates polished SDKs like OpenAI, Anthropic, Vercel use
+# Define SDK config in stainless.yml
+# Auto-generates on OpenAPI spec change via GitHub App
+```
+
+**SDK generation comparison:**
+```
+OpenAPI Generator:  Free, 50+ languages, decent quality.
+  Requires manual cleanup. Good for internal APIs.
+
+Speakeasy:          Commercial, 10+ languages, excellent quality.
+  Retry/pagination built-in. Best for public APIs.
+
+Stainless:          Commercial, premium quality, limited languages.
+  Generates polished SDKs like OpenAI's. Best for API-first companies.
+```
+
+### Interactive API Documentation
+
+**Swagger UI:**
+```html
+<!-- Embed Swagger UI -->
+<div id="swagger-ui"></div>
+<script src="https://unpkg.com/swagger-ui-dist/swagger-ui-bundle.js"></script>
+<script>
+  SwaggerUIBundle({
+    url: '/openapi.yaml',
+    dom_id: '#swagger-ui',
+    presets: [SwaggerUIBundle.presets.apis, SwaggerUIBundle.SwaggerUIStandalonePreset],
+    layout: 'StandaloneLayout',
+    tryItOutEnabled: true,
+  });
+</script>
+```
+
+**Redoc:**
+```html
+<!-- Redoc: cleaner rendering, better for reference docs -->
+<redoc spec-url="/openapi.yaml"></redoc>
+<script src="https://cdn.redoc.ly/redoc/latest/bundled/redoc.standalone.js"></script>
+```
+
+**Stoplight Elements:**
+```html
+<!-- Stoplight: modern, three-panel layout -->
+<script src="https://unpkg.com/@stoplight/elements/web-components.min.js"></script>
+<link rel="stylesheet" href="https://unpkg.com/@stoplight/elements/styles.min.css">
+<elements-api apiDescriptionUrl="/openapi.yaml" router="hash" layout="sidebar" />
+```
+
+**ReadMe (commercial):**
+```
+SaaS platform. Auto-generates docs from OpenAPI spec.
+Adds: API explorer with auth, usage analytics, changelog,
+developer dashboard, interactive tutorials. Best for public APIs.
+```
+
+**Tool comparison:**
+```
+Swagger UI:  Free, ubiquitous, try-it-out. Looks dated.
+Redoc:       Free, clean three-panel layout. No try-it-out in OSS version.
+Stoplight:   Free tier, modern UI, three-panel + try-it-out.
+ReadMe:      Paid, SaaS, analytics + developer portal features.
+```
+
+## Step 25: Developer Experience (DevEx) Metrics
+
+### SPACE Framework Applied
+
+SPACE measures developer productivity across 5 dimensions. No single metric captures productivity — use a balanced set.
+
+**S — Satisfaction & Well-Being:**
+```
+Metrics:
+- Developer satisfaction score (1-10 survey, quarterly)
+- eNPS (employee Net Promoter Score) for engineering org
+- Burnout indicators (after-hours commits, PTO usage)
+- Tool satisfaction rating (per tool: IDE, CI, deploy pipeline)
+
+Target: satisfaction >= 7/10, eNPS >= 30, no sustained after-hours work
+```
+
+**P — Performance:**
+```
+Metrics:
+- Change failure rate (% of deploys causing incidents)
+- Mean time to recovery (MTTR) from deployment failures
+- Code review coverage (% of PRs reviewed before merge)
+- Automated test coverage (line + branch, trending)
+
+Target: change failure rate < 15%, MTTR < 1h, review coverage 100%
+```
+
+**A — Activity:**
+```
+Metrics:
+- Commits per developer per week (trend, not absolute)
+- PRs opened/merged per developer per week
+- Deploys per service per day/week
+- Incidents resolved per developer per week
+
+Target: activity trends stable or improving. Decline signals friction.
+Activity metrics alone are misleading — pair with satisfaction/flow.
+```
+
+**C — Communication & Collaboration:**
+```
+Metrics:
+- PR review turnaround time (time to first review)
+- PR review depth (comments per PR, substantive vs nit)
+- Cross-team contribution rate (% of PRs from outside team)
+- Documentation freshness (age of last edit per doc)
+- Knowledge silos index (bus factor per repo/service)
+
+Target: review turnaround < 4h, cross-team contributions >= 10%
+```
+
+**E — Efficiency & Flow:**
+```
+Metrics:
+- Lead time for changes (commit to production)
+- Cycle time (PR open to merge)
+- Deploy frequency (per service, per team)
+- Wait time (% of time PRs spend waiting for review/CI/deploy)
+- Context switches per day (IDE/app switches, meeting interruptions)
+
+Target: lead time < 1 day, deploy frequency >= 1/day, wait time < 30%
+```
+
+### Developer Satisfaction Surveys
+
+**Survey design (quarterly cadence):**
+```
+Frequency: quarterly (monthly is too frequent, causes survey fatigue)
+             (semi-annually misses problems for too long)
+Length: 5-10 minutes max (20-30 questions)
+Format: Likert scale (1-5 or 1-7) + 2-3 open-ended questions
+Anonymity: mandatory. Aggregate results only. No individual tracking.
+```
+
+**Core questions (adapt from DX company research):**
+```
+1. I can get my development environment set up in a reasonable time.
+2. Our CI/CD pipeline is reliable and fast enough.
+3. I can find the documentation I need when I need it.
+4. Code review is timely and constructive.
+5. I spend most of my time on value-creating work (not fighting tools).
+6. I understand the architecture of the systems I work on.
+7. I have the tools I need to do my job effectively.
+8. Our deployment process is smooth and low-stress.
+9. I feel productive in my current work environment.
+10. Technical debt does not significantly slow me down.
+
+Open-ended:
+- What is the biggest friction point in your daily workflow?
+- What tool or process improvement would have the most impact?
+- What's working well that we should keep doing?
+```
+
+**DX company methodology:**
+```
+Framework by Abi Noda (DX) for measuring developer experience.
+Core insight: DevEx = f(perception, workflows, environment).
+Three dimensions: feedback loops, cognitive load, flow state.
+Survey + quantitative data = complete picture.
+Link: https://getdx.com
+```
+
+### Friction Logging
+
+Systematic process for identifying and tracking developer friction points.
+
+**Friction categories:**
+```
+1. Environment Setup    — dev env provisioning, dependency issues
+2. Build & Compile      — slow builds, flaky compilation
+3. Testing              — slow tests, flaky tests, hard to write tests
+4. Code Review          — slow reviews, nitpicking, unclear standards
+5. CI/CD Pipeline       — slow pipeline, opaque failures, flaky jobs
+6. Deployment           — complex deploy process, rollback difficulty
+7. Documentation        — missing, stale, hard to find docs
+8. Tooling              — IDE issues, CLI friction, tool fragmentation
+9. Access & Permissions — slow provisioning, too many systems
+10. Knowledge Sharing   — siloed knowledge, missing runbooks
+```
+
+**Friction log template:**
+```markdown
+## Friction Log Entry
+
+**Date:** 2025-01-15
+**Category:** CI/CD Pipeline
+**Reporter:** dev@example.com
+**Frequency:** Daily
+**Impact:** High (blocks work for 15+ min each occurrence)
+
+### Description
+CI pipeline takes 25 minutes for PR checks. Developers context-switch
+while waiting, losing flow state.
+
+### Current workaround
+Run subset of tests locally before pushing. Skip full check.
+
+### Suggested fix
+Implement test splitting across parallel runners. Target: < 10 min.
+
+### Evidence
+- 50+ PRs/month affected
+- Average wait: 25 min (p95: 40 min)
+- Developer survey: CI speed rated 2.1/5
+```
+
+**Frequency x Impact matrix:**
+```
+              Low Impact          High Impact
+High          Monitor             FIX FIRST
+Frequency     (log for trends)    (invest this sprint)
+
+Low           Ignore              INVESTIGATE
+              (noise)             (may become high frequency)
+```
+
+### Flow Metrics
+
+**Flow time:** Total elapsed time from work start to production deploy.
+```
+Flow time = ideation + development + review + testing + deployment
+
+Breakdown (example healthy org):
+  Ideation/requirements:  10% of flow time
+  Development:            30% of flow time
+  Code review:            15% of flow time
+  Testing (CI):           15% of flow time
+  Deployment:             10% of flow time
+  Waiting/blocked:        20% of flow time  ← minimize this
+
+Target: total flow time < 7 days for features, < 1 day for bugfixes
+```
+
+**Flow efficiency:**
+```
+Flow efficiency = active work time / total flow time
+
+Formula:
+  efficiency = (time_coding + time_reviewing + time_testing) / total_elapsed_time
+
+Benchmarks:
+  Elite:    > 40%
+  Good:     25-40%
+  Average:  15-25%
+  Below:    < 15%
+
+Improving efficiency: reduce wait states (PR review queue, CI queue,
+  deploy approval gates, environment provisioning).
+```
+
+**Cognitive load:**
+```
+Types (from Skelton & Pais, "Team Topologies"):
+  Intrinsic:     unavoidable complexity of the problem domain
+  Extraneous:    unnecessary complexity from tools/processes/debt
+  Germane:       productive learning, understanding the domain
+
+Measuring cognitive load:
+  Survey: "I can hold the relevant system context in my head" (1-5)
+  Proxy metrics:
+    - Number of repos a developer touches per week
+    - Number of distinct services owned per team
+    - Lines of config vs lines of product code
+    - On-call pages per shift (alert fatigue)
+    - Time spent in meetings vs coding
+
+Target: team owns 2-3 services max. Cognitive load survey >= 3.5/5.
+Red flags: developers can't explain system architecture, high bus factor,
+  frequent "I don't know who owns that" moments.
+```
+
+**Combined flow dashboard metrics:**
+```
+| Metric              | Target        | Measure from          |
+|---------------------|---------------|-----------------------|
+| Lead time           | < 1 day       | Git commit → deploy   |
+| Cycle time          | < 2 days      | PR open → merge       |
+| Deploy frequency    | ≥ 1/day       | CI/CD pipeline logs   |
+| Change failure rate | < 15%         | Deploy → incident     |
+| MTTR                | < 1 hour      | Incident → resolution |
+| Flow efficiency     | > 25%         | Time tracking / PRs   |
+| Review turnaround   | < 4 hours     | PR first review time  |
+| CI duration         | < 10 minutes  | Pipeline metrics      |
+| Cognitive load      | ≥ 3.5/5       | Quarterly survey      |
+| Satisfaction        | ≥ 7/10        | Quarterly survey      |
 ```

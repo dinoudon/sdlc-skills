@@ -1,7 +1,7 @@
 ---
 name: sdlc-requirements-engineering
 description: "Requirements: user story mapping (Jeff Patton), BDD/Gherkin (Cucumber, pytest-bdd), acceptance criteria (Given/When/Then), impact mapping (Gojko Adzic), example mapping, specification by example (Gojko Adzic), JTBD framework, RICE scoring, WSJF prioritization, user story splitting, NFR patterns, requirements traceability, OKR alignment (Doerr), design thinking, Lean UX (Gothelf), design sprint (Knapp), dual-track agile (Cagan), AI/ML requirements, STRIDE security, OWASP ASVS, WCAG 2.2 AA accessibility, event storming (Brandolini), domain storytelling (Hofer), platform team requirements, cost of delay (Reinertsen), requirements elicitation techniques, ATDD."
-version: 4.4.0
+version: 4.5.0
 author: Hermes Agent
 license: MIT
 platforms: [linux, macos, windows]
@@ -2007,6 +2007,192 @@ BENEFITS:
   - Onboarding: read specs to understand system
 ```
 
+### Example Mapping (Matt Wynne)
+
+Source: Matt Wynne, "Example Mapping" (2015), https://cucumber.io/blog/example-mapping-introduction/
+
+25-minute structured discovery sessions. Four colors, one rule per card type.
+
+```
+EXAMPLE MAPPING SESSION
+========================
+
+SETUP:
+  - Timer: 25 minutes (strict)
+  - Participants: Three Amigos (BA + Dev + Tester)
+  - Materials: colored index cards or sticky notes
+
+FOUR CARD COLORS:
+  YELLOW (top)  = Story being discussed (one per session)
+  BLUE          = Rules (business rules that govern the story)
+  GREEN         = Examples (concrete examples illustrating rules)
+  RED           = Questions (things we don't know yet)
+
+SESSION FLOW:
+  1. BA writes YELLOW card with story title (1 min)
+  2. Team identifies BLUE rule cards (5 min)
+     - "What rules govern this story?"
+     - "What constraints apply?"
+  3. Team writes GREEN example cards under each rule (10 min)
+     - Concrete inputs/outputs
+     - Edge cases, boundary values
+     - Happy path AND error paths
+  4. RED question cards placed whenever:
+     - Team disagrees on behavior
+     - Example reveals ambiguity
+     - External dependency unknown
+  5. Decision at 25 min:
+     - All GREEN, no RED → ready to code
+     - RED cards exist → story not ready, resolve questions first
+     - Too many rules → split story
+
+EXAMPLE:
+  YELLOW: "Apply discount code at checkout"
+  ├── BLUE: "Code must be valid and not expired"
+  │   ├── GREEN: "SAVE20 applied → 20% off"
+  │   ├── GREEN: "EXPIRED code → error message"
+  │   └── GREEN: "FAKE code → error message"
+  ├── BLUE: "One code per order"
+  │   ├── GREEN: "Second code rejected with message"
+  │   └── GREEN: "Replace existing code allowed"
+  ├── BLUE: "Minimum order amount required"
+  │   ├── GREEN: "Order $49, min $50 → error"
+  │   └── GREEN: "Order $50, min $50 → discount applied"
+  └── RED: "Can staff override max codes per order?"
+
+RULES:
+  - One story per session (go deeper, not wider)
+  - No laptops open (face the cards, face each other)
+  - Facilitator keeps time, not content
+  - Questions are progress, not failure
+  - If session ends with no RED cards AND < 5 rules → story is ready
+```
+
+### Feature File Organization
+```
+FEATURE FILE DIRECTORY STRUCTURE
+==================================
+
+features/
+  domain/                         # organize by business domain, not UI layer
+    checkout/
+      discount_codes.feature
+      shipping_options.feature
+      payment_methods.feature
+    account/
+      registration.feature
+      password_reset.feature
+      profile_management.feature
+    catalog/
+      search.feature
+      filtering.feature
+      recommendations.feature
+  support/                        # shared infrastructure
+    authentication.feature
+    error_handling.feature
+  smoke/                          # critical-path smoke tests
+    critical_checkout.feature
+    critical_login.feature
+
+CONVENTIONS:
+  - One feature per .feature file
+  - File name = kebab-case of feature name
+  - Feature description includes As a/I want/So that
+  - Max 10 scenarios per file (split if more)
+  - Background only for truly shared preconditions
+  - No nested folders > 3 levels deep
+```
+
+### Tagging Strategy
+```
+TAG TAXONOMY
+=============
+
+SCOPE TAGS (what to run):
+  @smoke        # critical path, run on every commit
+  @regression   # full suite, run nightly
+  @wip          # work in progress, skip in CI
+  @manual       # cannot automate, manual test only
+
+DOMAIN TAGS (feature area):
+  @checkout
+  @account
+  @catalog
+  @payments
+  @admin
+
+ENVIRONMENT TAGS (where to run):
+  @staging
+  @production-safe   # safe to run in prod (read-only)
+  @requires-auth     # needs authenticated session
+  @requires-external # depends on third-party service
+
+PRIORITY TAGS:
+  @critical    # P0, blocks release
+  @high        # P1, must pass for release
+  @medium      # P2, should pass
+  @low         # P3, nice to have
+
+USAGE IN CI/CD:
+  # Run smoke tests on every PR
+  pytest --tags="@smoke"
+
+  # Run regression excluding external dependencies
+  pytest --tags="@regression and not @requires-external"
+
+  # Run only checkout tests in staging
+  pytest --tags="@checkout and @staging"
+
+NAMING CONVENTION:
+  - Tags are lowercase, kebab-case for multi-word
+  - Place tags above Feature or Scenario keyword
+  - Feature-level tags apply to all scenarios in file
+  - Scenario-level tags override feature-level
+```
+
+### SpecFlow vs Cucumber Comparison
+```
+FRAMEWORK COMPARISON
+=====================
+
+                    SpecFlow (.NET)          Cucumber (Ruby/JS/Java)
+Language:           C# / .NET               Ruby, JS, Java, Python
+Gherkin version:    Gherkin 5+               Gherkin 5+
+IDE support:        Visual Studio, Rider     VS Code, IntelliJ
+Living docs:        SpecFlow+ LivingDoc      Cucumber Reports / HTML
+Step definitions:   [Given/When/Then]        Given/When/Then (decorators)
+Tag filtering:      --filter @tag            --tags @tag
+Parallel exec:      xUnit/NUnit parallel     Cucumber parallel (JS)
+Plugin ecosystem:   SpecFlow+ (paid)         Open-source ecosystem
+Community:          .NET-focused             Polyglot, larger community
+Best for:           .NET shops               Polyglot / Ruby / JS shops
+
+LIVING DOCUMENTATION TOOLS:
+  SpecFlow+ LivingDoc (SpecFlow):
+    - Generates HTML from .feature files + test results
+    - Integrates with Azure DevOps pipelines
+    - Shows pass/fail per scenario with screenshots
+    - Searchable, filterable by tag
+    - Command: livingdoc test-assembly <dll> -t <json>
+
+  Cucumber Reports (Cucumber JS/Java):
+    - JSON reporter generates machine-readable output
+    - HTML formatter creates browsable report
+    - Integrates with CI (Jenkins, GitHub Actions)
+    - Command: cucumber --format html --out report.html
+
+  Pickles (legacy, .NET):
+    - Generates static HTML from feature files
+    - No longer actively maintained
+    - Use SpecFlow+ LivingDoc instead
+
+DECISION MATRIX:
+  If .NET stack → SpecFlow + SpecFlow+ LivingDoc
+  If Ruby/JS/Python → Cucumber + Cucumber Reports
+  If Java → Cucumber-JVM + Cucumber Reports
+  If polyglot → Cucumber (works across languages)
+```
+
 ### Specification by Example Anti-Patterns
 1. **Specs written by one person** — collaborative or they're just tests, not specs
 2. **Specs too detailed** — one scenario = one behavior, not end-to-end workflow
@@ -2680,6 +2866,118 @@ BIAS AND FAIRNESS TESTING:
   [ ] Human review loop for high-stakes predictions (credit, health, hiring, criminal justice)
   [ ] Explainability: SHAP/LIME for tabular, attention maps for NLP/CV (when required)
 
+FAIRNESS REQUIREMENTS (deeper specification):
+  [ ] Demographic parity: P(Ŷ=1|A=a) = P(Ŷ=1|A=b) for all protected groups A
+    - Positive prediction rate equal across groups
+    - Threshold: |P(Ŷ=1|A=a) - P(Ŷ=1|A=b)| <= 0.05
+  [ ] Equalized odds: P(Ŷ=1|Y=y, A=a) = P(Ŷ=1|Y=y, A=b)
+    - True positive and false positive rates equal across groups
+    - Prevents systematic disadvantage for any group
+  [ ] Predictive parity: P(Y=1|Ŷ=1, A=a) = P(Y=1|Ŷ=1, A=b)
+    - Precision equal across groups
+  [ ] Individual fairness: similar individuals get similar predictions
+    - Metric: Lipschitz constraint on model function
+  [ ] Intersectional fairness: test on combinations (e.g., young Black women, elderly disabled men)
+    - Subgroup size >= 30 for statistical validity
+    - Report worst-case subgroup metric
+
+MODEL CARDS (Mitchell et al., 2019):
+  Source: https://arxiv.org/abs/1810.03993
+
+  MODEL CARD TEMPLATE:
+    Model Details:
+      - Name, version, type (classification, regression, generation)
+      - Owner, license, contact
+      - Date released, last updated
+    Intended Use:
+      - Primary use case
+      - Primary users (who should use this?)
+      - Out-of-scope uses (what this model should NOT be used for)
+    Factors:
+      - Relevant factors (age, gender, geography)
+      - Evaluation factors (subgroups tested)
+    Metrics:
+      - Primary metric (e.g., F1, AUC-ROC)
+      - Disaggregated metrics by subgroup
+      - Confidence intervals
+    Evaluation Data:
+      - Datasets used for evaluation
+      - Preprocessing applied
+    Training Data:
+      - Datasets used for training
+      - Preprocessing, augmentation
+    Quantitative Analyses:
+      - Performance tables by subgroup
+      - Fairness metrics (demographic parity, equalized odds)
+    Ethical Considerations:
+      - Potential harms (false positives/negatives impact)
+      - Mitigation strategies
+    Caveats and Recommendations:
+      - Known limitations
+      - Recommended monitoring
+
+DATASHEETS FOR DATASETS (Gebru et al., 2021):
+  Source: https://arxiv.org/abs/1803.09010
+
+  DATASHEET TEMPLATE:
+    Motivation:
+      - Why was this dataset created?
+      - Who created it? Who funded it?
+    Composition:
+      - What does each instance represent?
+      - What labels/annotations exist?
+      - Is there missing data? How much?
+      - Does the dataset contain sensitive data (PII)?
+    Collection Process:
+      - How was data collected? (crawling, survey, sensors, human annotation)
+      - What populations are represented?
+      - What populations are underrepresented or excluded?
+      - Collection time period
+    Uses:
+      - Has the dataset been used before? Where?
+      - What tasks is it suitable for?
+      - What tasks is it NOT suitable for?
+    Distribution:
+      - How is the dataset distributed?
+      - License terms
+    Maintenance:
+      - Who maintains the dataset?
+      - Update frequency
+
+EU AI ACT REQUIREMENTS (Regulation 2024/1689):
+  Source: https://eur-lex.europa.eu/eli/reg/2024/1689
+
+  HIGH-RISK AI SYSTEMS (Annex III):
+    - Biometric identification
+    - Critical infrastructure management
+    - Education and vocational training
+    - Employment, worker management
+    - Access to essential services (credit, insurance, social benefits)
+    - Law enforcement
+    - Migration, asylum, border control
+    - Administration of justice
+
+  MANDATORY REQUIREMENTS FOR HIGH-RISK AI (Article 9):
+    [ ] Risk management system (continuous, documented)
+    [ ] Data governance (training data quality, relevance, representativeness)
+    [ ] Technical documentation (architecture, training process, evaluation)
+    [ ] Record-keeping (automatic logs for traceability)
+    [ ] Transparency (clear information to deployers)
+    [ ] Human oversight (ability to intervene, override)
+    [ ] Accuracy, robustness, cybersecurity (tested against adversarial attacks)
+    [ ] Conformity assessment before market placement
+
+  TRANSPARENCY REQUIREMENTS FOR ALL AI (Article 50):
+    [ ] Users informed they are interacting with AI (chatbots, deepfakes)
+    [ ] AI-generated content labeled as such
+    [ ] Deepfake content marked as artificially generated
+    [ ] Emotion recognition systems: inform subjects
+
+  PENALTIES:
+    - Up to EUR 35M or 7% global turnover (prohibited AI practices)
+    - Up to EUR 15M or 3% global turnover (other violations)
+    - Up to EUR 7.5M or 1% global turnover (incorrect info to authorities)
+
 MLOPS REQUIREMENTS:
   [ ] Model registry (MLflow, SageMaker, Vertex AI)
   [ ] Experiment tracking (parameters, metrics, artifacts)
@@ -2701,6 +2999,147 @@ GHERKIN FOR AI/ML:
     When KL-divergence exceeds 0.15 for any feature
     Then a retraining job is queued
     And the on-call engineer is notified
+
+### Requirements Traceability (Forward, Backward, Impact Analysis)
+
+Full traceability ensures every requirement links to design, code, and tests. Enables impact analysis when requirements change.
+
+```
+FORWARD TRACEABILITY (requirement → downstream)
+=================================================
+
+  Requirement (ID: REQ-101)
+    "User can reset password via email link"
+    │
+    ├── Design (ID: DES-101)
+    │     "Password reset flow: email → token → new password form"
+    │
+    ├── Code (commit: abc123, PR #245)
+    │     src/auth/password_reset.py
+    │     src/templates/reset_email.html
+    │
+    └── Test (ID: TC-101, TC-102, TC-103)
+          TC-101: Valid token resets password
+          TC-102: Expired token shows error
+          TC-103: Invalid token shows error
+
+BACKWARD TRACEABILITY (test → upstream requirement)
+=====================================================
+
+  Test TC-101: "Valid token resets password"
+    │
+    ├── Code: src/auth/password_reset.py:reset_password()
+    │
+    ├── Design: DES-101 "Password reset flow"
+    │
+    └── Requirement: REQ-101 "User can reset password via email"
+
+WHY BOTH DIRECTIONS:
+  Forward: "Is every requirement implemented and tested?" (coverage)
+  Backward: "Why does this test exist?" (orphan detection)
+  Missing forward link = untested requirement
+  Missing backward link = orphan test (delete or justify)
+
+IMPACT ANALYSIS
+================
+
+When REQ-101 changes ("add SMS option for password reset"):
+
+  REQ-101 (changed)
+    ├── DES-101: MUST UPDATE (add SMS flow diagram)
+    ├── DES-102: AFFECTED (SMS gateway integration)
+    ├── Code:
+    │     src/auth/password_reset.py: MODIFY (add SMS path)
+    │     src/auth/sms_service.py: CREATE (new)
+    │     src/templates/reset_sms.html: CREATE (new)
+    ├── Tests:
+    │     TC-101: NO CHANGE (email path still works)
+    │     TC-104: CREATE (SMS token delivery)
+    │     TC-105: CREATE (SMS rate limiting)
+    └── Dependencies:
+          SMS Gateway API: NEW DEPENDENCY
+          Rate limiting service: UPDATE
+
+IMPACT ANALYSIS PROCESS:
+  1. Identify changed requirement
+  2. Follow forward links to find affected design/code/tests
+  3. Follow backward links to find related requirements
+  4. Estimate effort for each affected item
+  5. Present to team: "Changing REQ-101 affects 3 files, 2 tests, 1 new dependency"
+```
+
+### Traceability Matrix
+```
+REQUIREMENTS TRACEABILITY MATRIX (RTM)
+========================================
+
+Req ID  | Requirement              | Design  | Code                | Test Cases      | Status
+--------|--------------------------|---------|---------------------|-----------------|--------
+REQ-101 | Password reset via email | DES-101 | password_reset.py   | TC-101,102,103  | Verified
+REQ-102 | Two-factor authentication| DES-102 | tfa_service.py      | TC-201,202,203  | Verified
+REQ-103 | Session timeout 30min    | DES-103 | session_manager.py  | TC-301          | In Test
+REQ-104 | OAuth2 SSO login         | DES-104 | (not started)       | (not written)   | Designed
+REQ-105 | Account lockout 5 fails  | DES-105 | lockout.py          | TC-501,502      | Failed
+REQ-106 | Password complexity rules| (none)  | (not started)       | (not written)   | New
+
+COLUMNS:
+  Req ID:       Unique requirement identifier
+  Requirement:  Short description
+  Design:       Design document/section ID
+  Code:         Source file(s) implementing requirement
+  Test Cases:   Test case IDs covering requirement
+  Status:       New | Designed | In Dev | In Test | Verified | Failed
+
+COVERAGE METRICS (from RTM):
+  Requirements with code:  4/6 = 67%
+  Requirements with tests: 3/6 = 50%
+  Requirements verified:   2/6 = 33%
+  Orphan tests: 0
+  Orphan code: 0
+
+MAINTENANCE:
+  - Update RTM on every requirement change
+  - Review RTM in sprint retrospectives
+  - Auto-generate from tooling where possible
+  - Flag "Designed" items stuck > 2 sprints
+```
+
+### Traceability Tools
+```
+TOOL COMPARISON
+================
+
+IBM DOORS (Enterprise):
+  - Industry standard for regulated industries (aerospace, defense, automotive)
+  - Formal requirements management with full traceability
+  - Impact analysis built-in (what-if scenarios)
+  - Baseline management (versioned requirement snapshots)
+  - Heavy, expensive, steep learning curve
+  - Best for: ISO 26262, DO-178C, IEC 62304 compliance
+
+Jama Connect (Mid-Market):
+  - Modern web-based requirements management
+  - Live traceability (real-time impact analysis)
+  - Review workflows with electronic signatures
+  - Test management integration
+  - REST API for CI/CD integration
+  - Best for: Medical devices, automotive, complex systems
+
+Azure DevOps (Lightweight):
+  - Work items as requirements (Product Backlog Items / User Stories)
+  - Links between work items create traceability
+  - Query-based traceability views
+  - Test Plans link test cases to requirements
+  - Extensions: "Requirements Hub", "Traceability Matrix"
+  - Best for: Agile teams already on Azure DevOps
+  - Limitation: No formal impact analysis, manual link maintenance
+
+OPEN-SOURCE ALTERNATIVES:
+  - OSRMT: Open-source requirements management tool
+  - ReqView: Requirements management with traceability (free tier)
+  - GitHub Issues + Labels: Lightweight traceability for small teams
+  - Confluence + Jira Links: Manual but flexible
+```
 
 ### Connection Diagram
 
@@ -2771,6 +3210,249 @@ AI/ML Requirements (data, metrics, bias) - if applicable
 OKR Feedback Loop (KR results → next cycle objectives)
 ```
 
+## NFR Patterns (Performance Budgets, Accessibility, i18n, ISO 25010)
+
+Non-functional requirement patterns that apply across domains. Specify as acceptance criteria, not vague aspirations.
+
+### Performance Budgets (Web/SPA)
+
+Source: Google Web Vitals, https://web.dev/vitals/
+
+```
+CORE WEB VITALS (LCP, FID/INP, CLS)
+=====================================
+
+Largest Contentful Paint (LCP):
+  - Measures: loading performance (time largest element renders)
+  - Good: <= 2.5s
+  - Needs Improvement: 2.5s - 4.0s
+  - Poor: > 4.0s
+  - Budget example: "LCP <= 2.5s on 3G Fast connection for 75th percentile"
+  - Optimization: preload hero image, server-side render critical content, CDN
+
+First Input Delay (FID) / Interaction to Next Paint (INP):
+  - FID measures: interactivity delay (first click to response)
+  - INP measures: responsiveness (all interactions, worst case)
+  - Good FID: <= 100ms; Good INP: <= 200ms
+  - Budget example: "INP <= 200ms for 75th percentile of interactions"
+  - Optimization: code splitting, defer non-critical JS, web workers
+
+Cumulative Layout Shift (CLS):
+  - Measures: visual stability (unexpected layout movement)
+  - Good: <= 0.1
+  - Needs Improvement: 0.1 - 0.25
+  - Poor: > 0.25
+  - Budget example: "CLS <= 0.1 across all pages"
+  - Optimization: set explicit dimensions on images/ads, font-display: swap
+
+BUNDLE SIZE BUDGETS:
+  - JavaScript: <= 200KB compressed (initial load)
+  - CSS: <= 50KB compressed
+  - Total page weight: <= 1MB (initial load)
+  - Font files: <= 100KB per weight/style
+  - Image budget: <= 500KB for hero images (WebP/AVIF preferred)
+
+PERFORMANCE BUDGET SPEC (in acceptance criteria):
+  Given user loads homepage on 3G Fast connection
+  When page finishes loading
+  Then LCP <= 2.5s
+  And CLS <= 0.1
+  And total JS bundle <= 200KB gzipped
+  And Time to Interactive <= 3.5s
+
+MONITORING:
+  - Real User Monitoring (RUM) for field data
+  - Lighthouse CI for lab data in pipeline
+  - Performance budgets in webpack/rollup/vite config
+  - Alert when budget exceeded by > 10%
+```
+
+### Accessibility Requirements (WCAG 2.2)
+
+Source: W3C, https://www.w3.org/TR/WCAG22/
+
+```
+WCAG 2.2 AA REQUIREMENTS (new in 2.2)
+========================================
+
+NEW SUCCESS CRITERIA IN WCAG 2.2:
+  2.4.11 Focus Not Obscured (Minimum) [AA]:
+    - When component receives keyboard focus, not entirely hidden
+    - Acceptance: "Tab to any interactive element, focus indicator visible"
+
+  2.4.12 Focus Not Obscured (Enhanced) [AAA]:
+    - No part of focused component hidden by author-created content
+
+  2.4.13 Focus Appearance [AAA]:
+    - Focus indicator area >= 2px perimeter, 3:1 contrast ratio
+
+  2.5.7 Dragging Movements [AA]:
+    - Any dragging action has single-pointer alternative
+    - Acceptance: "Drag-to-reorder list also has arrow button controls"
+
+  2.5.8 Target Size (Minimum) [AA]:
+    - Touch/pointer targets >= 24x24 CSS pixels (unless inline, essential, or browser-controlled)
+    - Acceptance: "All buttons/links >= 24x24px, tested on mobile"
+
+  3.2.6 Consistent Help [A]:
+    - Help mechanism (contact, chatbot) in same relative order across pages
+    - Acceptance: "Help link appears in same position on all pages"
+
+  3.3.7 Redundant Entry [A]:
+    - Don't ask for same info twice in same session
+    - Auto-populate from earlier input
+    - Acceptance: "Billing address auto-filled from shipping if same"
+
+  3.3.8 Accessible Authentication (Minimum) [AA]:
+    - No cognitive function test for auth (memorize, transcribe, calculate)
+    - Acceptance: "Login supports password manager autofill, no CAPTCHA without alternative"
+
+EXISTING KEY CRITERIA (carried from 2.1):
+  1.1.1 Non-text Content: alt text for images
+  1.3.1 Info and Relationships: semantic HTML
+  1.4.3 Contrast (Minimum): 4.5:1 text, 3:1 large text
+  2.1.1 Keyboard: all functionality via keyboard
+  2.4.7 Focus Visible: visible focus indicator
+  3.1.1 Language of Page: html lang attribute
+  4.1.2 Name, Role, Value: ARIA for custom widgets
+
+ACCEPTANCE CRITERIA TEMPLATE:
+  Given [feature/component]
+  When user [action with assistive technology]
+  Then [expected accessible behavior]
+  And WCAG criterion [X.X.X] satisfied
+
+TESTING APPROACH:
+  - Automated: axe-core, Lighthouse a11y audit in CI
+  - Manual: keyboard-only navigation, screen reader (NVDA, VoiceOver)
+  - User testing: include people with disabilities
+  - Document: VPAT (Voluntary Product Accessibility Template)
+```
+
+### Internationalization (i18n) Requirements
+```
+I18N REQUIREMENTS CHECKLIST
+============================
+
+ENCODING:
+  [ ] UTF-8 everywhere (database, API, frontend, file I/O)
+  [ ] No hardcoded character encodings
+  [ ] BOM handling specified (or explicitly excluded)
+  [ ] Database collation set to utf8mb4 (MySQL) or UTF-8 (Postgres)
+
+TEXT DIRECTION (RTL):
+  [ ] CSS logical properties: margin-inline-start (not margin-left)
+  [ ] dir="rtl" on <html> or container element
+  [ ] Icon mirroring: arrows, progress bars, navigation flipped for RTL
+  [ ] Form field alignment: labels right-aligned in RTL
+  [ ] Text alignment: start/end (not left/right)
+
+TEXT EXPANSION:
+  [ ] UI accommodates 200% text expansion (German, Finnish)
+  [ ] Button/label containers use min-width, not fixed-width
+  [ ] No text baked into images
+  [ ] Truncation strategy: ellipsis with tooltip for long translations
+  [ ] Character count limits documented per field (for translators)
+
+LOCALE-DEPENDENT FORMATTING:
+  [ ] Dates: Intl.DateTimeFormat or library (moment/luxon/date-fns)
+  [ ] Numbers: Intl.NumberFormat (decimal separator, grouping)
+  [ ] Currency: locale-aware symbol position, decimal places
+  [ ] Addresses: configurable fields per country
+  [ ] Phone numbers: E.164 format storage, locale display
+
+STRING EXTERNALIZATION:
+  [ ] All user-facing strings in resource files (not hardcoded)
+  [ ] String keys: namespace.module.key (e.g., checkout.payment.error)
+  [ ] No string concatenation: use placeholders with context
+  [ ] Pluralization rules: CLDR plural categories (zero/one/two/few/many/other)
+  [ ] Gender agreement: context-aware translations
+
+ACCEPTANCE CRITERIA:
+  Given application locale is set to "ar-SA" (Arabic, Saudi Arabia)
+  When user views checkout page
+  Then text flows right-to-left
+  And currency displays as "١٢٣٫٤٥ ر.س."
+  And date displays as "١٤٤٥/٠٦/٢٠" (Hijri calendar)
+  And all labels have correct Arabic translations
+  And no English fallback text visible
+```
+
+### ISO/IEC 25010 Quality Model
+
+Source: ISO/IEC 25010:2023, https://www.iso.org/standard/35733.html
+
+```
+QUALITY CHARACTERISTICS (8 categories)
+========================================
+
+1. FUNCTIONAL SUITABILITY
+   Functional completeness: functions cover all tasks
+   Functional correctness: correct results with needed precision
+   Functional appropriateness: functions facilitate task completion
+   Spec: "Search returns results matching query with 99.9% accuracy"
+
+2. PERFORMANCE EFFICIENCY
+   Time behavior: response times, processing times
+   Resource utilization: CPU, memory, disk, network usage
+   Capacity: max concurrent users, data volume, throughput
+   Spec: "API responds within 200ms p95 under 1000 concurrent users"
+
+3. COMPATIBILITY
+   Co-existence: can operate with other software without conflict
+   Interoperability: exchange and use information with other systems
+   Spec: "Works alongside existing CRM without data conflicts"
+
+4. INTERACTION CAPABILITY (was Usability)
+   Appropriateness recognizability: users recognize if product suits needs
+   Learnability: ease of learning
+   Operability: ease of operation
+   User error protection: prevents user errors
+   User engagement: engaging/pleasant to use
+   Inclusivity: accessible to diverse users (WCAG 2.2)
+   Self-descriptiveness: explains itself
+   Spec: "New user completes first task within 5 minutes without help"
+
+5. RELIABILITY
+   Availability: operational when needed (uptime SLA)
+   Fault tolerance: operates despite hardware/software faults
+   Recoverability: recover data and state after interruption
+   Spec: "99.95% uptime, recovers from failure within 30 seconds"
+
+6. SECURITY
+   Confidentiality: data accessible only to authorized users
+   Integrity: prevents unauthorized data modification
+   Non-repudiation: actions attributable to actors
+   Accountability: actions traceable to entity
+   Authenticity: identity verified
+   Resistance: resists attacks (OWASP ASVS)
+   Spec: "All PII encrypted at rest (AES-256) and in transit (TLS 1.3)"
+
+7. FLEXIBILITY
+   Adaptability: adapt to different/environments without special action
+   Scalability: handle growing workload
+   Installability: install/uninstall in specified environment
+   Replaceability: replace same functionality in same environment
+   Spec: "Auto-scales from 100 to 10,000 users without config change"
+
+8. MAINTAINABILITY
+   Modularity: composed of discrete components
+   Reusability: assets usable in other systems
+   Analysability: impact of change assessed
+   Modifiability: modified without introducing defects
+   Testability: test criteria established and tests performed
+   Spec: "Any component replaceable without affecting others (no circular deps)"
+
+MAPPING TO REQUIREMENTS:
+  For each NFR, specify:
+    1. Quality characteristic (from above)
+    2. Sub-characteristic
+    3. Measure (quantitative metric)
+    4. Target (threshold)
+    5. Priority (must/should/could)
+  Example: "Performance Efficiency > Time Behavior > API p95 latency <= 200ms (must)"
+```
+
 ## Pitfalls
 
 1. **Don't write flat backlogs** — use story mapping for 2D visualization
@@ -2804,3 +3486,9 @@ OKR Feedback Loop (KR results → next cycle objectives)
 29. **Don't prototype for a week in design sprints** — prototype in ONE DAY, test with 5 users on day 5
 30. **Don't skip discovery track** — dual-track means validating BEFORE building, not after shipping
 31. **Don't confuse KRs with tasks** — key results measure outcomes (metric changed), tasks measure outputs (work done)
+32. **Don't skip example mapping for BDD** — 4-color cards (yellow/blue/green/red) in 25-min sessions catch ambiguity before code
+33. **Don't specify NFRs vaguely** — use ISO 25010 categories with measurable thresholds, not "fast" or "secure"
+34. **Don't ignore text expansion in i18n** — German/Finnish expand 200%; hard-coded widths break layouts
+35. **Don't treat AI fairness as optional** — demographic parity and equalized odds are measurable; Model Cards and Datasheets are documented requirements
+36. **Don't ignore WCAG 2.2 new criteria** — Focus Not Obscured, Target Size, Dragging Movements are new AA requirements
+37. **Don't skip EU AI Act compliance for high-risk AI** — Article 9 mandates risk management, data governance, human oversight; penalties up to EUR 35M

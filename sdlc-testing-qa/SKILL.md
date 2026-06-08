@@ -1,7 +1,7 @@
 ---
 name: sdlc-testing-qa
 description: "Test pyramid (unit/integration/e2e), TDD/BDD, property-based testing, mutation testing, contract testing, chaos engineering, performance testing (k6/Locust), security testing (SAST/DAST), accessibility testing, AI-assisted test generation, serverless testing patterns, ML model testing, API contract testing, database testing, concurrency testing, observability-driven testing, visual regression testing, test data management. Includes Google testing culture, Netflix testing culture, Spotify Squad Health Check, Observability-Driven Development, and test architecture patterns."
-version: 4.4.0
+version: 4.5.0
 author: Hermes Agent
 license: MIT
 platforms: [linux, macos, windows]
@@ -3608,3 +3608,1423 @@ WHERE request_id = 'abc-123-def'
 5. "If you can't find out what your code is doing in production,
     your code is not ready to ship."
    → Add observability before merging, not after a production incident.
+
+## Step 39: GraphQL Testing
+
+### Query-Level Snapshot Testing
+
+Capture GraphQL query results as snapshots to detect unexpected response shape changes.
+
+```typescript
+// Jest snapshot testing for GraphQL queries
+import { renderHook } from '@testing-library/react-hooks';
+import { MockedProvider } from '@apollo/client/testing';
+import { useUserQuery } from './useUserQuery';
+
+const mocks = [
+  {
+    request: { query: GET_USER, variables: { id: '1' } },
+    result: {
+      data: {
+        user: { id: '1', name: 'Alice', email: 'alice@example.com', posts: [{ id: 'p1', title: 'Hello' }] },
+      },
+    },
+  },
+];
+
+test('GET_USER query returns expected shape', async () => {
+  const { result, waitForNextUpdate } = renderHook(() => useUserQuery('1'), {
+    wrapper: ({ children }) => <MockedProvider mocks={mocks}>{children}</MockedProvider>,
+  });
+  await waitForNextUpdate();
+  expect(result.current.data).toMatchSnapshot(); // snapshot guards response shape
+});
+```
+
+```typescript
+// Vitest — inline snapshot for query responses
+import { executeQuery } from '@apollo/client/testing';
+
+test('user query shape', async () => {
+  const result = await executeQuery(GET_USER, { id: '1' }, { mocks });
+  expect(result.data).toMatchInlineSnapshot(`
+    Object {
+      "user": Object {
+        "id": "1",
+        "name": "Alice",
+        "email": "alice@example.com",
+      },
+    }
+  `);
+});
+```
+
+### Schema Linting (graphql-eslint)
+
+Enforce naming conventions, require descriptions, ban deprecated fields in new code.
+
+```yaml
+# .eslintrc.yml — graphql-eslint configuration
+extends:
+  - plugin:@graphql-eslint/schema-all
+overrides:
+  - files: ['*.graphql']
+    parser: '@graphql-eslint/graphql-parser'
+    rules:
+      '@graphql-eslint/naming-convention':
+        - error
+        - FieldDefinition: camelCase
+          ObjectTypeDefinition: PascalCase
+          EnumValueDefinition: UPPER_CASE
+          InputValueDefinition: camelCase
+      '@graphql-eslint/description-style': error
+      '@graphql-eslint/relay-arguments': error
+      '@graphql-eslint/no-deprecated': warn
+      '@graphql-eslint/require-deprecation-reason': error
+      '@graphql-eslint/unique-field-names': error
+      '@graphql-eslint/no-hashtag-description': error
+```
+
+```bash
+# Run schema linting
+npx eslint --ext .graphql schema/
+
+# CI integration
+npx @graphql-eslint/eslint-plugin 'src/**/*.graphql' --format json > graphql-lint-report.json
+```
+
+### Query Complexity Analysis (graphql-query-complexity)
+
+Prevent expensive queries from DoS-ing your GraphQL server.
+
+```typescript
+// Server-side complexity limits
+import { getComplexity, simpleEstimator, fieldExtensionsEstimator } from 'graphql-query-complexity';
+import { ApolloServer } from '@apollo/server';
+
+const server = new ApolloServer({
+  schema,
+  plugins: [
+    {
+      requestDidStart: () => ({
+        didResolveOperation({ request, document }) {
+          const complexity = getComplexity({
+            schema,
+            operationName: request.operationName,
+            query: document,
+            variables: request.variables,
+            estimators: [
+              fieldExtensionsEstimator(),
+              simpleEstimator({ defaultComplexity: 1 }),
+            ],
+          });
+          if (complexity > 1000) {
+            throw new Error(`Query too complex: ${complexity}. Max allowed: 1000`);
+          }
+          console.log('Query complexity:', complexity);
+        },
+      }),
+    },
+  ],
+});
+```
+
+```typescript
+// Field-level complexity hints in schema
+const typeDefs = `#graphql
+  type User {
+    id: ID!
+    name: String
+    posts: [Post!]! @complexity(value: 5, multipliers: ["first"])
+    friends(first: Int): [User!]! @complexity(value: 3, multipliers: ["first"])
+  }
+
+  type Query {
+    users(first: Int): [User!]! @complexity(value: 3, multipliers: ["first"])
+    search(query: String!): [Result!]! @complexity(value: 10)
+  }
+`;
+```
+
+### Apollo MockedProvider
+
+```typescript
+// Full component test with Apollo MockedProvider
+import { MockedProvider } from '@apollo/client/testing';
+import { render, screen, waitFor } from '@testing-library/react';
+import { UserProfile } from './UserProfile';
+import { GET_USER, UPDATE_USER } from './queries';
+
+const mocks = [
+  {
+    request: { query: GET_USER, variables: { id: '1' } },
+    result: { data: { user: { id: '1', name: 'Alice', role: 'admin' } } },
+  },
+  {
+    request: { query: UPDATE_USER, variables: { id: '1', name: 'Bob' } },
+    result: { data: { updateUser: { id: '1', name: 'Bob', role: 'admin' } } },
+  },
+];
+
+test('renders user and allows name update', async () => {
+  render(
+    <MockedProvider mocks={mocks} addTypename={false}>
+      <UserProfile userId="1" />
+    </MockedProvider>
+  );
+
+  // Wait for loading to finish
+  await waitFor(() => expect(screen.getByText('Alice')).toBeInTheDocument());
+
+  // Simulate update
+  fireEvent.click(screen.getByText('Edit'));
+  fireEvent.change(screen.getByLabelText('Name'), { target: { value: 'Bob' } });
+  fireEvent.click(screen.getByText('Save'));
+
+  await waitFor(() => expect(screen.getByText('Bob')).toBeInTheDocument());
+});
+
+// Error state testing
+const errorMocks = [
+  {
+    request: { query: GET_USER, variables: { id: '999' } },
+    error: new Error('User not found'),
+  },
+];
+
+test('shows error state', async () => {
+  render(
+    <MockedProvider mocks={errorMocks} addTypename={false}>
+      <UserProfile userId="999" />
+    </MockedProvider>
+  );
+  await waitFor(() => expect(screen.getByText(/error/i)).toBeInTheDocument());
+});
+```
+
+### Persisted Queries Allowlist
+
+Lock down production GraphQL to only allow pre-registered queries.
+
+```typescript
+// Automatic Persisted Queries (APQ) with allowlist
+import { ApolloServer } from '@apollo/server';
+import { ApolloServerPluginAPQ } from '@apollo/server/plugin/apq';
+import { createHash } from 'crypto';
+
+// Pre-compute query hashes at build time
+const ALLOWED_QUERIES = new Map<string, string>();
+
+async function loadAllowlist() {
+  const queries = await import('./persisted-queries.json');
+  for (const [hash, query] of Object.entries(queries)) {
+    ALLOWED_QUERIES.set(hash, query as string);
+  }
+}
+
+const server = new ApolloServer({
+  schema,
+  plugins: [
+    {
+      async requestDidStart({ request }) {
+        if (request.extensions?.persistedQuery) {
+          const { sha256Hash } = request.extensions.persistedQuery;
+          if (!ALLOWED_QUERIES.has(sha256Hash)) {
+            throw new Error(`Query not in allowlist: ${sha256Hash}`);
+          }
+        }
+      },
+    },
+  ],
+});
+```
+
+```bash
+# Generate persisted query manifest at build time
+npx apollo client:codegen \
+  --queries='./src/**/*.graphql' \
+  --persistedQueries \
+  --outputPersistedQueries=persisted-queries.json
+
+# CI gate: verify all queries are in allowlist
+npx graphql-allowlist check \
+  --schema schema.graphql \
+  --queries 'src/**/*.graphql' \
+  --allowlist persisted-queries.json
+```
+
+**GraphQL testing checklist:**
+- [ ] Schema linted with graphql-eslint (naming, descriptions, deprecation)
+- [ ] Query complexity limits enforced (prevent DoS)
+- [ ] Snapshot tests for query response shapes
+- [ ] MockedProvider tests for all UI components using GraphQL
+- [ ] Error/loading states tested with mock errors
+- [ ] Persisted queries allowlist for production
+- [ ] Subscription tests with `graphql-ws` test client
+- [ ] Schema breaking change detection in CI (graphql-inspector)
+
+## Step 40: gRPC Testing
+
+### grpcurl — CLI Testing
+
+Test gRPC services from the command line without writing code.
+
+```bash
+# List all services on a gRPC server
+grpcurl -plaintext localhost:50051 list
+
+# Describe a service
+grpcurl -plaintext localhost:50051 describe mypackage.UserService
+
+# Describe a message type
+grpcurl -plaintext localhost:50051 describe mypackage.User
+
+# Call a unary RPC
+grpcurl -plaintext -d '{"id": "123"}' \
+  localhost:50051 mypackage.UserService/GetUser
+
+# Call with metadata (auth headers)
+grpcurl -plaintext \
+  -H "authorization: Bearer eyJhbG..." \
+  -d '{"name": "Alice"}' \
+  localhost:50051 mypackage.UserService/CreateUser
+
+# Call a server-streaming RPC
+grpcurl -plaintext -d '{"user_id": "123"}' \
+  localhost:50051 mypackage.NotificationService/StreamNotifications
+
+# Call with TLS
+grpcurl -cacert /path/to/ca.crt \
+  -cert /path/to/client.crt \
+  -key /path/to/client.key \
+  -d '{"id": "123"}' \
+  grpc.example.com:443 mypackage.UserService/GetUser
+
+# Format output as JSON (default) or use specific formatters
+grpcurl -plaintext -format json \
+  -d '{}' localhost:50051 mypackage.UserService/ListUsers
+
+# Reflection-based: no proto files needed if server has reflection enabled
+grpcurl -plaintext localhost:50051 list
+grpcurl -plaintext localhost:50051 describe mypackage.UserService.GetUser
+```
+
+### ghz — Load Testing
+
+Benchmark gRPC services with configurable load patterns.
+
+```bash
+# Basic load test — 100 requests total
+ghz --insecure \
+  --proto ./proto/user.proto \
+  --call mypackage.UserService/GetUser \
+  -d '{"id": "123"}' \
+  -n 100 \
+  localhost:50051
+
+# Sustained load — 50 concurrent for 30 seconds
+ghz --insecure \
+  --proto ./proto/user.proto \
+  --call mypackage.UserService/GetUser \
+  -d '{"id": "{{randomString 10}}"}' \
+  -c 50 \
+  -z 30s \
+  localhost:50051
+
+# With metadata and TLS
+ghz --proto ./proto/user.proto \
+  --call mypackage.UserService/GetUser \
+  -d '{"id": "123"}' \
+  -M '{"authorization": "Bearer test-token"}' \
+  --cacert ./certs/ca.crt \
+  -c 100 \
+  -n 10000 \
+  grpc.example.com:443
+
+# JSON report output
+ghz --insecure \
+  --proto ./proto/user.proto \
+  --call mypackage.UserService/GetUser \
+  -d '{"id": "123"}' \
+  -n 1000 \
+  -o report.json \
+  -O json \
+  localhost:50051
+
+# Use template data for varied requests
+ghz --insecure \
+  --proto ./proto/user.proto \
+  --call mypackage.UserService/GetUser \
+  -D ./test-data.json \
+  --load-step=10 \
+  --load-step-duration=5s \
+  localhost:50051
+```
+
+**ghz output metrics:**
+```
+Summary:
+  Count:        1000
+  Total:        5.23 s
+  Slowest:      89.12 ms
+  Fastest:      1.23 ms
+  Average:      12.45 ms
+  Requests/sec: 191.20
+
+Response time histogram:
+  1.230  [1]    |
+  10.019 [754]  |∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎
+  ...
+
+Latency distribution:
+  10 % in 5.12 ms
+  25 % in 7.34 ms
+  50 % in 11.23 ms
+  75 % in 16.45 ms
+  90 % in 22.67 ms
+  99 % in 45.89 ms
+
+Status code distribution:
+  [OK]   1000 responses
+```
+
+### buf — Proto Contract Testing
+
+Detect breaking changes in protobuf definitions before they ship.
+
+```yaml
+# buf.yaml — repository configuration
+version: v2
+modules:
+  - path: proto
+deps:
+  - buf.build/googleapis/googleapis
+lint:
+  use:
+    - STANDARD
+  except:
+    - FIELD_NOT_REQUIRED
+    - PACKAGE_DIRECTORY_MATCH
+  enum_zero_value_suffix: _UNSPECIFIED
+  service_suffix: Service
+breaking:
+  use:
+    - FILE
+  ignore_unstable_packages: true
+```
+
+```bash
+# Lint proto files
+buf lint
+
+# Check for breaking changes against main branch
+buf breaking --against '.git#branch=main'
+
+# Check against a specific commit
+buf breaking --against '.git#ref=abc1234'
+
+# Check against a remote BSR (Buf Schema Registry) module
+buf breaking --against 'buf.build/myorg/mypackage'
+
+# Generate breaking change report in JSON
+buf breaking --against '.git#branch=main' --error-format json
+
+# Generate code from protos
+buf generate
+
+# Format proto files
+buf format -w
+```
+
+```yaml
+# buf.gen.yaml — code generation config
+version: v2
+plugins:
+  - remote: buf.build/protocolbuffers/go
+    out: gen/go
+    opt: paths=source_relative
+  - remote: buf.build/connectrpc/go
+    out: gen/go
+    opt: paths=source_relative
+  - remote: buf.build/grpc/go
+    out: gen/go
+    opt: paths=source_relative
+  - remote: buf.build/protocolbuffers/python
+    out: gen/python
+  - remote: buf.build/grpc/python
+    out: gen/python
+```
+
+```yaml
+# GitHub Actions: proto contract testing
+name: Proto Contract Check
+on:
+  pull_request:
+    paths: ['proto/**']
+
+jobs:
+  buf-checks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: bufbuild/buf-setup-action@v1
+      - uses: bufbuild/buf-lint-action@v1
+      - uses: bufbuild/buf-breaking-action@v1
+        with:
+          against: 'https://github.com/${{ github.repository }}.git#branch=main,ref=HEAD~1'
+```
+
+### Server Reflection Testing
+
+```bash
+# Test server reflection is working
+grpcurl -plaintext localhost:50051 list
+# Expected: grpc.health.v1.Health
+#           grpc.reflection.v1alpha.ServerReflection
+#           mypackage.UserService
+#           mypackage.OrderService
+
+# Verify specific service methods are exposed
+grpcurl -plaintext localhost:50051 describe mypackage.UserService
+# Should list: GetUser, CreateUser, ListUsers, UpdateUser, DeleteUser
+
+# Verify method signatures
+grpcurl -plaintext localhost:50051 describe mypackage.UserService.GetUser
+# Expected:
+#   mypackage.UserService.GetUser is a method:
+#   rpc GetUser ( .mypackage.GetUserRequest ) returns ( .mypackage.User );
+
+# Test health check
+grpcurl -plaintext localhost:50051 grpc.health.v1.Health/Check
+# Expected: {"status": "SERVING"}
+```
+
+```python
+# Python — reflection-based dynamic testing
+import grpc
+from grpc_reflection.v1alpha import reflection
+from grpc_health.v1 import health_pb2, health_pb2_grpc
+
+def test_grpc_reflection_enabled(channel):
+    """Verify server reflection is active."""
+    stub = reflection.ReflectionServiceStub(channel)
+    services = stub.ServerReflectionInfo(
+        iter([reflection.ServerReflectionRequest(list_services='')])
+    )
+    service_names = [s.name for s in next(services).list_services_response.service]
+    assert 'mypackage.UserService' in service_names
+    assert 'grpc.health.v1.Health' in service_names
+
+def test_grpc_health_check(channel):
+    """Verify health check returns SERVING."""
+    stub = health_pb2_grpc.HealthStub(channel)
+    response = stub.Check(health_pb2.HealthCheckRequest())
+    assert response.status == health_pb2.HealthCheckResponse.SERVING
+```
+
+### Service Mesh Integration Testing
+
+Test gRPC services through Istio/Linkerd service mesh with mTLS.
+
+```yaml
+# Kubernetes Job: gRPC integration test through mesh
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: grpc-integration-test
+  namespace: test
+spec:
+  template:
+    metadata:
+      annotations:
+        sidecar.istio.io/inject: "true"  # inject mesh sidecar
+    spec:
+      serviceAccountName: test-runner
+      containers:
+        - name: grpc-test
+          image: bufbuild/ghz:latest
+          command:
+            - ghz
+            - --proto
+            - /proto/user.proto
+            - --call
+            - mypackage.UserService/GetUser
+            - -d
+            - '{"id": "123"}'
+            - -n
+            - "100"
+            - -c
+            - "10"
+            - --cacert
+            - /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+            - user-service.test.svc.cluster.local:50051
+          volumeMounts:
+            - name: proto-files
+              mountPath: /proto
+      volumes:
+        - name: proto-files
+          configMap:
+            name: proto-definitions
+      restartPolicy: Never
+```
+
+```yaml
+# Istio PeerAuthentication for mTLS testing
+apiVersion: security.istio.io/v1beta1
+kind: PeerAuthentication
+metadata:
+  name: grpc-mtls
+  namespace: test
+spec:
+  mtls:
+    mode: STRICT
+```
+
+```go
+// Go — test gRPC through service mesh with mTLS
+func TestGRPCThroughMesh(t *testing.T) {
+    // Load mesh-provided certs
+    creds, err := credentials.NewClientTLSFromFile(
+        "/var/run/secrets/kubernetes.io/serviceaccount/ca.crt", "")
+    require.NoError(t, err)
+
+    conn, err := grpc.Dial(
+        "user-service.test.svc.cluster.local:50051",
+        grpc.WithTransportCredentials(creds),
+    )
+    require.NoError(t, err)
+    defer conn.Close()
+
+    client := pb.NewUserServiceClient(conn)
+    resp, err := client.GetUser(context.Background(), &pb.GetUserRequest{Id: "123"})
+    require.NoError(t, err)
+    assert.Equal(t, "123", resp.Id)
+}
+```
+
+**gRPC testing checklist:**
+- [ ] grpcurl smoke tests for all RPCs (unary, streaming, bidirectional)
+- [ ] ghz load tests with latency percentiles and error rates
+- [ ] buf lint + buf breaking in CI proto pipeline
+- [ ] Server reflection verified (list, describe, health check)
+- [ ] Service mesh mTLS integration tests
+- [ ] Timeout and deadline propagation tested
+- [ ] Error code mapping (gRPC status codes ↔ HTTP) verified
+- [ ] Load balancing behavior tested (round-robin, consistent hash)
+
+## Step 41: Test Data Management — Expanded
+
+### Synthetic Data Generation
+
+Generate realistic, privacy-safe test data at scale.
+
+```javascript
+// Faker.js — comprehensive synthetic data generation
+import { faker } from '@faker-js/faker';
+import { fakerDE, fakerJA, fakerZH_CN } from '@faker-js/faker';
+
+// Generate complete user profiles
+function generateUser(overrides = {}) {
+  const sex = faker.person.sexType();
+  const firstName = faker.person.firstName(sex);
+  const lastName = faker.person.lastName();
+
+  return {
+    id: faker.string.uuid(),
+    email: faker.internet.email({ firstName, lastName }),
+    username: faker.internet.username({ firstName, lastName }),
+    avatar: faker.image.avatar(),
+    firstName,
+    lastName,
+    sex,
+    phone: faker.phone.number({ style: 'national' }),
+    address: {
+      street: faker.location.streetAddress(),
+      city: faker.location.city(),
+      state: faker.location.state({ abbreviated: true }),
+      zipCode: faker.location.zipCode(),
+      country: faker.location.countryCode(),
+    },
+    creditCard: {
+      number: faker.finance.creditCardNumber(),
+      cvv: faker.finance.creditCardCVV(),
+      issuer: faker.finance.creditCardIssuer(),
+    },
+    company: faker.company.name(),
+    jobTitle: faker.person.jobTitle(),
+    bio: faker.person.bio(),
+    createdAt: faker.date.past({ years: 2 }),
+    ...overrides,
+  };
+}
+
+// Generate related data with referential integrity
+function generateDataset(count = 1000) {
+  const users = Array.from({ length: count }, () => generateUser());
+  const orders = users.flatMap(user =>
+    Array.from({ length: faker.number.int({ min: 0, max: 10 }) }, () => ({
+      id: faker.string.uuid(),
+      userId: user.id,
+      product: faker.commerce.productName(),
+      amount: parseFloat(faker.commerce.price({ min: 5, max: 500 })),
+      status: faker.helpers.arrayElement(['pending', 'shipped', 'delivered', 'returned']),
+      createdAt: faker.date.between({ from: user.createdAt, to: new Date() }),
+    }))
+  );
+  return { users, orders };
+}
+```
+
+```python
+import sys
+# Synthea — synthetic patient healthcare data
+# Generates realistic (but not real) FHIR patient records
+# https://github.com/synthetichealth/synthea
+#
+# java -jar synthea-with-dependencies.jar -p 1000 -s 42
+# Generates 1000 synthetic patients with seeded randomness
+#
+# Output: FHIR bundles, CSV, C-CDA formats
+# Includes: demographics, conditions, medications, encounters, procedures
+#
+# Use for: HIPAA-compliant testing without real PHI
+# Limitations: US-centric, limited rare disease coverage
+
+# Gretel.ai — synthetic data with differential privacy
+# https://gretel.ai/
+#
+# gretel-synthetics: train model on sensitive data, generate synthetic copies
+#
+# from gretel_synthetics.column_encoders import *
+# from gretel_synthetics.config import LocalConfig
+# from gretel_synthetics.generate import generate_text
+#
+# config = LocalConfig(
+#     max_line_len=2048,
+#     epochs=15,
+#     field_delimiter=",",
+#     dp=True,  # differential privacy enabled
+#     gen_lines=1000,
+# )
+# train(df=config, checkpoint_dir=".checkpoints")
+# records = list(generate_text(config, checkpoint_dir=".checkpoints"))
+#
+# Key: privacy-preserving — synthetic data cannot be reverse-engineered to real data
+
+# Tonic.ai — data synthesis for staging/test environments
+# https://tonic.ai/
+#
+# Features: subsetting (smaller copies of prod), referential integrity,
+# conditional generation, schema-aware synthesis
+# Integrates with: Postgres, MySQL, SQL Server, MongoDB, Snowflake, BigQuery
+# Use for: staging environment data that mirrors prod shape without prod PII
+```
+
+### Data Masking
+
+**Static vs Dynamic masking:**
+```
+Static Masking (persistent):
+  prod DB → masked copy → test DB (permanently masked)
+  Pros: simple, no runtime overhead, one-time cost
+  Cons: stale data, large storage, no real-time updates
+  Tools: Delphix, SQL Data Masker, DataVeil
+
+Dynamic Masking (on-read):
+  prod DB → proxy layer → masked on access → test/consumer
+  Pros: always fresh, granular per-role policies, no copies
+  Cons: latency, proxy dependency, policy complexity
+  Tools: Delphix, Oracle Data Redaction, Snowflake Dynamic Masking
+```
+
+```python
+import sys
+# Differential Privacy — mathematical privacy guarantee
+import numpy as np
+
+def laplace_mechanism(true_value, sensitivity, epsilon):
+    """Add Laplace noise for differential privacy."""
+    scale = sensitivity / epsilon
+    noise = np.random.laplace(0, scale)
+    return true_value + noise
+
+# Example: count query with DP
+true_count = 42  # real count from DB
+private_count = laplace_mechanism(true_count, sensitivity=1, epsilon=0.1)
+# Higher epsilon = less privacy, more accuracy
+# Lower epsilon = more privacy, less accuracy
+# Typical: epsilon in [0.1, 10]
+
+# Google's RAPPOR (Randomized Aggregatable Privacy-Preserving Ordinal Response)
+# for aggregate statistics without individual data exposure
+```
+
+### Test Data as Code
+
+Manage test data declaratively alongside tests.
+
+```xml
+<!-- DBUnit — XML dataset for database tests -->
+<!-- users-dataset.xml -->
+<dataset>
+  <users id="1" email="alice@test.com" name="Alice" role="admin"
+         created_at="2024-01-15 10:00:00" />
+  <users id="2" email="bob@test.com" name="Bob" role="member"
+         created_at="2024-02-20 14:30:00" />
+  <orders id="101" user_id="1" product="Widget" amount="29.99"
+          status="delivered" created_at="2024-03-01 09:00:00" />
+</dataset>
+```
+
+```java
+// DBUnit — Java database testing with datasets
+import org.dbunit.IDatabaseTester;
+import org.dbunit.dataset.xml.FlatXmlDataSetBuilder;
+
+public class UserRepositoryTest {
+    @BeforeEach
+    void setUp() throws Exception {
+        IDataSet dataSet = new FlatXmlDataSetBuilder()
+            .build(getClass().getResourceAsStream("/users-dataset.xml"));
+        databaseTester.setDataSet(dataSet);
+        databaseTester.onSetup();
+    }
+
+    @AfterEach
+    void tearDown() throws Exception {
+        databaseTester.onTearDown();
+    }
+
+    @Test
+    void testFindById() {
+        User user = repository.findById(1L);
+        assertEquals("Alice", user.getName());
+        assertEquals("admin", user.getRole());
+    }
+}
+```
+
+```yaml
+# Fixtures — YAML-based test data (Rails pattern, portable)
+# test/fixtures/users.yml
+alice:
+  id: 1
+  email: alice@test.com
+  name: Alice
+  role: admin
+  created_at: 2024-01-15 10:00:00
+
+bob:
+  id: 2
+  email: bob@test.com
+  name: Bob
+  role: member
+  created_at: 2024-02-20 14:30:00
+
+# test/fixtures/orders.yml
+alice_order:
+  id: 101
+  user_id: 1  # FK → alice
+  product: Widget
+  amount: 29.99
+  status: delivered
+```
+
+```typescript
+// Fixtures in TypeScript — custom test data loader
+import * as yaml from 'js-yaml';
+import { readFileSync } from 'fs';
+import { resolve } from 'path';
+
+function loadFixtures<T>(name: string): Record<string, T> {
+  const content = readFileSync(
+    resolve(__dirname, `fixtures/${name}.yml`), 'utf-8'
+  );
+  return yaml.load(content) as Record<string, T>;
+}
+
+// Usage
+const users = loadFixtures<User>('users');
+const orders = loadFixtures<Order>('orders');
+
+// Delphix — enterprise test data management
+# https://www.delphix.com/
+# Features: data virtualization (thin clones), masking, bookmarking,
+# branching (git-like for data), self-service provisioning
+# Use for: large-scale test environments with prod-like data
+# Workflow: prod → Delphix engine → masked virtual copies → test envs
+# Storage: virtual copies use ~1/10th space (copy-on-write)
+```
+
+### PII Detection
+
+Scan test data for accidentally leaked personally identifiable information.
+
+```python
+# Microsoft Presidio — PII detection and anonymization
+from presidio_analyzer import AnalyzerEngine
+from presidio_anonymizer import AnonymizerEngine
+from presidio_anonymizer.entities import OperatorConfig
+
+analyzer = AnalyzerEngine()
+anonymizer = AnonymizerEngine()
+
+text = "My name is John Smith, SSN: 123-45-6789, email: john@example.com"
+
+# Detect PII entities
+results = analyzer.analyze(
+    text=text,
+    language='en',
+    entities=['PERSON', 'US_SSN', 'EMAIL_ADDRESS', 'PHONE_NUMBER',
+              'CREDIT_CARD', 'IP_ADDRESS', 'LOCATION', 'DATE_TIME'],
+)
+
+for result in results:
+    print(f"Entity: {result.entity_type}, Start: {result.start}, "
+          f"End: {result.end}, Score: {result.score:.2f}")
+# Output:
+# Entity: PERSON, Start: 10, End: 20, Score: 0.85
+# Entity: US_SSN, Start: 28, End: 39, Score: 0.85
+# Entity: EMAIL_ADDRESS, Start: 48, End: 66, Score: 0.95
+
+# Anonymize detected PII
+anonymized = anonymizer.anonymize(
+    text=text,
+    analyzer_results=results,
+    operators={
+        'PERSON': OperatorConfig('replace', {'new_value': '<PERSON>'}),
+        'US_SSN': OperatorConfig('mask', {'chars_to_mask': 7, 'masking_char': '*'}),
+        'EMAIL_ADDRESS': OperatorConfig('replace', {'new_value': '<EMAIL>'}),
+    },
+)
+print(anonymized.text)
+# "My name is <PERSON>, SSN: ******789, email: <EMAIL>"
+
+# Presidio in CI — scan test fixtures for PII leaks
+def test_no_pii_in_fixtures():
+    """Ensure test fixture files contain no real PII."""
+    fixture_dir = Path('test/fixtures')
+    for fixture_file in fixture_dir.glob('**/*.yml'):
+        content = fixture_file.read_text()
+        results = analyzer.analyze(text=content, language='en')
+        pii_found = [r for r in results if r.score > 0.7]
+        assert not pii_found, (
+            f"PII detected in {fixture_file}: "
+            f"{[(r.entity_type, r.start, r.end) for r in pii_found]}"
+        )
+```
+
+```bash
+# AWS Macie — PII scanning for S3-stored test data
+# Enable Macie for S3 bucket containing test datasets
+aws macie2 create-classification-job \
+  --job-type ONE_TIME \
+  --s3-job-definition '{
+    "bucketDefinitions": [{
+      "accountId": "123456789012",
+      "buckets": ["test-data-bucket"]
+    }]
+  }' \
+  --name "PII-scan-test-data"
+
+# Check findings
+aws macie2 get-findings --finding-criteria '{
+  "criterion": {
+    "severity.score": { "gte": 3 }
+  }
+}'
+```
+
+```yaml
+# CI pipeline: PII detection gate
+name: PII Detection
+on:
+  pull_request:
+    paths: ['test/**', 'fixtures/**', 'seeds/**']
+
+jobs:
+  pii-scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install presidio-analyzer presidio-anonymizer
+      - name: Scan for PII in test data
+        run: |
+          python scripts/scan_pii.py \
+            --dirs test/fixtures test/seeds \
+            --threshold 0.7 \
+            --fail-on PERSON,US_SSN,CREDIT_CARD,EMAIL_ADDRESS
+```
+
+**Test data management checklist:**
+- [ ] Synthetic data generation for all entity types
+- [ ] Seeded/random modes (reproducible in CI, varied in dev)
+- [ ] Data masking strategy defined (static vs dynamic)
+- [ ] PII detection in CI for all fixture/seed files
+- [ ] Test data as code (versioned, reviewable, reproducible)
+- [ ] Referential integrity maintained across fixtures
+- [ ] Data cleanup between tests (transaction rollback, truncate)
+- [ ] Differential privacy for aggregate statistics from prod
+- [ ] Subsetting strategy for large prod databases
+
+## Step 42: Accessibility Testing — Expanded
+
+### WCAG Automated Tools
+
+Automated tools catch ~30-40% of a11y issues. Manual testing catches the rest.
+
+```typescript
+// axe-core — industry standard accessibility engine
+import AxeBuilder from '@axe-core/playwright';
+import { test, expect } from '@playwright/test';
+
+test('homepage meets WCAG 2.1 AA', async ({ page }) => {
+  await page.goto('/');
+  const results = await new AxeBuilder({ page })
+    .withTags(['wcag2a', 'wcag2aa', 'wcag21aa'])
+    .analyze();
+
+  expect(results.violations).toEqual([]);
+});
+
+// Test specific component
+test('modal dialog is accessible', async ({ page }) => {
+  await page.goto('/settings');
+  await page.click('button:text("Open Settings")');
+  await page.waitForSelector('[role="dialog"]');
+
+  const results = await new AxeBuilder({ page })
+    .include('[role="dialog"]')  // scope to modal
+    .withTags(['wcag2a', 'wcag2aa', 'best-practice'])
+    .analyze();
+
+  expect(results.violations).toEqual([]);
+});
+
+// Exclude known third-party widgets
+test('page accessible excluding chat widget', async ({ page }) => {
+  await page.goto('/');
+  const results = await new AxeBuilder({ page })
+    .exclude('#intercom-container')  // third-party chat
+    .analyze();
+
+  expect(results.violations).toEqual([]);
+});
+```
+
+```bash
+# Lighthouse CI — accessibility score in pipeline
+npx lhci autorun \
+  --collect.url=http://localhost:3000 \
+  --collect.url=http://localhost:3000/dashboard \
+  --assert.assertions.categories:accessibility=["error", {"minScore": 0.95}]
+
+# Programmatic Lighthouse
+npx lighthouse http://localhost:3000 \
+  --only-categories=accessibility \
+  --output=json \
+  --output-path=./a11y-report.json
+```
+
+```bash
+# Pa11y — CLI accessibility testing
+npx pa11y http://localhost:3000
+npx pa11y --standard WCAG2AA http://localhost:3000
+npx pa11y --reporter json http://localhost:3000 > pa11y-report.json
+
+# Pa11y CI — test multiple pages
+npx pa11y-ci --config .pa11yci.json
+```
+
+```json
+// .pa11yci.json
+{
+  "defaults": {
+    "standard": "WCAG2AA",
+    "timeout": 10000,
+    "wait": 1000,
+    "hideElements": ".cookie-banner, #intercom-container"
+  },
+  "urls": [
+    "http://localhost:3000",
+    "http://localhost:3000/login",
+    "http://localhost:3000/dashboard",
+    "http://localhost:3000/settings"
+  ]
+}
+```
+
+```bash
+# WAVE — Web Accessibility Evaluation (CLI via wave-api or browser extension)
+# Browser extension: https://wave.webaim.org/extension/
+# API: https://wave.webaim.org/api/
+
+# IBM Equal Access — accessibility checker
+# https://github.com/IBMa/equal-access
+npx accessibility-checker http://localhost:3000
+# Produces detailed report with: violations, needs review, recommendations
+# Config: .achecker.yml
+```
+
+```yaml
+# .achecker.yml — IBM Equal Access config
+ruleServer: "https://localhost:9445/rules"
+rulePack: "https://localhost:9445/rules/archives/2024.03.12"
+policies:
+  - IBM_Accessibility
+  - WCAG_2_1
+reportLevels:
+  - violation
+  - potentialviolation
+  - recommendation
+failLevels:
+  - violation
+```
+
+### Screen Reader Testing
+
+Automated tools cannot replace screen reader testing. Test key user flows with each reader.
+
+```
+Screen Reader Matrix:
+| Reader      | Platform | Browser           | Market Share |
+|-------------|----------|-------------------|--------------|
+| NVDA        | Windows  | Firefox, Chrome   | ~40%         |
+| JAWS        | Windows  | Chrome, Edge      | ~35%         |
+| VoiceOver   | macOS/iOS| Safari            | ~15%         |
+| TalkBack    | Android  | Chrome            | ~10%         |
+
+Priority: NVDA+Firefox > VoiceOver+Safari > JAWS+Chrome > TalkBack+Chrome
+```
+
+**Manual screen reader test checklist:**
+```markdown
+## Screen Reader Test Protocol
+
+### Page Load
+- [ ] Page title announced correctly
+- [ ] Skip-to-main-content link works
+- [ ] Landmark regions announced (banner, navigation, main, contentinfo)
+- [ ] Number of links/headers/landmarks announced
+
+### Navigation
+- [ ] All interactive elements reachable with Tab/arrow keys
+- [ ] Link text is descriptive (not "click here" or "read more")
+- [ ] Heading hierarchy is logical (h1 → h2 → h3, no skips)
+- [ ] Lists are marked up as <ul>/<ol>/<dl>
+
+### Forms
+- [ ] All inputs have associated labels (<label for=""> or aria-label)
+- [ ] Required fields announced as required
+- [ ] Error messages announced when they appear (aria-live="assertive")
+- [ ] Form submission result announced
+
+### Dynamic Content
+- [ ] Loading states announced (aria-busy="true", live regions)
+- [ ] Modal dialog traps focus and returns focus on close
+- [ ] Toast notifications announced via aria-live="polite"
+- [ ] Content changes announced via live regions
+
+### Images & Media
+- [ ] Meaningful images have descriptive alt text
+- [ ] Decorative images have alt="" or role="presentation"
+- [ ] Complex images have long descriptions
+- [ ] Video has captions and audio description
+```
+
+### Keyboard Navigation
+
+```typescript
+// Playwright — keyboard navigation tests
+import { test, expect } from '@playwright/test';
+
+test('tab order follows visual layout', async ({ page }) => {
+  await page.goto('/form');
+
+  // Tab through all interactive elements
+  const expectedOrder = [
+    'input[name="name"]',
+    'input[name="email"]',
+    'select[name="country"]',
+    'button[type="submit"]',
+  ];
+
+  for (const selector of expectedOrder) {
+    await page.keyboard.press('Tab');
+    const focused = await page.evaluate(() => document.activeElement?.tagName);
+    await expect(page.locator(selector)).toBeFocused();
+  }
+});
+
+test('focus is visible on all interactive elements', async ({ page }) => {
+  await page.goto('/');
+
+  // Get all focusable elements
+  const focusable = await page.$$eval(
+    'a, button, input, select, textarea, [tabindex]',
+    elements => elements.map(el => ({
+      tag: el.tagName,
+      id: el.id,
+      className: el.className,
+    }))
+  );
+
+  for (const el of focusable) {
+    await page.keyboard.press('Tab');
+    // Verify focus indicator is visible (outline or box-shadow)
+    const hasFocusStyle = await page.evaluate(() => {
+      const active = document.activeElement;
+      if (!active) return false;
+      const styles = window.getComputedStyle(active);
+      const outline = styles.outline;
+      const boxShadow = styles.boxShadow;
+      return (outline !== 'none' && outline !== '0px') ||
+             (boxShadow !== 'none');
+    });
+    expect(hasFocusStyle).toBe(true);
+  }
+});
+
+test('no keyboard traps exist', async ({ page }) => {
+  await page.goto('/');
+
+  // Tab 100 times, verify focus never gets stuck
+  const visitedElements: string[] = [];
+  for (let i = 0; i < 100; i++) {
+    await page.keyboard.press('Tab');
+    const focused = await page.evaluate(() => {
+      const el = document.activeElement;
+      return `${el?.tagName}#${el?.id}.${el?.className}`;
+    });
+    visitedElements.push(focused);
+  }
+
+  // Check we visited more than 1 element (not trapped)
+  const uniqueElements = new Set(visitedElements);
+  expect(uniqueElements.size).toBeGreaterThan(1);
+
+  // Check no single element appears consecutively more than 3 times
+  // (allowing for repeat in small pages)
+  let maxConsecutive = 1;
+  let currentConsecutive = 1;
+  for (let i = 1; i < visitedElements.length; i++) {
+    if (visitedElements[i] === visitedElements[i - 1]) {
+      currentConsecutive++;
+      maxConsecutive = Math.max(maxConsecutive, currentConsecutive);
+    } else {
+      currentConsecutive = 1;
+    }
+  }
+  expect(maxConsecutive).toBeLessThanOrEqual(3);
+});
+
+test('Escape closes modals and returns focus', async ({ page }) => {
+  await page.goto('/');
+  const trigger = page.locator('button:text("Open Modal")');
+  await trigger.click();
+
+  const modal = page.locator('[role="dialog"]');
+  await expect(modal).toBeVisible();
+
+  // Focus should be trapped in modal
+  await page.keyboard.press('Escape');
+  await expect(modal).toBeHidden();
+
+  // Focus should return to trigger
+  await expect(trigger).toBeFocused();
+});
+
+test('Enter and Space activate buttons', async ({ page }) => {
+  await page.goto('/');
+  const button = page.locator('button:text("Submit")');
+
+  await button.focus();
+  await page.keyboard.press('Enter');
+  await expect(page.locator('.result')).toBeVisible();
+
+  await page.reload();
+  await button.focus();
+  await page.keyboard.press('Space');
+  await expect(page.locator('.result')).toBeVisible();
+});
+```
+
+### Accessibility Testing in CI
+
+```typescript
+// jest-axe — unit/integration level a11y testing
+import { render } from '@testing-library/react';
+import { axe, toHaveNoViolations } from 'jest-axe';
+
+expect.extend(toHaveNoViolations);
+
+test('Button has no a11y violations', async () => {
+  const { container } = render(<Button variant="primary">Click me</Button>);
+  const results = await axe(container);
+  expect(results).toHaveNoViolations();
+});
+
+test('Form has no a11y violations', async () => {
+  const { container } = render(
+    <form>
+      <label htmlFor="email">Email</label>
+      <input id="email" type="email" required aria-describedby="email-help" />
+      <span id="email-help">We'll never share your email.</span>
+      <button type="submit">Subscribe</button>
+    </form>
+  );
+  const results = await axe(container);
+  expect(results).toHaveNoViolations();
+});
+
+test('Modal has no a11y violations', async () => {
+  const { container } = render(
+    <Modal isOpen={true} onClose={jest.fn()} aria-labelledby="modal-title">
+      <h2 id="modal-title">Confirm Action</h2>
+      <p>Are you sure?</p>
+      <button>Cancel</button>
+      <button>Confirm</button>
+    </Modal>
+  );
+  const results = await axe(container);
+  expect(results).toHaveNoViolations();
+});
+```
+
+```typescript
+// cypress-axe — E2E a11y testing
+import 'cypress-axe';
+
+describe('Accessibility', () => {
+  beforeEach(() => {
+    cy.visit('/');
+    cy.injectAxe();
+  });
+
+  it('homepage has no a11y violations', () => {
+    cy.checkA11y();
+  });
+
+  it('dashboard has no a11y violations', () => {
+    cy.visit('/dashboard');
+    cy.injectAxe();
+    cy.checkA11y('main', {
+      runOnly: {
+        type: 'tag',
+        values: ['wcag2a', 'wcag2aa'],
+      },
+    });
+  });
+
+  it('modal has no a11y violations', () => {
+    cy.get('button:contains("Open")').click();
+    cy.get('[role="dialog"]').should('be.visible');
+    cy.checkA11y('[role="dialog"]');
+  });
+
+  it('form error states are accessible', () => {
+    cy.get('button[type="submit"]').click(); // trigger validation
+    cy.checkA11y('form', {
+      rules: {
+        'color-contrast': { enabled: true },
+        'label': { enabled: true },
+      },
+    });
+  });
+});
+```
+
+```typescript
+// @axe-core/playwright — comprehensive E2E a11y suite
+import AxeBuilder from '@axe-core/playwright';
+import { test, expect } from '@playwright/test';
+
+// Audit every page route
+const routes = ['/', '/login', '/dashboard', '/settings', '/profile'];
+
+for (const route of routes) {
+  test(`${route} has no WCAG 2.1 AA violations`, async ({ page }) => {
+    await page.goto(route);
+    await page.waitForLoadState('networkidle');
+
+    const results = await new AxeBuilder({ page })
+      .withTags(['wcag2a', 'wcag2aa', 'wcag21aa'])
+      .analyze();
+
+    // Attach report for debugging
+    await test.info().attach('a11y-report', {
+      body: JSON.stringify(results, null, 2),
+      contentType: 'application/json',
+    });
+
+    expect(results.violations).toEqual([]);
+  });
+}
+
+// Visual snapshot + a11y combined
+test('login page — visual + a11y', async ({ page }) => {
+  await page.goto('/login');
+  await page.waitForLoadState('networkidle');
+
+  // Visual regression
+  await expect(page).toHaveScreenshot('login-page.png');
+
+  // Accessibility
+  const a11yResults = await new AxeBuilder({ page }).analyze();
+  expect(a11yResults.violations).toEqual([]);
+});
+```
+
+```yaml
+# CI pipeline: accessibility gate
+name: Accessibility Tests
+on: [pull_request]
+
+jobs:
+  a11y:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+      - run: npm ci
+
+      - name: Start app
+        run: npm run dev &
+        env:
+          PORT: 3000
+
+      - name: Wait for app
+        run: npx wait-on http://localhost:3000
+
+      - name: jest-axe (unit)
+        run: npx jest --testMatch='**/*.a11y.test.{ts,tsx}' --ci
+
+      - name: Playwright a11y (E2E)
+        run: npx playwright test --grep 'a11y|accessibility'
+
+      - name: Pa11y CI (pages)
+        run: npx pa11y-ci
+
+      - name: Lighthouse a11y score
+        run: |
+          npx lhci autorun \
+            --assert.assertions.categories:accessibility=["error",{"minScore":0.95}]
+```
+
+**Accessibility testing checklist:**
+- [ ] axe-core integrated in unit tests (jest-axe), E2E (cypress-axe, playwright)
+- [ ] Lighthouse CI a11y score ≥ 95% in pipeline
+- [ ] Pa11y CI runs on all key routes
+- [ ] Manual screen reader testing for critical flows (NVDA, VoiceOver)
+- [ ] Keyboard-only navigation verified (tab order, focus visible, no traps)
+- [ ] Color contrast ratios meet WCAG AA (4.5:1 normal, 3:1 large text)
+- [ ] All images have appropriate alt text
+- [ ] ARIA attributes used correctly (roles, states, properties)
+- [ ] Form errors announced to screen readers (aria-live)
+- [ ] Modal focus trapping and return-focus tested
+- [ ] Skip-to-main-content link present and functional
+- [ ] Touch target size ≥ 44×44 CSS pixels (WCAG 2.5.8)
+
