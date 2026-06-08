@@ -1,7 +1,7 @@
 ---
 name: sdlc-architecture-design
 description: "System design, C4 diagrams, API design (REST/GraphQL/gRPC), database schema, code architecture (Clean/Hexagonal/DDD), ADRs, branching strategies, code review, dependency management, DDIA patterns. Includes architecture fitness functions, DDD context mapping, platform engineering, Gateway API, green software, API governance, serverless architecture, edge computing, multi-cloud patterns, resilience patterns, distributed consensus, eventual consistency, idempotency, OAuth2/OIDC, JWT, authorization (RBAC/ABAC/ReBAC), rate limiting, API versioning, GraphQL Federation, Kafka patterns, database sharding, caching strategies, data pipelines, message queue comparison, 12-Factor App extended, microservices decomposition (Strangler Fig, DDD), service mesh comparison, API gateway comparison, serverless patterns, edge computing patterns."
-version: 4.1.0
+version: 4.2.0
 author: Hermes Agent
 license: MIT
 platforms: [linux, macos, windows]

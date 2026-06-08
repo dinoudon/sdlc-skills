@@ -1,7 +1,7 @@
 ---
 name: sdlc-testing-qa
 description: "Test pyramid (unit/integration/e2e), TDD/BDD, property-based testing, mutation testing, contract testing, chaos engineering, performance testing (k6/Locust), security testing (SAST/DAST), accessibility testing, AI-assisted test generation, serverless testing patterns, ML model testing, API contract testing, database testing, concurrency testing, observability-driven testing, visual regression testing, test data management. Includes Google testing culture and test architecture patterns."
-version: 4.1.0
+version: 4.2.0
 author: Hermes Agent
 license: MIT
 platforms: [linux, macos, windows]

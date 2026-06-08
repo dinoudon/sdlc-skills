@@ -1,7 +1,7 @@
 ---
 name: sdlc-developer-tooling
 description: "Modern dev tooling: Python (uv, Ruff, pytest, mypy), JS/TS (pnpm, Bun, Vitest, Biome, Playwright), Go (golangci-lint, go test -race), Rust (cargo). Cross-cutting: just, mise, direnv, Docker Compose, Dev Containers, Nix. Includes LSP/DAP patterns, AI-assisted dev, green software tooling."
-version: 4.1.0
+version: 4.2.0
 author: Hermes Agent
 license: MIT
 platforms: [linux, macos, windows]
