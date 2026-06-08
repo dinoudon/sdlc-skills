@@ -1,235 +1,258 @@
 ---
 name: sdlc-retrospective
-description: "Engineering retrospectives: weekly/daily/sprint-end reviews. Blameless post-mortems. Three Ways from Phoenix Project. Westrum culture types. Google post-mortem template."
-version: 1.1.0
+description: "Retrospective formats: Start/Stop/Continue, 4Ls, Mad/Sad/Glad, Sailboat, Kaizen PDCA cycle, blameless postmortems, continuous improvement patterns."
+version: 2.0.0
 author: Hermes Agent
 license: MIT
 platforms: [linux, macos, windows]
 metadata:
   hermes:
-    tags: [sdlc, retrospective, post-mortem, phoenix-project, three-ways, blameless, culture, google]
-    related_skills: [sdlc-observability, sdlc-deployment, sdlc-cicd-pipeline]
+    tags: [sdlc, retrospective, kaizen, continuous-improvement, postmortem, agile]
+    related_skills: [sdlc-prd-to-production, sdlc-requirements-engineering]
 ---
 
-# Retrospectives & Post-Mortems
+# Retrospectives & Continuous Improvement
 
-Engineering retrospectives (weekly/daily/sprint), blameless post-mortems, Three Ways from Phoenix Project, Westrum culture types, Google post-mortem template.
+Retrospective formats, Kaizen PDCA cycle, blameless postmortems, continuous improvement patterns.
 
 ## When to Use
 
 Trigger when user:
-- Runs a weekly/daily/sprint retrospective
-- Writes a post-mortem after an incident
-- Wants to improve team processes
-- Analyzes what went well/poorly
-- Tracks action items from retros
+- Runs sprint retrospective
+- Plans continuous improvement
+- Conducts blameless postmortem
+- Measures team health or improvement
 
-## Retrospective Formats
+## Step 1: Retrospective Formats
 
-### Weekly Retro (15 min)
+### Start / Stop / Continue
+Source: https://www.atlassian.com/team-playbook/plays/retrospective
+
+Simplest format. Three columns on board.
+
+| Start | Stop | Continue |
+|-------|------|----------|
+| Things team should begin doing | Things not adding value | Things working well |
+| New practices to try | Wastes to eliminate | Keep doing these |
+
+**Good for:** new teams, first retros, quick sessions.
+
+### 4Ls (Liked, Learned, Lacked, Longed For)
+
+| Liked | Learned | Lacked | Longed For |
+|-------|---------|--------|------------|
+| What went well | New insights | Missing resources/skills | Things wished existed |
+| What enjoyed | Key takeaways | Support gaps | Ideal state |
+
+**Good for:** cross-functional teams, product+engineering mix.
+
+### Mad / Sad / Glad
+
+| Mad | Sad | Glad |
+|-----|-----|------|
+| Frustrations, blockers | Disappointments, missed opportunities | Wins, celebrations |
+| Waste that caused anger | Things that didn't happen | Things that worked |
+
+**Good for:** surfacing hidden frustrations, psychological safety.
+
+### Sailboat Retrospective
+
+Visual metaphor. Draw sailboat on board:
+
 ```
-🚀 Shipped: [list completed items]
-🚧 Blocked: [list blockers]
-🔥 Wins: [list positives]
-😤 Frustrations: [list pain points]
-📋 Action Items: [list concrete next steps]
-📊 Metrics: [velocity, lead time, incidents]
-```
-
-### Sprint Review (1 hour)
-```
-## Sprint Goal
-[Goal statement]
-
-## Completed
-[Done items with demo links]
-
-## Not Completed
-[Carried items with reasons]
-
-## What Went Well
-[Team positives]
-
-## What Needs Improvement
-[Process issues]
-
-## Action Items
-- [ ] @person — [action] by [date]
-```
-
-### Start/Stop/Continue
-```
-Start: [New practices to adopt]
-Stop: [Practices to abandon]
-Continue: [Practices to maintain]
-```
-
-### 4Ls
-```
-Liked: [What we enjoyed]
-Learned: [What we discovered]
-Lacked: [What was missing]
-Longed For: [What we wished for]
-```
-
-### Sailboat
-```
-Wind (propellers): [What pushed us forward]
-Anchor (drag): [What held us back]
-Rocks (risks): [Potential dangers ahead]
-Island (goal): [Where we want to be]
+         ☀️ Sun (happiness)
+          |
+    ⛵ Sailboat
+   /  |  \
+  Wind    Rocks (risks)
+ (help)   |
+    \    /
+     Anchor (blockers)
+      |
+      🏝️ Island (goal)
 ```
 
-## Blameless Post-Mortems
+- **Wind:** propellers, things helping move forward
+- **Anchor:** things slowing team down
+- **Rocks:** risks, upcoming dangers
+- **Island:** goal, vision
+- **Sun:** things making team happy
 
-### Template (Google SRE)
+**Good for:** creative teams, visual thinkers, big-picture thinking.
+
+Source: https://www.funretrospectives.com/sailboat/
+
+## Step 2: Running a Retrospective
+
+### Best Practices
+Source: https://www.atlassian.com/team-playbook/plays/retrospective
+
+1. **Timebox:** 60-90 min for 2-week sprint
+2. **Facilitator rotates** (not always SM)
+3. **Anonymous input** via sticky notes or digital tools
+4. **Limit action items** to 1-3 max. Assign owners.
+5. **Follow up previous retro actions** first
+6. **Prime Directive:** "Regardless of what we discover, we understand and truly believe that everyone did the best job they could, given what they knew at the time, their skills and abilities, the resources available, and the situation at hand." — Norm Kerth
+
+### Retro Agenda
+```
+1. Set the stage (5 min)
+   - Prime Directive reading
+   - Check-in question
+
+2. Gather data (15 min)
+   - What happened? Timeline, metrics, events.
+
+3. Generate insights (15 min)
+   - Why did it happen? Patterns, root causes.
+
+4. Decide what to do (15 min)
+   - 1-3 action items with owners
+
+5. Close (5 min)
+   - Appreciation round
+   - Rate the retro itself
+```
+
+### Digital Tools
+- **RetroTool** — https://retrotool.io/ (free, anonymous)
+- **EasyRetro** — https://easyretro.io/ (popular, free tier)
+- **Miro** — https://miro.com/ (general whiteboard)
+- **FunRetro** — https://funretro.io/ (simple, clean)
+
+## Step 3: Kaizen (Continuous Improvement)
+
+Source: https://www.kaizen.com/what-is-kaizen.html
+
+Japanese "change for better." Philosophy of ongoing incremental improvement.
+
+### Core Principles
+- Good processes bring good results
+- Go see for yourself (genchi genbutsu)
+- Speak with data, manage by facts
+- Take action to contain and correct root causes
+- Work as team
+- Kaizen is everybody's business
+
+### PDCA Cycle (Plan-Do-Check-Act)
+
+```
+    ┌───────┐
+    │ PLAN  │ Identify problem, analyze root cause,
+    │       │ propose countermeasure.
+    └───┬───┘
+        │
+    ┌───▼───┐
+    │  DO   │ Implement on small scale (pilot).
+    │       │
+    └───┬───┘
+        │
+    ┌───▼───┐
+    │ CHECK │ Measure results against hypothesis.
+    │       │
+    └───┬───┘
+        │
+    ┌───▼───┐
+    │  ACT  │ Standardize if successful, or iterate.
+    │       │
+    └───────┘
+```
+
+### Kata Pattern (Mike Rother)
+Source: https://miketherother.com/
+
+1. Understand direction (challenge)
+2. Grasp current condition
+3. Establish next target condition
+4. PDCA toward target
+
+### In Software Context
+- Sprint retros = kaizen events
+- Blameless postmortems after incidents
+- DORA metrics as improvement indicators
+- Value stream mapping for flow optimization
+
+## Step 4: Blameless Postmortems
+
+### Template
 ```markdown
-# [Service] [Impact] — [Date]
+# Postmortem: [Incident Title]
 
 ## Summary
-- Severity: SEV1/SEV2/SEV3
-- Duration: X hours Y minutes
-- Impact: N users affected, $X revenue impact
+- **Date:** YYYY-MM-DD
+- **Duration:** X hours
+- **Impact:** [description of user impact]
+- **Severity:** P1/P2/P3
 
-## Timeline (UTC)
-- HH:MM — [Event description]
-- HH:MM — [Detection method]
-- HH:MM — [Mitigation action]
-- HH:MM — [Resolution]
+## Timeline
+| Time | Event |
+|------|-------|
+| HH:MM | [What happened] |
+| HH:MM | [Detection] |
+| HH:MM | [Response] |
+| HH:MM | [Resolution] |
 
 ## Root Cause
-[Technical explanation of what caused the incident]
+[5 Whys analysis or fishbone diagram]
 
-## Detection
-[How was it detected? Alert vs customer report?]
+## What Went Well
+- [Thing that helped resolve faster]
 
-## Resolution
-[What fixed it?]
+## What Went Wrong
+- [Thing that slowed resolution]
+
+## Where We Got Lucky
+- [Near-misses that could have been worse]
 
 ## Action Items
-- [ ] @person — [Preventive measure] by [date]
-- [ ] @person — [Detection improvement] by [date]
-- [ ] @person — [Process improvement] by [date]
-
-## Lessons Learned
-- [Blameless observations]
-- [Systemic issues identified]
+| Action | Owner | Due Date | Status |
+|--------|-------|----------|--------|
+| [Preventive action] | [Name] | [Date] | Open |
+| [Detective action] | [Name] | [Date] | Open |
 ```
 
 ### Blameless Culture Rules
-1. **No individual blame** — focus on systems
-2. **Assume positive intent** — everyone did their best
-3. **Ask "what" not "who"** — what allowed this?
-4. **Celebrate learning** — post-mortems are wins
-5. **Follow through** — action items get done
+- Focus on systems, not individuals
+- Assume everyone did their best given context
+- Ask "what allowed this to happen?" not "who caused this?"
+- Share learnings widely
+- Track action items to completion
 
-## Data Gathering
+Source: https://sre.google/sre-book/postmortem-culture/
 
-### Incident Data Points
-- **Time to detect** (TTD) — alert vs customer report
-- **Time to mitigate** (TTM) — how fast to stop bleeding
-- **Time to resolve** (TTR) — how fast to fix root cause
-- **Impact scope** — users, revenue, data loss
-- **Contributing factors** — missing tests, missing monitoring, missing runbook
+## Step 5: Team Health Check
 
-### Retrospective Data
-- **Velocity trend** — last 5 sprints
-- **Cycle time** — PR to production
-- **Bug escape rate** — bugs found in production
-- **Incident frequency** — SEV1/2/3 per sprint
-- **On-call load** — pages per shift
+### Spotify Squad Health Check
+Source: https://labs.spotify.com/2014/09/16/squad-health-check-model/
 
-## The Three Ways (from Phoenix Project — Kim)
+| Indicator | Awesome (😊) | Crappy (😢) |
+|-----------|-------------|-------------|
+| Easy to release | Releasing is easy, no drama | Releasing is painful |
+| Suitability | Right tools for the job | Wrong tools/frameworks |
+| Tech quality | Clean code, good tests | Tech debt everywhere |
+| Speed | Fast, no blockers | Slow, waiting for others |
+| Mission | Clear purpose, aligned | Confused, no direction |
+| Fun | Enjoy working here | Not fun |
+| Learning | Growing skills | Stagnant |
+| Support | Team helps each other | Everyone for themselves |
+| Pawns or players | Empowered to decide | Told what to do |
+| Health of codebase | Easy to change | Scary to touch |
 
-### First Way: Flow/Systems Thinking
-- Make work visible (Kanban board)
-- Limit WIP at every stage
-- Manage flow (left-to-right)
-- Small batches = fast feedback
-- Find and elevate the constraint (Theory of Constraints)
-
-### Second Way: Feedback Loops
-- Create feedback at every stage
-- Telemetry everywhere
-- Fail fast, recover faster
-- Post-mortems → systemic improvements
-- Automated tests as fast feedback
-
-### Third Way: Continual Learning
-- Foster experimentation
-- Allocate time for improvement (20%)
-- Blameless culture
-- Repetition creates mastery
-- Improvements come from the work, not outside it
-
-## Westrum Culture Types
-
-### Pathological (Fear-Based)
-- Low cooperation, lots of fear
-- Information is a personal power tool
-- Messengers are shot
-- Responsibilities are shirked
-
-### Bureaucratic (Rule-Based)
-- Modest cooperation
-- Information flows through rigid channels
-- Messengers are neglected
-- New ideas are met with ridicule
-
-### Generative (Performance-Based)
-- High cooperation, shared vision
-- Information is actively sought
-- Messengers are trained
-- Risks are shared, failure leads to inquiry
-
-**Goal: Move toward generative culture.**
-
-### Indicators
-| Aspect | Pathological | Bureaucratic | Generative |
-|--------|-------------|--------------|------------|
-| Messengers | Shot | Neglected | Trouted |
-| Responsibility | Shirked | Narrow | Bridged |
-| Cross-functional | Messy | Ordered | Bridge |
-| Failure | Punished | Causes justice | Leads to inquiry |
-| Novelty | Crushed | Suffocated | Implemented |
-
-## Blameless Post-Mortem Culture (from Google SRE + Netflix)
-
-### Google SRE
-- Every SEV1/2 gets a post-mortem
-- Template-driven, time-boxed (1 week)
-- Follow-up actions tracked to completion
-- Published internally for learning
-
-### Netflix
-- "Lead with context, not control"
-- Engineers own their incidents
-- Post-mortems are public (within company)
-- Focus on prevention, not punishment
-
-### Action Item Quality
-- **Good**: "@team — Add alert for X metric by Feb 15"
-- **Bad**: "Be more careful next time"
-- **Good**: "@team — Add circuit breaker for Y service by Mar 1"
-- **Bad**: "Improve monitoring"
-
-### Action Item Tracking
-```yaml
-# action-items.yaml
-- id: AI-001
-  incident: INC-2025-042
-  description: "Add alert for payment gateway latency > 2s"
-  owner: backend-team
-  due: 2025-02-15
-  status: open
-```
+**How to use:**
+1. Each team member votes anonymously (😊/😢/meh)
+2. Discuss results as team
+3. Pick 1-2 areas to improve
+4. Track improvement in next retro
 
 ## Pitfalls
 
-1. **Don't assign blame** — it destroys psychological safety
-2. **Don't skip retros** — regular cadence beats ad-hoc
-3. **Don't let action items rot** — track to completion
-4. **Don't use "Start/Stop/Continue" forever** — rotate formats
-5. **Don't skip post-mortems for SEV3** — learn from small incidents too
-6. **Don't write post-mortems weeks later** — memory fades, write within 48h
-7. **Don't ignore culture** — Westrum type predicts team performance
+1. **Don't skip the Prime Directive** — sets blameless tone
+2. **Don't allow more than 3 action items** — focus beats breadth
+3. **Don't assign actions to "the team"** — assign to named person
+4. **Don't skip following up previous actions** — accountability matters
+5. **Don't use same format every time** — rotate formats to stay fresh
+6. **Don't skip anonymous input** — people self-censor in groups
+7. **Don't run retros longer than 90 min** — fatigue kills quality
+8. **Don't skip postmortems for incidents** — every P1/P2 gets one
+9. **Don't blame individuals** — focus on systems and processes
+10. **Don't skip data** — DORA metrics, incident counts, team health scores

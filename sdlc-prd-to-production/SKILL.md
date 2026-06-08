@@ -1,228 +1,284 @@
 ---
 name: sdlc-prd-to-production
-description: "End-to-end orchestration: PRD → spec → plan → implement → simplify → review → ship → deploy. 8-stage pipeline chaining multiple skills. Includes YC startup fast track."
-version: 1.1.0
+description: "End-to-end workflow: PRD → design doc → implementation → code review → testing → deployment → monitoring → retrospective. Includes Ship/Show/Ask branching, design doc templates, and PRD structure."
+version: 2.0.0
 author: Hermes Agent
 license: MIT
 platforms: [linux, macos, windows]
 metadata:
   hermes:
-    tags: [sdlc, pipeline, prd, production, orchestration, ycombinator, startup, end-to-end]
-    related_skills: [sdlc-requirements-engineering, sdlc-architecture-design, sdlc-testing-qa, sdlc-deployment, sdlc-adversarial-review]
+    tags: [sdlc, prd, design-doc, rfc, ship-show-ask, workflow, end-to-end, product-development]
+    related_skills: [sdlc-requirements-engineering, sdlc-architecture-design, sdlc-cicd-pipeline, sdlc-deployment, sdlc-retrospective]
 ---
 
-# PRD-to-Production Pipeline
+# PRD to Production
 
-8-stage orchestration: PRD → spec → plan → implement → simplify → review → ship → deploy. Chains multiple skills. Includes YC startup fast track mode.
+End-to-end workflow: PRD → design doc → implementation → code review → testing → deployment → monitoring → retrospective. Includes Ship/Show/Ask branching and design doc templates.
 
 ## When to Use
 
 Trigger when user:
 - Starts a new feature from scratch
-- Needs end-to-end development pipeline
-- Wants to go from idea to production
-- Asks "how do I build this from start to finish?"
+- Writes PRD or design doc
+- Plans implementation workflow
+- Defines branching strategy for a feature
+- Reviews end-to-end process
 
-## The 8 Stages
+## Step 1: PRD (Product Requirements Document)
+
+### PRD Structure
+Source: https://www.atlassian.com/software/jira/guides/use-cases/what-is-a-prd
 
 ```
-1. PRD        → requirements document (YAML frontmatter + markdown)
-2. Spec       → non-PRD documents (README, architect notes, previews)
-3. Plan       → bite-sized tasks, file paths, code
-4. Implement  → execute plan with verification
-5. Simplify   → reduce LOC via deletion, consolidation, patterns
-6. Review     → adversarial review (3 agents parallel)
-7. Ship       → commit, bump version, update changelog, create PR
-8. Deploy     → canary → monitor → rollout
+1. Overview / Problem Statement
+   - What problem are we solving? For whom? Why now?
+
+2. Goals & Success Metrics
+   - Measurable outcomes. OKRs if applicable.
+
+3. User Stories / Scenarios
+   - "As a [user], I want [capability] so that [outcome]."
+
+4. Requirements
+   - Functional: what it must do.
+   - Non-functional: performance, security, accessibility.
+
+5. Scope / Out of Scope
+   - Explicit boundaries. What NOT building.
+
+6. Design / UX
+   - Wireframes, user flows, interaction notes.
+
+7. Technical Considerations
+   - Dependencies, constraints, API contracts.
+
+8. Milestones / Timeline
+   - Phases, release plan.
+
+9. Open Questions
+   - Unresolved decisions.
+
+10. Appendix / References
 ```
 
-## Stage 1: PRD
+### PRD-lite (One-Pager)
+For small features. Problem + Solution + Success.
 
-### PRD Template (from mattpocock/skills)
-```markdown
-## Problem Statement
-The problem from the user's perspective.
+```
+# [Feature Name]
+
+## Problem
+[One paragraph: what's broken or missing]
 
 ## Solution
-The solution from the user's perspective.
+[One paragraph: what we'll build]
 
-## User Stories
-1. As an <actor>, I want a <feature>, so that <benefit>
+## Success
+[How we know it worked: metric + target]
 
-## Technical Design
-- Architecture changes
-- Database schema changes
-- API contract changes
-
-## Testing Seams
-- Where to test (highest seam possible)
-
-## Non-Functional Requirements
-- Performance, security, accessibility targets
+## Out of Scope
+[What we're explicitly NOT building]
 ```
 
-### Commands
-```bash
-# Generate PRD from conversation
-hermes skill use sdlc-requirements-engineering
+## Step 2: Design Doc / RFC
 
-# Publish to issue tracker
-hermes skill use github-issues
+### Google Design Doc Template
+Source: https://www.industrialempathy.com/posts/design-docs-at-google/
+
+```
+1. Authors
+2. Status (Draft / In Review / Approved / Superseded)
+3. Background / Context
+   - Why are we doing this? What is the problem?
+4. Goals & Non-Goals
+   - Explicit non-goals prevent scope creep.
+5. Overview
+   - High-level approach, one paragraph.
+6. Detailed Design
+   - Architecture, data models, APIs, sequence diagrams.
+   - Include error handling, edge cases.
+7. Alternatives Considered
+   - What else was evaluated? Why rejected?
+8. Cross-Cutting Concerns
+   - Security, privacy, monitoring, logging, i18n.
+9. Operations
+   - Rollout plan, feature flags, rollback strategy.
+10. Risks & Tradeoffs
+11. Open Questions
+12. Milestones / Timeline
+13. Appendix
 ```
 
-## Stage 2: Spec (non-PRD)
+### RFC (Request for Comments) Process
+Source: https://github.com/reactjs/rfcs
 
-For smaller changes, README or architect notes may suffice.
-- Minimal sketch for visual work
-- Responsive states, interaction annotations
+1. Author writes RFC doc
+2. Shared with stakeholders (Slack channel, doc link, PR)
+3. Review period (typically 1-5 business days)
+4. Reviewers comment inline. Author addresses.
+5. Final approver signs off (usually tech lead or architect)
+6. RFC becomes source of truth for implementation
 
-## Stage 3: Plan
+**RFC vs Design Doc:**
+- RFC: process-oriented, emphasizes review/approval workflow
+- Design Doc: content-oriented, emphasizes technical detail
+- Many orgs use both terms interchangeably
 
-### Planning Process
-1. Read PRD + non-PRD docs
-2. Confirm latest codebase state
-3. Decompose into vertical slices
-4. Each task: exact file path + code sketch
-5. Commit plan to .hermes/plans/
+## Step 3: Ship / Show / Ask Branching
 
-### Vertical Slices
-Each slice = narrow but COMPLETE path through every layer:
-- Frontend UI component
-- API endpoint
-- Database schema
-- Tests
+Source: https://martinfowler.com/articles/ship-show-ask.html
 
-## Stage 4: Implement
+Three categories for branch merging decisions:
 
-### Implementation Rules
-- Follow existing patterns (imports, naming, structure)
-- No new dependencies without approval
-- Inline single-use code
-- Test each task before moving to next
-- Commit after each task
+### SHIP
+- Merge directly to main. No PR, no review needed.
+- For: tiny changes, typo fixes, config tweaks, doc-only.
+- Trust the author. Speed matters here.
 
-### Verification Loop
-```bash
-# After each task
-npm run build && npm run lint && npm test
+### SHOW
+- Merge to main immediately. Open PR afterward for visibility/async review.
+- For: small, low-risk changes that still benefit from eyes.
+- "Show, don't ask." Review happens after merge.
+
+### ASK
+- Open PR, wait for review and approval before merging.
+- For: architectural changes, new dependencies, security-sensitive code, public API changes.
+- Standard PR workflow. No shortcuts.
+
+### Why This Matters
+- Not all changes need same review rigor
+- Reduces PR bottlenecks on trivial changes
+- Keeps focus on high-signal reviews (ASK items)
+- Maintains trunk-based development velocity
+- Works with feature flags for safe production deploys
+
+### Implementation
+- Define team agreement: which changes fall in each bucket
+- SHIP: author self-merges. Log it.
+- SHOW: merge first, PR after. Bot can enforce opening PR.
+- ASK: standard branch protection rules. Require approvals.
+
+## Step 4: Implementation Workflow
+
+```
+PRD Written
+    │
+    ▼
+Design Doc / RFC
+    │
+    ▼
+Implementation
+    ├── Ship/Show/Ask classification per change
+    ├── CI runs (lint, test, build)
+    ├── Code review per classification
+    └── Feature flags for progressive rollout
+    │
+    ▼
+Testing & QA
+    ├── Unit tests (fast, isolated)
+    ├── Integration tests (module boundaries)
+    ├── E2E tests (critical user flows)
+    └── Staging environment validation
+    │
+    ▼
+Deployment
+    ├── Canary or progressive rollout
+    ├── Monitoring, alerting
+    └── Rollback plan ready
+    │
+    ▼
+Monitoring & Observability
+    ├── SLIs/SLOs defined
+    ├── Error budgets tracked
+    └── Dashboards created
+    │
+    ▼
+Retrospective
+    ├── What went well?
+    ├── What could improve?
+    └── 1-3 action items
 ```
 
-## Stage 5: Simplify
+## Step 5: Code Review
 
-### Simplification Process
-1. Verify: lint, build, test pass
-2. Scan for multi-layer duplication
-3. Apply known extraction patterns
-4. Re-verify
-5. Show net changes to user
+See `sdlc-adversarial-review` for full review process.
 
-### Rules
-- Smallest correct implementation
-- Prefer editing over adding
-- Prefer deleting over editing
-- NEVER add backward compatibility
-- NEVER add migration/adapter unless instructed
+**Quick checklist:**
+- [ ] PR < 400 LOC (or justified)
+- [ ] Design reviewed (right approach?)
+- [ ] Security reviewed (OWASP Top 10)
+- [ ] Tests present and passing
+- [ ] Comments explain WHY
+- [ ] No hardcoded secrets
 
-## Stage 6: Review
+**Google code review SLA:** respond within 4 hours.
 
-```bash
-hermes skill use sdlc-adversarial-review
+## Step 6: Testing
+
+See `sdlc-testing-qa` for full testing process.
+
+**Quick checklist:**
+- [ ] Unit tests for business logic
+- [ ] Integration tests for module boundaries
+- [ ] E2E tests for critical flows
+- [ ] Coverage > 80%
+- [ ] No flaky tests
+
+## Step 7: Deployment
+
+See `sdlc-deployment` for full deployment strategies.
+
+**Quick checklist:**
+- [ ] Canary or progressive rollout
+- [ ] Health checks configured
+- [ ] Rollback plan ready
+- [ ] Monitoring and alerting active
+- [ ] Feature flags for gradual rollout
+
+## Step 8: Monitoring
+
+See `sdlc-observability` for full observability process.
+
+**Quick checklist:**
+- [ ] SLIs defined (availability, latency)
+- [ ] SLOs set (99.9%, p99 < 250ms)
+- [ ] Error budgets tracked
+- [ ] Dashboards created
+- [ ] Alerts configured (burn-rate based)
+
+## Step 9: Retrospective
+
+See `sdlc-retrospective` for full retrospective formats.
+
+**Quick checklist:**
+- [ ] Format chosen (Start/Stop/Continue, 4Ls, Sailboat)
+- [ ] Prime Directive read
+- [ ] 1-3 action items with owners
+- [ ] Previous actions reviewed
+
+## End-to-End Checklist
+
 ```
-
-3 agents review in parallel:
-- Architecture reviewer
-- Security reviewer
-- Quality reviewer
-
-## Stage 7: Ship
-
-### Ship Workflow (from gstack)
-```bash
-# Merge base branch
-git fetch origin main && git merge origin/main
-
-# Run tests
-npm test
-
-# Review diff
-git diff main
-
-# Bump version
-npm version patch  # or minor/major
-
-# Update changelog
-git log --oneline > CHANGELOG.md
-
-# Commit and push
-git add -A && git commit -m "feat: new feature"
-git push origin feature/new-feature
-
-# Create PR
-gh pr create --title "feat: new feature" --body "Closes #42"
-```
-
-## Stage 8: Deploy
-
-### Progressive Delivery
-```bash
-# Canary deploy (1% traffic)
-kubectl argo rollouts set image myapp myapp=myapp:v1.2.0
-
-# Monitor for 5 minutes
-# If healthy → promote
-kubectl argo rollouts promote myapp
-
-# If unhealthy → auto-rollback
-```
-
-## YC Startup Mode (Fast Track)
-
-For early-stage startups, compress the pipeline:
-
-### YC Fast Track
-```
-1. Talk to 10 users → find pain
-2. Build MVP (1-2 weeks, monolith, boring tech)
-3. Ship embarrassingly early
-4. Get feedback, iterate weekly
-5. Measure retention, not vanity metrics
-```
-
-### YC Pragmatism
-- **Monolith first** — split services only when needed
-- **Boring technology** — Rails, Django, Next.js
-- **Technical debt is fine early** — speed > perfection
-- **Don't build for scale you don't have**
-- **Do things that don't scale** — manual before automation
-- **Founder writes code** — no code reviews for first 6 months
-
-### Startup vs Enterprise Pipeline
-| Stage | Startup | Enterprise |
-|-------|---------|------------|
-| PRD | 1-page doc | Full spec |
-| Spec | README | Architect notes |
-| Plan | Mental | Documented |
-| Implement | Solo | Team |
-| Simplify | Post-MVP | Pre-merge |
-| Review | Self-review | 3-agent adversarial |
-| Ship | Push to main | PR + CI |
-| Deploy | git push | Canary + monitoring |
-
-## Pipeline Metrics
-
-```yaml
-metrics:
-  lead_time: "< 1 week"           # PRD → production
-  deploy_frequency: "> 1/day"
-  change_failure_rate: "< 5%"
-  time_to_restore: "< 1 hour"
+□ PRD written (problem, goals, stories, requirements, scope)
+□ Design doc / RFC reviewed and approved
+□ Implementation plan (tasks, timeline, feature flags)
+□ Code review (Ship/Show/Ask classification)
+□ Tests (unit, integration, e2e)
+□ Staging validation
+□ Deployment plan (canary, rollback)
+□ Monitoring (SLIs, SLOs, dashboards, alerts)
+□ Retrospective (action items with owners)
+□ Documentation updated
+□ Stakeholders notified
 ```
 
 ## Pitfalls
 
-1. **Don't follow all 8 stages for trivial changes**
-2. **Don't skip simplify stage** — tech debt compounds
-3. **Don't write PRD without talking to users first**
-4. **Don't deploy without monitoring**
-5. **Don't use enterprise pipeline for startups** — too slow
-6. **Don't use startup pipeline for regulated industries**
+1. **Don't skip PRD** — even one-pager prevents scope creep
+2. **Don't skip design doc for complex features** — technical decisions need documentation
+3. **Don't use ASK for trivial changes** — Ship/Show/Ask reduces bottlenecks
+4. **Don't skip feature flags** — decouple deploy from release
+5. **Don't skip retrospective** — continuous improvement requires reflection
+6. **Don't skip monitoring setup** — deploy without observability is blind
+7. **Don't skip rollback plan** — always have a way back
+8. **Don't skip stakeholder communication** — keep everyone informed
