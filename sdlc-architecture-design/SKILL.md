@@ -1,7 +1,7 @@
 ---
 name: sdlc-architecture-design
-description: "System design, C4 diagrams, API design (REST/GraphQL/gRPC), database schema, code architecture (Clean/Hexagonal/DDD), ADRs, branching strategies, code review, dependency management, DDIA patterns. Includes architecture fitness functions, DDD context mapping, platform engineering, Gateway API, green software, API governance, serverless architecture, edge computing, and multi-cloud patterns."
-version: 3.2.0
+description: "System design, C4 diagrams, API design (REST/GraphQL/gRPC), database schema, code architecture (Clean/Hexagonal/DDD), ADRs, branching strategies, code review, dependency management, DDIA patterns. Includes architecture fitness functions, DDD context mapping, platform engineering, Gateway API, green software, API governance, serverless architecture, edge computing, multi-cloud patterns, resilience patterns, distributed consensus, eventual consistency, idempotency, OAuth2/OIDC, JWT, authorization (RBAC/ABAC/ReBAC), rate limiting, API versioning, GraphQL Federation, Kafka patterns, database sharding, caching strategies, data pipelines, and message queue comparison."
+version: 4.0.0
 author: Hermes Agent
 license: MIT
 platforms: [linux, macos, windows]
@@ -1288,3 +1288,1222 @@ Avoid: DynamoDB-only, Spanner-only, CosmosDB-only in portable designs
 | Cloud-agnostic containers | Medium | Medium | Medium | Most teams — use K8s, PostgreSQL, S3-compatible storage |
 | Active-active multi-cloud | High | High | High | Regulated industries, global SLAs < 100ms |
 | Abstraction layer (Pulumi/TF) | Medium | Low | High | All teams — IaC portability from day one |
+
+## Step 25: Resilience Patterns
+
+Source: https://resilience4j.readme.io/, https://github.com/App-vNext/Polly
+
+### Circuit Breaker
+
+State machine protecting downstream services from cascading failures.
+
+```
+         ┌─────────────────────────────────────┐
+         │            CLOSED                    │
+         │  (normal operation, count failures)  │
+         └──────┬───────────────────┬───────────┘
+                │                   │
+     failures exceed         request succeeds
+     threshold               (after probe)
+                │                   │
+                ▼                   ▼
+         ┌──────────┐       ┌──────────┐
+         │   OPEN   │──────▶│ HALF-OPEN│
+         │(fail fast│       │(allow 1  │
+         │  reject) │◀──────│  probe)  │
+         └──────────┘       └──────────┘
+              ▲                   │
+              │   probe fails     │
+              └───────────────────┘
+```
+
+**Parameters:** failure rate threshold, slow call rate threshold, wait duration in open state, permitted calls in half-open, sliding window size.
+
+**Resilience4j (Java):**
+```java
+CircuitBreakerConfig config = CircuitBreakerConfig.custom()
+    .failureRateThreshold(50)
+    .waitDurationInOpenState(Duration.ofSeconds(30))
+    .permittedNumberOfCallsInHalfOpenState(5)
+    .slidingWindowType(SlidingWindowType.COUNT_BASED)
+    .slidingWindowSize(10)
+    .build();
+
+CircuitBreaker breaker = CircuitBreaker.of("payment", config);
+Supplier<String> decorated = CircuitBreaker.decorateSupplier(breaker, () -> callPayment());
+```
+
+**Polly (.NET):**
+```csharp
+var breaker = Policy
+    .Handle<HttpRequestException>()
+    .CircuitBreakerAsync(
+        handledEventsAllowedBeforeBreaking: 5,
+        durationOfBreak: TimeSpan.FromSeconds(30),
+        onBreak: (ex, ts) => Log.Warning("Circuit open"),
+        onReset: () => Log.Information("Circuit closed"));
+```
+
+**Key decisions:** per-endpoint vs shared breaker, fallback strategy when open, monitoring/alerting on state transitions.
+
+### Retry with Exponential Backoff + Jitter
+
+Retry transient failures while avoiding thundering herd.
+
+```python
+import random
+import time
+
+def retry_with_backoff(func, max_retries=5, base_delay=1.0, max_delay=30.0):
+    for attempt in range(max_retries):
+        try:
+            return func()
+        except TransientError as e:
+            if attempt == max_retries - 1:
+                raise
+            # Exponential backoff with full jitter
+            delay = min(base_delay * (2 ** attempt), max_delay)
+            jitter = random.uniform(0, delay)
+            time.sleep(jitter)
+```
+
+**Backoff strategies:**
+
+| Strategy | Formula | Use Case |
+|----------|---------|----------|
+| Exponential | base × 2^attempt | Default for most retries |
+| Exponential + full jitter | random(0, base × 2^attempt) | Prevent thundering herd |
+| Exponential + equal jitter | base × 2^attempt / 2 + random(0, base × 2^attempt / 2) | Balance between retry delay and jitter |
+| Decorrelated jitter | min(cap, random(base, prev_delay × 3)) | AWS-recommended, best spread |
+
+**Retry budget:** limit total retries across all calls in a time window (e.g., max 20% of calls retried). Prevents retry storms.
+
+### Bulkhead Isolation
+
+Isolate failure domains so one failing dependency doesn't exhaust all resources.
+
+```java
+// Resilience4j bulkhead
+BulkheadConfig config = BulkheadConfig.custom()
+    .maxConcurrentCalls(25)
+    .maxWaitDuration(Duration.ofMillis(500))
+    .build();
+
+Bulkhead bulkhead = Bulkhead.of("payment", config);
+```
+
+**Patterns:**
+- **Thread pool bulkhead:** separate thread pool per dependency (Resilience4j `ThreadPoolBulkhead`)
+- **Semaphore bulkhead:** limit concurrent calls, no separate threads (Resilience4j `Bulkhead`)
+- **Connection pool:** limit DB/HTTP connections per service
+
+### Timeout
+
+Fail fast when downstream is too slow.
+
+```
+Operation timeout < User-facing timeout < Upstream timeout
+(e.g., 2s)        (e.g., 5s)              (e.g., 10s)
+```
+
+**Rule:** cascading timeouts must decrease toward origin. If service C has 2s timeout, service B should have 3-4s, service A should have 5-6s.
+
+### Fallback
+
+Graceful degradation when circuit is open or call fails.
+
+```java
+Supplier<String> withFallback = CircuitBreaker
+    .decorateSupplier(breaker, () -> callPayment())
+    .andThen(s -> s)
+    .recover(CallNotPermittedException.class, e -> "default-cached-value")
+    .recover(TimeoutException.class, e -> "default-cached-value");
+```
+
+**Fallback strategies:** cached response, default value, static placeholder, secondary service, queue for later processing.
+
+### Composition Order
+
+Resilience patterns compose. Correct order matters:
+
+```
+Retry → CircuitBreaker → RateLimiter → Bulkhead → Timeout → Fallback → Call
+
+Outer                                          Inner
+```
+
+**Rationale:** Retry wraps circuit breaker (retry opens breaker, not retry-forever). Rate limiter before bulkhead (reject before consuming thread). Timeout closest to call.
+
+## Step 26: Distributed Consensus
+
+Source: https://raft.github.io/, https://lamport.azurewebsites.net/pubs/paxos-simple.pdf
+
+### Raft Consensus
+
+Source: https://raft.github.io/ (Ongaro & Ousterhout, 2014)
+
+Designed for understandability. Used by etcd, Consul, CockroachDB, TiKV.
+
+**Three subproblems:**
+
+**Leader Election:**
+```
+All nodes start as FOLLOWER
+  ↓
+Follower election timeout (150-300ms random)
+  ↓
+No heartbeat received → become CANDIDATE → request vote
+  ↓
+Majority votes → become LEADER
+  ↓
+Leader sends heartbeats (AppendEntries RPC) every 50-150ms
+  ↓
+If leader fails → followers timeout → new election
+```
+
+**Log Replication:**
+```
+Client → Leader
+Leader appends to log → replicates to followers (AppendEntries)
+Majority ack → commit → apply to state machine → respond to client
+```
+
+**Safety guarantees:**
+- Election safety: at most one leader per term
+- Leader append-only: leader never overwrites/deletes log entries
+- Log matching: if two logs have entry with same index and term, logs identical up to that index
+- Leader completeness: committed entries present in all future leaders' logs
+- State machine safety: if server applied entry at index, no other server applies different entry at same index
+
+### Paxos (Simplified)
+
+Source: Lamport (1998, simplified 2001)
+
+**Single-decree Paxos (two phases):**
+
+```
+Phase 1a: PROPOSE — Proposer sends Prepare(n) to majority
+Phase 1b: PROMISE — Acceptors respond with highest accepted value (if any)
+Phase 2a: ACCEPT — Proposer sends Accept(n, value) to majority
+          If no value was accepted → use proposer's value
+          If value was accepted → use that value (must not change)
+Phase 2b: ACCEPTED — Acceptors respond, majority → value chosen
+```
+
+**Multi-Paxos:** optimize with stable leader (skip phase 1 for subsequent values). Raft is essentially multi-Paxos made understandable.
+
+### CAP Theorem (Practical Implications)
+
+Source: Gilbert & Lynch (2002), Brewer (2000)
+
+**In network partition, choose:**
+- **CP** (consistency over availability): reject writes during partition (etcd, ZooKeeper, HBase)
+- **AP** (availability over consistency): accept writes, serve stale/conflicting data (Cassandra, DynamoDB, CouchDB)
+
+**Practical reality:**
+- Partitions are rare in well-connected data centers
+- Most systems choose CA in practice (no partition → both available)
+- The real tradeoff is latency vs consistency (not CAP)
+
+### PACELC Extension
+
+Source: Abadi (2012)
+
+```
+IF Partition (P):
+  Choose Availability (A) or Consistency (C)?
+ELSE (no partition — normal operation):
+  Choose Latency (L) or Consistency (C)?
+```
+
+| System | P:A/C | E:L/C |
+|--------|-------|-------|
+| DynamoDB | A | L |
+| Cassandra | A | L (tunable) |
+| MongoDB | C | C |
+| CockroachDB | C | C |
+| Spanner | C | C (TrueTime) |
+| Cosmos DB | Configurable per consistency level | Configurable |
+
+## Step 27: Eventual Consistency Patterns
+
+Source: https://jepsen.io/consistency models, Vogels (2009)
+
+### Read-Your-Writes
+
+Guarantee: after a write, the user who made the write sees it on subsequent reads.
+
+**Implementations:**
+- Sticky sessions: route user to node that accepted write
+- Read-after-write: pass write timestamp/version as cursor on subsequent reads
+- Write to leader, read from leader for recent writes
+
+```python
+# Client sends last write timestamp with read request
+response = client.get("/orders", headers={"X-Last-Write": "2025-01-15T10:30:00Z"})
+# Server ensures read result includes writes up to that timestamp
+```
+
+### Monotonic Reads
+
+Guarantee: a user never sees data go backward in time.
+
+**Implementation:** track last-seen version per client, reject reads with older version.
+
+### Causal Consistency
+
+Guarantee: if operation A causally precedes B, all nodes see A before B.
+
+**Implementation:** vector clocks or logical timestamps (Lamport, hybrid logical clocks).
+
+### Conflict Resolution
+
+**Last-Writer-Wins (LWW):**
+```
+Each write has timestamp. Latest timestamp wins.
+Problem: concurrent writes → data loss of one write.
+Good for: fields where overwrite is acceptable (status, metadata).
+```
+
+**CRDTs (Conflict-free Replicated Data Types):**
+```
+Data structures that merge automatically without conflicts.
+Types: G-Counter, PN-Counter, G-Set, OR-Set, LWW-Register, MV-Register, RGA (text)
+Used by: Redis (CRDB), Riak, Automerge, Yjs
+```
+
+**Operational Transformation (OT):**
+```
+Transform operations so they can be applied in any order and converge.
+Used by: Google Docs, Etherpad.
+Largely replaced by CRDTs for new systems (Yjs, Automerge).
+```
+
+### Saga Pattern (Deep Dive)
+
+**Choreography:**
+```
+Order Service ──OrderCreated──▶ Payment Service
+Payment Service ──PaymentProcessed──▶ Inventory Service
+Inventory Service ──InventoryReserved──▶ Shipping Service
+Each service: listen for event → do work → publish event
+Compensation: publish failure event → upstream listens → undo
+```
+
+**Orchestration:**
+```
+Saga Orchestrator
+  ├── Call Order.create() → success
+  ├── Call Payment.charge() → success
+  ├── Call Inventory.reserve() → FAIL
+  ├── Call Payment.refund()   ← compensating transaction
+  └── Call Order.cancel()     ← compensating transaction
+```
+
+| Aspect | Choreography | Orchestration |
+|--------|-------------|---------------|
+| Coupling | Low (events only) | Medium (orchestrator knows steps) |
+| Complexity | Spans many services, hard to trace | Centralized, easier to reason about |
+| Failure handling | Each service handles own compensation | Orchestrator drives compensation |
+| Testing | Hard (event chains) | Easier (mock orchestrator) |
+| Good for | Simple 2-3 step sagas | Complex multi-step workflows |
+
+## Step 28: Idempotency Patterns
+
+Source: https://stripe.com/blog/idempotency
+
+### Idempotency Key (Stripe Pattern)
+
+Client generates unique key per logical operation. Server deduplicates.
+
+```
+POST /payments
+Idempotency-Key: 7a0c46e8-e20f-4b5a-9e0a-8c9d0e1f2a3b
+Content-Type: application/json
+{"amount": 100, "currency": "USD"}
+```
+
+**Server implementation:**
+```python
+def handle_payment(request):
+    idempotency_key = request.headers["Idempotency-Key"]
+
+    # Check if already processed
+    existing = db.query("SELECT response FROM idempotency_keys WHERE key = ?", idempotency_key)
+    if existing:
+        return JSONResponse(existing.response, status=200)  # or 409 if in-flight
+
+    # Mark as in-flight (prevent concurrent processing)
+    db.execute("INSERT INTO idempotency_keys (key, status) VALUES (?, 'processing')", idempotency_key)
+
+    try:
+        result = process_payment(request.body)
+        db.execute("UPDATE idempotency_keys SET status='complete', response=? WHERE key=?",
+                   json.dumps(result), idempotency_key)
+        return JSONResponse(result)
+    except Exception as e:
+        db.execute("DELETE FROM idempotency_keys WHERE key=?", idempotency_key)
+        raise
+```
+
+**Key lifecycle:** generate at client → store at server → expire after 24-48h → cleanup via TTL.
+
+### Conditional Requests
+
+Use HTTP conditional headers for natural idempotency.
+
+```
+PUT /orders/123
+If-Match: "etag-v3"
+# Returns 412 Precondition Failed if ETag doesn't match
+```
+
+**ETags for optimistic concurrency:** read resource + ETag → modify → PUT with If-Match → server checks ETag → reject if changed.
+
+### Natural Idempotency
+
+Some operations are inherently idempotent:
+- `PUT /resource` (replace entire resource)
+- `DELETE /resource` (delete is idempotent — already deleted is fine)
+- `GET /resource` (read-only)
+
+**NOT naturally idempotent:**
+- `POST /resource` (creates new resource each time)
+- `PATCH /resource` with increment (`{"quantity": 5}` → not idempotent if applied twice as increment)
+
+### Deduplication via Database
+
+```sql
+-- Unique constraint prevents duplicates
+CREATE TABLE events (
+    id UUID PRIMARY KEY,
+    idempotency_key VARCHAR(64) UNIQUE NOT NULL,
+    payload JSONB,
+    created_at TIMESTAMP DEFAULT NOW()
+);
+
+-- INSERT with ON CONFLICT DO NOTHING
+INSERT INTO events (id, idempotency_key, payload)
+VALUES (gen_random_uuid(), $1, $2)
+ON CONFLICT (idempotency_key) DO NOTHING
+RETURNING id;
+-- Returns NULL if duplicate
+```
+
+### Idempotent Event Processing
+
+```
+Consumer receives event → check event_id in processed_events table
+  ├── Not found → process → store event_id
+  └── Found → skip (already processed)
+```
+
+**Outbox pattern for idempotent publishing:**
+```
+1. Begin transaction
+2. Write business data to domain table
+3. Write event to outbox table (same DB, same transaction)
+4. Commit
+5. Separate process: read outbox → publish to broker → mark as published
+```
+
+## Step 29: OAuth2/OIDC Flows
+
+Source: https://oauth.net/2/, https://openid.net/developers/how-connect-works/
+
+### Authorization Code + PKCE (Recommended for SPAs and Mobile)
+
+```
+Browser → Authorization Server
+  GET /authorize?
+    response_type=code&
+    client_id=app&
+    redirect_uri=https://app/callback&
+    scope=openid profile&
+    code_challenge=E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM&
+    code_challenge_method=S256&
+    state=abc123
+
+Authorization Server → Browser (redirect)
+  GET https://app/callback?code=AUTH_CODE&state=abc123
+
+Browser → Authorization Server (back-channel)
+  POST /token
+  grant_type=authorization_code&
+  code=AUTH_CODE&
+  code_verifier=dBjftJeZ4CVP-mB92K27uhbUJU1p1r_wW1gFWFOEjXk&
+  redirect_uri=https://app/callback
+```
+
+**PKCE (Proof Key for Code Exchange):**
+- Client generates random `code_verifier` (43-128 chars, URL-safe)
+- Sends `code_challenge = SHA256(code_verifier)` in authorize request
+- Sends `code_verifier` in token request
+- Server verifies SHA256(code_verifier) == stored code_challenge
+- Prevents authorization code interception attacks
+
+### Client Credentials (Machine-to-Machine)
+
+```
+POST /token
+Content-Type: application/x-www-form-urlencoded
+  grant_type=client_credentials&
+  client_id=service-a&
+  client_secret=SECRET&
+  scope=api:read
+```
+
+No user context. Service-to-service authentication. Use short-lived tokens.
+
+### Device Flow (TV, IoT, CLI)
+
+```
+Device → Authorization Server
+  POST /device/code
+  client_id=tv-app&
+  scope=openid profile
+
+Response:
+  { "device_code": "xxx", "user_code": "WDJB-MJHT",
+    "verification_uri": "https://auth.example.com/device",
+    "expires_in": 600, "interval": 5 }
+
+User → opens verification_uri on phone → enters user_code → authorizes
+
+Device → polls /token every 5s with device_code until success or timeout
+```
+
+### OIDC id_token
+
+OpenID Connect extends OAuth2 with authentication layer.
+
+**id_token:** JWT containing user identity claims.
+```json
+{
+  "iss": "https://auth.example.com",
+  "sub": "user-123",
+  "aud": "client-id",
+  "exp": 1705312200,
+  "iat": 1705308600,
+  "name": "Jane Doe",
+  "email": "jane@example.com",
+  "email_verified": true
+}
+```
+
+**Flow:** authorization code → receive `access_token` + `id_token` + optional `refresh_token`.
+
+### Token Storage (BFF Pattern)
+
+**Backend For Frontend (BFF):** tokens never reach browser.
+
+```
+Browser → BFF Server → Authorization Server
+Browser stores: only HttpOnly session cookie
+BFF stores: access_token + refresh_token in server-side session
+BFF proxies API calls, attaching access_token
+```
+
+**Why:** eliminates XSS token theft. Tokens only in server memory/storage, never in browser JS.
+
+## Step 30: JWT Best Practices
+
+Source: https://datatracker.ietf.org/doc/html/rfc7519
+
+### Short-Lived Access Tokens
+
+```
+Access token: 5-15 minutes
+Refresh token: hours to days (single-use, rotated)
+```
+
+**Why short-lived:** stolen token window minimized. No need for token revocation infrastructure.
+
+### Refresh Token Rotation
+
+```
+Client sends refresh_token_1 → receives new access_token + new refresh_token_2
+refresh_token_1 is invalidated
+
+If refresh_token_1 reused (replay attack) → ALL tokens for user invalidated
+```
+
+**Detection:** store refresh token hash + family ID. Reuse of any token in family → revoke entire family.
+
+### jti Claim (JWT ID)
+
+```json
+{ "jti": "unique-token-id-uuid" }
+```
+
+- Unique identifier per token
+- Server stores seen jti values in short-lived cache (TTL = token expiry)
+- Enables single-use tokens and revocation detection
+- Tradeoff: requires state (cache/DB), defeats statelessness advantage
+
+### RS256 vs HS256
+
+| Algorithm | Type | Key | Use Case |
+|-----------|------|-----|----------|
+| HS256 | Symmetric | Shared secret | Single service, same team controls issuer and verifier |
+| RS256 | Asymmetric | Private key signs, public key verifies | Multiple services verify, public key distribution |
+| ES256 | Asymmetric (ECDSA) | Smaller keys, faster | Same as RS256 but more efficient |
+
+**Recommendation:** RS256 for microservices. Distribute public key (JWKS endpoint) for verification. Private key stays with issuer only.
+
+### Token Storage
+
+| Storage | XSS | CSRF | Recommended |
+|---------|-----|------|-------------|
+| localStorage | Vulnerable | Not vulnerable | No (XSS = token theft) |
+| sessionStorage | Vulnerable (while tab open) | Not vulnerable | No |
+| HttpOnly cookie | Immune | Vulnerable (mitigate with SameSite) | Yes (with CSRF protection) |
+| In-memory (JS variable) | Window only while script runs | Not vulnerable | Yes (SPA + silent refresh) |
+
+**Best practice:** HttpOnly + Secure + SameSite=Strict cookies for session. In-memory for access tokens in SPAs with BFF-served silent refresh.
+
+## Step 31: Authorization Patterns
+
+### RBAC (Role-Based Access Control)
+
+```
+User → has Role → has Permissions
+Admin  → [read, write, delete, manage-users]
+Editor → [read, write]
+Viewer → [read]
+```
+
+**Implementation:**
+```sql
+CREATE TABLE roles (id UUID PRIMARY KEY, name VARCHAR(50) UNIQUE);
+CREATE TABLE permissions (id UUID PRIMARY KEY, resource VARCHAR(100), action VARCHAR(50));
+CREATE TABLE role_permissions (role_id UUID REFERENCES roles, permission_id UUID REFERENCES permissions);
+CREATE TABLE user_roles (user_id UUID, role_id UUID);
+```
+
+**Limitations:** role explosion (too many roles), no context awareness (time, location, resource state).
+
+### ABAC (Attribute-Based Access Control)
+
+Source: XACML (eXtensible Access Control Markup Language)
+
+```
+Policy: IF user.department == "finance" AND resource.type == "report"
+        AND action == "read" AND environment.time BETWEEN 9am-5pm
+        THEN PERMIT
+```
+
+**XACML architecture:**
+```
+PEP (Policy Enforcement Point) → PDP (Policy Decision Point)
+                                      ├── PAP (Policy Administration Point)
+                                      └── PIP (Policy Information Point)
+```
+
+**Modern ABAC:** OPA (Open Policy Agent) with Rego language.
+
+```rego
+package authz
+
+default allow = false
+
+allow {
+    input.method == "GET"
+    input.path == ["api", "orders", order_id]
+    user_owns_order(order_id)
+}
+
+user_owns_order(order_id) {
+    order := data.orders[order_id]
+    order.user_id == input.user.id
+}
+```
+
+### ReBAC (Relationship-Based Access Control)
+
+Source: Google Zanzibar (2019), https://openfga.dev/
+
+```
+# Object-relation-user tuples
+document:readme  viewer    user:alice
+folder:eng       editor    group:engineering
+document:readme  parent    folder:eng
+folder:eng       viewer    user:alice   # inherited through parent relation
+
+# Can alice read readme?
+check(document:readme, viewer, user:alice) → true (inherited via parent)
+```
+
+**OpenFGA (open-source Zanzibar):**
+```
+model
+  schema 1.1
+
+type user
+
+type document
+  relations
+    define viewer: [user] or editor
+    define editor: [user]
+
+type folder
+  relations
+    define viewer: [user] or can_view
+    define editor: [user]
+    define parent: [folder]
+    define can_view: viewer or viewer from parent
+```
+
+### Hybrid Patterns
+
+**Layer authorization checks:**
+```
+API Gateway: coarse-grained (is token valid? is IP allowed?)
+Service: RBAC (does user have role for this endpoint?)
+Domain: ABAC/ReBAC (can this user access this specific resource?)
+```
+
+**Common stack:** RBAC for coarse permissions + ReBAC for fine-grained resource access.
+
+## Step 32: Rate Limiting Algorithms
+
+### Token Bucket
+
+```
+Bucket fills at fixed rate (tokens/sec) up to max capacity.
+Each request consumes 1 token.
+Request rejected if bucket empty.
+
+Parameters: bucket_size (max burst), refill_rate (sustained rate)
+```
+
+**Use:** AWS API Gateway, Stripe API. Best for allowing bursts while limiting sustained rate.
+
+### Sliding Window Log
+
+```
+Store timestamp of each request in sorted set.
+Count requests in last window.
+Reject if count exceeds limit.
+
+Redis: ZADD key timestamp, ZREMRANGEBYSCORE key 0 (now - window), ZCARD key
+```
+
+**Pros:** exact count. **Cons:** memory proportional to request count.
+
+### Sliding Window Counter
+
+```
+Combine current window count + weighted previous window count.
+
+count = current_count + (prev_count × overlap_percentage)
+overlap_percentage = (window_size - elapsed_in_current) / window_size
+```
+
+**Pros:** memory efficient (2 counters). **Cons:** approximate. Used by Cloudflare.
+
+### Leaky Bucket
+
+```
+Requests enter queue (bucket). Processed at fixed rate.
+If queue full → reject.
+Smooths traffic to constant output rate.
+```
+
+**Use:** nginx rate limiting. Good for protecting backend with steady processing rate.
+
+### Fixed Window
+
+```
+Divide time into fixed windows (e.g., per minute).
+Count requests per window. Reset at window boundary.
+
+Problem: burst at boundary (2x limit in 2 seconds if window ends at :00)
+```
+
+### Response Headers
+
+```
+X-RateLimit-Limit: 1000          # max requests per window
+X-RateLimit-Remaining: 999       # remaining in current window
+X-RateLimit-Reset: 1705312200    # Unix timestamp when window resets
+Retry-After: 60                  # seconds to wait (when rate limited)
+```
+
+**Standard:** draft-ietf-httpapi-ratelimit-headers.
+
+### Comparison
+
+| Algorithm | Burst Handling | Memory | Precision | Use Case |
+|-----------|---------------|--------|-----------|----------|
+| Token Bucket | Yes (configurable) | O(1) | High | API rate limiting |
+| Sliding Window Log | No | O(n) | Exact | Low-traffic precise limiting |
+| Sliding Window Counter | Partial | O(1) | Approximate | High-traffic general limiting |
+| Leaky Bucket | No (smooths) | O(1) | Exact | Backend protection |
+| Fixed Window | Yes (boundary burst) | O(1) | High | Simple per-minute limiting |
+
+## Step 33: API Versioning
+
+### URL Path Versioning
+
+```
+GET /v1/orders
+GET /v2/orders
+```
+
+**Pros:** simple, explicit, cacheable, easy routing.
+**Cons:** URL proliferation, client must update URLs.
+
+### Header Versioning
+
+```
+GET /orders
+Accept: application/vnd.myapi.v2+json
+```
+
+**Pros:** clean URLs, content negotiation.
+**Cons:** harder to test in browser, caching requires Vary header.
+
+### Query Parameter Versioning
+
+```
+GET /orders?version=2
+```
+
+**Pros:** easy to test.
+**Cons:** cache key pollution, not RESTful.
+
+### Sunset Header (RFC 8594)
+
+```
+HTTP/1.1 200 OK
+Sunset: Sat, 01 Jun 2025 00:00:00 GMT
+Link: <https://api.example.com/v2/orders>; rel="successor-version"
+```
+
+**Deprecation:** warn clients of version end-of-life.
+
+```yaml
+# OpenAPI extension
+x-sunset: "2025-06-01"
+x-deprecated: true
+```
+
+### Versioning Strategy Decision
+
+| Approach | When to Use |
+|----------|-------------|
+| URL path | Public APIs, simple consumer apps |
+| Header | Enterprise APIs, many consumers |
+| Query param | Internal APIs, prototyping |
+| Content negotiation | Large version families, infrequent breaking changes |
+
+**Best practice:** URL path for public APIs. Support at most 2-3 concurrent versions. Document deprecation timeline. Use Sunset header.
+
+## Step 34: GraphQL Federation
+
+Source: https://www.apollographql.com/docs/federation/
+
+### Apollo Federation v2
+
+Compose multiple GraphQL services into unified supergraph.
+
+**Core directives:**
+```graphql
+# @key — defines entity's primary key
+type Product @key(fields: "id") {
+  id: ID!
+  name: String!
+  price: Float!
+}
+
+# @external — field owned by another subgraph
+type Product @key(fields: "id") {
+  id: ID! @external
+}
+
+# @requires — needs external fields to resolve
+type Product @key(fields: "id") {
+  id: ID! @external
+  weight: Float! @external
+  shippingCost: Float! @requires(fields: "weight")
+}
+
+# @shareable — resolved by multiple subgraphs
+type Product @key(fields: "id") {
+  id: ID!
+  name: String! @shareable
+}
+```
+
+**Subgraph example:**
+```graphql
+# Products subgraph
+type Product @key(fields: "id") {
+  id: ID!
+  name: String!
+  price: Float!
+}
+
+# Reviews subgraph
+extend schema @link(url: "https://specs.apollo.dev/federation/v2.0", import: ["@key", "@external"])
+type Product @key(fields: "id") {
+  id: ID! @external
+  reviews: [Review!]!
+}
+
+type Review {
+  id: ID!
+  rating: Int!
+  text: String
+}
+```
+
+### Schema Stitching (Alternative)
+
+Source: https://www.graphql-tools.com/schema-stitching
+
+```
+Gateway merges schemas manually at build/runtime.
+Stitching uses type merging to connect types across schemas.
+```
+
+**Less automated than Federation.** Federation: declarative with directives. Stitching: imperative merge config.
+
+### Federation v2 vs Schema Stitching
+
+| Aspect | Apollo Federation v2 | Schema Stitching |
+|--------|---------------------|------------------|
+| Schema ownership | Declarative (@key, @external) | Imperative merge config |
+| Entity resolution | Automatic via @key | Manual type merging |
+| Subgraph independence | Each subgraph owns types | Gateway needs full picture |
+| Tooling | Apollo Router, Rover CLI | graphql-tools, graphql-mesh |
+| Complexity | Lower for large teams | Lower for small projects |
+
+### GraphQL Mesh
+
+Source: https://the-guild.dev/graphql/mesh
+
+Compose GraphQL from non-GraphQL sources (REST, gRPC, SOAP, databases).
+
+```yaml
+# .meshrc.yaml
+sources:
+  - name: REST API
+    handler:
+      openapi:
+        source: ./openapi.yaml
+  - name: gRPC Service
+    handler:
+      grpc:
+        endpoint: localhost:50051
+        protoFilePath: ./service.proto
+```
+
+**Use when:** migrating from REST/gRPC to GraphQL incrementally.
+
+## Step 35: Kafka Patterns
+
+Source: https://kafka.apache.org/documentation/
+
+### Consumer Groups
+
+```
+Topic: orders (6 partitions)
+Consumer Group: order-processors
+
+Consumer A → partitions 0, 1
+Consumer B → partitions 2, 3
+Consumer C → partitions 4, 5
+
+Rules:
+- Max consumers = partition count (more consumers → idle)
+- Each partition assigned to exactly one consumer in group
+- Rebalance on consumer join/leave
+```
+
+### Exactly-Once Semantics
+
+**Kafka supports exactly-once within Kafka ecosystem:**
+```
+Producer → idempotent writes (enable.idempotence=true)
+         → transactional API (atomic multi-partition writes)
+Consumer → read_committed isolation level
+         → manual offset commit within transaction
+```
+
+**End-to-end exactly-once:** requires idempotent consumer (idempotency key in DB).
+
+```
+enable.idempotence=true
+transactional.id=order-service-01
+isolation.level=read_committed
+```
+
+### Schema Registry
+
+Source: https://docs.confluent.io/platform/current/schema-registry/
+
+**Purpose:** enforce schema compatibility for Avro/Protobuf/JSON Schema messages.
+
+```
+Producer → Schema Registry (register/validate schema)
+         → Kafka (message + schema ID)
+Consumer ← Schema Registry (fetch schema by ID)
+         ← Kafka (deserialize with schema)
+```
+
+**Compatibility modes:**
+- `BACKWARD` (default): new schema reads old data
+- `FORWARD`: old schema reads new data
+- `FULL`: both directions
+- `NONE`: no checks
+
+### Dead Letter Queues
+
+Failed messages routed to DLQ instead of blocking consumer.
+
+```
+Consumer → process message → FAIL (retry 3x)
+  ↓
+Route to DLQ topic: orders.DLQ
+  ↓
+Alert + manual inspection/replay
+```
+
+**Implementation:**
+```java
+@KafkaListener(topics = "orders")
+public void consume(ConsumerRecord<String, String> record) {
+    try {
+        process(record);
+    } catch (Exception e) {
+        kafkaTemplate.send("orders.DLQ", record.key(), record.value());
+        // Log, alert, store failure reason in headers
+    }
+}
+```
+
+## Step 36: Database Sharding
+
+### Hash-Based Sharding
+
+```
+shard_id = hash(partition_key) % num_shards
+```
+
+**Pros:** even distribution. **Cons:** range queries span all shards, resharding requires rehashing.
+
+### Range-Based Sharding
+
+```
+shard_1: user_id 0-999999
+shard_2: user_id 1000000-1999999
+shard_3: user_id 2000000-2999999
+```
+
+**Pros:** range queries efficient. **Cons:** hotspots (new users all go to one shard).
+
+### Directory-Based Sharding
+
+```
+Lookup table: user_id → shard_id
+123 → shard_2
+456 → shard_1
+```
+
+**Pros:** flexible, can move data between shards. **Cons:** lookup table is SPOF/bottleneck.
+
+### Geographic Sharding
+
+```
+US users → US shard (us-east-1)
+EU users → EU shard (eu-west-1)
+APAC users → APAC shard (ap-southeast-1)
+```
+
+**Use:** data residency (GDPR), latency optimization.
+
+### Consistent Hashing
+
+```
+Hash ring: 0 ─────────────────────────────── 2^32
+           │    │    │    │    │    │    │
+           N1   N2   N3   N4   N5   N6
+
+Key → hash → find next node clockwise on ring
+Adding/removing node → only ~1/n keys move
+```
+
+**Virtual nodes:** each physical node maps to multiple points on ring (100-200 vnodes). Improves distribution.
+
+**Used by:** DynamoDB, Cassandra, Redis Cluster.
+
+## Step 37: Caching Strategies
+
+Source: https://martinfowler.com/bliki/CacheAside.html
+
+### Cache-Aside (Lazy Loading)
+
+```
+Read: App → check cache → HIT: return | MISS: read DB → write cache → return
+Write: App → write DB → invalidate cache
+```
+
+**Most common pattern.** App controls cache. Good for read-heavy workloads.
+
+### Write-Through
+
+```
+Write: App → write cache → cache writes to DB (synchronously)
+Read: App → read cache (always hit after write)
+```
+
+**Pros:** cache always consistent. **Cons:** write latency (double write), cache may have data never read.
+
+### Write-Behind (Write-Back)
+
+```
+Write: App → write cache → cache acks → cache writes to DB (async, batched)
+Read: App → read cache
+```
+
+**Pros:** low write latency, write batching. **Cons:** data loss risk (cache crash before flush), eventual consistency.
+
+### Read-Through
+
+```
+Read: App → cache → on miss: cache loads from DB → cache returns
+```
+
+Cache acts as data source. App doesn't know about DB.
+
+### Eviction Policies
+
+| Policy | Algorithm | Use Case |
+|--------|-----------|----------|
+| LRU | Least Recently Used | General purpose, recency matters |
+| LFU | Least Frequently Used | Frequency matters more than recency |
+| FIFO | First In First Out | Simple, no access pattern preference |
+| TTL | Time-To-Live expiry | Data with known staleness window |
+| Random | Random eviction | Uniform access patterns |
+
+**Redis defaults:** LRU approximated (allkeys-lru or volatile-lru).
+
+### Cache Invalidation
+
+**Strategies:**
+- **TTL-based:** set expiry, let cache miss naturally (simpler, stale until TTL)
+- **Event-driven:** publish cache invalidation on write (fresher, more complex)
+- **Version-based:** cache key includes version/hash, new version = new key
+
+**Cache stampede protection:**
+```
+Multiple requests for same stale key → all hit DB simultaneously.
+Fix: mutex/lock (only one request rebuilds), probabilistic early expiration, stale-while-revalidate.
+```
+
+## Step 38: Data Pipeline Patterns
+
+### ETL vs ELT
+
+| Aspect | ETL | ELT |
+|--------|-----|-----|
+| Transform | Before loading (in pipeline) | After loading (in target DB) |
+| Tools | Informatica, Talend, dbt | dbt, Spark in data lake |
+| Target | Data warehouse (structured) | Data lake (raw) + warehouse |
+| Latency | Higher (transform first) | Lower (load raw fast) |
+| Flexibility | Fixed schema at load time | Schema-on-read, retransform anytime |
+| Modern choice | Legacy / strict compliance | Most new systems (cloud data warehouses) |
+
+### CDC (Change Data Capture)
+
+Source: https://debezium.io/
+
+Capture row-level changes from database transaction log.
+
+```
+PostgreSQL WAL → Debezium connector → Kafka → Consumers
+                                              ├── Search index (Elasticsearch)
+                                              ├── Cache (Redis)
+                                              ├── Analytics (Snowflake)
+                                              └── Event store
+```
+
+**Debezium:** open-source CDC for PostgreSQL, MySQL, MongoDB, SQL Server, Oracle.
+
+**Advantages over polling:** real-time, no query load on source DB, captures deletes.
+
+### Batch vs Stream Processing
+
+| Aspect | Batch | Stream |
+|--------|-------|--------|
+| Latency | Minutes to hours | Milliseconds to seconds |
+| Data | Complete dataset | Individual events |
+| Throughput | High (bulk processing) | Lower per-event overhead |
+| Tools | Spark, Hadoop, dbt | Flink, Kafka Streams, ksqlDB |
+| Use case | Daily reports, ML training | Real-time dashboards, fraud detection |
+
+### Lambda vs Kappa Architecture
+
+**Lambda:**
+```
+Batch layer (Hadoop/Spark) + Speed layer (Flink/Storm) + Serving layer
+Data stored twice: batch views + real-time views
+Query merges both layers
+```
+
+**Kappa:**
+```
+Single stream processing layer
+All processing on streaming data
+Reprocess by replaying event log
+Simpler than Lambda (one codebase)
+```
+
+**Modern choice:** Kappa preferred. Replay Kafka topic to reprocess. dbt + Snowflake for batch when needed.
+
+## Step 39: Message Queue Comparison
+
+Source: https://kafka.apache.org/, https://www.rabbitmq.com/, https://nats.io/, https://pulsar.apache.org/
+
+| Feature | Kafka | RabbitMQ | NATS | Pulsar |
+|---------|-------|----------|------|--------|
+| **Model** | Distributed log | Message broker | Pub/sub + JetStream | Distributed log (segments) |
+| **Throughput** | Very high (millions/sec) | Medium (tens of thousands/sec) | Very high (millions/sec) | Very high (millions/sec) |
+| **Latency** | Low ms | Sub-ms | Sub-ms | Low ms |
+| **Ordering** | Per-partition | Per-queue | Per-subject | Per-partition |
+| **Retention** | Time/size-based, configurable | Until consumed (classic) | JetStream: configurable | Segment-based, tiered storage |
+| **Delivery** | At-least-once, exactly-once (trans) | At-least-once, at-most-once | At-most-once, at-least-once (JetStream) | At-least-once, effectively-once |
+| **Protocol** | Custom TCP | AMQP, MQTT, STOMP | Custom text/binary | Custom TCP (binary) |
+| **Schema** | Schema Registry (Avro/Protobuf) | None built-in | None built-in | Built-in Schema Registry |
+| **Multi-tenancy** | Clusters per tenant | Vhosts | Accounts | Native multi-tenancy (namespaces) |
+| **Storage** | Disk (segments) | Memory + disk (Mnesia) | Memory (core), disk (JetStream) | BookKeeper (segmented) |
+| **Replay** | Yes (offset-based) | No (consumed = gone) | JetStream: yes | Yes (cursor-based) |
+| **Consumer groups** | Native | Competing consumers | Queue groups | Subscription types (shared, failover, key_shared) |
+| **Geo-replication** | MirrorMaker 2 | Federation/Shovel | Leaf nodes, superclusters | Built-in geo-replication |
+| **Ops complexity** | High (ZooKeeper/KRaft) | Low-Medium | Very low | High (BookKeeper + brokers) |
+| **Best for** | Event streaming, event sourcing, high-throughput pipelines | Task queues, request/reply, complex routing | Microservices, low-latency messaging, IoT | Multi-tenant streaming, tiered storage |
+
+**Decision guide:**
+- **Event sourcing / stream processing:** Kafka or Pulsar
+- **Task queues / complex routing:** RabbitMQ
+- **Low-latency microservices / IoT:** NATS
+- **Multi-tenant SaaS:** Pulsar
+- **Simple setup, minimal ops:** NATS
+- **Enterprise with existing AMQP:** RabbitMQ
+
+## Pitfalls (Addendum)
+
+19. **Don't skip idempotency keys on POST endpoints** — retries cause duplicate side effects
+20. **Don't store JWTs in localStorage** — XSS exposes tokens; use HttpOnly cookies or in-memory + BFF
+21. **Don't use HS256 across microservices** — RS256 so any service can verify without shared secret
+22. **Don't implement rate limiting with fixed window** — boundary bursts allow 2x limit
+23. **Don't version APIs in body** — URL path or header; body versioning breaks REST semantics
+24. **Don't use schema stitching for new projects** — Apollo Federation v2 is the standard for federated GraphQL
+25. **Don't poll for CDC** — use Debezium/log-based capture
+26. **Don't shard prematurely** — optimize queries, add read replicas first; shard at ~1TB or clear bottleneck
+27. **Don't use write-through cache for infrequently read data** — cache-aside avoids caching unused data
+28. **Don't mix ETL and ELT in same pipeline** — choose one pattern per data flow
+29. **Don't ignore circuit breaker composition order** — retry wraps circuit breaker, not reverse
+30. **Don't allow unbounded retries** — use retry budget (max 20% of calls retried)
