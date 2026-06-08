@@ -1,13 +1,13 @@
 ---
 name: sdlc-developer-tooling
-description: "Modern dev tooling: Python (uv, Ruff, pytest, mypy), JS/TS (pnpm, Bun, Vitest, Biome, Playwright), Go (golangci-lint, go test -race), Rust (cargo). Cross-cutting: just, mise, direnv, Docker Compose, Dev Containers, Nix. Includes LSP/DAP patterns, AI-assisted dev, green software tooling."
-version: 4.2.0
+description: "Modern dev tooling: Python (uv, Ruff, pytest, mypy), JS/TS (pnpm, Bun, Vitest, Biome, Playwright), Go (golangci-lint, go test -race), Rust (cargo). Cross-cutting: just, mise, direnv, Docker Compose, Dev Containers, Nix. Includes LSP/DAP patterns, AI-assisted dev, green software tooling, CI/CD advanced patterns, build caching, artifact management."
+version: 4.3.0
 author: Hermes Agent
 license: MIT
 platforms: [linux, macos, windows]
 metadata:
   hermes:
-    tags: [sdlc, tooling, developer-experience, python, typescript, go, rust, docker, devex, lsp, dap, nix, bun, ai-assisted, green-software, mise, uv]
+    tags: [sdlc, tooling, developer-experience, python, typescript, go, rust, docker, devex, lsp, dap, nix, bun, ai-assisted, green-software, mise, uv, ci-cd, caching, artifacts, sbom]
     related_skills: [sdlc-architecture-design, sdlc-cicd-pipeline, sdlc-testing-qa, sdlc-adversarial-review]
 ---
 
@@ -2419,4 +2419,469 @@ praise: Clever use of the builder pattern here. Very clean.
 - [ ] Naming is clear and consistent?
 - [ ] Magic numbers extracted?
 - [ ] Public APIs documented?
+```
+
+## Step 19: GitHub Actions Advanced
+
+### Reusable Workflows
+
+Call workflows from other repos/workflows. Define at top level with `workflow_call` trigger.
+
+```yaml
+# .github/workflows/reusable-deploy.yml (called workflow)
+name: Reusable Deploy
+on:
+  workflow_call:
+    inputs:
+      environment:
+        required: true
+        type: string
+      image_tag:
+        required: true
+        type: string
+    secrets:
+      DEPLOY_TOKEN:
+        required: true
+    outputs:
+      deploy_url:
+        description: "Deployed URL"
+        value: ${{ jobs.deploy.outputs.url }}
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.environment }}
+    outputs:
+      url: ${{ steps.deploy.outputs.url }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: deploy
+        run: |
+          echo "Deploying ${{ inputs.image_tag }} to ${{ inputs.environment }}"
+          echo "url=https://${{ inputs.environment }}.example.com" >> "$GITHUB_OUTPUT"
+```
+
+```yaml
+# Caller workflow
+jobs:
+  deploy-staging:
+    uses: ./.github/workflows/reusable-deploy.yml
+    with:
+      environment: staging
+      image_tag: ${{ needs.build.outputs.tag }}
+    secrets:
+      DEPLOY_TOKEN: ${{ secrets.STAGING_DEPLOY_TOKEN }}
+
+  deploy-prod:
+    needs: deploy-staging
+    uses: ./.github/workflows/reusable-deploy.yml
+    with:
+      environment: production
+      image_tag: ${{ needs.build.outputs.tag }}
+    secrets:
+      DEPLOY_TOKEN: ${{ secrets.PROD_DEPLOY_TOKEN }}
+```
+
+Cross-repo: `uses: org/repo/.github/workflows/deploy.yml@main`
+
+### Composite Actions
+
+Bundle multiple steps into one reusable action with `action.yml`.
+
+```yaml
+# .github/actions/setup-project/action.yml
+name: Setup Project
+description: Install deps and configure environment
+inputs:
+  node-version:
+    default: '20'
+  python-version:
+    default: '3.12'
+runs:
+  using: composite
+  steps:
+    - uses: actions/setup-node@v4
+      with:
+        node-version: ${{ inputs.node-version }}
+    - uses: actions/setup-python@v5
+      with:
+        python-version: ${{ inputs.python-version }}
+    - shell: bash
+      run: npm ci
+    - shell: bash
+      run: pip install -r requirements.txt
+```
+
+Usage: `- uses: ./.github/actions/setup-project`
+
+### Dynamic Matrix with fromJSON
+
+```yaml
+jobs:
+  prepare:
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.set-matrix.outputs.matrix }}
+    steps:
+      - id: set-matrix
+        run: |
+          # Generate matrix dynamically (e.g., from changed files)
+          echo 'matrix={"service":["api","web","worker"],"include":[{"service":"api","port":8080},{"service":"web","port":3000},{"service":"worker","port":9090}]}' >> "$GITHUB_OUTPUT"
+
+  build:
+    needs: prepare
+    runs-on: ubuntu-latest
+    strategy:
+      matrix: ${{ fromJSON(needs.prepare.outputs.matrix) }}
+      fail-fast: false
+    steps:
+      - run: echo "Building ${{ matrix.service }} on port ${{ matrix.port }}"
+```
+
+### Concurrency Groups
+
+Prevent duplicate runs, cancel in-progress when new push arrives.
+
+```yaml
+# Cancel in-progress runs on same branch/PR
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+# Environment-level concurrency (max 1 deploy at a time)
+concurrency:
+  group: deploy-${{ github.event.inputs.environment }}
+  cancel-in-progress: false
+
+# Dynamic group for PR comments
+concurrency:
+  group: pr-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+```
+
+## Step 20: GitLab CI Advanced
+
+### Child Pipelines
+
+Trigger child pipelines from main pipeline for modularization.
+
+```yaml
+# Generate child pipeline config dynamically
+generate:
+  stage: build
+  script:
+    - python generate_pipeline.py > child-pipeline.yml
+  artifacts:
+    paths:
+      - child-pipeline.yml
+
+child:
+  stage: test
+  trigger:
+    include:
+      - artifact: child-pipeline.yml
+        job: generate
+    strategy: depend  # parent waits for child
+```
+
+### Multi-Project Pipelines
+
+Trigger pipeline in another project and wait for result.
+
+```yaml
+deploy-infra:
+  stage: deploy
+  trigger:
+    project: infra/terraform
+    branch: main
+    strategy: depend
+  variables:
+    UPSTREAM_COMMIT: $CI_COMMIT_SHA
+    ENVIRONMENT: staging
+```
+
+### DAG with needs Keyword
+
+`needs` defines explicit job dependencies instead of stage-based ordering. Jobs run as soon as dependencies complete.
+
+```yaml
+stages:
+  - build
+  - test
+  - deploy
+
+build-api:
+  stage: build
+  script: make build-api
+
+build-web:
+  stage: build
+  script: make build-web
+
+test-api:
+  stage: test
+  needs: [build-api]  # runs as soon as build-api done, ignores stage order
+  script: make test-api
+
+test-web:
+  stage: test
+  needs: [build-web]
+  script: make test-web
+
+deploy:
+  stage: deploy
+  needs: [test-api, test-web]  # runs when both tests pass
+  script: make deploy
+```
+
+Minimal DAG: `needs: []` runs immediately with no dependencies.
+
+### Resource Groups
+
+Limit concurrent access to a shared resource (e.g., only one deploy to prod at a time).
+
+```yaml
+deploy-production:
+  stage: deploy
+  resource_group: production
+  script: make deploy-prod
+  rules:
+    - if: $CI_COMMIT_BRANCH == "main"
+```
+
+Queue behavior: second job waits until first finishes. Combine with `environment` for auto-locking.
+
+```yaml
+deploy:
+  resource_group: deploy/$CI_ENVIRONMENT_NAME
+  environment:
+    name: $CI_ENVIRONMENT_NAME
+    on_stop: stop-deploy
+```
+
+## Step 21: Build Caching Deep Dive
+
+### Bazel Remote Cache
+
+Bazel separates analysis (loading, analysis) from execution. Remote cache stores action outputs.
+
+```bash
+# .bazelrc -- use remote cache
+build --remote_cache=grpcs://cache.example.com:443
+build --remote_header=Authorization="Bearer $CACHE_TOKEN"
+# Read-only for CI (no cache pollution)
+build --remote_upload_local_results=false
+# Accept cached results
+build --noremote_accept_cached
+```
+
+```yaml
+# GitHub Actions: cache Bazel with GitHub cache backend
+- uses: actions/cache@v4
+  with:
+    path: ~/.cache/bazel
+    key: bazel-${{ runner.os }}-${{ hashFiles('.bazelversion', 'MODULE.bazel') }}
+    restore-keys: bazel-${{ runner.os }}-
+```
+
+**Cache key strategy:** Hash lockfile (MODULE.bazel, WORKSPACE) + OS. Invalidate on dependency change, not on source change (Bazel handles source-level caching internally).
+
+### Gradle Build Cache
+
+Gradle caches task outputs. Local cache is on by default; remote cache requires setup.
+
+```kotlin
+// settings.gradle.kts
+buildCache {
+    local {
+        enabled = true
+        directory = File(rootDir, ".gradle/build-cache")
+    }
+    remote<HttpBuildCache> {
+        url = uri("https://cache.example.com/cache/")
+        credentials {
+            username = "ci"
+            password = System.getenv("CACHE_PASSWORD") ?: ""
+        }
+        push = System.getenv("CI") != null  // CI pushes, local pulls only
+    }
+}
+```
+
+```bash
+# gradle.properties
+org.gradle.caching=true
+org.gradle.configuration-cache=true   # caches configuration phase
+```
+
+**Debug cache hits:** `./gradlew build --info | grep -i "cache"`
+
+### Docker Layer Caching with buildx
+
+```bash
+# GitHub Actions: cache registry
+docker buildx build \
+  --cache-from type=registry,ref=ghcr.io/org/cache:buildcache \
+  --cache-to type=registry,ref=ghcr.io/org/cache:buildcache,mode=max \
+  -t myapp:latest .
+
+# Local: cache to local directory
+docker buildx build \
+  --cache-from type=local,src=/tmp/buildcache \
+  --cache-to type=local,dest=/tmp/buildcache,mode=max \
+  -t myapp:latest .
+```
+
+**mode=max** caches all layers (including intermediate). **mode=min** only caches final layers (default).
+
+```yaml
+# GitHub Actions: inline cache (simpler but less effective)
+- uses: docker/build-push-action@v5
+  with:
+    push: true
+    tags: ghcr.io/org/app:latest
+    cache-from: type=gha
+    cache-to: type=gha,mode=max
+```
+
+### Cache Invalidation Strategies
+
+**Key-based invalidation:**
+```
+hash(files) -> cache key
+restore-keys: [prefix-]  # fallback to partial match
+```
+
+**Strategies:**
+1. **Content-hash:** Hash lockfile/manifest. Invalidate on dependency change.
+2. **Time-based:** TTL expiry (e.g., 7 days). Prevents stale cache accumulation.
+3. **Version-bump:** Bump cache version prefix when build infra changes.
+4. **Selective invalidation:** Cache per-component (monorepo). Invalidate only affected.
+
+```yaml
+# Monorepo: per-service cache keys
+- uses: actions/cache@v4
+  with:
+    path: services/api/node_modules
+    key: api-nm-${{ hashFiles('services/api/package-lock.json') }}
+    restore-keys: api-nm-
+```
+
+**Anti-patterns:**
+- Caching node_modules directly (cache .npm or pnpm store instead)
+- One global cache key for entire repo (invalidates too broadly)
+- Caching build output that depends on env vars (stale secrets)
+
+## Step 22: Artifact Management
+
+### OCI Artifacts with oras
+
+Push/pull non-Docker artifacts to OCI registries (Helm charts, WASM, SBOMs, signatures, policies).
+
+```bash
+# Install oras
+curl -LO https://github.com/oras-project/oras/releases/download/v1.2.0/oras_1.2.0_linux_amd64.tar.gz
+tar xzf oras_1.2.0_linux_amd64.tar.gz
+
+# Push arbitrary file as OCI artifact
+oras push ghcr.io/org/artifacts:v1.0 \
+  --artifact-type application/vnd.example.config.v1 \
+  config.json:application/json
+
+# Push multiple files with annotations
+oras push ghcr.io/org/release:v1.2.0 \
+  ./dist/app-linux:application/vnd.oci.image.layer.v1.tar \
+  ./dist/app-darwin:application/vnd.oci.image.layer.v1.tar \
+  --annotation "org.opencontainers.image.version=1.2.0"
+
+# Pull
+oras pull ghcr.io/org/artifacts:v1.0
+
+# Copy between registries
+oras copy ghcr.io/org/app:v1 ghcr.io/backup/app:v1
+```
+
+### Sigstore Signing with Cosign (Keyless)
+
+Sign artifacts using OIDC identity (GitHub Actions, GitLab CI) — no long-lived keys.
+
+```bash
+# Install cosign
+go install github.com/sigstore/cosign/v2/cmd/cosign@latest
+
+# Keyless sign (in CI, uses OIDC token automatically)
+COSIGN_EXPERIMENTAL=1 cosign sign ghcr.io/org/app@sha256:abc123...
+
+# Sign with annotations
+cosign sign \
+  --annotations "repo=https://github.com/org/app" \
+  --annotations "ref=$GITHUB_REF" \
+  ghcr.io/org/app@sha256:abc123...
+
+# Verify
+COSIGN_EXPERIMENTAL=1 cosign verify \
+  --certificate-identity-regexp="https://github.com/org/app" \
+  --certificate-oidc-issuer="https://token.actions.githubusercontent.com" \
+  ghcr.io/org/app@sha256:abc123...
+
+# Sign a file (not OCI image)
+cosign sign-blob --bundle sig.bundle ./artifact.tar.gz
+cosign verify-blob --bundle sig.bundle ./artifact.tar.gz
+```
+
+**Keyless flow:** CI runner gets OIDC token → cosign gets short-lived cert from Fulcio → signs artifact → stores in Rekor transparency log.
+
+### SBOM Generation
+
+Generate Software Bill of Materials for supply chain transparency.
+
+**Syft** (Anchore):
+```bash
+# Install
+curl -sSfL https://raw.githubusercontent.com/anchore/syft/main/install.sh | sh -s
+
+# Generate SBOM from container image
+syft ghcr.io/org/app:latest -o cyclonedx-json > sbom.cdx.json
+syft ghcr.io/org/app:latest -o spdx-json > sbom.spdx.json
+syft ghcr.io/org/app:latest -o spdx-tag-value > sbom.spdx
+
+# Generate from directory
+syft dir:. -o cyclonedx-json > sbom.cdx.json
+
+# Attach SBOM to OCI image (with oras)
+oras attach \
+  --artifact-type application/spdx+json \
+  ghcr.io/org/app:v1 \
+  sbom.spdx.json:application/spdx+json
+```
+
+**CycloneDX vs SPDX:**
+```
+CycloneDX (OWASP): JSON/XML, designed for security use cases,
+  vulnerability analysis, license compliance. Preferred for app deps.
+
+SPDX (Linux Foundation): JSON/YAML/RDF, ISO standard (5962:2021),
+  legal/license compliance focus. Preferred for license auditing.
+```
+
+**GitHub Actions: generate and attest SBOM:**
+```yaml
+- name: Generate SBOM
+  run: syft ghcr.io/org/app@${{ steps.build.outputs.digest }} -o cyclonedx-json > sbom.cdx.json
+
+- name: Attest SBOM
+  run: |
+    gh attestation add sbom.cdx.json \
+      --repo ${{ github.repository }} \
+      --bundle-from-oci
+
+- name: Sign SBOM
+  run: cosign sign-blob --bundle sbom.bundle sbom.cdx.json
+```
+
+**Grype** (vulnerability scanner that consumes SBOMs):
+```bash
+grype sbom:sbom.cdx.json
+# Exit non-zero if critical/high vulns found
+grype sbom:sbom.cdx.json --fail-on critical
 ```

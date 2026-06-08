@@ -1,13 +1,13 @@
 ---
 name: sdlc-prd-to-production
-description: "End-to-end workflow: PRD → design doc → implementation → code review → testing → deployment → monitoring → retrospective. Includes Ship/Show/Ask branching, design doc templates, PRD patterns (YC, Amazon Working Backwards), ephemeral environments, DORA 2024 insights, Score spec, AI-augmented development, technical specification templates, GitOps automation, documentation-as-code pipelines, metrics-driven development, production readiness reviews, launch strategies, post-launch monitoring, stakeholder communication templates, product-engineering alignment, continuous discovery habits, product-led growth, technical debt management, engineering metrics, and incident management."
-version: 4.2.0
+description: "End-to-end workflow: PRD → design doc → implementation → code review → testing → deployment → monitoring → retrospective. Includes Ship/Show/Ask branching, design doc templates, PRD patterns (YC, Amazon Working Backwards), ephemeral environments, DORA 2024 insights, Score spec, AI-augmented development, technical specification templates, GitOps automation, documentation-as-code pipelines, metrics-driven development, production readiness reviews, launch strategies, post-launch monitoring, stakeholder communication templates, product-engineering alignment, continuous discovery habits, product-led growth, technical debt management, engineering metrics, incident management, engineering leadership, developer onboarding, and inner source patterns."
+version: 4.3.0
 author: Hermes Agent
 license: MIT
 platforms: [linux, macos, windows]
 metadata:
   hermes:
-    tags: [sdlc, prd, design-doc, rfc, ship-show-ask, workflow, end-to-end, product-development, yc, amazon-working-backwards, ephemeral-envs, score-spec, dora, ai-augmented, gitops, metrics-driven, docs-as-code, tech-spec, production-readiness, launch-strategy, post-launch, stakeholder-comms, okr, ab-testing, continuous-discovery, plg, product-led-growth, tech-debt, devex, incident-management, pagerduty]
+    tags: [sdlc, prd, design-doc, rfc, ship-show-ask, workflow, end-to-end, product-development, yc, amazon-working-backwards, ephemeral-envs, score-spec, dora, ai-augmented, gitops, metrics-driven, docs-as-code, tech-spec, production-readiness, launch-strategy, post-launch, stakeholder-comms, okr, ab-testing, continuous-discovery, plg, product-led-growth, tech-debt, devex, incident-management, pagerduty, engineering-leadership, developer-onboarding, inner-source]
     related_skills: [sdlc-requirements-engineering, sdlc-architecture-design, sdlc-cicd-pipeline, sdlc-deployment, sdlc-retrospective]
 ---
 
@@ -2340,6 +2340,472 @@ Action Items:
 ## Lessons Learned
 - {Lesson 1}
 - {Lesson 2}
+```
+
+---
+
+## Step 19: Engineering Leadership
+
+Source: Camille Fournier — *The Manager's Path*; Will Larson — *An Elegant Puzzle*; Charity Majors.
+
+Engineering orgs grow in layers. Each layer requires different skills, tools, and mindset shifts. Getting this wrong creates chaos, burnout, and attrition.
+
+### Role Progression: IC → Tech Lead → Manager → Director → VP
+Source: Camille Fournier — *The Manager's Path*.
+
+```
+IC (Individual Contributor)
+  → Owns technical execution within a team
+  → Deep expertise in one or more domains
+  → Impact through own work + code review + mentoring
+
+Tech Lead
+  → Owns technical direction for a team
+  → Still writes code (50-70% of time)
+  → Resolves technical disagreements, sets architecture standards
+  → NOT a people manager — no hiring/firing/comp decisions
+  → Key skill: influence without authority, writing technical docs
+
+Engineering Manager
+  → Owns people + delivery for a team
+  → Writes little to no code (0-20% of time)
+  → Hiring, firing, career growth, comp reviews, 1:1s
+  → Key skill: giving feedback, having hard conversations, protecting team from chaos
+  → Common trap: micromanaging code reviews, staying in IC comfort zone
+
+Director of Engineering
+  → Owns multiple teams (2-4) or a department
+  → Sets process, standards, cross-team coordination
+  → Hires managers, builds organizational structure
+  → Key skill: org design, managing managers, strategic planning
+  → Common trap: skipping middle management, creating matrix confusion
+
+VP of Engineering
+  → Owns engineering org as a whole
+  → Partners with product, design, exec on strategy
+  → Sets culture, values, hiring bar at org level
+  → Key skill: organizational communication, executive presence, resource allocation
+  → Common trap: becoming disconnected from technical reality
+```
+
+### Org Design Principles (Will Larson)
+Source: Will Larson — *An Elegant Puzzle*.
+
+#### Team Sizing: 4-8 Engineers
+
+```
+Below 4: team is too fragile
+  - 1 departure = 25-33% capacity loss
+  - No slack for sick days, vacations, on-call rotation
+  - Risk: single point of failure on key knowledge
+
+Sweet spot 4-8: ideal team size
+  - Enough capacity for meaningful work
+  - Small enough for everyone to have context
+  - On-call rotation works (1 in 5-8)
+  - 1:1s and code review manageable
+
+Above 8: split into sub-teams
+  - Communication overhead grows quadratically (n*(n-1)/2)
+  - Managers can't give individual attention
+  - Risk: team within a team, invisible politics
+
+Exception: teams of 2-3 can work for focused, time-boxed initiatives (skunkworks, prototypes)
+but should not be permanent structures.
+```
+
+#### Migration Patterns
+
+```
+# Larson's org migration approach:
+
+1. IDENTIFY the migration (new platform, reorg, tool change)
+2. DEFINE the migration contract
+   - What's changing, what's NOT changing
+   - Timeline (migrations take 2-4x longer than estimate)
+   - Success criteria (what does "done" look like?)
+3. CREATE a migration team (temporary, 4-6 engineers)
+   - Not the team that owns the destination platform
+   - Focused entirely on migration, not dual-tasked
+4. EXECUTE incrementally
+   - Migrate one team/service at a time
+   - Validate each before moving to next
+   - Document patterns and blockers as you go
+5. DISSOLVE migration team once complete
+   - Knowledge transfers to receiving teams
+   - Migration team members become advocates
+
+# Common migration anti-patterns:
+- Big bang: "we'll migrate everything next quarter" → never happens
+- Dual-tasking: same team owns product AND migration → migration starves
+- No rollback: "we can always go back" → you can't, plan accordingly
+- Executive sponsorship without IC buy-in → grudging compliance, poor execution
+```
+
+#### Org Debt
+
+```
+# Org debt = structural problems that slow work down over time
+# Analogous to tech debt but in organizational structure
+
+Examples of org debt:
+  - Ambiguous ownership: "who owns the auth service?" → nobody, everybody
+  - Cross-cutting responsibilities: every change requires 3+ team approvals
+  - Stale org charts: team names don't match actual work
+  - Unclear decision rights: nobody knows who makes the call → death by committee
+  - Informal power structures: "ask Sarah, she knows everything" → bus factor of 1
+
+Remediation:
+  - Quarterly org review: map teams to domains, flag gaps/overlaps
+  - Decision rights matrix (RACI or equivalent): who decides what
+  - Ownership registry: service → owning team (updated automatically from CODEOWNERS)
+  - Retro on org issues: "what process/team structure slowed us down this quarter?"
+
+Cost of ignoring org debt:
+  - Onboarding takes 3x longer (nobody knows who to ask)
+  - Projects stall in review/approval limbo
+  - Best engineers leave (frustrated by bureaucracy)
+```
+
+### Management ≠ Promotion: The IC Track (Charity Majors)
+Source: Charity Majors — "The Manager's Path is Not a Promotion", "The IC Track".
+
+```
+# Core principle: management is a CAREER CHANGE, not a promotion
+# Promoting best IC to manager = losing best IC, gaining bad manager
+
+Anti-pattern: "You're a senior IC, now manage people"
+  - IC skills ≠ management skills (empathy, feedback, delegation ≠ code quality)
+  - No training offered: "figure it out" → manager fails, team suffers
+  - Reverting to IC seen as demotion → cultural trap
+
+# Charity's advice for orgs:
+
+1. Create compelling Staff+ IC track
+   - Staff Engineer = same influence as Engineering Manager
+   - Principal Engineer = same influence as Director
+   - Distinguished Engineer = same influence as VP
+   - Equal pay, equal voice in org decisions
+
+2. Never promote to management as reward
+   - "You're doing great as IC, want to try management?" = wrong framing
+   - Ask: "Do you want to be responsible for people's careers and emotional well-being?"
+   - If answer is not enthusiastic YES → don't do it
+
+3. Make it easy to switch tracks
+   - IC → Manager → IC should be normal career movement
+   - No stigma, no pay cut, no "step back"
+   - 6-month trial: try management, revert easily if not a fit
+
+4. Staff+ IC responsibilities:
+   - Technical vision and strategy (cross-team)
+   - Architecture decisions and RFCs
+   - Mentoring and growing other engineers
+   - Bridging between eng and product/business
+   - NOT: "just a really senior coder"
+
+5. Common failure mode: "We can't afford Staff+ ICs, we need managers"
+   - Response: "You can't afford NOT to. Every team needs technical leadership."
+   - Orgs with only managers drift technically → architecture debt compounds
+```
+
+---
+
+## Step 20: Developer Onboarding
+
+Source: Google Engineering Practices, Stripe engineering culture.
+
+Onboarding is a system, not a checklist. Poor onboarding costs 3-6 months of productivity. Great onboarding ships code in week 1.
+
+### Google Codelab System
+Source: Google engineering onboarding — internal codelabs.
+
+```
+# Codelab = self-paced, hands-on tutorial with real code
+# Not documentation — interactive exercises with working examples
+
+Google's approach:
+  1. New hire receives curated list of codelabs (role-specific)
+  2. Codelabs cover: codebase overview, team conventions, common patterns
+  3. Each codelab: 30-90 min, ends with working code change
+  4. Mentor reviews codelab output — not test, but learning conversation
+  5. Codelabs updated by team (not HR) — always current
+
+# Creating codelabs for your org:
+
+Template:
+  1. Objective: "After this codelab, you can [specific skill]"
+  2. Prerequisites: what you need before starting
+  3. Environment setup: copy-paste commands (devcontainer, Docker, Nix)
+  4. Step-by-step: each step = code change + explanation + verification
+  5. Cleanup: how to reset / remove artifacts
+  6. Next steps: what to learn next, links to related codelabs
+
+# Codelab topics (minimum viable set):
+  - "Build and run [service] locally"
+  - "Make your first PR (ship to production)"
+  - "Debug a failing test"
+  - "Add a new API endpoint"
+  - "Trace a request through the system"
+  - "Deploy to staging via GitOps"
+```
+
+### Stripe's Incremental Onboarding
+Source: Stripe engineering blog — onboarding practices.
+
+```
+# Core principle: ship real code in week 1
+# Not "read docs for 2 weeks then shadow someone"
+
+Week 1: Ship a real change to production
+  - Day 1: setup environment, get access, meet buddy
+  - Day 2: complete 2-3 codelabs
+  - Day 3: pick starter bug from backlog
+  - Day 4: implement fix, open PR, get review
+  - Day 5: ship to production (with buddy review)
+  - Celebration: team acknowledges first deploy (Slack channel, lunch, etc.)
+
+Week 2-3: Expand scope
+  - Own a small feature (1-2 PRs)
+  - Participate in code review (review others' PRs)
+  - Attend team rituals (standup, retro, planning)
+  - Shadow on-call rotation (observe, don't respond)
+
+Week 4-6: Full contributor
+  - Own a medium-sized feature
+  - Take on-call shifts (paired with experienced member first)
+  - Present a tech talk or write a doc for next new hire
+  - Give feedback on onboarding process (meta-improvement)
+
+# Why this works:
+  - Learning by doing > learning by reading
+  - First PR builds confidence and belonging
+  - Real code = real context (not toy examples)
+  - Buddy system prevents getting stuck for days
+```
+
+### Time-to-First-Commit Targets
+
+```
+| Metric                    | Poor    | Acceptable | Excellent |
+|---------------------------|---------|------------|-----------|
+| Time to first commit      | > 2 weeks | 3-5 days | < 1 day   |
+| Time to first deploy      | > 4 weeks | 1-2 weeks | < 1 week |
+| Time to on-call ready     | > 3 months | 4-6 weeks | < 4 weeks |
+| Time to full productivity | > 6 months | 3-4 months | < 2 months |
+
+# How to measure:
+  - Track first PR date from HR start date
+  - Track first on-call shift date
+  - Survey new hires at 30/60/90 days: "How productive do you feel?" (1-5)
+  - Compare across teams — if one team has 2x longer onboarding, investigate
+
+# Common blockers (fix before hiring):
+  - Access provisioning takes > 1 day → automate with SSO/SCIM
+  - Environment setup takes > 4 hours → devcontainer/Nix/flake.nix
+  - No starter bugs in backlog → create them in advance
+  - Buddy system doesn't exist → assign buddy before day 1
+  - Documentation stale → docs-as-code, CI checks freshness
+```
+
+### Buddy System
+
+```
+# Every new hire gets a buddy (not their manager)
+# Buddy = same team, 6+ months tenure, volunteered (not voluntold)
+
+Buddy responsibilities:
+  - Answer "stupid questions" (no such thing) without judgment
+  - Pair on first 2-3 PRs (not do it for them — guide)
+  - Introduce to people: "meet Sarah, she owns payments; Tom, infra"
+  - Explain unwritten rules: "we always squash merge", "ping @channel for deploy"
+  - Check in daily week 1, weekly weeks 2-4
+  - Escalate to manager if new hire seems stuck/unhappy
+
+Time commitment: ~2-3 hours/week for first 4 weeks, then decreasing
+
+# Buddy rotation: different buddy per new hire (don't overload one person)
+# Track buddy effectiveness: survey new hires, buddy should score 4+/5
+```
+
+### Starter Bugs
+
+```
+# Pre-curated list of bugs for new hires to fix on day 3-5
+# Not throwaway work — real issues that need fixing
+
+Criteria for good starter bugs:
+  - Well-defined (clear description, reproduction steps)
+  - Low-risk (no data loss, no security implications)
+  - Self-contained (minimal cross-team dependencies)
+  - Good learning opportunity (touches key system areas)
+  - Can be completed in 1-3 days
+  - Has clear acceptance criteria
+
+Examples:
+  - Fix a broken link in docs
+  - Add missing error handling in a code path
+  - Improve a confusing error message
+  - Add unit test for untested function
+  - Fix a minor UI bug (button alignment, missing label)
+  - Update a stale README
+
+# Maintenance: team reviews and refreshes starter bugs monthly
+# Labels: `good-first-issue`, `starter-bug`, `onboarding`
+```
+
+---
+
+## Step 21: Inner Source Patterns
+
+Source: InnerSource Commons — https://innersourcecommons.org/.
+
+Inner source = apply open-source practices within your organization. Teams contribute to other teams' repositories instead of forking, duplicating, or waiting for the owning team.
+
+### Trusted Committer Role
+
+```
+# Trusted Committer (TC) = maintainer of a shared repository
+# Analogous to open-source maintainer, but within the org
+
+TC responsibilities:
+  - Review PRs from other teams (within 48 hours)
+  - Maintain contribution guidelines (CONTRIBUTING.md)
+  - Triage issues from contributors outside the owning team
+  - Mentor contributors: explain architecture, conventions, patterns
+  - Merge or delegate merge authority to frequent contributors
+  - Maintain CODEOWNERS for their repository
+
+TC selection criteria:
+  - Deep knowledge of the repository/service
+  - Willingness to review external PRs (not just own team's)
+  - Good communication (explain WHY, not just WHAT to change)
+  - Time allocation: TC duties should be part of sprint capacity (10-20%)
+
+# Scaling TCs:
+  - 1 TC per repo minimum, 2-3 for high-traffic repos
+  - Promote frequent contributors to TC after 3+ accepted PRs
+  - TC burns out if too many contributions → add more TCs, not restrict contributions
+```
+
+### 30-Minute Rule
+
+```
+# Rule: if you can't figure out how to contribute to a repo in 30 minutes, the repo failed
+
+What "30 minutes" means:
+  - Clone repo
+  - Read README and CONTRIBUTING.md
+  - Run tests locally (all pass)
+  - Understand directory structure
+  - Find where your change would go
+
+What makes a repo pass the 30-minute rule:
+  - Clear README: what this is, how to run it, who owns it
+  - CONTRIBUTING.md: how to fork, branch, PR, test, get review
+  - Makefile / script: `make setup && make test` works on fresh clone
+  - Devcontainer or Nix flake: zero-config environment
+  - CI runs on PR: contributor sees pass/fail without manual setup
+  - CODEOWNERS: contributor knows who to ping for review
+
+What fails the 30-minute rule:
+  - README says "ask @person for setup instructions"
+  - Tests require specific environment vars, databases, or third-party credentials
+  - No clear entry point (20 top-level directories, no structure guide)
+  - CI only runs on main branch (PRs don't get validation)
+```
+
+### GIG Model (Governed Inner Source Gateway)
+
+```
+# GIG = structured process for accepting contributions from outside the owning team
+
+# Governance layers:
+
+1. CONTRIBUTION GUIDE (published to internal portal)
+   - Which repos accept inner-source contributions
+   - How to propose a change (issue first, then PR)
+   - SLA for PR review: 48 hours for initial response
+   - What changes are appropriate (bug fix, small feature, docs)
+   - What changes require owning team involvement (architecture, API changes)
+
+2. CONTRIBUTION AGREEMENT
+   - Contributing team owns the code they add (maintains it, fixes bugs)
+   - Owning team retains architectural control
+   - Breaking changes require owning team approval
+   - Both teams listed in CODEOWNERS for shared areas
+
+3. QUALITY GATES
+   - All contributions pass same CI as owning team's code
+   - Same test coverage threshold
+   - Same linting and style enforcement
+   - Trusted Committer signs off on merge
+
+4. ESCALATION PATH
+   - If TC not responsive within 48h → escalate to TC's manager
+   - If teams disagree on architecture → escalate to shared architect or RFC process
+   - If contribution rejected → TC provides clear reason and alternative approach
+```
+
+### Repository Model
+
+```
+# Two models for inner-source repositories:
+
+MODEL A: Shared Repository (recommended for most orgs)
+  - One canonical repo per service/library
+  - Owning team maintains it
+  - Other teams contribute via PRs (governed by GIG)
+  - CODEOWNERS lists both owning team and frequent contributors
+  - Pros: single source of truth, no fork divergence
+  - Cons: owning team review bottleneck if TCs are scarce
+
+MODEL B: Fork + Upstream
+  - Teams fork the canonical repo
+  - Work in their fork, submit PRs to upstream
+  - Upstream team reviews and merges
+  - Pros: contributors have autonomy, no blocking on main repo
+  - Cons: fork divergence risk, merge conflicts, sync overhead
+  - Best for: large orgs with many contributors, regulatory separation
+
+# Decision matrix:
+| Factor                    | Shared Repo | Fork + Upstream |
+|---------------------------|-------------|-----------------|
+| Contributor frequency     | Low-Medium  | High            |
+| Contributor team count    | < 10        | > 10            |
+| Code divergence risk      | Low         | Medium          |
+| Maintenance overhead      | Low         | Medium-High     |
+| Regulatory requirements   | None        | Some            |
+```
+
+### Benefits: 20-40% Code Dedup
+
+```
+# Measured benefits from inner-source adoption (industry data):
+
+Code deduplication: 20-40% reduction in duplicated code
+  - Teams stop building their own auth, logging, config, etc.
+  - One well-maintained library beats 5 forked copies
+  - Metric: count unique implementations of same functionality before/after
+
+Other quantified benefits:
+  - Bug fix propagation: fix once, all consumers get it (vs. 5 fixes in 5 forks)
+  - New service bootstrap: 2-3 days (using shared templates/libs) vs. 2-3 weeks
+  - Cross-team knowledge: engineers understand other services (reduces bus factor)
+  - Review quality: more eyes on shared code = fewer bugs shipped
+
+Costs and risks:
+  - TC review time (10-20% of sprint capacity)
+  - Governance overhead (GIG process, agreements)
+  - Political friction ("you're changing MY code")
+  - Initial investment: 2-4 weeks to set up contribution guides + CI for shared repos
+
+# Rollout strategy:
+  Phase 1 (1 month): Identify 3-5 highest-duplication libraries/services
+  Phase 2 (2 weeks): Add CONTRIBUTING.md, devcontainer, starter bugs to each
+  Phase 3 (1 month): Pilot inner-source with 2-3 contributing teams
+  Phase 4 (ongoing): Measure dedup, contributor satisfaction, review SLA
+  Phase 5: Expand to more repos, formalize GIG process
 ```
 
 ---
