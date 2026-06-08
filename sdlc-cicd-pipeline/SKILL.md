@@ -1,19 +1,19 @@
 ---
 name: sdlc-cicd-pipeline
-description: "CI/CD pipeline design with GitHub Actions and GitLab CI. Docker multi-stage builds, caching, matrix builds, test sharding, security scanning, GitOps, DORA metrics, WIP limits."
-version: 1.1.0
+description: "CI/CD pipeline design with GitHub Actions and GitLab CI. Docker multi-stage builds, caching, matrix builds, test sharding, security scanning, GitOps, DORA metrics, trunk-based development, anti-patterns."
+version: 2.0.0
 author: Hermes Agent
 license: MIT
 platforms: [linux, macos, windows]
 metadata:
   hermes:
-    tags: [sdlc, ci-cd, github-actions, gitlab-ci, docker, devops, pipeline, gitops, dora, accelerate]
+    tags: [sdlc, ci-cd, github-actions, gitlab-ci, docker, devops, pipeline, gitops, dora, accelerate, trunk-based]
     related_skills: [sdlc-architecture-design, sdlc-testing-qa, sdlc-deployment, github-pr-workflow]
 ---
 
 # CI/CD Pipeline Design
 
-Pipeline architecture, GitHub Actions, GitLab CI, Docker builds, caching, security scanning, GitOps, DORA metrics, WIP limits. Includes Accelerate and Phoenix Project patterns.
+Pipeline architecture, GitHub Actions, GitLab CI, Docker builds, caching, security scanning, GitOps, DORA metrics, trunk-based development, anti-patterns.
 
 ## When to Use
 
@@ -71,6 +71,7 @@ jobs:
   test:
     needs: lint
     strategy:
+      fail-fast: false
       matrix:
         shard: [1, 2, 3, 4]
     services:
@@ -81,229 +82,341 @@ jobs:
         ports: ['5432:5432']
         options: >-
           --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
       - run: npm ci
       - run: npm test -- --shard=${{ matrix.shard }}/4
 
-  security:
-    needs: lint
+  build:
+    needs: test
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/build-push-action@v5
+        with:
+          push: false
+          tags: myapp:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  deploy:
+    needs: build
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: aquasecurity/trivy-action@master
-        with:
-          scan-type: 'fs'
-          severity: 'HIGH,CRITICAL'
-
-  deploy:
-    if: github.ref == 'refs/heads/main'
-    needs: [test, security]
-    environment: production
-    steps:
-      - uses: actions/checkout@v4
-      - run: docker build -t app:${{ github.sha }} .
-      - run: argocd app sync myapp
+      - run: ./deploy.sh
 ```
 
-### Caching
+### Caching Best Practices
 ```yaml
-# Node.js (built-in)
-- uses: actions/setup-node@v4
-  with:
-    node-version: '20'
-    cache: 'npm'
-
-# Python
+# Cache key pattern: include lockfile hash for deterministic invalidation
 - uses: actions/cache@v4
   with:
-    path: ~/.cache/pip
-    key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+    path: |
+      node_modules
+      ~/.npm
+    key: deps-${{ runner.os }}-${{ hashFiles('**/package-lock.json') }}
+    restore-keys: deps-${{ runner.os }}-
+```
 
-# Docker layer
-- uses: docker/build-push-action@v5
-  with:
-    cache-from: type=gha
-    cache-to: type=gha,mode=max
+**What to cache:** node_modules/, pip cache, go mod cache, cargo registry
+**What NOT to cache:** build artifacts (use actions/upload-artifact)
+
+### Reusable Workflows
+```yaml
+# .github/workflows/reusable-deploy.yml
+name: Reusable Deploy
+on:
+  workflow_call:
+    inputs:
+      environment:
+        required: true
+        type: string
+    secrets:
+      DEPLOY_KEY:
+        required: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.environment }}
+    steps:
+      - uses: actions/checkout@v4
+      - run: ./deploy.sh
+        env:
+          DEPLOY_KEY: ${{ secrets.DEPLOY_KEY }}
+```
+
+```yaml
+# Caller workflow
+jobs:
+  deploy-staging:
+    uses: ./.github/workflows/reusable-deploy.yml
+    with:
+      environment: staging
+    secrets:
+      DEPLOY_KEY: ${{ secrets.STAGING_DEPLOY_KEY }}
 ```
 
 ### Matrix Builds
 ```yaml
 strategy:
-  fail-fast: false
+  fail-fast: false  # Don't cancel other legs on failure
   matrix:
     os: [ubuntu-latest, macos-latest]
     node: [18, 20, 22]
+    exclude:
+      - os: macos-latest
+        node: 18  # Skip known-bad combo
+    include:
+      - os: ubuntu-latest
+        node: 22
+        experimental: true  # Special case
 ```
 
 ## Step 3: GitLab CI
 
+### Pipeline Architectures
+- **Branch pipelines:** run on every push (default)
+- **Merge request pipelines:** run only on MRs
+- **Parent-child pipelines:** parent triggers child via `trigger:` keyword
+- **Multi-project pipelines:** cross-repo triggers
+
+### Key Patterns
 ```yaml
-stages: [lint, test, build, deploy]
-
-lint:
-  stage: lint
-  image: node:20
-  script: npm ci && npm run lint
-
-test:
+# Hidden jobs as templates (prefix with .)
+.base_test:
   stage: test
-  services: [postgres:16]
-  script: npm ci && npm test
-  coverage: '/All files[^|]*\|[^|]*\s+([\d.]+)/'
+  image: python:3.12
+  script: [pytest]
 
-build:
-  stage: build
-  image: docker:24
-  services: [docker:24-dind]
-  script:
-    - docker build -t $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA .
-    - docker push $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA
+unit_tests:
+  extends: .base_test
+  script: [pytest tests/unit]
+
+integration_tests:
+  extends: .base_test
+  services:
+    - postgres:16
+  script: [pytest tests/integration]
+
+# DAG with needs: for parallel execution
+test:
+  needs: [build]  # Only waits for build, not all prior stage jobs
+  script: [pytest]
+
+# Cache vs artifacts
+cache:
+  key: ${CI_COMMIT_REF_SLUG}
+  paths:
+    - node_modules/
+    - .npm/
+  policy: pull-push  # or pull-only for non-build jobs
+
+# Include external configs
+include:
+  - local: ci/build.yml
+  - template: Security/SAST.gitlab-ci.yml
+  - template: Security/Secret-Detection.gitlab-ci.yml
+```
+
+### Rules (replaces only/except)
+```yaml
+deploy:
+  script: [./deploy.sh]
+  rules:
+    - if: $CI_COMMIT_BRANCH == "main"
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+      when: never
 ```
 
 ## Step 4: Docker Multi-Stage Builds
 
 ```dockerfile
-FROM node:20-alpine AS build
+# Build stage
+FROM node:20-slim AS builder
 WORKDIR /app
 COPY package*.json ./
-RUN npm ci --production=false
+RUN --mount=type=cache,target=/root/.npm npm ci
 COPY . .
 RUN npm run build
 
-FROM node:20-alpine
+# Production stage
+FROM node:20-slim AS runner
 WORKDIR /app
-RUN addgroup -g 1001 -S nodejs && adduser -S nextjs -u 1001
-COPY --from=build --chown=nextjs:nodejs /app/dist ./dist
-COPY --from=build --chown=nextjs:nodejs /app/node_modules ./node_modules
+ENV NODE_ENV=production
+COPY --from=builder /app/dist ./dist
+COPY --from=builder /app/node_modules ./node_modules
 COPY package*.json ./
-USER nextjs
 EXPOSE 3000
-HEALTHCHECK --interval=30s --timeout=3s CMD wget -qO- http://localhost:3000/health || exit 1
-CMD ["node", "dist/main.js"]
+USER node
+CMD ["node", "dist/server.js"]
 ```
 
-### Dockerfile Best Practices
-- Multi-stage: build in first stage, copy to minimal runtime
-- `.dockerignore`: exclude `node_modules`, `.git`, `tests/`
-- Non-root `USER` for security
-- Pin base image versions
+### Container Security Scanning
+```bash
+# Trivy
+trivy image myapp:latest
+
+# Grype
+grype myapp:latest
+
+# Snyk
+snyk container test myapp:latest
+```
 
 ## Step 5: GitOps
 
-### ArgoCD Application
+### ArgoCD
 ```yaml
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
   name: myapp
-  namespace: argocd
 spec:
+  project: default
   source:
-    repoURL: https://github.com/org/k8s-manifests.git
+    repoURL: https://github.com/org/k8s-manifests
     targetRevision: main
     path: apps/myapp/overlays/production
   destination:
     server: https://kubernetes.default.svc
-    namespace: myapp
+    namespace: production
   syncPolicy:
     automated:
       prune: true
       selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
 ```
 
-### ArgoCD CLI
-```bash
-argocd app sync myapp
-argocd app rollback myapp REVISION
+### Flux
+```yaml
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: GitRepository
+metadata:
+  name: myapp
+spec:
+  interval: 1m
+  url: https://github.com/org/k8s-manifests
+  ref:
+    branch: main
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: myapp
+spec:
+  interval: 5m
+  path: ./apps/myapp/overlays/production
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: myapp
 ```
 
-## Step 6: Infrastructure as Code
+## Step 6: Trunk-Based Development
 
-### Terraform + Terragrunt
-```bash
-terragrunt plan --terragrunt-source /modules//vpc
-terragrunt apply
-```
+Source: https://trunkbaseddevelopment.com/
 
-### Tools
-| Tool | Language | Best For |
-|------|----------|----------|
-| Terraform | HCL | Multi-cloud |
-| Pulumi | TS/Python/Go | Code-native |
-| CDK | TypeScript | AWS-specific |
-| OpenTofu | HCL | Open-source fork |
+### Core Principles
+- All developers commit to one branch (main/trunk)
+- Feature branches are SHORT: 1-2 days max, merged or deleted
+- Use feature flags for incomplete work behind the trunk
+- Release branches (if needed) are cut from trunk, never merge back
 
-## Step 7: CI Gates (from earp-kit)
+### Key Rules
+- CI must pass on every commit to trunk. Broken trunk = top priority fix.
+- Short-lived branches: < 1 day ideally, < 2 days max.
+- No "code freeze" periods — trunk is always deployable.
+- Branch by abstraction (feature flags, interfaces) instead of branching.
 
-### Gate Structure
-```
-lint        → < 30s — fast feedback
-build       → < 2min — compilation
-unit-test   → < 2min — core logic
-integration → < 5min — boundaries
-security    → < 3min — SAST + secrets
-e2e         → < 10min — critical paths (optional)
-```
+### Why
+- Eliminates merge hell from long-lived branches
+- Forces small, incremental changes = easier review, faster feedback
+- DORA research correlates trunk-based with high deployment frequency
 
-### Gate Rules
-- **Gate tests** (CI default, blocks merge) — safety, functional
-- **Periodic tests** (weekly cron) — benchmarks, non-deterministic
-- Each test declares file dependencies for diff-based selection
+## Step 7: CI/CD Anti-Patterns
 
-## Step 8: DORA Metrics (from Accelerate)
+Source: https://dora.dev/capabilities/ (Accelerate research)
+
+| Anti-Pattern | Why It's Bad | Fix |
+|--------------|-------------|-----|
+| Long-lived feature branches | Merge conflicts, stale code | Trunk-based + feature flags |
+| Broken CI ignored | Erodes trust | Branch protection: green before merge |
+| Manual approval gates everywhere | Humans become bottlenecks | Automated quality gates |
+| Flaky tests | Pass/fail randomly erodes trust | Quarantine and fix immediately |
+| No caching | Re-downloading deps every run | Cache with lockfile hash keys |
+| CI does everything in one job | Can't parallelize, slow feedback | Split into focused jobs |
+| Snowflake environments | Staging != production | IaC (Terraform/Pulumi) |
+| Manual deployment | Error-prone, slow | Fully automated deploy pipelines |
+| No rollback mechanism | Can't recover from bad deploy | Always have rollback plan |
+| Secret sprawl | Credentials in code/CI systems | Centralize (Vault, cloud secrets) |
+| Coupled build and deploy | Can't deploy artifact independently | Separate build from deploy stage |
+
+## Step 8: DORA Metrics
+
+Source: https://dora.dev/research/ (State of DevOps Reports)
 
 ### Four Key Metrics
+1. **Lead Time for Changes** — commit to production (includes review time)
+2. **Deployment Frequency** — how often code reaches production
+3. **Change Failure Rate** — % of deployments causing failures
+4. **Time to Restore Service** — recovery time from failures
+
+### Performance Tiers (2023)
 | Metric | Elite | High | Medium | Low |
 |--------|-------|------|--------|-----|
-| Deployment Frequency | On-demand | Daily-weekly | Weekly-monthly | Monthly-never |
-| Lead Time for Changes | < 1 hour | 1 day-1 week | 1 week-1 month | > 1 month |
-| Change Failure Rate | < 5% | 5-10% | 10-15% | 15-30% |
-| Time to Restore | < 1 hour | < 1 day | < 1 week | > 1 week |
+| Lead Time | < 1 hour | 1 day-1 week | 1 week-1 month | > 6 months |
+| Deploy Frequency | On demand | Daily-weekly | Monthly | < 1/year |
+| Change Failure Rate | 0-15% | 16-30% | 16-30% | 16-30% |
+| Time to Restore | < 1 hour | < 1 day | < 1 week | > 6 months |
 
-### Key Insight
-**Throughput and stability are NOT a tradeoff.** Elite performers have BOTH high deployment frequency AND low change failure rate.
+### Key DORA Capabilities
+- Version control (trunk-based)
+- Continuous integration
+- Test automation
+- Deployment automation
+- Infrastructure as Code
+- Progressive delivery (canary/blue-green)
+- Observability (SLIs/SLOs)
+- Cloud infrastructure
 
-### DORA Capabilities
-1. Trunk-based development
-2. Test automation
-3. Deployment automation
-4. Infrastructure as code
-5. Shift left on security
-6. Monitoring and observability
-7. Lightweight change approval
+## Step 9: Security Scanning in CI
 
-## Step 9: WIP Limits (from Phoenix Project)
+```yaml
+# Semgrep — fast SAST
+- run: semgrep --config=auto --severity=ERROR .
 
-### Theory of Constraints
-1. **Visualize** all work (Kanban board)
-2. **Limit WIP** at every stage
-3. **Find bottleneck** — everything else subordinated
-4. **Automate** the bottleneck away
-5. **Repeat** — find next bottleneck
+# Trivy — dependencies + secrets + IaC
+- run: trivy fs --scanners vuln,secret,misconfig .
 
-### WIP Limits
+# CodeQL — deep semantic analysis (GitHub Advanced Security)
+- uses: github/codeql-action/analyze@v3
+
+# Dependency review
+- uses: actions/dependency-review-action@v4
+  with:
+    fail-on-severity: high
 ```
-In Progress: 2-3 per developer (strict)
-In Review: 1-2 per reviewer
-Deploying: limited by pipeline capacity
-```
-
-### Four Types of Work
-1. **Business projects** — new features
-2. **Internal projects** — tech debt, tooling
-3. **Changes** — operational changes
-4. **Unplanned work** — incidents (the silent killer)
-
-Track unplanned work ratio. If > 30%, systemic problem.
 
 ## Pitfalls
 
-1. **Don't use `@main` for actions** — pin to `@v4`
-2. **Don't cache without lockfile hash** — stale cache = phantom bugs
-3. **Don't deploy without health checks**
-4. **Don't skip `concurrency` in GitHub Actions**
-5. **Don't store secrets in CI config** — use vault
-6. **Don't automate deploy without rollback plan**
-7. **Don't ignore DORA metrics** — they predict org performance
-8. **Don't overload teams with WIP** — limit work in progress
+1. **Don't run everything in one job** — split lint, test, build, deploy
+2. **Don't ignore flaky tests** — quarantine and fix immediately
+3. **Don't skip caching** — lockfile hash key for deterministic invalidation
+4. **Don't use long-lived branches** — trunk-based + feature flags
+5. **Don't skip branch protection** — require green CI before merge
+6. **Don't manually deploy** — automate fully
+7. **Don't skip security scanning** — SAST + SCA + secrets in every pipeline
+8. **Don't use `fail-fast: true`** — one failure shouldn't cancel other matrix legs
+9. **Don't forget concurrency groups** — cancel stale runs on same PR
+10. **Don't skip artifact signing** — Sigstore/cosign for container images

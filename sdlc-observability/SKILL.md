@@ -1,262 +1,326 @@
 ---
 name: sdlc-observability
-description: "Observability stack: structured logging (ELK/Loki), metrics (Prometheus/Grafana), distributed tracing (OpenTelemetry/Jaeger), incident management (PagerDuty), post-mortems. Includes Google SRE practices."
-version: 1.1.0
+description: "Observability: OpenTelemetry, structured logging, SLIs/SLOs/SLAs, error budgets, multi-window burn-rate alerting, Grafana LGTM stack, Prometheus, Loki, Jaeger, distributed tracing, continuous profiling."
+version: 2.0.0
 author: Hermes Agent
 license: MIT
 platforms: [linux, macos, windows]
 metadata:
   hermes:
-    tags: [sdlc, observability, logging, metrics, tracing, opentelemetry, prometheus, grafana, sre, google]
-    related_skills: [sdlc-deployment, sdlc-testing-qa, sdlc-cicd-pipeline]
+    tags: [sdlc, observability, opentelemetry, prometheus, grafana, loki, jaeger, sli, slo, error-budget, tracing, logging, sre]
+    related_skills: [sdlc-deployment, sdlc-cicd-pipeline, sdlc-testing-qa]
 ---
 
-# Observability & Incident Management
+# Observability
 
-Logging, metrics, distributed tracing, alerting, incident response, post-mortems. Includes Google SRE practices (SLIs/SLOs/error budgets).
+OpenTelemetry, structured logging, SLIs/SLOs/SLAs, error budgets, burn-rate alerting, Grafana LGTM stack, Prometheus, Loki, Jaeger, distributed tracing, continuous profiling.
 
 ## When to Use
 
 Trigger when user:
-- Sets up logging, metrics, or tracing
-- Configures OpenTelemetry, Prometheus, Grafana, ELK, Loki
-- Handles incidents (PagerDuty, Opsgenie)
-- Writes post-mortems or runbooks
-- Sets up alerting or SLOs
+- Instruments services with OpenTelemetry
+- Sets up dashboards, alerts, or SLOs
+- Configures structured logging
+- Implements distributed tracing
+- Designs monitoring architecture
+- Defines error budgets
 
-## Step 1: Structured Logging
+## Step 1: OpenTelemetry (OTEL)
 
-### Principles
-- JSON format, always
-- Correlation IDs across services
-- Log levels: DEBUG, INFO, WARN, ERROR, FATAL
-- Never log PII, passwords, tokens
+Source: https://opentelemetry.io/
 
-### Python (structlog)
-```python
-import structlog
-log = structlog.get_logger()
-log.info("user_login", user_id="123", method="oauth2", duration_ms=45)
-```
+CNCF observability framework. Standardizes telemetry data collection. Vendor-neutral. Merged OpenTracing + OpenCensus.
 
-### Node.js (Pino)
-```javascript
-const pino = require('pino');
-const logger = pino({ level: 'info' });
-logger.info({ userId: '123' }, 'user login');
-```
+**Components:**
+- **API:** Interfaces for instrumentation (traces, metrics, logs)
+- **SDK:** Configurable implementations (sampling, exporters, processors)
+- **Collector:** Receives, processes, exports telemetry
+- **OTLP:** Native protocol (gRPC/HTTP) for all signal types
 
-### Log Tools
-| Tool | Best For |
-|------|----------|
-| ELK Stack | Full-text search |
-| Loki (Grafana) | Label-based, cheaper |
-| Fluent Bit | Log forwarding |
-| Datadog Logs | All-in-one |
-
-## Step 2: Metrics
-
-### RED Method (for services)
-- **R**ate — requests per second
-- **E**rrors — error rate
-- **D**uration — latency (p50, p95, p99)
-
-### USE Method (for resources)
-- **U**tilization — % used
-- **S**aturation — queue depth
-- **E**rrors — error count
-
-### Prometheus
-```yaml
-global:
-  scrape_interval: 15s
-scrape_configs:
-  - job_name: 'myapp'
-    static_configs:
-      - targets: ['myapp:8080']
-```
-
-### Prometheus Client (Python)
-```python
-from prometheus_client import Counter, Histogram, start_http_server
-
-REQUEST_COUNT = Counter('http_requests_total', 'Total requests', ['method', 'endpoint', 'status'])
-REQUEST_DURATION = Histogram('http_request_duration_seconds', 'Duration', ['method', 'endpoint'])
-
-start_http_server(9090)
-```
-
-### Alerting
-```yaml
-# prometheus-rules.yml
-groups:
-- name: myapp
-  rules:
-  - alert: HighErrorRate
-    expr: sum(rate(http_requests_total{code=~"5.."}[5m])) / sum(rate(http_requests_total[5m])) > 0.01
-    for: 5m
-    labels:
-      severity: critical
-    annotations:
-      summary: "High error rate"
-```
-
-## Step 3: Distributed Tracing
-
-### OpenTelemetry
-```python
-from opentelemetry import trace
-from opentelemetry.sdk.trace import TracerProvider
-from opentelemetry.sdk.trace.export import BatchSpanProcessor
-from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import OTLPSpanExporter
-from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
-
-provider = TracerProvider()
-provider.add_span_processor(BatchSpanProcessor(OTLPSpanExporter(endpoint="otel-collector:4317")))
-trace.set_tracer_provider(provider)
-FastAPIInstrumentor.instrument_app(app)
-```
-
-### Auto-instrumentation CLI
+**Auto-instrumentation (zero-code):**
 ```bash
+# Python
 opentelemetry-instrument python app.py
+
+# Java
+java -javaagent:opentelemetry-javaagent.jar -jar app.jar
+
+# Node.js
 node --require @opentelemetry/auto-instrumentations-node app.js
 ```
 
+**Collector config:**
+```yaml
+receivers:
+  otlp:
+    protocols:
+      grpc:
+        endpoint: 0.0.0.0:4317
+      http:
+        endpoint: 0.0.0.0:4318
+
+processors:
+  batch:
+    timeout: 5s
+  memory_limiter:
+    check_interval: 1s
+    limit_mib: 512
+
+exporters:
+  otlp:
+    endpoint: "jaeger:4317"
+  prometheus:
+    endpoint: "0.0.0.0:8889"
+
+service:
+  pipelines:
+    traces:
+      receivers: [otlp]
+      processors: [batch, memory_limiter]
+      exporters: [otlp]
+    metrics:
+      receivers: [otlp]
+      processors: [batch]
+      exporters: [prometheus]
+```
+
+**Semantic conventions:** http.method, http.status_code, db.system, rpc.service, etc.
+
+## Step 2: Three Pillars — Logs, Metrics, Traces
+
+Source: https://opentelemetry.io/docs/concepts/signals/
+
+| Pillar | What | Why | Example |
+|--------|------|-----|---------|
+| **Metrics** | Numerical measurements over time | WHAT is happening (dashboards, alerts) | requests_total, duration_seconds |
+| **Traces** | End-to-end request path across services | WHERE the problem is (request flow) | trace_id → [span1 → span2 → span3] |
+| **Logs** | Timestamped text records | WHY it happened (detailed context) | "Connection refused to db-prod:5432" |
+
+**OpenTelemetry unifies all three under one API/SDK.**
+
+### Metric Types
+- **Counter:** Monotonically increasing (requests_total)
+- **Gauge:** Point-in-time value (cpu_usage, queue_depth)
+- **Histogram:** Distribution of values (request_duration_seconds)
+
+### Trace Concepts
+- **Trace:** Full journey of a request (tree of spans)
+- **Span:** Single unit of work (trace_id, span_id, parent_span_id, name, start_time, duration, attributes, status)
+- **Context propagation:** W3C TraceContext (traceparent, tracestate headers) or B3 headers
+
+## Step 3: Structured Logging
+
+### Unstructured (bad)
+```
+2024-01-15 ERROR: Connection refused to db-prod:5432
+```
+
+### Structured JSON (good)
+```json
+{
+  "timestamp": "2024-01-15T10:30:00Z",
+  "level": "ERROR",
+  "message": "Connection refused",
+  "service": "api-gateway",
+  "host": "db-prod",
+  "port": 5432,
+  "trace_id": "abc123def456",
+  "span_id": "789ghi",
+  "request_id": "req-42",
+  "user_id": "u-1001",
+  "duration_ms": 5023,
+  "error": "dial tcp: connection refused"
+}
+```
+
+**Benefits:** machine-parseable, filterable, correlatable (trace_id links to distributed trace), aggregatable.
+
+**Libraries:**
+| Language | Library |
+|----------|---------|
+| Go | zerolog, zap (uber) |
+| Python | structlog, python-json-logger |
+| Java | Logback + logstash-logback-encoder |
+| Node.js | pino, winston |
+| .NET | Serilog |
+
+**Best practices:**
+- Always include trace_id and span_id
+- Use consistent field names across services
+- Log at appropriate levels: DEBUG < INFO < WARN < ERROR < FATAL
+- Include request context (user_id, request_id, correlation_id)
+- Avoid logging PII/secrets
+- Use log sampling in high-throughput paths
+
+## Step 4: SLIs / SLOs / SLAs
+
+Source: https://sre.google/sre-book/service-level-objectives/
+
+### SLI (Service Level Indicator)
+Quantitative measure of service behavior.
+
+**Common SLIs:**
+- **Availability:** successful requests / total requests
+- **Latency:** % of requests faster than threshold (p50, p95, p99)
+- **Throughput:** requests per second
+- **Correctness:** responses with correct data / total responses
+
+**Prometheus SLI queries:**
+```promql
+# Availability SLI
+sum(rate(http_requests_total{code!~"5.."}[30d]))
+/
+sum(rate(http_requests_total[30d]))
+
+# Latency SLI (p99 < 250ms)
+sum(rate(http_request_duration_seconds_bucket{le="0.25"}[30d]))
+/
+sum(rate(http_request_duration_seconds_count[30d]))
+```
+
+### SLO (Service Level Objective)
+Target value for an SLI.
+
+**Example:** "99.9% of requests complete in < 250ms over 30-day window"
+- SLO = availability: 99.9% AND latency_p99: < 250ms
+- Multiple SLOs per service
+- Window: rolling (last N days) vs calendar (monthly)
+
+### SLA (Service Level Agreement)
+Business contract with consequences. Contains SLOs + penalties for breach.
+- SLA is external/customer-facing
+- SLO is internal/target
+- SLO should be stricter than SLA (buffer for error)
+
+## Step 5: Error Budgets
+
+Source: https://sre.google/sre-book/embracing-risk/
+
+**Error budget = 1 - SLO target**
+
+| SLO | Error Budget | Monthly Downtime |
+|-----|-------------|------------------|
+| 99.9% | 0.1% | 43.2 minutes |
+| 99.95% | 0.05% | 21.6 minutes |
+| 99.99% | 0.01% | 4.32 minutes |
+
+**Budget-based decision making:**
+- Budget remaining > 50%: push features faster
+- Budget remaining 20-50%: normal pace
+- Budget remaining < 20%: slow down, focus on reliability
+- Budget exhausted: freeze deployments, fix reliability
+
+### Multi-Window Burn-Rate Alerting
+
+Source: https://sre.google/workbook/alerting-on-slos/
+
+```yaml
+# Fast burn: 14.4x over 1h (2% budget in 1h) → page
+- alert: FastBurnBudget
+  expr: |
+    (
+      sum(rate(http_requests_total{code=~"5.."}[1h])) /
+      sum(rate(http_requests_total[1h]))
+    ) > (14.4 * (1 - 0.999))
+  for: 5m
+  labels:
+    severity: page
+
+# Slow burn: 6x over 6d (5% budget in 6d) → ticket
+- alert: SlowBurnBudget
+  expr: |
+    (
+      sum(rate(http_requests_total{code=~"5.."}[6d])) /
+      sum(rate(http_requests_total[6d]))
+    ) > (6 * (1 - 0.999))
+  for: 30m
+  labels:
+    severity: ticket
+```
+
+## Step 6: Grafana LGTM Stack
+
+### LGTM Architecture
+```
+Loki (logs) ← Promtail/Alloy (agent)
+Grafana (visualization) ← all datasources
+Tempo (traces) ← OTel Collector
+Mimir (metrics) ← Prometheus remote_write
+```
+
+### Prometheus
+```yaml
+# prometheus.yml
+scrape_configs:
+  - job_name: 'api'
+    static_configs:
+      - targets: ['api:8080']
+    metrics_path: /metrics
+    scrape_interval: 15s
+```
+
+**Key:** Pull model. Scrapes /metrics endpoints. PromQL query language.
+
+### Loki
+```bash
+# LogQL query
+{service="api"} |= "error" | logfmt | duration > 1s
+```
+
+**Key:** Indexes labels, not full text (cheap storage). Like Prometheus for logs.
+
 ### Jaeger
 ```bash
-docker run -d --name jaeger -p 16686:16686 -p 4317:4317 jaegertracing/all-in-one
+# Run in dev
+docker run -d -p 16686:16686 -p 4317:4317 jaegertracing/all-in-one
 ```
 
-## Step 4: Incident Management
+**Key:** Distributed tracing backend (CNCF graduated). Supports OTLP, Zipkin.
 
-### Tools
-| Tool | Type |
-|------|------|
-| PagerDuty | On-call scheduling, escalation |
-| Opsgenie (Atlassian) | Similar to PagerDuty |
-| Grafana OnCall | Open-source |
-| Firehydrant / Rootly | Incident orchestration |
+### Grafana Dashboard Panels
+- Time series, stat, table, heatmap, flamegraph, node graph
+- Datasources: Prometheus, Loki, Tempo, Jaeger, Elasticsearch, CloudWatch
 
-### Incident Response Flow
-1. **Alert fires** → PagerDuty
-2. **On-call acks** within SLA (5 min for SEV1)
-3. **Declare incident**, assign roles (IC, comms, ops)
-4. **Mitigate first** (rollback, feature flag, scale up)
-5. **Communicate** (Slack #incidents, status page)
-6. **Resolve**, close incident
-7. **Post-mortem** within 48-72h
+## Step 7: Continuous Profiling
 
-### PagerDuty CLI
-```bash
-pd incident list --status triggered
-pd incident ack INC-123
-pd incident resolve INC-123
+### Pyroscope
+Source: https://pyroscope.io/
+
+```go
+import "github.com/grafana/pyroscope-go"
+
+pyroscope.Start(pyroscope.Config{
+  ApplicationName: "myapp",
+  ServerAddress:   "http://pyroscope:4040",
+  ProfileTypes: []pyroscope.ProfileType{
+    pyroscope.ProfileCPU,
+    pyroscope.ProfileAllocObjects,
+    pyroscope.ProfileAllocSpace,
+  },
+})
 ```
 
-## Step 5: Post-Mortems
+**Key:** Always-on CPU/memory profiling. Flame graphs show hot paths.
 
-### Template
-```markdown
-# [Service] [Impact] — [Date]
+## Step 8: Observability Anti-Patterns
 
-## Summary
-- Severity: SEV1/SEV2/SEV3
-- Duration: X hours Y minutes
-- Impact: N users affected
-
-## Timeline (UTC)
-- HH:MM — [Event]
-
-## Root Cause
-[Technical explanation]
-
-## Detection
-[Alert vs customer report]
-
-## Resolution
-[What fixed it]
-
-## Action Items
-- [ ] @person — [prevention] by [date]
-
-## Lessons Learned
-- [Blameless observations]
-```
-
-### Blameless Culture
-- Focus on systems, not individuals
-- "What allowed this to happen?" not "Who caused this?"
-
-## Step 6: SRE Practices (from Google SRE Book)
-
-### SLIs, SLOs, SLAs
-
-**SLI** = what you measure
-```
-SLI = good events / total events
-Example: successful requests / total requests
-```
-
-**SLO** = target for SLI
-```
-SLO = 99.9% availability (43.8 min downtime/month)
-```
-
-**SLA** = contractual SLO with consequences
-
-### Error Budget
-```
-Error Budget = 1 - SLO
-SLO 99.9% → Error Budget = 0.1% = 43.8 min/month
-
-If error budget exhausted:
-  → Feature velocity STOPS
-  → Team focuses on reliability
-```
-
-### Error Budget Policy
-```markdown
-## Error Budget Policy
-
-### When budget > 50% remaining
-- Normal feature development
-
-### When budget 25-50% remaining
-- Increased testing, canary mandatory
-
-### When budget < 25% remaining
-- Feature freeze, reliability only
-
-### When budget exhausted
-- Full freeze, post-mortem for all incidents
-```
-
-### Toil Elimination
-**Toil** = manual, repetitive, automatable, reactive work
-
-Rule: SREs spend max 50% on ops. Rest on engineering.
-
-### Incident Severity (Google)
-| Level | Description | Response |
-|-------|-------------|----------|
-| SEV1 | User-facing outage | Immediate (15 min) |
-| SEV2 | Degraded service | 1 hour |
-| SEV3 | Non-critical | Next business day |
-| SEV4 | Minor | Sprint backlog |
-
-### Incident Commander
-- IC owns the incident, doesn't fix it
-- IC delegates: comms, ops, debugging leads
-- IC makes decisions: rollback, escalate, communicate
-- IC writes post-mortem
+| Anti-Pattern | Why It's Bad | Fix |
+|--------------|-------------|-----|
+| Unstructured logs | Can't filter, aggregate, correlate | Structured JSON with trace_id |
+| No trace correlation | Can't follow request across services | OTel auto-instrumentation |
+| Alert on everything | Alert fatigue, real issues missed | SLO-based burn-rate alerts |
+| Dashboards without SLOs | No business-relevant health metric | Define SLIs → SLOs → dashboards |
+| No log sampling | High-throughput paths generate TB of logs | Sample at 1-10% for debug logs |
+| Vendor lock-in | Can't switch observability tools | OTel Collector as abstraction layer |
+| No correlation IDs | Can't trace request across services | trace_id in every log and span |
 
 ## Pitfalls
 
-1. **Don't log at DEBUG in production** — use dynamic log level
-2. **Don't alert on everything** — alert on symptoms (user impact)
-3. **Don't skip distributed tracing** — debugging cross-service is blind
-4. **Don't write post-mortems weeks later** — memory fades
-5. **Don't assign blame** — blameless culture prerequisite
-6. **Don't forget SLOs** — define SLIs, set targets, track error budget
-7. **Don't ignore toil** — track and eliminate systematically
+1. **Don't skip OpenTelemetry** — it's the standard, use auto-instrumentation
+2. **Don't log without trace_id** — logs and traces must be correlated
+3. **Don't alert on raw metrics** — use SLO-based burn-rate alerting
+4. **Don't skip structured logging** — unstructured logs are useless at scale
+5. **Don't vendor-lock** — OTel Collector abstracts away backend choice
+6. **Don't create too many dashboards** — one per service with SLIs
+7. **Don't skip error budgets** — they balance reliability vs velocity
+8. **Don't ignore log sampling** — high-throughput paths need sampling
