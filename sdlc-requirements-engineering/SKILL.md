@@ -2,7 +2,7 @@
 name: sdlc-requirements-engineering
 description: "Requirements: user story mapping (Jeff Patton), BDD/Gherkin (Cucumber, pytest-bdd), acceptance criteria (Given/When/Then), impact mapping (Gojko Adzic), example mapping, specification by example (Gojko Adzic), JTBD framework, RICE scoring, WSJF prioritization, user story splitting, NFR patterns, requirements traceability, OKR alignment (Doerr), design thinking, Lean UX (Gothelf), design sprint (Knapp), dual-track agile (Cagan), AI/ML requirements, STRIDE security, OWASP ASVS, WCAG 2.2 AA accessibility, event storming (Brandolini), domain storytelling (Hofer), platform team requirements, cost of delay (Reinertsen), requirements elicitation techniques, ATDD, strategic DDD (bounded contexts, context mapping, ubiquitous language), tactical DDD (entities, value objects, aggregates, domain events, repositories, domain services, factories), event storming workshop (6-phase, process+design level), domain storytelling workshop (notation, discovery patterns)."
 version: 4.7.0
-author: Hermes Agent
+author: Dinoudon
 license: MIT
 platforms: [linux, macos, windows]
 metadata:

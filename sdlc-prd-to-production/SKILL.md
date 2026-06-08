@@ -1,14 +1,14 @@
 ---
 name: sdlc-prd-to-production
-description: "End-to-end workflow: PRD → design doc → implementation → code review → testing → deployment → monitoring → retrospective. Includes Ship/Show/Ask branching, design doc templates, PRD patterns (YC, Amazon Working Backwards), ephemeral environments, DORA 2024 insights, Score spec, AI-augmented development, technical specification templates, GitOps automation, documentation-as-code pipelines, metrics-driven development, production readiness reviews, launch strategies, post-launch monitoring, stakeholder communication templates, product-engineering alignment, continuous discovery habits, product-led growth, technical debt management, engineering metrics, incident management, engineering leadership, developer onboarding, inner source patterns, product analytics, A/B testing at scale, feature flag experimentation, product metrics frameworks, Shape Up cycles, continuous deployment culture, engineering team building, and product-market fit."
-version: 4.6.0
-author: Hermes Agent
+description: "End-to-end workflow: PRD → design doc → implementation → code review → testing → deployment → monitoring → retrospective. Includes Ship/Show/Ask branching, design doc templates, PRD patterns (YC, Amazon Working Backwards), ephemeral environments, DORA 2024 insights, Score spec, AI-augmented development, technical specification templates, GitOps automation, documentation-as-code pipelines, metrics-driven development, production readiness reviews, launch strategies, post-launch monitoring, stakeholder communication templates, product-engineering alignment, continuous discovery habits, product-led growth, technical debt management, engineering metrics, incident management, engineering leadership, developer onboarding, inner source patterns, product analytics, A/B testing at scale, feature flag experimentation, product metrics frameworks, Shape Up cycles, continuous deployment culture, engineering team building, product-market fit, high growth handbook, engineering culture patterns, Google SRE, and blameless postmortems."
+version: 4.7.0
+author: Dinoudon
 license: MIT
 platforms: [linux, macos, windows]
 metadata:
   hermes:
-    tags: [sdlc, prd, design-doc, rfc, ship-show-ask, workflow, end-to-end, product-development, yc, amazon-working-backwards, ephemeral-envs, score-spec, dora, ai-augmented, gitops, metrics-driven, docs-as-code, tech-spec, production-readiness, launch-strategy, post-launch, stakeholder-comms, okr, ab-testing, continuous-discovery, plg, product-led-growth, tech-debt, devex, incident-management, pagerduty, engineering-leadership, developer-onboarding, inner-source, shape-up, continuous-deployment, devops-culture, engineering-teams, product-market-fit]
-    tags: [sdlc, prd, design-doc, rfc, ship-show-ask, workflow, end-to-end, product-development, yc, amazon-working-backwards, ephemeral-envs, score-spec, dora, ai-augmented, gitops, metrics-driven, docs-as-code, tech-spec, production-readiness, launch-strategy, post-launch, stakeholder-comms, okr, ab-testing, continuous-discovery, plg, product-led-growth, tech-debt, devex, incident-management, pagerduty, engineering-leadership, developer-onboarding, inner-source, product-analytics, amplitude, mixpanel, posthog, feature-flags, launchdarkly, unleash, statsig, flipt, flagsmith, aarrar, north-star-metric, heart-framework, experiment-platform, shape-up, continuous-deployment, devops-culture, engineering-teams, product-market-fit]
+    tags: [sdlc, prd, design-doc, rfc, ship-show-ask, workflow, end-to-end, product-development, yc, amazon-working-backwards, ephemeral-envs, score-spec, dora, ai-augmented, gitops, metrics-driven, docs-as-code, tech-spec, production-readiness, launch-strategy, post-launch, stakeholder-comms, okr, ab-testing, continuous-discovery, plg, product-led-growth, tech-debt, devex, incident-management, pagerduty, engineering-leadership, developer-onboarding, inner-source, shape-up, continuous-deployment, devops-culture, engineering-teams, product-market-fit, high-growth-handbook, engineering-culture, google-sre, blameless-postmortems]
+    tags: [sdlc, prd, design-doc, rfc, ship-show-ask, workflow, end-to-end, product-development, yc, amazon-working-backwards, ephemeral-envs, score-spec, dora, ai-augmented, gitops, metrics-driven, docs-as-code, tech-spec, production-readiness, launch-strategy, post-launch, stakeholder-comms, okr, ab-testing, continuous-discovery, plg, product-led-growth, tech-debt, devex, incident-management, pagerduty, engineering-leadership, developer-onboarding, inner-source, product-analytics, amplitude, mixpanel, posthog, feature-flags, launchdarkly, unleash, statsig, flipt, flagsmith, aarrar, north-star-metric, heart-framework, experiment-platform, shape-up, continuous-deployment, devops-culture, engineering-teams, product-market-fit, high-growth-handbook, engineering-culture, google-sre, blameless-postmortems]
     related_skills: [sdlc-requirements-engineering, sdlc-architecture-design, sdlc-cicd-pipeline, sdlc-deployment, sdlc-retrospective]
 ---
 
@@ -3910,6 +3910,607 @@ After PMF (focus: growth):
   [ ] HXC profile informs marketing targeting (ICP defined)
   [ ] Growth experiments start (referral loops, paid acquisition)
   [ ] "Pour fuel on fire" — but only after PMF is confirmed
+```
+
+---
+
+## Step 30: High Growth Handbook
+
+Source: Elad Gil — "High Growth Handbook: Scaling Startups from 10 to 10,000 People"
+
+### Key Patterns
+
+#### Hire Executives Before You Think You Need Them
+- Start recruiting VPs/directors 6+ months before you need them
+- Good exec hires take 3-6 months to close; bad ones cost 6+ months to fix
+- You need execs when you feel pain, but by then it's too late — hire proactively
+- Pattern: founder does role part-time → recognizes need → starts search → exec arrives just as pain peaks
+- Rule of thumb: when founder spends >50% time on a function, hire exec for it
+
+#### 1-3-1 Problem Solving Framework
+```
+When escalating or bringing problems to leadership:
+  1 — One concise problem statement (what's wrong)
+  3 — Three viable options with trade-offs (not just one ask)
+  1 — One recommended option with reasoning (take a position)
+
+Anti-pattern: "Here's the problem, what should I do?"
+Correct pattern: "Here's the problem, here are 3 options with pros/cons, I recommend #2 because..."
+
+Why it works:
+  - Forces the person raising the issue to think deeply
+  - Prevents delegation of thinking upward
+  - Gives decision-maker enough context to decide quickly
+  - Builds judgment in the team over time
+```
+
+#### Split Teams by Product Area (Not Technology)
+```
+DON'T split by:
+  - Frontend team / Backend team / Infra team (creates dependency chains)
+  - "We need a feature" → 3 teams must coordinate → slow
+
+DO split by:
+  - Product area: Search team, Checkout team, Notifications team
+  - Each team owns end-to-end: frontend + backend + infra + oncall
+  - Team owns the outcome (conversion, latency, reliability) not just output (code)
+
+When to split:
+  - When team exceeds 8 engineers (communication overhead explodes)
+  - When two product areas have divergent priorities
+  - When oncall burden becomes unsustainable for single team
+```
+
+#### 5-8 Engineers Per Team
+- Sweet spot: 5-8 engineers + 1 PM + 1 designer + 1 TL/EM
+- Below 5: not enough capacity, bus factor too low
+- Above 8: communication overhead dominates, sub-teams form naturally
+- Two-pizza rule variant: if you can't feed the team with two pizzas, it's too big
+- Exception: platform/infra teams can be 3-4 (different work pattern)
+
+#### Add Process Only When Pain Is Felt
+```
+STAGE 1: No process (1-20 people)
+  - Everyone knows everything, informal communication works
+  - Adding process here slows things down for no benefit
+
+STAGE 2: Lightweight process (20-50 people)
+  - Add: weekly team syncs, basic sprint planning, RFC process
+  - Trigger: "I didn't know that was happening" starts appearing
+  - Only add process that solves an observed pain, not theoretical risk
+
+STAGE 3: Structured process (50-200 people)
+  - Add: OKRs, quarterly planning, formal oncall, postmortems
+  - Trigger: teams duplicating work, inconsistent quality, oncall chaos
+  - Process should reduce coordination cost, not create bureaucracy
+
+STAGE 4: Scaled process (200+ people)
+  - Add: org-level planning, architecture review boards, compliance
+  - Trigger: cross-team failures, regulatory requirements, audit findings
+  - Each new process needs a clear owner and sunset condition
+
+ANTI-PATTERN: Adding Netflix/Google process at 15-person startup
+ANTI-PATTERN: Running 200-person org with 15-person processes
+```
+
+### Scaling Decision Matrix
+```
+TEAM SIZE    PROCESS NEED           HIRE NEED
+1-10         None (communicate)     Generalists who can wear many hats
+10-30        Lightweight (syncs)    First specialists + first exec
+30-100       Structured (OKRs)      VPs for each major function
+100-500      Scaled (planning)      C-level, dedicated ops teams
+500+         Enterprise (governance) COO, formal org design
+```
+
+### High Growth Handbook Checklist
+```
+SCALING READINESS CHECKLIST:
+
+Org Design:
+  [ ] Teams split by product area (not technology layer)
+  [ ] Each team 5-8 engineers with clear ownership
+  [ ] Exec search started for functions where founder spends >50% time
+  [ ] 1-3-1 framework adopted for escalations
+
+Process Calibration:
+  [ ] Current process level matches team size stage
+  [ ] Every process item has clear trigger (what pain it solved)
+  [ ] No premature process (not adding Google-style at startup size)
+  [ ] Quarterly review: which process is no longer needed?
+
+Hiring:
+  [ ] Executive pipeline active (even if no opening today)
+  [ ] Hiring bar defined and documented
+  [ ] Interview process tests for judgment, not just technical skill
+  [ ] Onboarding plan exists for each role level
+```
+
+---
+
+## Step 31: Engineering Culture Patterns
+
+### Stripe Culture: API-First and Docs-as-Product
+
+Source: Stripe engineering blog, Will Larson (staffeng.com), internal Stripe practices
+
+```
+PRINCIPLE: API-first means the API IS the product, not an afterthought
+
+Pattern 1: Docs as Product
+  - Documentation is a first-class product with its own PM and eng team
+  - Docs ship WITH the feature, not after (blocks launch if missing)
+  - Every API endpoint has: reference docs, tutorials, changelog entry
+  - Docs are versioned alongside the API
+  - Quality bar: "Could a new developer integrate in <30 minutes?"
+
+Pattern 2: 7 Lines of Docs per 1 Line of Code
+  - Ratio target: for every line of code, 7 lines of documentation
+  - Not 7x comments — 7x of: reference, guide, tutorial, example, changelog
+  - Breakdown:
+    - 2 lines: API reference (parameters, return values, errors)
+    - 2 lines: developer guide (when to use, common patterns)
+    - 1 line: code example (copy-pasteable, tested)
+    - 1 line: changelog (breaking changes, migration path)
+    - 1 line: troubleshooting (common errors, debugging tips)
+  - Enforced by: doc review in PR, doc coverage in CI, doc quality metrics
+
+Pattern 3: Empathy Rotation
+  - Every engineer spends 1 week/quarter doing support
+  - Not tier-1 triage — real issue investigation and customer communication
+  - Goal: build empathy for users, discover UX pain points firsthand
+  - Output: each rotation produces 3+ "paper cuts" report (small UX fixes)
+  - Engineers return to their team with user empathy + actionable insights
+  - Leadership participates too (VP eng does rotation, not just ICs)
+
+Pattern 4: API Review Board
+  - Every new API endpoint reviewed by API design committee
+  - Checklist: naming conventions, pagination, error format, versioning
+  - Goal: consistency across 100+ services feels like one product
+  - "API is forever" mindset — breaking changes are extremely costly
+```
+
+### Netflix Culture: Freedom & Responsibility
+
+Source: Reed Hastings ("No Rules Rules"), Netflix culture deck, Netflix tech blog
+
+```
+PRINCIPLE: Hire exceptional people, give them context, get out of the way
+
+Pattern 1: Context, Not Control
+  - Manager's job: provide context (strategy, constraints, data) NOT control decisions
+  - "Lead with context" — share the WHY, let team figure out the HOW
+  - Anti-pattern: manager reviews every PR, approves every decision
+  - Netflix pattern: "Farm for dissent" — actively seek disagreement before committing
+  - Once decision made after debate, everyone commits (disagree & commit)
+
+Pattern 2: Talent Density
+  - Maintain high talent density by paying top of market
+  - "Adequate performance gets generous severance" — no coasting
+  - One brilliant engineer > three adequate engineers (not just 3x, often 10x)
+  - Netflix rule: "Would you fight to keep this person?" If no → transition them out
+  - High talent density enables: less process, more freedom, faster execution
+  - Counter-intuitive: fewer people + higher talent = more output + less management
+
+Pattern 3: Radical Candor
+  - "4A" feedback model:
+    - Aim to Assist: feedback must be intended to help
+    - Actionable: specific, implementable suggestions
+    - Appreciate: receiver listens with gratitude, doesn't have to accept
+    - Accept or Discard: receiver decides, no retaliation
+  - Feedback is continuous, not saved for performance reviews
+  - "Sunshining" — making decisions and reasoning transparent to all
+  - Anti-pattern: "feedback sandwich" (praise-criticism-praise) is banned — just say it
+
+Pattern 4: High Alignment, Loose Coupling
+  - Top-down: strategy, priorities, metrics (high alignment)
+  - Bottom-up: implementation, architecture, process (loose coupling)
+  - Teams don't need permission to deploy, experiment, or ship
+  - Guard rails via: automated testing, canary deploys, rollback (not approvals)
+```
+
+### Cross-Cutting Culture Themes
+
+```
+THEME 1: Write Things Down
+  - "If it's not written down, it didn't happen" — decisions, context, rationale
+  - Benefits: async communication, onboarding speed, institutional memory
+  - Tools: RFCs/ADRs, decision logs, team handbooks, architecture docs
+  - Anti-pattern: tribal knowledge, "ask Dave, he knows"
+  - Metric: "Could someone join tomorrow and understand our decisions?"
+
+THEME 2: Small Autonomous Teams
+  - Amazon "two-pizza teams" — small, end-to-end ownership
+  - Spotify model variant: squad owns a user journey, not a tech layer
+  - Autonomy = authority to decide HOW (not WHAT — strategy is top-down)
+  - Autonomy requires: clear goals, measurable outcomes, trust
+  - Anti-pattern: autonomous team with no metrics = autonomous team with no accountability
+
+THEME 3: Hire for Density (Not Volume)
+  - 10 exceptional engineers > 30 average engineers
+  - Hiring bar: "Would I want to work for this person?"
+  - Compensation: top 10% of market (total comp, not just salary)
+  - Interview loop: technical + system design + culture/values + work simulation
+  - Anti-pattern: "we need to hire 20 engineers fast" → lowers bar → more management overhead → slower
+  - Netflix/Stripe pattern: be willing to have empty seats rather than fill with mediocre hires
+```
+
+### Culture Implementation Checklist
+```
+CULTURE MATURITY CHECKLIST:
+
+Documentation Culture:
+  [ ] RFC/ADR process exists and is used for technical decisions
+  [ ] Team handbooks exist (onboarding takes <1 week, not "ask someone")
+  [ ] Decision logs maintained (what was decided, why, alternatives considered)
+  [ ] Docs ship with features (not "we'll document it later")
+
+Talent & Feedback:
+  [ ] Compensation reviewed semi-annually against market
+  [ ] Regular feedback culture (not just annual reviews)
+  [ ] Low performers addressed within 30 days (not tolerated for quarters)
+  [ ] Interview process tests for culture add, not just culture fit
+
+Team Autonomy:
+  [ ] Teams own outcomes (metrics) not just outputs (features)
+  [ ] Teams can deploy without multi-layer approval
+  [ ] Strategy/priorities communicated top-down, implementation is bottom-up
+  [ ] Guard rails automated (CI/CD, canary, rollback) not manual (approval gates)
+```
+
+---
+
+## Step 32: Google SRE Deep Dive
+
+Source: Google SRE Book, Google SRE Workbook, https://sre.google/
+
+### Toil Measurement
+
+```
+DEFINITION: Toil is manual, repetitive, automatable, reactive work that scales linearly with service growth
+
+Examples:
+  - Manually deploying releases (not CI/CD)
+  - Hand-editing config files across servers
+  - Responding to same alert pattern every week
+  - Manually scaling capacity before traffic spikes
+  - Copy-pasting data between systems
+
+NOT toil:
+  - Designing new monitoring dashboards (creative, non-repetitive)
+  - Writing automation scripts (reduces future toil)
+  - Incident response for novel issues (reactive but not repetitive)
+  - Architecture review (strategic, doesn't scale with traffic)
+
+TOIL BUDGET: <50% of engineering time
+  - Measure: each engineer logs toil time weekly (survey or time tracking)
+  - Target: no more than 50% of SRE time on toil
+  - If >50%: STOP feature work, invest in automation until below threshold
+  - Quarterly budget review with leadership: "Here's our toil percentage, here's the plan to reduce it"
+
+TOIL REDUCTION CYCLE:
+  1. Measure current toil (time spent, categories, frequency)
+  2. Categorize: automate, eliminate, or tolerate
+  3. Prioritize by: frequency × time_per_occurrence × engineer_cost
+  4. Invest 20% of sprint capacity in toil reduction
+  5. Track: toil percentage over time (should decrease quarter over quarter)
+
+QUARTERLY TOIL REVIEW TEMPLATE:
+  - Current toil %: [X%]
+  - Top 3 toil sources: [list]
+  - Toil reduced this quarter: [what was automated]
+  - Toil added this quarter: [new services/features that added toil]
+  - Plan for next quarter: [automation roadmap]
+  - Ask: [headcount, tooling, time investment]
+```
+
+### Error Budgets
+
+```
+CONCEPT: Error budget = 1 - SLO = allowed unreliability
+
+Example:
+  SLO: 99.9% availability
+  Error budget: 0.1% = ~43 minutes/month of downtime allowed
+  If budget remaining > 0%: ship features
+  If budget exhausted: STOP feature work, invest in reliability
+
+MULTI-TIER SLOs:
+  - Availability SLO: 99.9% of requests succeed (2xx/3xx)
+  - Latency SLO: 99% of requests < 200ms
+  - Freshness SLO: 99% of data updated within 1 hour
+  - Correctness SLO: 99.99% of writes persist correctly
+  - Each SLO has its own error budget, tracked independently
+
+BURN RATE ALERTING:
+  - Burn rate = how fast you're consuming error budget
+  - Burn rate 1.0 = consuming at steady pace (budget exhausted at end of window)
+  - Burn rate 2.0 = consuming 2x as fast (budget exhausted in half the window)
+  - Burn rate 14.4 = consuming 14.4x as fast (budget exhausted in ~50 min of a 12h window)
+
+MULTI-WINDOW ALERTING (Google recommendation):
+  - Short window (5 min): catches severe outages fast
+    - Alert if: burn rate > 14.4 AND budget consumed > 2% in 1 hour
+    - Action: page on-call immediately
+  - Long window (6 hours): catches slow burns
+    - Alert if: burn rate > 1.0 AND budget consumed > 5% in 6 hours
+    - Action: page on-call, investigate
+  - Why both: short window catches big outages, long window catches slow degradation
+
+ERROR BUDGET POLICY:
+  - Budget remaining > 50%: normal feature development
+  - Budget remaining 20-50%: increased testing, slower rollout cadence
+  - Budget remaining < 20%: reliability sprint (no new features)
+  - Budget exhausted (0%): freeze feature work, all-hands reliability
+  - Budget resets monthly (or per quarter, depending on SLO window)
+
+ERROR BUDGET REPORTING:
+  - Weekly: error budget dashboard shared with eng + product
+  - Monthly: error budget review in team retro
+  - Quarterly: SLO compliance review with leadership
+  - Metric: "What % of our error budget did we consume?"
+```
+
+### Capacity Planning
+
+```
+THREE HORIZONS OF CAPACITY PLANNING:
+
+Horizon 1: Reactive (days to weeks)
+  - Trigger: traffic spike detected, approaching resource limits
+  - Action: auto-scaling rules, manual scale-up, load shedding
+  - Tools: auto-scalers, capacity alerts, runbooks
+  - Goal: don't run out of capacity in the next 7 days
+
+Horizon 2: Tactical (weeks to months)
+  - Trigger: seasonal traffic patterns, new feature launches, marketing campaigns
+  - Action: pre-provision capacity, optimize hot paths, cache warming
+  - Tools: traffic forecasting models, load testing results, historical data
+  - Goal: have capacity ready for planned events 1-3 months out
+
+Horizon 3: Strategic (months to quarters)
+  - Trigger: organic growth trends, new markets, service decomposition
+  - Action: infrastructure budget planning, datacenter/cloud region expansion, architecture changes
+  - Tools: growth models, capacity review meetings, budget planning cycles
+  - Goal: infrastructure can support business plan 6-12 months out
+
+HEADROOM TARGETS:
+  - Critical services: 50% headroom (can handle 2x current load)
+  - Standard services: 30% headroom (can handle 1.3x current load)
+  - Best-effort services: 20% headroom (can handle 1.2x current load)
+  - Headroom = (provisioned_capacity - peak_usage) / peak_usage × 100%
+  - Review headroom monthly; if below target, trigger capacity increase
+
+LOAD SHEDDING:
+  - Definition: intentionally dropping requests when at capacity to protect core functionality
+  - Priority tiers:
+    - Tier 1 (never shed): authentication, checkout, payment
+    - Tier 2 (shed last): core product features, search
+    - Shed first: recommendations, analytics, non-critical batch jobs
+  - Implementation:
+    - Request prioritization headers (X-Priority: high/low)
+    - Rate limiting per client/tier
+    - Queue depth monitoring → shed when queue > threshold
+    - Graceful degradation: return cached/stale data instead of failing
+  - Test load shedding: regularly run game days to verify shedding works as expected
+
+CAPACITY PLANNING CHECKLIST:
+  [ ] Auto-scaling configured for all stateless services
+  [ ] Headroom targets defined per service tier
+  [ ] Traffic forecasting model exists (seasonal + organic growth)
+  [ ] Load shedding priority tiers defined and tested
+  [ ] Quarterly capacity review with eng + finance
+  [ ] Game days run to test capacity limits (at least 2x/year)
+```
+
+---
+
+## Step 33: Blameless Postmortems
+
+### Google Blameless Postmortem Pattern
+
+Source: Google SRE Book Chapter 15, https://sre.google/workbook/postmortem-culture/
+
+```
+TRIGGERS (when to write a postmortem):
+  - User-visible downtime or degradation > 5 minutes
+  - Data loss (any amount)
+  - On-call engineer paged (any severity)
+  - Manual intervention required to resolve
+  - Incident required >2 people to resolve
+  - Postmortem requested by any team member (regardless of severity)
+
+DOCUMENT STRUCTURE:
+  # Postmortem: [Incident Title]
+
+  ## Summary
+  - Incident severity: [SEV1/SEV2/SEV3]
+  - Impact: [duration, users affected, revenue impact]
+  - Root cause: [one sentence]
+
+  ## Timeline (UTC)
+  - HH:MM — [what happened, who noticed, what action taken]
+  - HH:MM — [escalation, investigation finding, mitigation applied]
+  - HH:MM — [resolution confirmed, monitoring verified]
+
+  ## Root Cause(s)
+  - Primary: [the technical/systemic cause]
+  - Contributing: [other factors that made it worse or harder to fix]
+
+  ## What Went Well
+  - [detection was fast because...]
+  - [communication was clear because...]
+
+  ## What Went Poorly
+  - [took too long to find because...]
+  - [runbook was outdated because...]
+
+  ## Action Items
+  - [ ] [Specific fix] — Owner: @[name] — Due: [date]
+  - [ ] [Monitoring improvement] — Owner: @[name] — Due: [date]
+  - [ ] [Process change] — Owner: @[name] — Due: [date]
+
+  ## Lessons Learned
+  - [What we now understand that we didn't before]
+
+BLAMELESSNESS PRINCIPLES:
+  1. Assume everyone acted with best intentions given what they knew at the time
+  2. Focus on SYSTEM causes, not individual mistakes
+  3. Replace "X made a mistake" with "the system allowed X to happen"
+  4. Questions to ask:
+     - "What information did the person have at the time?"
+     - "Why did that action seem reasonable?"
+     - "What would have made the right action obvious?"
+  5. NEVER use postmortem findings in performance reviews
+  6. Postmortem is for LEARNING, not BLAMING
+
+  Anti-pattern: "John deployed the broken code"
+  Blameless: "The deployment pipeline lacked automated canary analysis"
+
+  Anti-pattern: "The on-call engineer didn't respond fast enough"
+  Blameless: "The alerting threshold was set too low, causing alert fatigue"
+
+POSTMORTEM REVIEW:
+  - Written within 48h of incident
+  - Reviewed in team meeting within 1 week
+  - Action items tracked to completion (not forgotten)
+  - Quarterly: review all postmortems for systemic patterns
+```
+
+### Etsy Blameless Postmortem Pattern
+
+Source: Etsy Code as Craft, John Allspaw
+
+```
+PRINCIPLE: Local Rationality
+  - People make rational decisions given their LOCAL context
+  - "At the time, given what they knew, what they did made sense"
+  - The failure is in the SYSTEM, not the person
+  - Goal: understand the system conditions that made the failure possible
+
+  Key questions:
+  - "What did the person know at the time?"
+  - "What were they trying to accomplish?"
+  - "What tools/information were available to them?"
+  - "Why did their action seem like the right one?"
+
+FACILITATED DEBRIEFS:
+  - Postmortem meeting is FACILITATED (not led by the incident commander)
+  - Facilitator role: keep discussion blameless, redirect personal attacks
+  - Facilitator asks: "What can we learn?" not "Who is responsible?"
+  - Facilitator interrupts blame language: "Let's focus on the system, not individuals"
+  - Separate the PERSON from the ACTION: "The deploy was bad" not "John's deploy was bad"
+
+5 WHYS AT SYSTEM LEVEL:
+  - Not 5 Whys to find a person — 5 Whys to find systemic causes
+
+  Example:
+  Why did the site go down?
+  → Because the database ran out of connections
+  Why did the database run out of connections?
+  → Because a new feature opened connections but didn't close them
+  Why didn't we catch the connection leak?
+  → Because we don't have connection pool monitoring in staging
+  Why don't we have connection pool monitoring in staging?
+  → Because monitoring setup is manual and wasn't done for this service
+  Why is monitoring setup manual?
+  → Because we haven't invested in monitoring-as-code
+
+  ACTION: automate monitoring setup (systemic fix)
+  NOT: "train developers to set up monitoring" (blame the person)
+
+ETTY POSTMORTEM TEMPLATE ADDITIONS:
+  ## Cultural Context
+  - What was the team's workload at the time?
+  - Were there recent changes that affected team capacity?
+  - What was the organizational pressure (deadline, incident streak)?
+
+  ## Systemic Factors
+  - What organizational/process gaps contributed?
+  - What tooling gaps contributed?
+  - What knowledge gaps contributed?
+```
+
+### PagerDuty Incident Response Pattern
+
+Source: PagerDuty Incident Response documentation, https://response.pagerduty.com/
+
+```
+INCIDENT COMMANDER (IC) ROLE:
+  - IC owns the incident from declaration to resolution
+  - IC responsibilities:
+    - Coordinate responders (who does what)
+    - Communicate status to stakeholders (every 30 min for SEV1)
+    - Make tactical decisions (rollback vs. fix-forward)
+    - Ensure postmortem is scheduled
+  - IC does NOT:
+    - Fix the problem themselves (they coordinate, responders fix)
+    - Get pulled into debugging (stays high-level)
+  - IC transfer: if original IC needs to do deep investigation, hand off IC role
+
+SEVERITY LEVELS:
+  SEV1 (Critical):
+    - Complete service outage or data loss
+    - All hands, war room, exec notification
+    - Response: 5 minutes, update: every 30 minutes
+    - Postmortem: mandatory, within 48h
+
+  SEV2 (Major):
+    - Significant degradation, partial outage
+    - On-call + team lead engaged
+    - Response: 15 minutes, update: every 1 hour
+    - Postmortem: mandatory, within 48h
+
+  SEV3 (Minor):
+    - Minor degradation, workaround available
+    - On-call only
+    - Response: 1 hour, update: every 4 hours
+    - Postmortem: optional (recommended)
+
+  SEV4 (Low):
+    - Cosmetic issue, no user impact
+    - Business hours response
+    - Response: next business day
+    - Postmortem: not required
+
+48-HOUR COOL-DOWN:
+  - Postmortem meeting: no earlier than 48h after incident resolution
+  - Why: emotions are high, people are defensive, recollection is biased immediately after
+  - 48h allows: sleep, perspective, calmer analysis, better documentation
+  - Exception: if same incident recurs within 48h, expedite postmortem
+  - Timeline doc: write within 24h (facts while fresh), review at 48h (with perspective)
+
+MTTx METRICS:
+  MTTD — Mean Time to Detect:
+    - Time from incident start to first alert/notification
+    - Target: < 5 min for SEV1
+    - Improvement: better monitoring, synthetic checks, anomaly detection
+
+  MTTA — Mean Time to Acknowledge:
+    - Time from alert to human acknowledges + begins investigation
+    - Target: < 5 min for SEV1, < 15 min for SEV2
+    - Improvement: better on-call tooling, escalation policies, runbooks
+
+  MTTR — Mean Time to Resolve:
+    - Time from incident start to full resolution
+    - Target: < 30 min for SEV1 (varies by complexity)
+    - Improvement: better runbooks, faster rollback, feature flags
+
+  MTTM — Mean Time to Mitigate:
+    - Time from incident start to impact reduced (not fully resolved)
+    - Often more useful than MTTR: "How fast did we reduce user pain?"
+    - Target: < 15 min for SEV1
+    - Improvement: pre-approved rollback, load shedding, circuit breakers
+
+INCIDENT RESPONSE CHECKLIST:
+  [ ] Severity levels defined with response SLAs
+  [ ] IC role documented and trained (rotation + shadowing)
+  [ ] Escalation policies configured in paging tool
+  [ ] 48h cool-down policy adopted for postmortems
+  [ ] MTTx metrics tracked and reviewed monthly
+  [ ] Postmortem action items tracked to completion
+  [ ] Quarterly: review postmortems for systemic patterns
+  [ ] Blameless culture: leadership models blamelessness publicly
 ```
 
 ---

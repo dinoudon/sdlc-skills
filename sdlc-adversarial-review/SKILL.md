@@ -2,7 +2,7 @@
 name: sdlc-adversarial-review
 description: "Multi-agent PR review: 3 specialized reviewers (architecture, security, quality) run in parallel, orchestrator synthesizes findings and applies fixes. Includes Google/Stripe/Meta code review culture, DORA velocity metrics (5 metrics incl. reliability), SLSA supply chain verification, AI-assisted review guardrails, automated tooling integration, advanced threat modeling (attack trees, kill chain, MITRE ATT&CK), secure code review patterns, compliance-aware review (SOC2/GDPR/HIPAA), AI/ML model review, performance review patterns, OWASP API Security Top 10 2023, supply chain security (SLSA levels/SolarWinds/npm/PyPI), LLM/AI security (OWASP LLM Top 10), container security scanning, IaC security scanning, secret detection, SOC2 Trust Services Criteria (5 categories/9 control families), GDPR technical implementation (6 data subject rights/CMP/DPIA), HIPAA technical safeguards (AES-256/audit logging/break-glass), ISO 27001 for engineering (ISMS/Annex A 93 controls), policy as code (OPA/Kyverno/Sentinel/Cloud Custodian), zero trust architecture (NIST SP 800-207/BeyondCorp), service identity (SPIFFE/SPIRE/SVIDs), mTLS (Istio/Linkerd/Cilium), secret management (Vault/Sealed Secrets/External Secrets), and container runtime security (Falco/Sysdig/KubeArmor)."
 version: 4.6.0
-author: Hermes Agent
+author: Dinoudon
 license: MIT
 platforms: [linux, macos, windows]
 metadata:

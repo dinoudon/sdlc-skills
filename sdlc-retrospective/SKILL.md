@@ -1,13 +1,13 @@
 ---
 name: sdlc-retrospective
-description: "Retrospective formats: Start/Stop/Continue, 4Ls, Mad/Sad/Glad, Sailboat, Kaizen PDCA cycle, Toyota Kata (Mike Rother), blameless postmortems, incident deep-dive (Swiss cheese model), continuous improvement patterns. DORA metrics integration, DORA capability assessment, SPACE framework productivity metrics, Team Topologies awareness, team cognitive load measurement, Value Stream Mapping, flow metrics (lead time, cycle time, flow efficiency, WIP limits), anti-patterns, remote retro patterns, psychological safety measurement, action item tracking, green software retrospective, FinOps retrospective, platform engineering retrospective, Toyota Kata practice, Lean Software Development (7 wastes), Theory of Constraints (5 focusing steps, thinking processes), DORA transformation patterns (24 capabilities, 4 tiers), Platform Engineering Maturity (CNCF maturity model, Gartner predictions), Developer Productivity Research (SPACE applied, Microsoft studies, DORA culture findings), Technical Debt Management (Fowler's quadrant, Strangler Fig, quantification), Inner Source Patterns (InnerSource Commons, trusted committer, 30-day warranty)."
-version: 4.6.0
-author: Hermes Agent
+description: "Retrospective formats: Start/Stop/Continue, 4Ls, Mad/Sad/Glad, Sailboat, Kaizen PDCA cycle, Toyota Kata (Mike Rother), blameless postmortems, incident deep-dive (Swiss cheese model), continuous improvement patterns. DORA metrics integration, DORA capability assessment, SPACE framework productivity metrics, Team Topologies awareness, team cognitive load measurement, Value Stream Mapping, flow metrics (lead time, cycle time, flow efficiency, WIP limits), anti-patterns, remote retro patterns, psychological safety measurement, action item tracking, green software retrospective, FinOps retrospective, platform engineering retrospective, Toyota Kata practice, Lean Software Development (7 wastes), Theory of Constraints (5 focusing steps, thinking processes), DORA transformation patterns (24 capabilities, 4 tiers), Platform Engineering Maturity (CNCF maturity model, Gartner predictions), Developer Productivity Research (SPACE applied, Microsoft studies, DORA culture findings), Technical Debt Management (Fowler's quadrant, Strangler Fig, quantification), Inner Source Patterns (InnerSource Commons, trusted committer, 30-day warranty), Staff Engineer Role (Larson's 4 archetypes), Engineering Ladder Design (dual-track IC/management), 1:1 Meeting Patterns (Lara Hogan, SBI, Radical Candor), Technical Decision Making (ADR, RFC, consensus models)."
+version: 4.7.0
+author: Dinoudon
 license: MIT
 platforms: [linux, macos, windows]
 metadata:
   hermes:
-    tags: [sdlc, retrospective, kaizen, continuous-improvement, postmortem, agile, dora-metrics, team-topologies, value-stream-mapping, psychological-safety, space-framework, toyota-kata, flow-metrics, cognitive-load, incident-deepdive, dora-capabilities, green-software, finops, platform-engineering, sustainable-engineering, cloud-cost-optimization, developer-experience, lean-software-development, theory-of-constraints, dora-transformation, seven-wastes, throughput-accounting, platform-maturity, developer-productivity, technical-debt, inner-source]
+    tags: [sdlc, retrospective, kaizen, continuous-improvement, postmortem, agile, dora-metrics, team-topologies, value-stream-mapping, psychological-safety, space-framework, toyota-kata, flow-metrics, cognitive-load, incident-deepdive, dora-capabilities, green-software, finops, platform-engineering, sustainable-engineering, cloud-cost-optimization, developer-experience, lean-software-development, theory-of-constraints, dora-transformation, seven-wastes, throughput-accounting, platform-maturity, developer-productivity, technical-debt, inner-source, staff-engineer, engineering-ladder, one-on-ones, adr, rfc, technical-decisions]
     related_skills: [sdlc-prd-to-production, sdlc-requirements-engineering]
 ---
 
@@ -3754,3 +3754,533 @@ Contribution Workflow:
 Source: InnerSource Commons (https://innersourcecommons.org/) | InnerSource Patterns (https://patterns.innersourcecommons.org/) | O'Reilly: Adopting Inner Source
 DORA State of DevOps Report: https://dora.dev/research/ | https://cloud.google.com/devops/state-of-devops
 24 Capabilities: https://dora.dev/capabilities/
+## Step 35: Staff Engineer Role
+
+### Will Larson's 4 Archetypes
+Source: Will Larson, "Staff Engineer" (https://staffeng.com/)
+
+| Archetype | Scope | Primary Activity | Typical Org Size |
+|-----------|-------|-----------------|-----------------|
+| **Tech Lead** | Team-scoped | Owns technical direction for one team, pairing and code review | Small-medium |
+| **Architect** | Org-wide | Influences technical direction across multiple teams, sets standards | Medium-large |
+| **Solver** | Problem-scoped | Dives into hardest ambiguous problems, may not own the solution long-term | Any |
+| **Right Hand** | Leader-scoped | Delegates from a senior leader, amplifies their reach | Large |
+
+No archetype is "better." Engineers often shift between archetypes across career. Company needs determine which archetype matters most at any time.
+
+### Organizational Scope
+
+Staff engineers operate **beyond the team**. Key differences from senior engineers:
+
+| Senior Engineer | Staff Engineer |
+|----------------|---------------|
+| Team impact | Org or company impact |
+| Owns team technical decisions | Influences cross-team technical decisions |
+| Mentors team members | Mentors across teams, raises bar org-wide |
+| Writes code for team | Writes code where highest leverage is |
+| Solves defined problems | Identifies and frames ambiguous problems |
+
+### Writing as Influence
+
+Writing scales influence beyond synchronous meetings. Key documents:
+
+- **Engineering strategies:** 1-2 page docs articulating direction for next 1-2 years. Describe current state, desired state, and why. Not a roadmap.
+- **RFCs/ADRs:** See Step 38.
+- **Postmortems:** See blameless postmortem patterns.
+- **Tech spec templates:** Standardize how decisions get documented.
+- **Architecture docs:** Living documents in version control, reviewed quarterly.
+
+Principles:
+1. Write to drive alignment, not to show knowledge.
+2. Keep docs short (1-2 pages). Long docs don't get read.
+3. Store in version control, review like code.
+4. Present docs async; use meetings for debate, not reading.
+
+### Engineering Strategies
+
+Source: Will Larson, "An Elegant Puzzle"
+
+An engineering strategy is two things:
+1. **Diagnosis:** Honest description of current state and constraints.
+2. **Guiding policies:** Principles for navigating constraints (not specific solutions).
+
+Template:
+```
+# Strategy: [Title]
+
+## Context
+Brief description of current situation. What constraints exist.
+
+## Diagnosis
+What is the core challenge? What tradeoffs are we facing?
+
+## Guiding Policies
+1. [Policy 1]: [Rationale]
+2. [Policy 2]: [Rationale]
+3. [Policy 3]: [Rationale]
+
+## Coherent Actions
+Concrete steps that follow from guiding policies.
+```
+
+Bad strategy: aspirational goals without diagnosis ("be best-in-class at X").
+Good strategy: honest diagnosis + specific guiding policies that constrain choices.
+
+### Retrospective Integration
+
+| Retro Phase | Staff Engineer Activity |
+|-------------|------------------------|
+| Set the Stage | Frame retro around org-wide technical themes, not just team sprint |
+| Gather Data | Cross-team technical metrics, architecture health, tech debt trends |
+| Generate Insights | Identify systemic issues no single team can fix alone |
+| Decide What to Do | Action items at org level: new RFC, architecture review, strategy doc |
+| Close | Share write-up with broader org |
+
+**Retro questions:**
+- "What technical decisions are we avoiding? Why?"
+- "Are we reinventing the wheel across teams?"
+- "Where does ambiguity block progress?"
+- "Are our docs up to date and useful?"
+
+Source: Will Larson, "Staff Engineer" (https://staffeng.com/book/) | Charity Majors, "The Engineer's Ladder" | Camille Fournier, "The Manager's Path"
+
+## Step 36: Engineering Ladder Design
+
+### Dual-Track: IC vs Management
+
+Source: https://www.progression.fyi/ | Holloway, "Career Frameworks for Software Engineers"
+
+```
+                          ┌─────────────┐
+                          │   VP Eng /   │
+                          │   CTO        │
+                          └──────┬──────┘
+                   ┌─────────────┴─────────────┐
+            IC Track                    Management Track
+           ┌──────┐                      ┌──────┐
+           │ E8   │ Staff+ / Fellow      │ M3   │ Director
+           │ E7   │ Staff                │ M2   │ Senior Manager
+           │ E6   │ Senior Staff         │ M1   │ Engineering Manager
+           │ E5   │ Senior Engineer      │      │
+           │ E4   │ Engineer             │      │
+           │ E3   │ Junior Engineer      │      │
+           └──────┘                      └──────┘
+```
+
+Principles:
+- **Equal prestige.** Neither track is a "promotion" from the other.
+- **Comparable compensation.** IC and management pay bands overlap at each scope level.
+- **Lateral movement.** Engineers can switch tracks without "demotion."
+- **Scope, not seniority.** Level defined by impact scope, not years worked.
+
+### Level Table
+
+| Level | Title | Scope | Typical Experience |
+|-------|-------|-------|--------------------|
+| E3 | Junior Engineer | Task-level | 0-2 years |
+| E4 | Engineer | Feature/task-level independently | 2-5 years |
+| E5 | Senior Engineer | Project/team-level, influences team decisions | 5-8 years |
+| E6 | Senior Staff | Multi-team, influences org technical direction | 8-12 years |
+| E7 | Staff | Org-wide, sets technical strategy | 12-18 years |
+| E8 | Staff+ / Fellow | Company-wide, industry recognition | 18+ years |
+| M1 | Engineering Manager | Team of 4-8, people management + delivery | 5-8 years |
+| M2 | Senior Manager | Multiple teams or 1 large team (8-15) | 8-12 years |
+| M3 | Director | Department/org (15-50+), strategy + budget | 12+ years |
+
+Note: Titles vary across companies. Some orgs use E1-E2 for interns, some use "Principal" for E8. The key is consistent internal definitions.
+
+### Core Competency Dimensions
+
+Each level requires demonstration across 5 dimensions:
+
+**1. Technical Skill**
+| Level | Expectation |
+|-------|-------------|
+| E3 | Writes correct code with guidance, learns team's tech stack |
+| E4 | Writes clean, tested code independently, debugs effectively |
+| E5 | Designs systems, makes sound technical tradeoffs, reviews others' code |
+| E6 | Designs complex multi-system architectures, identifies technical risks |
+| E7 | Sets technical strategy, resolves org-wide technical ambiguity |
+| E8 | Industry-recognized expertise, shapes company technical direction |
+
+**2. Execution**
+| Level | Expectation |
+|-------|-------------|
+| E3 | Completes assigned tasks on time with help |
+| E4 | Delivers features end-to-end, manages own work queue |
+| E5 | Owns project timeline, manages dependencies, unblocks others |
+| E6 | Drives multi-team programs, manages risk and scope |
+| E7 | Defines and drives org-level engineering programs |
+
+**3. Communication**
+| Level | Expectation |
+|-------|-------------|
+| E3 | Communicates status clearly to team |
+| E4 | Writes clear PRs, documents own work |
+| E5 | Writes RFCs/design docs, presents to team, influences decisions |
+| E6 | Communicates across teams, writes strategy docs, presents to leadership |
+| E7 | Drives org-wide alignment through writing and presenting |
+
+**4. Leadership**
+| Level | Expectation |
+|-------|-------------|
+| E3 | Receptive to feedback, collaborative |
+| E4 | Mentors peers informally, onboards new hires |
+| E5 | Mentors junior engineers, leads technical initiatives |
+| E6 | Mentors across teams, influences engineering culture |
+| E7 | Defines engineering values and practices org-wide |
+
+**5. Strategic Impact**
+| Level | Expectation |
+|-------|-------------|
+| E3 | Understands team goals |
+| E4 | Connects work to team priorities |
+| E5 | Proposes improvements to team processes and architecture |
+| E6 | Identifies and drives multi-quarter technical initiatives |
+| E7 | Shapes engineering strategy aligned with business goals |
+
+### Design Principles for Ladders
+
+1. **Behavior-based, not trait-based.** Describe observable behaviors, not personality qualities. Bad: "strong communicator." Good: "writes RFCs that get approved without major revisions."
+2. **Calibration sessions.** Quarterly meetings where managers discuss promotions using evidence. Prevents drift between teams. Format:
+   - Manager presents case with specific evidence per dimension
+   - Peers ask clarifying questions
+   - Group aligns on level
+3. **Promotion committees.** Cross-team panel reviews promotion packets. Reduces single-manager bias.
+4. **Documented rubrics.** Published internally so engineers self-assess. Reduces anxiety and politics.
+5. **Scope-based leveling.** "What scope of impact does this person have?" Not "how long have they been here?"
+6. **No forced distribution.** Don't cap promotions per team. If everyone meets the bar, promote everyone.
+
+### Retrospective Integration
+
+| Retro Phase | Ladder Activity |
+|-------------|----------------|
+| Set the Stage | Share anonymized level distribution (are we top-heavy? stuck in middle?) |
+| Gather Data | Promotion rates, calibration session notes, exit interview data |
+| Generate Insights | Are promotions equitable across teams? Are rubrics clear? |
+| Decide What to Do | Update rubric, adjust calibration process, address bias |
+| Close | Celebrate growth stories |
+
+**Retro questions:**
+- "Do engineers understand what it takes to get promoted?"
+- "Are promotions equitable across demographics and teams?"
+- "Is our ladder behavior-based or vibes-based?"
+- "Are IC and management tracks truly equal in prestige and pay?"
+
+Source: Progression.fyi (https://www.progression.fyi/) | Holloway Guide | Dropbox, Spotify, Patreon public ladders
+
+## Step 37: 1:1 Meeting Patterns
+
+### Lara Hogan Template
+Source: Lara Hogan, "Reshaping the 1:1" (https://larahogan.me/blog/reshaping-1-1/)
+
+Structure: **Report-driven, 30 minutes, weekly.**
+
+```
+## Agenda (filled by report before meeting)
+
+1. Check-in (3 min)
+   - How are you feeling? (1-5 scale or open)
+
+2. Report's topics (15 min)
+   - What's on your mind?
+   - Anything blocking you?
+   - Decisions you need input on?
+
+3. Manager's topics (7 min)
+   - Context from leadership
+   - Feedback (see frameworks below)
+   - Org updates
+
+4. Wrap-up (5 min)
+   - Action items (who, what, when)
+   - Schedule any follow-ups
+```
+
+Key principles:
+- **Report owns the agenda.** Manager's job is to listen first.
+- **Don't cancel.** Canceling 1:1s signals "you're not important."
+- **No status updates.** Use standup/async for that. 1:1 is for growth, blockers, feelings.
+- **Take notes.** Both sides keep notes. Review at start of next meeting.
+- **Walk and talk.** Sometimes getting out of conference room changes dynamic.
+
+### Feedback Frameworks
+
+#### Feedback Wheel
+Source: Ellen Linsky (https://ellenlinsky.com/)
+
+```
+      ┌──────────────┐
+      │  Ask for     │
+      │  permission   │
+      └──────┬───────┘
+             │
+      ┌──────┴───────┐
+      │  Describe     │
+      │  behavior     │
+      └──────┬───────┘
+             │
+      ┌──────┴───────┐
+      │  Describe     │
+      │  impact        │
+      └──────┬───────┘
+             │
+      ┌──────┴───────┐
+      │  Discuss      │
+      │  next steps    │
+      └──────┬───────┘
+             │
+      ┌──────┴───────┐
+      │  Thank        │
+      └──────────────┘
+```
+
+1. **Ask:** "Can I share some feedback about the design review yesterday?"
+2. **Behavior:** "When you interrupted the mid-level engineer three times..."
+3. **Impact:** "...they stopped contributing and the team lost their perspective."
+4. **Next steps:** "Could you try pausing before responding in reviews?"
+5. **Thank:** "Thanks for hearing me out."
+
+#### SBI Model (Situation-Behavior-Impact)
+Source: Center for Creative Leadership (https://www.ccl.org/)
+
+Template:
+```
+Situation: [When and where]
+Behavior: [What specifically they did]
+Impact: [Effect on you, team, or project]
+```
+
+Example:
+```
+Situation: In yesterday's architecture review
+Behavior: You dismissed the caching proposal without asking clarifying questions
+Impact: The engineer who proposed it felt unheard, and we may have missed a good idea
+```
+
+Keep it factual. No "you always" or "you never." Specific instance only.
+
+#### Radical Candor
+Source: Kim Scott, "Radical Candor" (https://www.radicalcandrco.com/)
+
+Framework: Care Personally + Challenge Directly
+
+```
+            Challenge Directly
+            ┌─────────┬──────────┐
+            │Obnoxious│Radical   │
+            │Aggression│Candor   │
+            │(mean)    │(ideal)  │
+Care        ├─────────┼──────────┤
+Personally  │Manipu-   │Ruinous  │
+            │lative    │Empathy  │
+            │Insincerity│(nice   │
+            │(fake)    │but no   │
+            │         │growth)  │
+            └─────────┴──────────┘
+```
+
+- **Radical Candor:** "I care about you AND I'm going to challenge you on this." Direct feedback + genuine care.
+- **Ruinous Empathy:** "I don't want to hurt their feelings." Silence is not kindness.
+- **Obnoxious Aggression:** Feedback without care. Creates fear.
+- **Manipulative Insincerity:** Passive-aggressive, gossip, politics.
+
+Practice: Start with praise to show care, then deliver criticism directly. "I really value your work on X. AND I need to be direct about Y."
+
+### Career Conversations (Quarterly)
+
+Separate from regular 1:1s. Dedicated 45-60 min every quarter.
+
+Template:
+```
+## Career Conversation: [Name] | [Date]
+
+### Current Role
+- What's energizing you right now?
+- What's draining you?
+- Where do you feel stuck?
+
+### Growth Areas
+- What skills do you want to build in the next 6 months?
+- What projects would stretch you?
+- Who could mentor you on this?
+
+### T-Shaped Skills Assessment
+                    ┌──────────────────────┐
+  Deep expertise →  │████████████████████│  ← breadth across domains
+                    │████████████████████│
+                    │████████████████████│
+
+Breadth: [list general skills]
+Depth: [list deep specialty]
+
+### Next Steps
+- Action items with dates
+- Follow-up in next 1:1
+```
+
+T-shaped skills: broad knowledge across many areas + deep expertise in one. Encourage engineers to identify their "deep bar" and build it deliberately.
+
+Career conversation questions:
+1. "What do you want to be known for?"
+2. "What would your ideal next role look like?"
+3. "What's one thing you'd change about your current work?"
+4. "Who do you admire in engineering? Why?"
+5. "What are you avoiding? What would help you face it?"
+
+### Retrospective Integration
+
+| Retro Phase | 1:1 Activity |
+|-------------|--------------|
+| Set the Stage | Review 1:1 patterns: frequency, cancellations, agenda ownership |
+| Gather Data | Feedback delivery metrics, career conversation completion rates |
+| Generate Insights | Are 1:1s happening? Are they substantive or status updates? |
+| Decide What to Do | Improve 1:1 quality: new template, training on feedback frameworks |
+| Close | Commit to one 1:1 improvement |
+
+**Retro questions:**
+- "Do 1:1s feel like a safe space for honest conversation?"
+- "Is feedback given in 1:1s or saved for performance reviews?"
+- "Do engineers own the agenda or do managers?"
+- "Are career conversations happening quarterly?"
+
+Source: Lara Hogan (https://larahogan.me/) | Kim Scott, "Radical Candor" | CCL SBI Model | Lara Hogan, "1:1 Meeting Guide"
+
+## Step 38: Technical Decision Making
+
+### Architecture Decision Records (ADR)
+Source: Michael Nygard, "Documenting Architecture Decisions" (https://cognitect.com/blog/2011/11/15/documenting-architecture-decisions)
+
+ADR template (Nygard format):
+```
+# ADR-[NNN]: [Title]
+
+## Status
+[Proposed | Accepted | Deprecated | Superseded by ADR-XXX]
+
+## Context
+What is the issue that we're seeing that is motivating this decision?
+
+## Decision
+What is the change that we're proposing and/or doing?
+
+## Consequences
+What becomes easier or more difficult because of this change?
+```
+
+Key principles:
+- **Immutable.** Once accepted, do not edit. Supersede with new ADR.
+- **Stored in VCS.** Same repo as code. Reviewed via PR.
+- **Sequential numbering.** ADR-001, ADR-002, etc.
+- **Lightweight.** One page max. If it's longer, the decision is too complex.
+- **All decisions.** Not just "big" ones. Small decisions that affect future choices qualify.
+
+Variations:
+- **ADR with alternatives:** Add `## Alternatives Considered` section with rejected options and reasons.
+- **MADR (Markdown Any Decision Records):** Adds decision drivers, options matrix.
+- **Y-statements:** One-liner format: "In the context of X, facing Y, we decided Z, to achieve W, accepting N."
+
+### RFC (Request for Comments) Pattern
+Source: https://www.ietf.org/standards/rfcs/ | Rust RFC process
+
+Lifecycle:
+```
+Draft → Review → Final Comment Period → Accepted/Rejected
+  │        │              │                    │
+  │        │              │                    └── Decision recorded
+  │        │              │                        (ADR if accepted)
+  │        │              └── 1 week with no new
+  │        │                  objections → decision
+  │        └── Open for comments, typically 2-4 weeks
+  └── Author writes proposal, submits PR
+```
+
+RFC template:
+```
+# RFC: [Title]
+
+## Summary
+One paragraph overview of the proposal.
+
+## Motivation
+Why is this needed? What problem does it solve?
+
+## Detailed Design
+Full specification. Enough detail to implement.
+
+## Drawbacks
+What are the downsides of this approach?
+
+## Alternatives
+What other approaches were considered? Why rejected?
+
+## Unresolved Questions
+What needs to be resolved during implementation?
+
+## References
+Links to prior art, related proposals, relevant docs.
+```
+
+Key principles:
+- **Written proposals, not verbal agreements.** Decisions made in writing persist.
+- **Time-bounded review.** Set a deadline. Don't let RFCs languish.
+- **Final comment period.** Announce "no more major objections, we'll accept in 1 week."
+- **Named reviewers.** Assign specific people, not "everyone."
+- **Track status.** Use labels or a dashboard: draft, in-review, accepted, rejected, superseded.
+
+### Decision Fatigue: Bezos Type 1 / Type 2
+
+Source: Jeff Bezos, 2015 Amazon Shareholder Letter
+
+| Type | Reversibility | Speed | Example |
+|------|---------------|-------|---------|
+| **Type 1** | Irreversible or very costly to reverse | Slow, deliberate, careful | Choosing database vendor, building in a specific cloud region |
+| **Type 2** | Easily reversible | Fast, decide and move | Feature flag on/off, UI copy change, team process tweak |
+
+Most decisions are Type 2. Teams treat them as Type 1 out of caution, causing slowness.
+
+Anti-pattern: **One-Way Door Fallacy.** Treating reversible decisions as irreversible. Result: analysis paralysis, committee everything, slow velocity.
+
+Practice:
+- Label decisions: "Is this a Type 1 or Type 2?"
+- Type 2: delegate to lowest competent level. Decide in days.
+- Type 1: gather input, write RFC/ADR, take weeks. But still timebox.
+
+### Consensus Models
+
+| Model | Decision Maker | Input | Speed | When to Use |
+|-------|---------------|-------|-------|-------------|
+| **Unilateral** | One person | None required | Fastest | Emergencies, clearly scoped decisions |
+| **Consultative** | One person after gathering input | Team provides input, one decides | Fast | Most technical decisions |
+| **Consent** | Group, no major objections | Group reviews, blocks only for "good enough" objections | Medium | Cross-team decisions |
+| **Consensus** | Full agreement required | Everyone must agree | Slowest | Irreversible, high-stakes decisions |
+
+**Sociocracy consent model:** "Good enough for now, safe enough to try." Not requiring agreement, only absence of paramount objections. Faster than consensus, safer than unilateral.
+
+**Consultative decision-making in practice:**
+1. Author writes proposal (RFC/ADR)
+2. Share with impacted people, request feedback by deadline
+3. Decision maker incorporates feedback (may disagree, must explain why)
+4. Decision announced with rationale
+5. Objections documented even if not accepted
+
+**Anti-consensus:** "Disagree and commit." Once decided, everyone executes. No passive-aggressive undermining. Revisit only with new data.
+
+### Retrospective Integration
+
+| Retro Phase | Decision-Making Activity |
+|-------------|-------------------------|
+| Set the Stage | Review recent decisions: were they documented? right model used? |
+| Gather Data | ADR count, RFC lifecycle times, decision reversal rate |
+| Generate Insights | Are we using Type 1 process for Type 2 decisions? Missing docs? |
+| Decide What to Do | Improve decision hygiene: new ADR template, faster RFC reviews |
+| Close | Commit to one decision-making improvement |
+
+**Retro questions:**
+- "Are we documenting decisions, or are they in Slack threads that get lost?"
+- "Are we using the right consensus model for each decision?"
+- "Are we treating Type 2 decisions as Type 1? (Analysis paralysis?)"
+- "Do people know who the decision maker is for each choice?"
+- "Are RFCs getting stuck in review forever?"
+
+Source: Michael Nygard ADR | IETF RFC process | Rust RFC process | Jeff Bezos Shareholder Letter | Sociocracy consent model
