@@ -1,13 +1,13 @@
 ---
 name: sdlc-retrospective
-description: "Retrospective formats: Start/Stop/Continue, 4Ls, Mad/Sad/Glad, Sailboat, Kaizen PDCA cycle, Toyota Kata (Mike Rother), blameless postmortems, incident deep-dive (Swiss cheese model), continuous improvement patterns. DORA metrics integration, DORA capability assessment, SPACE framework productivity metrics, Team Topologies awareness, team cognitive load measurement, Value Stream Mapping, flow metrics (lead time, cycle time, flow efficiency, WIP limits), anti-patterns, remote retro patterns, psychological safety measurement, action item tracking, green software retrospective, FinOps retrospective, platform engineering retrospective, Toyota Kata practice, Lean Software Development (7 wastes), Theory of Constraints (5 focusing steps, thinking processes), DORA transformation patterns (24 capabilities, 4 tiers)."
-version: 4.4.0
+description: "Retrospective formats: Start/Stop/Continue, 4Ls, Mad/Sad/Glad, Sailboat, Kaizen PDCA cycle, Toyota Kata (Mike Rother), blameless postmortems, incident deep-dive (Swiss cheese model), continuous improvement patterns. DORA metrics integration, DORA capability assessment, SPACE framework productivity metrics, Team Topologies awareness, team cognitive load measurement, Value Stream Mapping, flow metrics (lead time, cycle time, flow efficiency, WIP limits), anti-patterns, remote retro patterns, psychological safety measurement, action item tracking, green software retrospective, FinOps retrospective, platform engineering retrospective, Toyota Kata practice, Lean Software Development (7 wastes), Theory of Constraints (5 focusing steps, thinking processes), DORA transformation patterns (24 capabilities, 4 tiers), Platform Engineering Maturity (CNCF maturity model, Gartner predictions), Developer Productivity Research (SPACE applied, Microsoft studies, DORA culture findings), Technical Debt Management (Fowler's quadrant, Strangler Fig, quantification), Inner Source Patterns (InnerSource Commons, trusted committer, 30-day warranty)."
+version: 4.5.0
 author: Hermes Agent
 license: MIT
 platforms: [linux, macos, windows]
 metadata:
   hermes:
-    tags: [sdlc, retrospective, kaizen, continuous-improvement, postmortem, agile, dora-metrics, team-topologies, value-stream-mapping, psychological-safety, space-framework, toyota-kata, flow-metrics, cognitive-load, incident-deepdive, dora-capabilities, green-software, finops, platform-engineering, sustainable-engineering, cloud-cost-optimization, developer-experience, lean-software-development, theory-of-constraints, dora-transformation, seven-wastes, throughput-accounting]
+    tags: [sdlc, retrospective, kaizen, continuous-improvement, postmortem, agile, dora-metrics, team-topologies, value-stream-mapping, psychological-safety, space-framework, toyota-kata, flow-metrics, cognitive-load, incident-deepdive, dora-capabilities, green-software, finops, platform-engineering, sustainable-engineering, cloud-cost-optimization, developer-experience, lean-software-development, theory-of-constraints, dora-transformation, seven-wastes, throughput-accounting, platform-maturity, developer-productivity, technical-debt, inner-source]
     related_skills: [sdlc-prd-to-production, sdlc-requirements-engineering]
 ---
 
@@ -3053,5 +3053,704 @@ Next improvement:
 **Retro question:** "Are we improving technical capability and cultural capability together, or neglecting one?"
 
 Source: Accelerate by Nicole Forsgren, Jez Humble, Gene Kim, 2018 | https://dora.dev/research/
+
+## Step 31: Platform Engineering Maturity
+
+Source: https://tag-app-delivery.cncf.io/whitepapers/platforms/ | CNCF Platform Engineering Maturity Model: https://maturitymodel.cncf.io/ | Team Topologies by Matthew Skelton & Manuel Pais
+
+Platform engineering builds internal developer platforms (IDPs) that reduce cognitive load on product teams. Mature platforms provide self-service capabilities, golden paths, and paved roads. Gartner predicted 80% of large engineering orgs would have platform engineering teams by 2026. Anti-pattern: ticket-ops disguised as platform (submit ticket, wait for ops team to do it manually).
+
+### CNCF Platform White Paper
+
+Core thesis: Platforms provide consistent, curated sets of internal services that reduce cognitive load on development teams. Platforms are not just infrastructure — they are products.
+
+**Key principles:**
+- Platforms are **products** with users (developers), not just infrastructure projects
+- Platform teams serve internal customers, apply product management practices
+- Reduce cognitive load: developers shouldn't need to understand infrastructure details
+- Self-service: developers provision what they need without tickets or waiting
+- Golden paths: opinionated defaults that work well, with escape hatches for edge cases
+- Paved roads: pre-built integrations, templates, and workflows
+
+**Platform capabilities layer stack:**
+
+```
+┌─────────────────────────────────────────────────┐
+│         Developer Experience Layer              │
+│   Portals, CLIs, APIs, SDKs, documentation      │
+├─────────────────────────────────────────────────┤
+│         Platform Services Layer                 │
+│   CI/CD, monitoring, logging, secrets,          │
+│   service catalog, cost management              │
+├─────────────────────────────────────────────────┤
+│         Infrastructure Layer                    │
+│   Compute, storage, networking, Kubernetes,     │
+│   cloud services, IaC                           │
+└─────────────────────────────────────────────────┘
+```
+
+### CNCF Platform Engineering Maturity Model
+
+4 dimensions × 4 levels. Assess each dimension independently.
+
+| Dimension | Description |
+|-----------|-------------|
+| **Investment** | How much org invests in platform (people, budget, time) |
+| **Adoption** | How widely teams use the platform (vs shadow IT, workarounds) |
+| **Operational Excellence** | How well platform runs (reliability, observability, incident response) |
+| **User Experience** | How good developer experience is (self-service, docs, onboarding) |
+
+**Maturity Levels:**
+
+| Level | Name | Investment | Adoption | Operational Excellence | User Experience |
+|-------|------|-----------|----------|----------------------|-----------------|
+| 1 | **Ad Hoc** | No dedicated platform team, scattered effort | Teams build own solutions, duplication | Unreliable, no SLOs, firefighting | Poor docs, tribal knowledge, manual setup |
+| 2 | **Operational** | Small dedicated team, limited budget | Some teams onboarded, voluntary | Basic monitoring, incident response exists | Getting-started guides, some self-service |
+| 3 | **Scalable** | Proper team with product manager, adequate budget | Majority of teams use platform, onboarding standard | SLOs defined, observability, proactive | Good docs, self-service portal, golden paths |
+| 4 | **Optimizing** | Platform treated as product, product-market fit | Near-universal adoption, platform is default | SRE practices, error budgets, continuous improvement | Excellent DX, feedback loops, platform metrics |
+
+**Assessment template:**
+
+```
+Platform Maturity Assessment:
+
+1. Investment:      Level ___ → Evidence: ___
+2. Adoption:        Level ___ → Evidence: ___
+3. Operations:      Level ___ → Evidence: ___
+4. User Experience: Level ___ → Evidence: ___
+
+Overall maturity = lowest dimension (bottleneck)
+Priority: raise lowest dimension first
+Next review: ___
+```
+
+### Gartner Predictions
+
+- By 2026, 80% of large software engineering orgs will have platform engineering teams (Gartner, 2023)
+- By 2027, 50% of large orgs will have established platform engineering self-service internal platforms
+- Platform engineering is the evolution of DevOps, not a replacement
+- Key driver: cognitive overload on developers (too many tools, too much infra knowledge required)
+
+### Anti-Patterns
+
+**Ticket-Ops Disguised as Platform:**
+
+```
+❌ WRONG (ticket-ops):
+Developer needs database → Submits ticket → Waits 3 days →
+Ops team provisions manually → Developer gets connection string
+
+✅ RIGHT (platform):
+Developer needs database → Opens portal → Selects "PostgreSQL" →
+Clicks "Create" → Connection string available in < 5 minutes
+```
+
+**Other anti-patterns:**
+
+| Anti-Pattern | Symptom | Fix |
+|-------------|---------|-----|
+| **Ivory tower platform** | Platform team builds without user research | Product management, user interviews, usage metrics |
+| **Mandatory adoption** | Teams forced to use immature platform | Make platform so good teams want to use it (pull, not push) |
+| **Everything platform** | Platform tries to solve every use case | Focus on 80% use case, escape hatches for edge cases |
+| **No feedback loop** | Platform team doesn't track user satisfaction | Developer NPS, support ticket trends, adoption metrics |
+| **Infra-only platform** | Just Kubernetes + Terraform, no developer services | Add CI/CD, observability, service catalog, docs |
+
+### Retrospective Integration
+
+| Retro Phase | Platform Activity |
+|-------------|-----------------|
+| Set the Stage | State current platform maturity level (per dimension) |
+| Gather Data | Platform adoption metrics, developer NPS, support tickets, time-to-first-deploy |
+| Generate Insights | Identify which maturity dimension is lowest, find blocking anti-patterns |
+| Decide What to Do | One maturity improvement, focus on lowest dimension |
+| Close | Reassess maturity level, track progress |
+
+**Retro questions:**
+- "Is our platform reducing cognitive load, or adding another layer of complexity?"
+- "Are we doing ticket-ops or true self-service?"
+- "What's our developer NPS for the platform?"
+- "Which teams are still doing shadow IT? Why?"
+
+Source: CNCF Platform White Paper, 2023 | Gartner, 2023 | Team Topologies by Skelton & Pais
+
+## Step 32: Developer Productivity Research
+
+Source: SPACE framework: https://queue.acm.org/detail.cfm?id=3454124 | DORA: https://dora.dev/research/ | Microsoft studies: ICSE 2019, 2021
+
+Developer productivity research provides evidence-based frameworks for measuring and improving how developers work. Key findings: flow state matters more than output volume, perception and output metrics diverge, culture predicts technical outcomes, and the SPACE framework captures 5 dimensions of productivity.
+
+### SPACE Framework (Applied)
+
+Source: SPACE: https://queue.acm.org/detail.cfm?id=3454124 | Forsgren, Storey, Maddila, Zimmermann, 2021
+
+5 dimensions of developer productivity. No single dimension is sufficient. Measure across dimensions to avoid optimizing locally.
+
+| Dimension | What It Measures | Concrete Metrics |
+|-----------|-----------------|------------------|
+| **S**atisfaction & Well-being | How fulfilled developers are with work, tools, culture | Developer satisfaction survey (eNPS), burnout indicators, tool satisfaction scores, psychological safety score |
+| **P**erformance | System/infrastructure performance and developer output quality | PR review time, build success rate, deployment frequency, change failure rate, MTTR |
+| **A**ctivity | Countable outputs (commits, PRs, deployments, reviews) | PRs merged/week, commits/developer, reviews completed, deployments/week, stories completed |
+| **C**ommunication & Collaboration | How well teams communicate, review, share knowledge | PR review depth (comments per PR), cross-team PRs, knowledge sharing sessions, docs contributions, onboarding time |
+| **E**fficiency & Flow | How much uninterrupted time developers have, flow state | Focus time (hours), interruption rate, cycle time, lead time, wait time in queues, handoff count |
+
+**Measurement principles:**
+- Use **perception** metrics (surveys) alongside **output** metrics (countable)
+- **Never use single dimension** — optimizing activity alone creates perverse incentives
+- **Team-level > individual-level** — measure team productivity, not individual developer output
+- **Trends > absolutes** — track direction of change, not absolute numbers
+- **Balance** — satisfaction without output is complacency; output without satisfaction is burnout
+
+**Applied example — sprint retrospective SPACE dashboard:**
+
+```
+SPACE Sprint Dashboard:
+
+Satisfaction:  Dev survey score: 7.2/10 (↑ 0.3)
+Performance:   Deployment freq: 3/week (→), CFR: 8% (↓ 2%)
+Activity:      PRs merged: 24 (↑ 3), Reviews: 31 (↑ 5)
+Communication: Cross-team PRs: 4 (↑ 1), Doc updates: 6 (↑ 2)
+Efficiency:    Focus time: 4.1h/day (↓ 0.3h) ← WARNING
+
+Action: Investigate focus time drop. Check meeting load.
+```
+
+### Microsoft Studies: Flow State & Perception vs Output
+
+Source: ICSE 2019, 2021 | Microsoft Research | "Today Was a Good Day" (Forsgren et al.)
+
+**Key findings from Microsoft studies:**
+
+1. **Flow state is critical:** Developers who report high flow also report high productivity and satisfaction. Flow is destroyed by context switching, interruptions, and waiting.
+
+2. **Inner loop vs outer loop:**
+   - **Inner loop:** Code → Build → Test → Debug (developer's tight feedback cycle)
+   - **Outer loop:** Code review → CI → Deploy → Monitor (team/organizational cycle)
+   - Optimizing inner loop (fast builds, instant tests) has highest impact on perceived productivity
+   - Outer loop optimization (fast CI, quick deploys) affects team throughput
+
+3. **Perception ≠ Output:**
+   - Developers' **perceived productivity** does NOT always correlate with **output metrics**
+   - A developer may feel unproductive (waiting on reviews, blocked) while output metrics look fine
+   - Conversely, high output with no flow state leads to burnout, not satisfaction
+   - **Implication:** Measure both perception AND output; don't optimize one alone
+
+4. **What kills flow:**
+
+```
+Flow Killers (ranked by impact):
+
+1. Context switching (multiple tasks simultaneously)
+2. Waiting for reviews / approvals / builds
+3. Meetings (especially mid-day breaking focus blocks)
+4. Unclear requirements (rework from ambiguity)
+5. Tool friction (slow builds, flaky tests, broken dev env)
+6. Cognitive overload (too many systems, too much infra knowledge)
+```
+
+5. **What builds flow:**
+   - Uninterrupted blocks of 2+ hours
+   - Fast inner loop (< 10 min build-test cycle)
+   - Clear goals and acceptance criteria
+   - Good tooling (fast IDE, reliable CI, easy dev env setup)
+   - Autonomy over how to do the work
+
+### Google DORA Reports: Culture Predicts Outcomes
+
+Source: https://dora.dev/research/ | Accelerate by Forsgren, Humble, Kim
+
+**Key DORA research findings:**
+
+1. **Culture is the strongest predictor of software delivery performance** — stronger than tools, processes, or technology choices
+2. **Westrum organizational culture** (generative/blameless) predicts all 4 DORA metrics
+3. **Transformational leadership** predicts culture, which predicts performance (leadership → culture → performance chain)
+4. **Technical practices and culture co-evolve** — you cannot sustainably improve one without the other
+5. **Continuous improvement is itself a capability** — teams that regularly reflect and improve outperform those that don't
+
+**Evidence summary:**
+
+| Finding | Evidence | Source |
+|---------|----------|--------|
+| Culture predicts delivery performance | Statistical analysis across 31,000+ surveys | DORA 2018-2023 |
+| Generative culture → 2x change approval speed | Controlled comparison of org culture types | DORA/Accelerate |
+| Psychological safety → higher deployment frequency | Regression analysis, p < 0.001 | DORA 2021 |
+| Learning culture → faster MTTR | Teams that invest in learning recover faster | DORA 2022 |
+| Transformational leadership → culture → performance | Mediation analysis | DORA 2019 |
+| Perception ≠ output | Qual + quant mixed methods | Microsoft ICSE 2019 |
+| Flow state → satisfaction → retention | Longitudinal study | Microsoft ICSE 2021 |
+
+### Retrospective Integration
+
+| Retro Phase | Productivity Activity |
+|-------------|---------------------|
+| Set the Stage | Present SPACE dashboard (one metric per dimension) |
+| Gather Data | Flow state data, interruption logs, build times, survey results |
+| Generate Insights | Identify which SPACE dimension is weakest, check perception vs output gap |
+| Decide What to Do | One improvement to weakest dimension, verify with both perception and output |
+| Close | Reassess SPACE scores, track trends |
+
+**Retro questions:**
+- "Are we measuring productivity holistically (SPACE) or just counting outputs?"
+- "What's destroying our flow state this sprint?"
+- "Do our perception scores match our output metrics? If not, why?"
+- "Are we optimizing inner loop or outer loop? Which matters more now?"
+
+Source: SPACE Framework (Forsgren et al., 2021) | Microsoft Research ICSE 2019, 2021 | DORA/Google Research
+
+## Step 33: Technical Debt Management
+
+Source: Martin Fowler's Technical Debt Quadrant: https://martinfowler.com/bliki/TechnicalDebt.html | Ward Cunningham's original metaphor: https://wiki.c2.com/?WardExplainsDebtMetaphor | Strangler Fig: https://martinfowler.com/bliki/StranglerFigApplication.html
+
+Technical debt is deliberate or inadvertent suboptimal technical choices that incur ongoing cost. Ward Cunningham's original metaphor: shipping first-time code is like going into debt, with interest on that debt being the extra effort required to extend the code in the future. Martin Fowler categorized debt into a 2×2 quadrant. Strangler Fig pattern enables incremental debt reduction.
+
+### Cunningham's Original Metaphor
+
+> "Shipping first time code is like going into debt. A little debt speeds development so long as it is paid back promptly with a rewrite... The danger occurs when the debt is not repaid. Every minute spent on not-quite-right code counts as interest on that debt."
+> — Ward Cunningham, 1992
+
+Key insight: debt is not inherently bad. Deliberate, controlled debt can accelerate delivery. The problem is **unmanaged** debt where interest compounds.
+
+### Fowler's Technical Debt Quadrant
+
+Source: https://martinfowler.com/bliki/TechnicalDebt.html
+
+Two axes: **Reckless vs Prudent** × **Deliberate vs Inadvertent**
+
+```
+                    Deliberate              Inadvertent
+                ┌─────────────────────┬─────────────────────┐
+   Prudent      │                     │                     │
+                │  "We don't have     │  "Now we know how   │
+                │   time to design"   │   we should have    │
+                │                     │   done it"          │
+                │  Acceptable debt:   │  Learning debt:     │
+                │  known tradeoff,    │  discovered through  │
+                │  plan to repay      │  experience          │
+                │                     │                     │
+                ├─────────────────────┼─────────────────────┤
+   Reckless     │                     │                     │
+                │  "We don't have     │  "What's layered    │
+                │   time for design"  │   design?"          │
+                │                     │                     │
+                │  Dangerous debt:    │  Dangerous debt:    │
+                │  knowingly creating │  incompetence creating│
+                │  mess               │  mess unknowingly    │
+                │                     │                     │
+                └─────────────────────┴─────────────────────┘
+```
+
+| Quadrant | Type | Example | Retro Response |
+|----------|------|---------|---------------|
+| **Prudent + Deliberate** | Strategic debt | "Ship now, refactor next sprint" | Track it, schedule repayment, timebox |
+| **Prudent + Inadvertent** | Learning debt | "After building it, we see a better design" | Refactor when discovered, share learning |
+| **Reckless + Deliberate** | Negligent debt | "No time for tests, just ship it" | Stop. This is organizational dysfunction. Escalate. |
+| **Reckless + Inadvertent** | Accidental debt | Developer doesn't know design patterns | Training, pair programming, code review, mentoring |
+
+### Strangler Fig Pattern for Debt
+
+Source: https://martinfowler.com/bliki/StranglerFigApplication.html
+
+Named after strangler fig trees that grow around host trees until they replace them. Apply incrementally to technical debt:
+
+```
+Phase 1: Wrap (add facade/API around legacy code)
+├── New code calls legacy through clean interface
+├── Legacy still runs, but new consumers use new interface
+└── Zero risk: legacy untouched
+
+Phase 2: Redirect (route traffic to new implementation)
+├── Build new implementation behind the interface
+├── Route percentage of traffic to new code (canary)
+├── Compare behavior: new vs legacy
+└── Low risk: can revert traffic instantly
+
+Phase 3: Replace (remove legacy code)
+├── All traffic on new implementation
+├── Legacy code no longer called
+├── Remove legacy code
+└── Debt eliminated incrementally
+
+Phase 4: Clean up
+├── Remove facade if no longer needed
+├── Update documentation
+└── Retrospective: what did we learn?
+```
+
+**Strangler Fig applied to common debt:**
+
+| Debt Type | Wrap | Redirect | Replace |
+|-----------|------|----------|---------|
+| Monolith → Microservices | Extract one service behind API | Route traffic to new service | Decommission monolith module |
+| Old library → New library | Adapter pattern around old lib | New consumers use new lib | Remove old lib dependency |
+| Manual process → Automated | Document manual steps | Run automation alongside manual | Remove manual process |
+| Legacy database → New database | Read from new, write to both | Read/write from new | Decommission old DB |
+
+### Quantifying Technical Debt
+
+**Technical Debt Ratio (TDR):**
+
+```
+TDR = (cost to fix debt) / (total codebase cost to develop from scratch)
+
+Example:
+  Cost to fix all known debt:  800 person-hours
+  Cost to rewrite from scratch: 10,000 person-hours
+  TDR = 800 / 10,000 = 8%
+
+Industry benchmark: TDR < 5% is healthy, 5-10% needs attention, > 10% is critical
+```
+
+**SQALE (Software Quality Assessment based on Lifecycle Expectations):**
+
+Source: https://www.sonarsource.com/
+
+SQALE method measures debt as remediation cost per quality characteristic:
+
+| SQALE Characteristic | What It Measures | Measurement |
+|---------------------|-----------------|-------------|
+| Reliability | Bugs, potential failures | Hours to fix all reliability issues |
+| Maintainability | Code smells, complexity | Hours to fix all maintainability issues |
+| Testability | Test coverage, coupling | Hours to achieve adequate test coverage |
+| Portability | Platform dependencies | Hours to remove platform lock-in |
+| Security | Vulnerabilities, CVEs | Hours to fix all security issues |
+| Efficiency | Performance issues | Hours to fix all performance issues |
+| Changeability | Modularity, duplication | Hours to reduce coupling/duplication |
+
+**Cost of Delay for debt:**
+
+```
+Cost of Delay = (debt impact per sprint) × (number of sprints until fixed)
+
+Example:
+  Tech debt in payment module adds 2 days/sprint to feature work
+  Sprint cost: $50,000
+  2 days = $25,000/sprint
+  If fix is delayed 6 sprints: Cost of Delay = $25,000 × 6 = $150,000
+  If fix costs $40,000 now: ROI = ($150,000 - $40,000) / $40,000 = 275%
+
+Fix now. Waiting is expensive.
+```
+
+**Debt tracking template:**
+
+```
+Technical Debt Register:
+
+| ID | Description | Quadrant | TDR Impact | Cost of Delay | Fix Effort | Priority |
+|----|-------------|----------|------------|---------------|------------|----------|
+| TD-1 | Payment module has no tests | Reckless+Deliberate | +2% | $25k/sprint | 3 sprints | P1 |
+| TD-2 | Old auth library, known better | Prudent+Inadvertent | +1% | $10k/sprint | 1 sprint | P2 |
+| TD-3 | Hardcoded config values | Prudent+Deliberate | +0.5% | $5k/sprint | 2 days | P3 |
+```
+
+### Retrospective Integration
+
+| Retro Phase | Debt Activity |
+|-------------|--------------|
+| Set the Stage | State current TDR, list top 3 debt items |
+| Gather Data | Measure cost-of-delay for top debt items, track new debt created this sprint |
+| Generate Insights | Categorize debt (Fowler quadrant), identify root causes |
+| Decide What to Do | Plan one debt repayment (Strangler Fig if large), timebox it |
+| Close | Update debt register, celebrate debt reduction |
+
+**Retro questions:**
+- "What debt did we create this sprint? Was it deliberate or inadvertent?"
+- "Which quadrant is our debt in? Is it strategic or negligent?"
+- "What is the cost of delaying our top debt item another sprint?"
+- "Can we apply Strangler Fig to our biggest debt item?"
+- "Is our TDR going up or down trend?"
+
+Source: Ward Cunningham, 1992 | Martin Fowler, 2009 | Strangler Fig: Fowler, 2004 | SQALE: SonarSource
+
+## Step 34: Inner Source Patterns
+
+Source: InnerSource Commons: https://innersourcecommons.org/ | Working in Inner Source (O'Reilly): https://innersourcecommons.org/resources/ | InnerSource Patterns: https://patterns.innersourcecommons.org/
+
+Inner source applies open source practices within an organization. Code is shared across teams, contributions flow freely, and transparency replaces gatekeeping. InnerSource Commons is the community hub. Key patterns: trusted committer, 30-day warranty, dedicated community leader, and contribution model.
+
+### InnerSource Commons
+
+Source: https://innersourcecommons.org/
+
+InnerSource Commons is the largest community of inner source practitioners. Founded 2015. Provides:
+- Pattern library (peer-reviewed inner source patterns)
+- Working groups (metrics, governance, education)
+- Annual summit
+- Maturity model
+- Case studies from SAP, Bosch, Porsche, American Airlines, and others
+
+**Why inner source:**
+- Reduce code duplication across teams
+- Improve code quality through wider review
+- Share knowledge across organizational silos
+- Enable cross-team contributions without team reorganization
+- Build onboarding materials that serve as documentation
+
+### Trusted Committer Role
+
+Source: https://patterns.innersourcecommons.org/p/trusted-committer
+
+Trusted committer (TC) is the inner source equivalent of a maintainer. They don't have to be the original author. They own the health of a shared component.
+
+**Responsibilities:**
+- Review and merge contributions from other teams
+- Maintain code quality standards for the shared component
+- Mentor contributors (especially first-time contributors)
+- Maintain documentation, README, contributing guide
+- Triage issues and manage backlog
+- Represent the component in architecture discussions
+
+**Key distinction from open source maintainer:**
+- TC is often a **rotating role** (not permanent ownership)
+- TC may have **other primary responsibilities** (not full-time maintainer)
+- TC contributions count toward **performance reviews** (org must value this work)
+- TC is **appointed by the component-owning team**, not self-selected
+
+**TC workload management:**
+
+```
+TC Weekly Time Budget (suggested):
+
+├── PR reviews:          30-40% (core activity)
+├── Contributor mentoring: 15-20% (growth)
+├── Documentation:        10-15% (sustainability)
+├── Backlog triage:       10% (organization)
+├── Architecture review:  10% (quality)
+└── Community engagement:  10% (adoption)
+
+If TC is spending > 50% on PR reviews: component needs more TCs or stricter contribution guidelines.
+```
+
+### 30-Day Warranty
+
+Source: https://patterns.innersourcecommons.org/p/30-day-warranty
+
+When a team accepts a contribution from another team, the **contributing team** provides a 30-day warranty: they fix any bugs or issues caused by their contribution for 30 days after merge.
+
+**How it works:**
+
+```
+Timeline:
+Day 0:   Team B contributes feature to Team A's shared component
+Day 1-30: Warranty period
+         ├── If bug found in Team B's code: Team B fixes it
+         ├── If bug found in existing code: Team A fixes it
+         └── If ambiguous: teams pair to resolve
+Day 31+: Component-owning team (Team A) owns all maintenance
+
+Contract (informal, documented in CONTRIBUTING.md):
+├── Team B commits to fixing their code for 30 days
+├── Team A commits to reviewing and merging promptly
+├── Both teams agree on definition of "their code"
+└── Escalation path if dispute arises
+```
+
+**Why 30 days:**
+- Enough time to catch integration issues, edge cases, regression bugs
+- Short enough that contributing team doesn't carry indefinite maintenance burden
+- Creates incentive for contributors to write quality code (they own the bugs)
+- Reduces fear of accepting contributions (contributor has skin in the game)
+
+### Inner Source Portal
+
+Source: https://patterns.innersourcecommons.org/p/innersource-portal
+
+Central discovery point for inner source projects. Think "internal GitHub Explore."
+
+**Portal features:**
+
+| Feature | Purpose | Implementation |
+|---------|---------|---------------|
+| **Project catalog** | Find reusable components | List all inner source projects with metadata (owner, language, maturity, usage) |
+| **Search** | Discover components by need | Full-text search across READMEs, code, docs |
+| **Activity feed** | See recent contributions | Git activity, new contributors, releases |
+| **Contributor profiles** | Recognize inner source contributions | List contributions per person, badges, recognition |
+| **Maturity indicators** | Know component readiness | Badges: incubating, active, mature, deprecated |
+| **Contribution guide** | Know how to contribute | Per-project CONTRIBUTING.md, linked from portal |
+| **Metrics dashboard** | Track inner source health | Contributions/month, unique contributors, cross-team PRs |
+
+**Portal anti-patterns:**
+- Just a wiki page listing repos → no discoverability, no engagement
+- No contribution guides → people find components but can't contribute
+- No activity feed → stale projects look abandoned
+- No recognition → no incentive to contribute
+
+### Standard Base Documentation
+
+Source: https://patterns.innersourcecommons.org/p/base-documentation
+
+Every inner source project must have minimum documentation before accepting contributions.
+
+**Required documentation (minimum):**
+
+```
+README.md:
+├── What is this? (1-2 sentences)
+├── Why does it exist? (problem it solves)
+├── How to use it (quick start, 5 min or less)
+├── How to contribute (link to CONTRIBUTING.md)
+├── License (internal use license)
+└── Contact / Trusted Committer
+
+CONTRIBUTING.md:
+├── Prerequisites (tools, access, setup)
+├── How to set up dev environment
+├── How to run tests
+├── PR process and review expectations
+├── Coding standards
+├── 30-day warranty explanation
+└── Escalation path
+
+CHANGELOG.md:
+└── Release notes, version history
+
+CODEOWNERS:
+└── Who reviews what (maps to TCs)
+```
+
+### Review Committee
+
+Source: https://patterns.innersourcecommons.org/p/review-committee
+
+Group of senior engineers (cross-team) who review and approve new inner source projects. Ensures quality and prevents "dump and run" (abandoning code as inner source without maintenance).
+
+**Review committee responsibilities:**
+- Approve new inner source projects (gate for entering the catalog)
+- Verify minimum documentation exists (base documentation standard)
+- Verify trusted committer is assigned
+- Verify maintenance plan exists
+- Periodic review of existing projects (are they still maintained?)
+- Archive unmaintained projects
+
+**Review criteria:**
+
+| Criterion | Minimum Standard |
+|-----------|-----------------|
+| Documentation | README + CONTRIBUTING.md present |
+| Trusted Committer | Named TC with commitment |
+| Test coverage | > 60% for new projects |
+| CI/CD | Automated build and test pipeline |
+| License | Internal use license specified |
+| Maintenance plan | TC committed to triage within 5 business days |
+| API stability | Breaking changes require version bump + notice |
+
+### Dedicated Community Leader
+
+Source: https://patterns.innersourcecommons.org/p/dedicated-community-leader
+
+A full-time or dedicated role responsible for growing and sustaining inner source culture. Not a part-time side job.
+
+**Responsibilities:**
+- Evangelize inner source across the organization
+- Onboard new contributors and trusted committers
+- Resolve cross-team contribution conflicts
+- Track and report inner source metrics
+- Organize inner source events (hackathons, brown bags)
+- Maintain portal and pattern library
+- Advocate for inner source tooling improvements
+- Report to leadership on inner source ROI
+
+**Why dedicated (not part-time):**
+- Inner source culture requires sustained effort
+- Part-time leaders get pulled into primary responsibilities
+- Community building is a full-time job in large orgs
+- Without dedicated leadership, inner source initiatives fade
+
+### Service vs Library Model
+
+Two models for sharing code across teams:
+
+| Aspect | Library Model | Service Model |
+|--------|--------------|---------------|
+| **What's shared** | Code (packages, modules, SDKs) | APIs (running services) |
+| **How consumed** | Import/dependency | HTTP/gRPC call |
+| **Contribution** | Fork, modify, PR back | API contract changes, PR to service |
+| **Deployment** | Consumer manages deployment | Service team manages deployment |
+| **Coupling** | Compile-time dependency | Runtime dependency |
+| **Versioning** | Semantic versioning, package releases | API versioning, backward compatibility |
+| **Best for** | Utilities, algorithms, shared logic | Business capabilities, data services |
+| **Inner source** | Easy: just PR to shared repo | Harder: need API governance, contract testing |
+
+**Decision framework:**
+
+```
+Use Library Model when:
+├── Logic is pure (no external state)
+├── Multiple teams need same algorithm/utility
+├── Performance matters (no network hop)
+└── Consumer wants control over upgrade timing
+
+Use Service Model when:
+├── Data is centralized (single source of truth)
+├── Logic requires access to specific infrastructure
+├── Teams need independent deployment
+└── Multiple consumers need same business capability
+```
+
+### Contribution Model
+
+How contributions flow in inner source:
+
+```
+Contribution Workflow:
+
+1. DISCOVER
+   └── Contributor finds component on inner source portal
+
+2. FORK/BRANCH
+   └── Contributor creates branch (or fork in Git terms)
+
+3. DEVELOP
+   └── Contributor implements change in their team's context
+
+4. TEST
+   └── Contributor runs tests, ensures CI passes
+
+5. SUBMIT PR
+   └── Contributor opens PR to shared component repo
+
+6. REVIEW
+   ├── Trusted Committer reviews code
+   ├── TC may request changes (contributor iterates)
+   └── TC ensures quality standards
+
+7. MERGE
+   └── TC merges when standards met
+
+8. WARRANTY
+   └── Contributor's team owns fixes for 30 days
+
+9. MAINTENANCE
+   └── After 30 days, component-owning team maintains
+```
+
+**Contribution friction reduction:**
+
+| Friction Point | Solution |
+---------------|----------|
+| "I don't know what exists" | Inner source portal with search |
+| "I don't know how to contribute" | Base documentation (CONTRIBUTING.md) |
+| "My PR sits forever" | SLA: TC reviews within 5 business days |
+| "My team doesn't support this" | Leadership buy-in, contribution in performance reviews |
+| "I'm afraid of breaking things" | 30-day warranty (contributor fixes their bugs) |
+| "I don't have access" | Self-service access requests, open repos by default |
+
+### Retrospective Integration
+
+| Retro Phase | Inner Source Activity |
+|-------------|---------------------|
+| Set the Stage | State inner source health: active projects, unique contributors, cross-team PRs |
+| Gather Data | Contribution metrics, portal usage, TC review times, warranty claims |
+| Generate Insights | Identify barriers to contribution, find duplicated code across teams |
+| Decide What to Do | One inner source improvement: new shared component, TC rotation, doc improvement |
+| Close | Celebrate contributions, recognize contributors |
+
+**Retro questions:**
+- "Are we duplicating code across teams that could be shared?"
+- "Do our trusted committers have enough time for reviews?"
+- "Is our inner source portal actually used? What's missing?"
+- "Are contributions counted in performance reviews?"
+- "Which components should we inner source next?"
+
+Source: InnerSource Commons (https://innersourcecommons.org/) | InnerSource Patterns (https://patterns.innersourcecommons.org/) | O'Reilly: Adopting Inner Source
 DORA State of DevOps Report: https://dora.dev/research/ | https://cloud.google.com/devops/state-of-devops
 24 Capabilities: https://dora.dev/capabilities/

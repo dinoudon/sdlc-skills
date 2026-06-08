@@ -1,7 +1,7 @@
 ---
 name: sdlc-observability
 description: "Observability: OpenTelemetry 2024, GenAI semantic conventions, eBPF (Cilium/Hubble/Tetragon), sidecar-less mesh, profiling signal, structured logging, SLIs/SLOs/SLAs, error budgets, burn-rate alerting, Grafana LGTM, distributed tracing, cost optimization, serverless observability, LLM/AI observability, edge observability, OTel Collector deployment patterns, microservices golden signals, log aggregation (ELK/Loki/ClickHouse), metrics aggregation, alert design patterns, observability maturity model, LLM platform comparison, ML model monitoring, AI agent observability, MLOps observability."
-version: 4.4.0
+version: 4.5.0
 author: Hermes Agent
 license: MIT
 platforms: [linux, macos, windows]
@@ -3151,4 +3151,1087 @@ datasources:
 Total: ~$900/mo for full observability stack
 
 vs. equivalent SaaS: Datadog/New Relic $5000-15000/mo
+```
+
+## Step 34: OTel Collector Deployment (Advanced Patterns)
+
+### Agent Pattern (Sidecar/DaemonSet)
+
+Agent runs close to application, receives telemetry locally.
+
+**Sidecar (per-pod):**
+```yaml
+# Kubernetes sidecar injection
+apiVersion: apps/v1
+kind: Deployment
+spec:
+  template:
+    spec:
+      containers:
+        - name: app
+          env:
+            - name: OTEL_EXPORTER_OTLP_ENDPOINT
+              value: "http://localhost:4317"
+        - name: otel-collector-sidecar
+          image: otel/opentelemetry-collector-contrib:0.96.0
+          args: ["--config=/etc/otel/config.yaml"]
+          volumeMounts:
+            - name: otel-config
+              mountPath: /etc/otel
+      volumes:
+        - name: otel-config
+          configMap:
+            name: otel-sidecar-config
+```
+
+**DaemonSet (per-node):**
+```yaml
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: otel-collector-agent
+spec:
+  selector:
+    matchLabels:
+      component: otel-agent
+  template:
+    metadata:
+      labels:
+        component: otel-agent
+    spec:
+      containers:
+        - name: otel-collector
+          image: otel/opentelemetry-collector-contrib:0.96.0
+          ports:
+            - containerPort: 4317 # gRPC
+            - containerPort: 4318 # HTTP
+          resources:
+            limits:
+              memory: 512Mi
+              cpu: 500m
+          env:
+            - name: GATEWAY_ENDPOINT
+              value: "otel-gateway:4317"
+      hostNetwork: true # reduce network hops
+      dnsPolicy: ClusterFirstWithHostNet
+```
+
+**Agent config (minimal, forwards to gateway):**
+```yaml
+receivers:
+  otlp:
+    protocols:
+      grpc:
+        endpoint: 0.0.0.0:4317
+      http:
+        endpoint: 0.0.0.0:4318
+  # Node-level metrics via hostmetrics
+  hostmetrics:
+    collection_interval: 15s
+    scrapers:
+      cpu:
+      memory:
+      disk:
+      network:
+      load:
+
+processors:
+  batch:
+    timeout: 5s
+    send_batch_size: 1000
+  memory_limiter:
+    check_interval: 1s
+    limit_mib: 256
+  # Add k8s metadata
+  k8sattributes:
+    auth_type: serviceAccount
+    extract:
+      metadata:
+        - k8s.pod.name
+        - k8s.namespace.name
+        - k8s.deployment.name
+        - k8s.node.name
+
+exporters:
+  otlp:
+    endpoint: "otel-gateway:4317"
+    tls:
+      insecure: true # internal cluster
+
+service:
+  pipelines:
+    traces:
+      receivers: [otlp]
+      processors: [memory_limiter, k8sattributes, batch]
+      exporters: [otlp]
+    metrics:
+      receivers: [otlp, hostmetrics]
+      processors: [memory_limiter, k8sattributes, batch]
+      exporters: [otlp]
+    logs:
+      receivers: [otlp]
+      processors: [memory_limiter, k8sattributes, batch]
+      exporters: [otlp]
+```
+
+### Gateway Pattern
+
+Central collector receives from agents, performs enrichment, routing.
+
+```yaml
+receivers:
+  otlp:
+    protocols:
+      grpc:
+        endpoint: 0.0.0.0:4317
+        max_recv_msg_size_mib: 4
+      http:
+        endpoint: 0.0.0.0:4318
+
+processors:
+  batch:
+    timeout: 10s
+    send_batch_size: 8192
+  memory_limiter:
+    limit_mib: 2048
+  # Attribute manipulation at gateway
+  attributes:
+    actions:
+      - key: environment
+        value: production
+        action: upsert
+  # Probabilistic sampling (head-based)
+  probabilistic_sampler:
+    sampling_percentage: 10
+
+exporters:
+  otlp/jaeger:
+    endpoint: "jaeger-collector:4317"
+  prometheusremotewrite:
+    endpoint: "http://mimir:9009/api/v1/push"
+  loki:
+    endpoint: "http://loki:3100/loki/api/v1/push"
+  debug:
+    verbosity: basic
+
+service:
+  pipelines:
+    traces:
+      receivers: [otlp]
+      processors: [memory_limiter, attributes, probabilistic_sampler, batch]
+      exporters: [otlp/jaeger]
+    metrics:
+      receivers: [otlp]
+      processors: [memory_limiter, attributes, batch]
+      exporters: [prometheusremotewrite]
+    logs:
+      receivers: [otlp]
+      processors: [memory_limiter, attributes, batch]
+      exporters: [loki]
+```
+
+### Load Balancing Exporter (TraceID Routing)
+
+Routes spans to specific collectors by traceID for tail-based sampling.
+
+```yaml
+# In agent config - route spans to specific gateway instances
+exporters:
+  loadbalancing:
+    protocol:
+      otlp:
+        tls:
+          insecure: true
+    resolver:
+      dns:
+        hostname: otel-gateway-headless.observability.svc.cluster.local
+        port: 4317
+    routing_key: traceID
+
+# Gateway config with tail-based sampling
+processors:
+  tail_sampling:
+    decision_wait: 30s
+    num_traces: 100000
+    policies:
+      - name: errors
+        type: status_code
+        status_code:
+          status_codes: [ERROR]
+      - name: slow
+        type: latency
+        latency:
+          threshold_ms: 2000
+      - name: probabilistic
+        type: probabilistic
+        probabilistic:
+          sampling_percentage: 5
+```
+
+### Hybrid Agent → Gateway Pipeline (Recommended for Production)
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                    PRODUCTION TOPOLOGY                       │
+│                                                              │
+│  [Node 1]              [Node 2]              [Node 3]        │
+│  ┌────────────┐       ┌────────────┐       ┌────────────┐   │
+│  │ Agent DS   │       │ Agent DS   │       │ Agent DS   │   │
+│  │ receives   │       │ receives   │       │ receives   │   │
+│  │ enriches   │       │ enriches   │       │ enriches   │   │
+│  │ k8s meta   │       │ k8s meta   │       │ k8s meta   │   │
+│  └─────┬──────┘       └─────┬──────┘       └─────┬──────┘   │
+│        │ load_balancer      │                     │          │
+│        │ (traceID routing)  │                     │          │
+│        ▼                    ▼                     ▼          │
+│  ┌───────────────────────────────────────────────────┐       │
+│  │              Gateway Cluster (3+ replicas)         │       │
+│  │  ┌──────────┐  ┌──────────┐  ┌──────────┐        │       │
+│  │  │Gateway-1 │  │Gateway-2 │  │Gateway-3 │        │       │
+│  │  │ sampling │  │ sampling │  │ sampling │        │       │
+│  │  │ routing  │  │ routing  │  │ routing  │        │       │
+│  │  └────┬─────┘  └────┬─────┘  └────┬─────┘        │       │
+│  └───────┼──────────────┼──────────────┼─────────────┘       │
+│          ▼              ▼              ▼                      │
+│  ┌──────────┐  ┌──────────┐  ┌──────────┐                   │
+│  │  Tempo   │  │  Mimir   │  │  Loki    │                   │
+│  │  traces  │  │  metrics │  │  logs    │                   │
+│  └──────────┘  └──────────┘  └──────────┘                   │
+└─────────────────────────────────────────────────────────────┘
+```
+
+## Step 35: Distributed Tracing Advanced
+
+### Tail-Based Sampling
+
+Head-based sampling (at agent) drops spans early — can't recover errors or slow traces. Tail-based sampling (at collector/gateway) makes decision after trace completes.
+
+```yaml
+# tail_sampling processor config
+processors:
+  tail_sampling:
+    decision_wait: 10s # wait for trace to complete
+    num_traces: 100000 # buffer size
+    expected_new_traces_per_sec: 1000
+    policies:
+      # Always keep errors
+      - name: error-policy
+        type: status_code
+        status_code:
+          status_codes: [ERROR]
+      # Always keep slow traces
+      - name: latency-policy
+        type: latency
+        latency:
+          threshold_ms: 2000
+      # Keep traces with specific attributes
+      - name: important-users
+        type: string_attribute
+        string_attribute:
+          key: user.tier
+          values: [enterprise, premium]
+      # Composite: error OR slow OR attribute match
+      - name: composite-policy
+        type: composite
+        composite:
+          max_total_spans_per_second: 5000
+          policy_order: [error-policy, latency-policy, important-users]
+          rate_allocation:
+            - policy: error-policy
+              percent: 50
+            - policy: latency-policy
+              percent: 30
+            - policy: important-users
+              percent: 20
+      # Drop low-value traces
+      - name: probabilistic-drop
+        type: probabilistic
+        probabilistic:
+          sampling_percentage: 1
+```
+
+**Tail sampling requires stateful collector:** all spans for a traceID must route to same collector instance. Use load balancing exporter with traceID routing (see Step 34).
+
+**Stateful collector HA with consistent hashing:**
+```yaml
+# Gateway pods must use consistent hashing
+exporters:
+  loadbalancing:
+    resolver:
+      k8s:
+        service: otel-gateway-headless
+        namespaces: [observability]
+    routing_key: traceID
+    protocol:
+      otlp:
+        endpoint: "" # resolved by resolver
+```
+
+### Trace-to-Log Correlation
+
+Connect traces to log entries via traceID injection into structured logs.
+
+**Structured logging with traceID (Python):**
+```python
+import logging
+from opentelemetry import trace
+
+class TraceContextFilter(logging.Filter):
+    def filter(self, record):
+        span = trace.get_current_span()
+        ctx = span.get_span_context()
+        record.trace_id = format(ctx.trace_id, '032x') if ctx.trace_id else ''
+        record.span_id = format(ctx.span_id, '016x') if ctx.span_id else ''
+        record.trace_flags = ctx.trace_flags
+        return True
+
+handler = logging.StreamHandler()
+handler.addFilter(TraceContextFilter())
+handler.setFormatter(logging.Formatter(
+    '{"timestamp":"%(asctime)s","level":"%(levelname)s","service":"api",'
+    '"message":"%(message)s","trace_id":"%(trace_id)s",'
+    '"span_id":"%(span_id)s"}'
+))
+logging.root.addHandler(handler)
+logging.root.setLevel(logging.INFO)
+```
+
+**Grafana Tempo → Loki correlation (datasource config):**
+```yaml
+# Grafana provisioning: Loki datasource with Tempo derived field
+apiVersion: 1
+datasources:
+  - name: Loki
+    type: loki
+    uid: loki
+    url: http://loki:3100
+    jsonData:
+      derivedFields:
+        - datasourceUid: tempo
+          matcherRegex: "trace_id=(\\w{32})"
+          name: Trace ID
+          url: "$${__value.raw}"
+          # Opens Tempo trace from Loki log entry
+  - name: Tempo
+    type: tempo
+    uid: tempo
+    url: http://tempo:3200
+    jsonData:
+      tracesToLogs:
+        datasourceUid: loki
+        filterByTraceID: true
+        filterBySpanID: true
+        tags: ['service']
+        # Click span → see associated Loki logs
+```
+
+**Log-to-trace flow:**
+```
+1. App logs: {"trace_id":"abc123def456","message":"payment failed"}
+2. Loki query: {service="payment"} |= "payment failed"
+3. Grafana detects trace_id in log line (derived field)
+4. Click trace_id → Tempo opens full trace
+5. See spans: api(200ms) → payment(150ms) → stripe(100ms)
+```
+
+### Trace-to-Metric Correlation (Exemplars + SpanMetrics)
+
+**Exemplars** — link metric data points to specific traces.
+
+```yaml
+# Prometheus config: enable exemplar ingestion
+global:
+  scrape_interval: 15s
+
+# Exemplars exposed by OTel Collector Prometheus exporter
+scrape_configs:
+  - job_name: otel-collector
+    static_configs:
+      - targets: ['otel-collector:8889']
+    # Exemplars are automatically scraped from histogram buckets
+```
+
+**Grafana exemplar display:**
+```yaml
+# Grafana datasource config with exemplars
+apiVersion: 1
+datasources:
+  - name: Mimir
+    type: prometheus
+    uid: prometheus
+    url: http://mimir:9009
+    jsonData:
+      exemplarTraceIdDestinations:
+        - name: trace_id
+          datasourceUid: tempo
+          # Grafana shows dots on graph → click → opens trace
+```
+
+**SpanMetrics connector — derive RED metrics from spans:**
+```yaml
+# OTel Collector config: compute RED metrics from trace spans
+connectors:
+  spanmetrics:
+    histogram:
+      explicit:
+        buckets: [5ms, 10ms, 25ms, 50ms, 100ms, 250ms, 500ms, 1s, 5s]
+    dimensions:
+      - name: http.method
+      - name: http.status_code
+      - name: http.route
+    dimensions_cache_size: 1000
+    aggregation_temporality: AGGREGATION_TEMPORALITY_CUMULATIVE
+    metrics_flush_interval: 15s
+
+service:
+  pipelines:
+    traces:
+      receivers: [otlp]
+      exporters: [otlp, spanmetrics]  # spans → trace store + metrics connector
+    metrics:
+      receivers: [spanmetrics]         # connector emits metrics
+      exporters: [prometheusremotewrite]
+```
+
+**Generated metrics (auto from spans):**
+```
+Calls (Rate):
+  calls_total{service="api", http.method="GET", http.status_code="200"} 15234
+
+Errors (Rate):
+  calls_total{service="api", http.method="GET", http.status_code="500"} 23
+
+Latency (Histogram):
+  duration_milliseconds_bucket{service="api", http.method="GET", le="100"} 14500
+  duration_milliseconds_bucket{service="api", http.method="GET", le="250"} 15100
+  ...
+
+RED Dashboard (auto-generated from spanmetrics):
+  Rate:     sum(rate(calls_total[5m])) by (service)
+  Errors:   sum(rate(calls_total{http.status_code=~"5.."}[5m])) by (service)
+  Duration: histogram_quantile(0.99, sum(rate(duration_milliseconds_bucket[5m])) by (le, service))
+```
+
+## Step 36: Monitoring as Code
+
+### Grafana Dashboards as Code
+
+**Grafonnet (Jsonnet library):**
+```jsonnet
+// dashboards/api-overview.jsonnet
+local grafana = import 'grafonnet/grafana.libsonnet';
+local dashboard = grafana.dashboard;
+local prometheus = grafana.prometheus;
+local graphPanel = grafana.graphPanel;
+
+dashboard.new(
+  'API Overview',
+  tags=['api', 'production'],
+  editable=false,  // prevent UI edits (code is source of truth)
+  refresh='30s',
+  time_from='now-6h',
+)
+.addPanel(
+  graphPanel.new(
+    'Request Rate',
+    datasource='prometheus',
+    format='reqps',
+    legend_values=true,
+    legend_current=true,
+  )
+  .addTarget(
+    prometheus.target(
+      'sum(rate(http_requests_total{service="$service"}[5m])) by (method)',
+      legendFormat='{{method}}',
+    )
+  ),
+  gridPos={x: 0, y: 0, w: 12, h: 8},
+)
+.addPanel(
+  graphPanel.new(
+    'Error Rate',
+    datasource='prometheus',
+    format='percentunit',
+    thresholds=[{value: 0.01, colorMode: 'critical', op: 'gt'}],
+  )
+  .addTarget(
+    prometheus.target(
+      'sum(rate(http_requests_total{service="$service",code=~"5.."}[5m])) / sum(rate(http_requests_total{service="$service"}[5m]))',
+      legendFormat='error rate',
+    )
+  ),
+  gridPos={x: 12, y: 0, w: 12, h: 8},
+)
+```
+
+**Terraform Grafana provider:**
+```hcl
+terraform {
+  required_providers {
+    grafana = {
+      source  = "grafana/grafana"
+      version = "~> 2.9"
+    }
+  }
+}
+
+provider "grafana" {
+  url  = "https://grafana.example.com"
+  auth = var.grafana_api_key
+}
+
+resource "grafana_dashboard" "api_overview" {
+  folder      = grafana_folder.production.id
+  config_json = file("${path.module}/dashboards/api-overview.json")
+  overwrite   = true
+}
+
+resource "grafana_folder" "production" {
+  title = "Production"
+}
+
+resource "grafana_data_source" "prometheus" {
+  name = "Mimir"
+  type = "prometheus"
+  url  = "http://mimir:9009"
+  json_data_encoded = jsonencode({
+    exemplarTraceIdDestinations = [{
+      name         = "trace_id"
+      datasourceUid = "tempo"
+    }]
+  })
+}
+
+resource "grafana_alert_rule" "high_error_rate" {
+  folder_uid = grafana_folder.production.uid
+  name       = "High Error Rate"
+  condition  = "C"
+
+  data {
+    ref_id         = "A"
+    datasource_uid = grafana_data_source.prometheus.uid
+    relative_time_range {
+      from = 300
+      to   = 0
+    }
+    model = jsonencode({
+      expr = "sum(rate(http_requests_total{code=~\"5..\"}[5m])) / sum(rate(http_requests_total[5m]))"
+    })
+  }
+
+  data {
+    ref_id         = "C"
+    datasource_uid = "__expr__"
+    model = jsonencode({
+      type       = "threshold"
+      conditions = [{
+        evaluator = { type = "gt", params = [0.05] }
+        query     = { params = ["A"] }
+      }]
+    })
+  }
+
+  annotations = {
+    runbook_url = "https://wiki/runbooks/high-error-rate"
+  }
+
+  labels = {
+    severity = "critical"
+    team     = "platform"
+  }
+}
+```
+
+### Prometheus Recording Rules
+
+Pre-compute expensive queries for dashboard performance.
+
+```yaml
+# recording_rules.yml
+groups:
+  # SLO recording rules (burn rate)
+  - name: slo_recording_rules
+    interval: 30s
+    rules:
+      # Error ratio over 5m
+      - record: slo:error_ratio:rate5m
+        expr: |
+          sum(rate(http_requests_total{code=~"5.."}[5m])) by (service)
+          /
+          sum(rate(http_requests_total[5m])) by (service)
+      # Error ratio over 1h
+      - record: slo:error_ratio:rate1h
+        expr: |
+          sum(rate(http_requests_total{code=~"5.."}[1h])) by (service)
+          /
+          sum(rate(http_requests_total[1h])) by (service)
+      # Error ratio over 6h
+      - record: slo:error_ratio:rate6h
+        expr: |
+          sum(rate(http_requests_total{code=~"5.."}[6h])) by (service)
+          /
+          sum(rate(http_requests_total[6h])) by (service)
+      # Burn rate (how fast we consume error budget)
+      - record: slo:burn_rate:1h
+        expr: |
+          slo:error_ratio:rate1h / (1 - 0.999)  # assuming 99.9% SLO
+
+  # RED metrics (pre-aggregated)
+  - name: red_recording_rules
+    interval: 15s
+    rules:
+      - record: red:request_rate:rate5m
+        expr: sum(rate(http_requests_total[5m])) by (service, method, code)
+      - record: red:error_rate:rate5m
+        expr: sum(rate(http_requests_total{code=~"5.."}[5m])) by (service)
+      - record: red:latency:p99:rate5m
+        expr: histogram_quantile(0.99, sum(rate(http_request_duration_seconds_bucket[5m])) by (le, service))
+
+  # Cardinality guardrails
+  - name: cardinality_rules
+    interval: 5m
+    rules:
+      - record: prometheus:series_count:top10
+        expr: topk(10, count by (__name__)({__name__=~".+"}))
+```
+
+### Alerting Rules with Alertmanager Routing
+
+```yaml
+# alerting_rules.yml
+groups:
+  - name: slo_alerts
+    rules:
+      # Multi-window burn rate alert (Google SRE)
+      - alert: HighErrorBudgetBurn
+        expr: |
+          slo:error_ratio:rate5m > (14.4 * (1 - 0.999))
+          and
+          slo:error_ratio:rate1h > (14.4 * (1 - 0.999))
+        for: 2m
+        labels:
+          severity: critical
+          team: platform
+        annotations:
+          summary: "Error budget burning at 14.4x rate"
+          description: "Service {{ $labels.service }} will exhaust error budget in 1 hour"
+          runbook_url: "https://wiki/runbooks/error-budget-burn"
+
+      - alert: LowErrorBudgetBurn
+        expr: |
+          slo:error_ratio:rate6h > (3 * (1 - 0.999))
+          and
+          slo:error_ratio:rate1d > (3 * (1 - 0.999))
+        for: 15m
+        labels:
+          severity: warning
+          team: platform
+        annotations:
+          summary: "Error budget burning at 3x rate"
+
+# alertmanager.yml
+route:
+  receiver: default
+  group_by: ['alertname', 'service']
+  group_wait: 30s
+  group_interval: 5m
+  repeat_interval: 4h
+  routes:
+    - match:
+        severity: critical
+      receiver: pagerduty-critical
+      group_wait: 10s
+      repeat_interval: 1h
+    - match:
+        severity: warning
+      receiver: slack-warnings
+    - match:
+        team: ml
+      receiver: ml-team-slack
+
+receivers:
+  - name: pagerduty-critical
+    pagerduty_configs:
+      - routing_key: "${PAGERDUTY_KEY}"
+        severity: critical
+  - name: slack-warnings
+    slack_configs:
+      - channel: '#alerts-warning'
+        title: '{{ .GroupLabels.alertname }}'
+        text: '{{ range .Alerts }}{{ .Annotations.summary }}{{ end }}'
+
+inhibit_rules:
+  - source_match:
+      severity: critical
+    target_match:
+      severity: warning
+    equal: ['alertname', 'service']
+
+# Silence example (maintenance window)
+# amtool silence add alertname=HighErrorBudgetBurn --duration=2h --comment="DB migration window"
+```
+
+### promtool Validation
+
+```bash
+# Validate recording rules
+promtool check rules recording_rules.yml
+
+# Validate alerting rules
+promtool check rules alerting_rules.yml
+
+# Test rules against real data
+promtool test rules test_cases.yml
+
+# test_cases.yml
+rule_files:
+  - alerting_rules.yml
+evaluation_interval: 1m
+tests:
+  - interval: 1m
+    input_series:
+      - series: 'http_requests_total{service="api",code="200"}'
+        values: "100+10x15"  # 100, 110, 120, ... increments of 10
+      - series: 'http_requests_total{service="api",code="500"}'
+        values: "0+1x15"
+    alert_rule_test:
+      - eval_time: 5m
+        alertname: HighErrorBudgetBurn
+        exp_alerts: []  # should NOT fire
+      - eval_time: 10m
+        alertname: HighErrorBudgetBurn
+        exp_alerts:
+          - exp_labels:
+              severity: critical
+              service: api
+```
+
+## Step 37: Incident Response Automation
+
+### PagerDuty Integration
+
+**Event Intelligence (ML-powered):**
+```python
+# PagerDuty Events API v2
+import requests
+import json
+
+def trigger_pagerduty(summary, severity, source, component, custom_details):
+    payload = {
+        "routing_key": os.environ["PAGERDUTY_ROUTING_KEY"],
+        "event_action": "trigger",
+        "dedup_key": f"{source}-{component}",
+        "payload": {
+            "summary": summary,
+            "severity": severity,  # critical, error, warning, info
+            "source": source,
+            "component": component,
+            "custom_details": custom_details,
+            "group": "production",
+            "class": "high-error-rate"
+        },
+        "links": [
+            {"href": "https://grafana.example.com/d/api", "text": "API Dashboard"},
+            {"href": "https://grafana.example.com/explore?left=...", "text": "Trace Explorer"}
+        ]
+    }
+    resp = requests.post(
+        "https://events.pagerduty.com/v2/enqueue",
+        json=payload,
+        headers={"Content-Type": "application/json"}
+    )
+    return resp.json()
+
+# Runbook Automation (Rundeck) via PagerDuty webhook
+# PagerDuty → webhook → Rundeck API → execute runbook
+def auto_remediate(alert):
+    """Trigger Rundeck runbook from PagerDuty webhook"""
+    if alert["alertname"] == "HighMemoryUsage" and alert["service"] == "api":
+        rundeck_payload = {
+            "options": {
+                "namespace": alert["namespace"],
+                "deployment": alert["deployment"],
+                "action": "restart"
+            }
+        }
+        requests.post(
+            f"{RUNDECK_URL}/api/41/job/{RUNBOOK_JOB_ID}/run",
+            json=rundeck_payload,
+            headers={
+                "X-Rundeck-Auth-Token": os.environ["RUNDECK_TOKEN"],
+                "Content-Type": "application/json"
+            }
+        )
+```
+
+**PagerDuty webhooks v3 (Event Orchestration):**
+```yaml
+# PagerDuty Event Orchestration rules (YAML-as-code)
+# Process events before routing to escalation policy
+orchestration_rules:
+  - conditions:
+      - expression: "event.severity == 'info' and event.component == 'deployment'"
+    actions:
+      - type: suppress  # suppress deployment noise
+  - conditions:
+      - expression: "event.severity == 'critical' and event.class == 'database'"
+    actions:
+      - type: route
+        escalation_policy_id: P_DATABASE_TEAM
+      - type: annotate
+        note: "Auto-remediation: check connection pool, verify replication lag"
+      - type: webhook
+        url: "https://rundeck.example.com/api/41/job/db-autofix/run"
+        headers:
+          X-Rundeck-Auth-Token: "${RUNDECK_TOKEN}"
+```
+
+### incident.io Integration
+
+**Slack-native incident management:**
+```bash
+# Trigger incident from Slack
+/incident new "Payment API returning 500s" --severity=high --team=payments
+
+# incident.io API
+curl -X POST "https://api.incident.io/v2/incidents" \
+  -H "Authorization: Bearer ${INCIDENT_IO_TOKEN}" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Payment API 500 errors",
+    "severity": "high",
+    "incident_type": {
+      "id": "inc_type_01H..."
+    },
+    "status_page_title": "Payment processing issues",
+    "slack_channel_name": "inc-payments-2024-01-15"
+  }'
+```
+
+**incident.io automation features:**
+```
+Alert triggered
+  → incident.io receives webhook
+  → Creates incident automatically
+  → Opens Slack channel #inc-<name>-<date>
+  → Starts Zoom call (optional)
+  → Updates status page (public or internal)
+  → Pages on-call via PagerDuty/Opsgenie
+  → Creates postmortem template with timeline pre-filled
+```
+
+**Postmortem template (incident.io):**
+```yaml
+# incident.io postmortem config
+postmortem:
+  template: |
+    # {{ incident.name }}
+
+    **Severity:** {{ incident.severity }}
+    **Duration:** {{ incident.duration }}
+    **Impact:** {{ incident.impact_summary }}
+
+    ## Timeline
+    {{ timeline }}
+
+    ## Root Cause
+    <!-- What caused this incident? -->
+
+    ## Contributing Factors
+    <!-- What made this worse? -->
+
+    ## Action Items
+    {{ action_items }}
+
+    ## Lessons Learned
+    <!-- What did we learn? -->
+  auto_generate: true
+  send_to: ["#engineering", "#leadership"]
+  due_days: 5
+```
+
+### FireHydrant Integration
+
+**Runbooks (automated response):**
+```yaml
+# FireHydrant runbook definition
+name: High Error Rate Response
+signal: high-error-rate
+steps:
+  - name: Create incident
+    type: incident
+    config:
+      severity: high
+      team: platform
+      commander: on-call
+  - name: Start war room
+    type: zoom
+    config:
+      auto_create: true
+      post_url_to: slack-incident-channel
+  - name: Notify stakeholders
+    type: pagerduty
+    config:
+      escalation_policy: platform-oncall
+  - name: Pull recent deploys
+    type: webhooks
+    config:
+      url: "https://api.github.com/repos/org/repo/actions/runs?per_page=5"
+      method: GET
+      headers:
+        Authorization: "token ${GITHUB_TOKEN}"
+      response_mapping:
+        recent_deploys: ".workflow_runs[] | .head_commit.message"
+  - name: Check service health
+    type: webhooks
+    config:
+      url: "http://api-service/health"
+      method: GET
+      fail_on_status: "[500-599]"
+  - name: Run remediation script
+    type: runbook
+    config:
+      script: |
+        #!/bin/bash
+        kubectl rollout restart deployment/api -n production
+        kubectl rollout status deployment/api -n production --timeout=120s
+```
+
+**Service Catalog (dependency mapping):**
+```yaml
+# FireHydrant service catalog
+services:
+  - name: api-gateway
+    description: "Public API entry point"
+    team: platform
+    tier: 0  # most critical
+    dependencies:
+      - payment-service
+      - user-service
+      - notification-service
+    links:
+      - name: Grafana Dashboard
+        url: "https://grafana.example.com/d/api"
+      - name: Runbook
+        url: "https://wiki/runbooks/api-gateway"
+    labels:
+      language: go
+      infrastructure: kubernetes
+
+  - name: payment-service
+    description: "Payment processing"
+    team: payments
+    tier: 0
+    dependencies:
+      - stripe-external
+      - database-primary
+```
+
+**FireHydrant Signals (alert routing):**
+```yaml
+# Route alerts to correct team + runbook
+signals:
+  - name: payment-errors
+    source: prometheus
+    expression: 'rate(payment_errors_total[5m]) > 0.01'
+    severity: high
+    runbook: payment-error-response
+    team: payments
+    services: [payment-service]
+  - name: api-latency
+    source: prometheus
+    expression: 'histogram_quantile(0.99, rate(http_duration_bucket[5m])) > 2'
+    severity: medium
+    runbook: api-latency-response
+    team: platform
+    services: [api-gateway]
+```
+
+### Common Automation Pattern
+
+```
+┌──────────────────────────────────────────────────────────────┐
+│              ALERT → INCIDENT → RUNBOOK FLOW                  │
+│                                                               │
+│  Prometheus Alert                                             │
+│       │                                                       │
+│       ▼                                                       │
+│  Alertmanager                                                 │
+│       │                                                       │
+│       ├──→ PagerDuty / incident.io / FireHydrant              │
+│       │         │                                             │
+│       │         ├──→ Create incident                          │
+│       │         ├──→ Open Slack channel #inc-xxx              │
+│       │         ├──→ Start Zoom war room                      │
+│       │         ├──→ Page on-call engineer                    │
+│       │         ├──→ Update status page                       │
+│       │         └──→ Execute runbook                          │
+│       │                  │                                    │
+│       │                  ├──→ Pull recent deploys             │
+│       │                  ├──→ Check service health            │
+│       │                  ├──→ Gather diagnostic info          │
+│       │                  └──→ Auto-remediate (if safe)        │
+│       │                           │                           │
+│       │                           ├──→ Restart service        │
+│       │                           ├──→ Rollback deploy        │
+│       │                           └──→ Scale up replicas      │
+│       │                                                       │
+│       └──→ Slack notification (lower severity)                │
+│                                                               │
+│  Resolution:                                                  │
+│       ├──→ Acknowledge in PagerDuty                           │
+│       ├──→ Close incident                                     │
+│       ├──→ Generate postmortem (auto-template)                │
+│       └──→ Schedule action item review                        │
+└──────────────────────────────────────────────────────────────┘
+```
+
+**Webhook handler example (Python/FastAPI):**
+```python
+from fastapi import FastAPI, Request
+import httpx
+
+app = FastAPI()
+
+@app.post("/webhook/alertmanager")
+async def handle_alertmanager(request: Request):
+    payload = await request.json()
+    for alert in payload.get("alerts", []):
+        if alert["status"] == "firing":
+            severity = alert["labels"].get("severity", "warning")
+            service = alert["labels"].get("service", "unknown")
+
+            # Route to incident management
+            if severity == "critical":
+                await create_incident(alert)
+                await page_oncall(alert)
+            elif severity == "warning":
+                await notify_slack(alert)
+    return {"status": "ok"}
+
+async def create_incident(alert):
+    """Create incident in PagerDuty/incident.io"""
+    async with httpx.AsyncClient() as client:
+        # PagerDuty
+        await client.post(
+            "https://events.pagerduty.com/v2/enqueue",
+            json={
+                "routing_key": PAGERDUTY_KEY,
+                "event_action": "trigger",
+                "payload": {
+                    "summary": alert["annotations"]["summary"],
+                    "severity": alert["labels"]["severity"],
+                    "source": alert["labels"].get("instance", "unknown"),
+                }
+            }
+        )
+        # incident.io
+        await client.post(
+            "https://api.incident.io/v2/incidents",
+            headers={"Authorization": f"Bearer {INCIDENT_IO_TOKEN}"},
+            json={
+                "name": alert["annotations"]["summary"],
+                "severity": alert["labels"]["severity"],
+            }
+        )
 ```

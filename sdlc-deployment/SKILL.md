@@ -1,13 +1,13 @@
 ---
 name: sdlc-deployment
-description: "Deployment strategies: canary, blue-green, rolling, progressive delivery (Flagger/Argo Rollouts), feature flags (LaunchDarkly/Unleash/OpenFeature), rollback, database migrations, zero-downtime patterns. v3: Gateway API traffic splitting, OpenFeature CNCF standard, FinOps (OpenCost/Karpenter/FOCUS), AnalysisTemplate, multi-cluster progressive delivery. v3.1: Serverless (Lambda/Cloud Run/Container Apps), edge deployment (Cloudflare Workers/Deno Deploy), cold start optimization, serverless observability. v4: Production hardening (health probes, graceful shutdown, PDB), multi-region patterns (active-active/passive, follow-the-sun), disaster recovery (RPO/RTO, failover automation), cost optimization (right-sizing, spot/reserved), deployment verification (smoke tests, synthetic monitoring, canary analysis). v4.3: Deployment failure case studies (Knight Capital, AWS S3, Cloudflare, GitLab, Facebook BGP), successful deployment patterns (Netflix, Google, Amazon, Etsy), database migration war stories (gh-ost, expand-contract, Vitess), feature flag case studies (Facebook Gate, LaunchDarkly, Microsoft flight rings)."
-version: 4.4.0
+description: "Deployment strategies: canary, blue-green, rolling, progressive delivery (Flagger/Argo Rollouts), feature flags (LaunchDarkly/Unleash/OpenFeature), rollback, database migrations, zero-downtime patterns. v3: Gateway API traffic splitting, OpenFeature CNCF standard, FinOps (OpenCost/Karpenter/FOCUS), AnalysisTemplate, multi-cluster progressive delivery. v3.1: Serverless (Lambda/Cloud Run/Container Apps), edge deployment (Cloudflare Workers/Deno Deploy), cold start optimization, serverless observability. v4: Production hardening (health probes, graceful shutdown, PDB), multi-region patterns (active-active/passive, follow-the-sun), disaster recovery (RPO/RTO, failover automation), cost optimization (right-sizing, spot/reserved), deployment verification (smoke tests, synthetic monitoring, canary analysis). v4.3: Deployment failure case studies (Knight Capital, AWS S3, Cloudflare, GitLab, Facebook BGP), successful deployment patterns (Netflix, Google, Amazon, Etsy), database migration war stories (gh-ost, expand-contract, Vitess), feature flag case studies (Facebook Gate, LaunchDarkly, Microsoft flight rings). v4.5: IaC testing (Terratest, Checkov, tfsec, OPA/Rego, 4-layer strategy), GitOps advanced (ArgoCD app-of-apps, Flux v2, progressive delivery), service mesh deep dive (Istio Ambient, Linkerd viz, Cilium eBPF/Hubble), edge computing patterns (Cloudflare Workers, Deno Deploy, Lambda@Edge)."
+version: 4.5.0
 author: Hermes Agent
 license: MIT
 platforms: [linux, macos, windows]
 metadata:
   hermes:
-    tags: [sdlc, deployment, canary, blue-green, rolling, feature-flags, progressive-delivery, flagger, argo-rollouts, kubernetes, zero-downtime, gateway-api, openfeature, finops, opencost, karpenter, analysis-template, multi-cluster, database-migration, serverless, lambda, cloud-run, container-apps, edge-deployment, cloudflare-workers, cold-start, serverless-observability, production-hardening, health-checks, graceful-shutdown, pdb, multi-region, disaster-recovery, rpo-rto, cost-optimization, spot-instances, deployment-verification, smoke-tests, synthetic-monitoring, canary-analysis, failure-case-studies, deployment-patterns, database-migration-war-stories, feature-flag-case-studies]
+    tags: [sdlc, deployment, canary, blue-green, rolling, feature-flags, progressive-delivery, flagger, argo-rollouts, kubernetes, zero-downtime, gateway-api, openfeature, finops, opencost, karpenter, analysis-template, multi-cluster, database-migration, serverless, lambda, cloud-run, container-apps, edge-deployment, cloudflare-workers, cold-start, serverless-observability, production-hardening, health-checks, graceful-shutdown, pdb, multi-region, disaster-recovery, rpo-rto, cost-optimization, spot-instances, deployment-verification, smoke-tests, synthetic-monitoring, canary-analysis, failure-case-studies, deployment-patterns, database-migration-war-stories, feature-flag-case-studies, iac-testing, terratest, checkov, tfsec, opa, rego, gitops, argocd, flux, service-mesh, istio, linkerd, cilium, ebpf, edge-computing, deno-deploy, lambda-at-edge]
     related_skills: [sdlc-cicd-pipeline, sdlc-testing-qa, sdlc-observability]
 ---
 
@@ -27,6 +27,10 @@ Trigger when user:
 - Sets up multi-region or disaster recovery deployments
 - Optimizes deployment costs (right-sizing, spot, reserved)
 - Implements deployment verification (smoke tests, synthetic monitoring)
+- Tests infrastructure-as-code (Terraform, CloudFormation, Pulumi)
+- Configures GitOps workflows (ArgoCD, Flux)
+- Sets up service mesh (Istio, Linkerd, Cilium)
+- Deploys to edge platforms (Cloudflare Workers, Deno Deploy, Lambda@Edge)
 
 ## Strategy Comparison
 
@@ -3151,6 +3155,1135 @@ ci_flag_check:
   command: "flag-audit --type release --max-age 60d --fail-on-stale"
 ```
 
+## Step 26: Infrastructure-as-Code Testing
+
+Validate IaC before deployment. 4-layer strategy: static analysis → unit tests → integration tests → compliance checks.
+
+### 4-Layer IaC Testing Strategy
+
+```
+Layer 1: Static Analysis (seconds, no infra needed)
+├── Syntax validation (terraform validate, cfn-lint)
+├── Security scanning (tfsec, Checkov, Trivy Config)
+├── Policy checks (OPA/Rego, Sentinel)
+└── Linting (tflint, terraform fmt)
+
+Layer 2: Unit Tests (seconds, mocked providers)
+├── Resource count/attribute assertions
+├── Variable validation
+├── Module contract testing
+└── Tools: terraform test (built-in), Terratest unit, pytest-terraform
+
+Layer 3: Integration Tests (minutes, real infra in sandbox)
+├── Plan + apply in ephemeral environment
+├── Validate actual resource behavior
+├── Destroy after test
+└── Tools: Terratest, kitchen-terraform, pulumi test
+
+Layer 4: Compliance Tests (continuous, production/audit)
+├── Drift detection (terraform plan -detailed-exitcode)
+├── Runtime policy enforcement (OPA/Gatekeeper, Sentinel)
+├── Cost estimation (Infracost)
+└── Tools: Checkov runtime, OPA Gatekeeper, Cloud Custodian
+```
+
+### Terratest (Go library, real infra testing)
+
+```go
+// terratest/modules/terraform_test.go
+package test
+
+import (
+    "testing"
+    "github.com/gruntwork-io/terratest/modules/terraform"
+    "github.com/gruntwork-io/terratest/modules/http-helper"
+    "github.com/gruntwork-io/terratest/modules/retry"
+    "time"
+)
+
+func TestTerraformS3Bucket(t *testing.T) {
+    t.Parallel()
+
+    terraformOptions := &terraform.Options{
+        TerraformDir: "../examples/s3-bucket",
+        Vars: map[string]interface{}{
+            "bucket_name": fmt.Sprintf("test-bucket-%s", uniqueId),
+            "environment": "test",
+        },
+        NoColor: true,
+    }
+
+    // Clean up resources after test
+    defer terraform.Destroy(t, terraformOptions)
+    terraform.InitAndApply(t, terraformOptions)
+
+    // Validate outputs
+    bucketName := terraform.Output(t, terraformOptions, "bucket_name")
+    bucketArn := terraform.Output(t, terraformOptions, "bucket_arn")
+
+    // Validate S3 bucket is accessible
+    url := fmt.Sprintf("https://%s.s3.amazonaws.com", bucketName)
+    http_helper.HttpGetWithRetry(t, url, nil, 200, "", 30, 10*time.Second)
+}
+
+// Test with retry for eventually-consistent resources
+func TestEKSModule(t *testing.T) {
+    terraformOptions := terraform.WithDefaultRetryableErrors(t, &terraform.Options{
+        TerraformDir: "../modules/eks",
+        RetryableTerraformErrors: map[string]string{
+            "RequestError: send request failed": "VPC not ready",
+        },
+        MaxRetries:         3,
+        TimeBetweenRetries: 30 * time.Second,
+    })
+    defer terraform.Destroy(t, terraformOptions)
+    terraform.InitAndApply(t, terraformOptions)
+
+    // Validate EKS cluster
+    clusterEndpoint := terraform.Output(t, terraformOptions, "cluster_endpoint")
+    clusterCa := terraform.Output(t, terraformOptions, "cluster_ca")
+    // ... kubectl validation
+}
+```
+
+### Checkov (1000+ policies, custom Python checks)
+
+```yaml
+# .checkov.yml — Checkov configuration
+framework:
+  - terraform
+  - cloudformation
+  - kubernetes
+  - helm
+  - dockerfile
+directory:
+  - terraform/
+  - k8s/
+output:
+  - cli
+  - junitxml
+  - sarif
+quiet: true
+hard-fail-on:
+  - CKV_AWS_18  # S3 logging enabled
+  - CKV_AWS_21  # S3 versioning
+soft-fail-on:
+  - CKV_AWS_19  # S3 encryption (non-critical)
+```
+
+```python
+# custom_checkov/checks/ec2_no_public_ip.py
+from checkov.terraform.checks.resource.base_resource_check import BaseResourceCheck
+from checkov.common.models.enums import CheckCategories, CheckResult
+
+class EC2NoPublicIP(BaseResourceCheck):
+    def __init__(self):
+        name = "Ensure EC2 instances don't have public IPs"
+        id = "CUSTOM_AWS_001"
+        supported_resources = ["aws_instance"]
+        categories = [CheckCategories.NETWORKING]
+        super().__init__(name, id, categories, supported_resources)
+
+    def scan_resource_conf(self, conf):
+        # Check associate_public_ip_address
+        public_ip = conf.get("associate_public_ip_address", [None])
+        if isinstance(public_ip, list):
+            public_ip = public_ip[0]
+        if public_ip is True:
+            return CheckResult.FAILED
+        return CheckResult.PASSED
+
+check = EC2NoPublicIP()
+```
+
+### tfsec / Trivy Config (security scanner)
+
+```yaml
+# .tfsec.yml — tfsec configuration
+exclude:
+  - aws-s3-enable-bucket-logging  # Covered by Checkov
+  - aws-vpc-no-public-ingress-sgr  # Intentional for ALB
+
+# In CI pipeline
+# trivy config --policy-bundle-refs=aquacadabra terraform/
+# tfsec terraform/ --format json --out tfsec-report.json
+```
+
+### cfn-lint (CloudFormation validation)
+
+```yaml
+# .cfnlintrc
+templates:
+  - "cloudformation/**/*.yaml"
+regions:
+  - us-east-1
+  - eu-west-1
+ignore_checks:
+  - E3012  # Type checking (too strict for some modules)
+include_checks:
+  - I  # Include informational checks
+```
+
+### OPA/Rego (policy-as-code)
+
+```rego
+# policy/terraform/deny_public_s3.rego
+package terraform.aws.s3
+
+deny[msg] {
+    resource := input.planned_values.root_module.resources[_]
+    resource.type == "aws_s3_bucket"
+    not startswith(resource.values.bucket, "internal-")
+    msg := sprintf("S3 bucket '%s' must have 'internal-' prefix", [resource.values.bucket])
+}
+
+deny[msg] {
+    resource := input.planned_values.root_module.resources[_]
+    resource.type == "aws_s3_bucket_public_access_block"
+    resource.values.block_public_acls == false
+    msg := sprintf("S3 bucket '%s' must block public ACLs", [resource.values.id])
+}
+```
+
+```yaml
+# conftest test runner
+# conftest test terraform-plan.json -p policy/terraform/
+# conftest verify -p policy/terraform/  # Run test cases
+# ---
+# Gatekeeper constraint template (K8s admission)
+apiVersion: templates.gatekeeper.sh/v1
+kind: ConstraintTemplate
+metadata:
+  name: k8srequiredlabels
+spec:
+  crd:
+    spec:
+      names:
+        kind: K8sRequiredLabels
+      validation:
+        openAPIV3Schema:
+          type: object
+          properties:
+            labels:
+              type: array
+              items:
+                type: string
+  targets:
+    - target: admission.k8s.gatekeeper.sh
+      rego: |
+        package k8srequiredlabels
+        violation[{"msg": msg}] {
+          provided := {label | input.review.object.metadata.labels[label]}
+          required := {label | label := input.parameters.labels[_]}
+          missing := required - provided
+          count(missing) > 0
+          msg := sprintf("Missing required labels: %v", [missing])
+        }
+---
+apiVersion: constraints.gatekeeper.sh/v1beta1
+kind: K8sRequiredLabels
+metadata:
+  name: require-team-label
+spec:
+  match:
+    kinds:
+      - apiGroups: [""]
+        kinds: ["Namespace"]
+  parameters:
+    labels:
+      - "team"
+      - "cost-center"
+```
+
+### CI Integration
+
+```yaml
+# GitHub Actions IaC testing pipeline
+name: IaC Tests
+on: [pull_request]
+jobs:
+  iac-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # Layer 1: Static Analysis
+      - name: tfsec
+        uses: aquasecurity/tfsec-action@v1.0.3
+      - name: Checkov
+        uses: bridgecrewio/checkov-action@v12
+        with:
+          directory: terraform/
+          framework: terraform
+          output_format: junitxml
+      - name: cfn-lint
+        run: cfn-lint cloudformation/**/*.yaml
+      - name: OPA/Conftest
+        run: conftest test terraform-plan.json -p policy/
+
+      # Layer 2: Unit Tests (terraform test)
+      - name: Terraform Unit Tests
+        run: terraform test -filter=unit_test.tftest.hcl
+
+      # Layer 3: Integration Tests (Terratest)
+      - name: Terratest
+        run: |
+          cd tests
+          go test -v -timeout 30m -parallel 4 ./...
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_TEST_KEY }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_TEST_SECRET }}
+
+      # Cost estimation
+      - name: Infracost
+        uses: infracost/infracost-gh-action@v1
+        with:
+          path: terraform/
+```
+
+---
+
+## Step 27: Advanced GitOps Patterns
+
+ArgoCD app-of-apps, Flux v2 GitOps Toolkit, progressive delivery with GitOps.
+
+### ArgoCD — App of Apps Pattern
+
+```yaml
+# argocd/app-of-apps.yaml — Parent application that manages child apps
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: cluster-apps
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/org/gitops-infra.git
+    targetRevision: main
+    path: cluster-apps/production
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: argocd
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+```
+
+### ArgoCD ApplicationSets
+
+```yaml
+# ApplicationSet — Deploy to multiple clusters
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: multi-cluster-app
+  namespace: argocd
+spec:
+  generators:
+    # Generator 1: Cluster generator (auto-discover clusters)
+    - clusters:
+        selector:
+          matchLabels:
+            env: production
+    # Generator 2: Git directory generator
+    - git:
+        repoURL: https://github.com/org/apps.git
+        revision: main
+        directories:
+          - path: apps/*
+  template:
+    metadata:
+      name: '{{name}}-{{path.basename}}'
+    spec:
+      project: default
+      source:
+        repoURL: https://github.com/org/apps.git
+        targetRevision: main
+        path: '{{path}}'
+        helm:
+          valueFiles:
+            - values-{{name}}.yaml
+      destination:
+        server: '{{server}}'
+        namespace: '{{path.basename}}'
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+```
+
+### ArgoCD Sync Waves & Phases
+
+```yaml
+# Order resources with sync waves (annotations)
+# Wave -1: CRDs first
+# Wave 0: Namespaces, RBAC
+# Wave 1: Secrets, ConfigMaps
+# Wave 2: Deployments, Services
+# Wave 3: Ingress, NetworkPolicy
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: myapp
+  annotations:
+    argocd.argoproj.io/sync-wave: "2"
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+spec:
+  # ...
+---
+# Sync phases: PreSync → Sync → PostSync
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: db-migrate
+  annotations:
+    argocd.argoproj.io/hook: PreSync
+    argocd.argoproj.io/hook-delete-policy: HookSucceeded
+```
+
+### ArgoCD Multi-Tenancy
+
+```yaml
+# AppProject — tenant isolation
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: team-backend
+  namespace: argocd
+spec:
+  description: Backend team project
+  sourceRepos:
+    - 'https://github.com/org/backend-*'
+  destinations:
+    - namespace: 'backend-*'
+      server: https://kubernetes.default.svc
+    - namespace: 'staging-backend-*'
+      server: https://staging-cluster.example.com
+  clusterResourceWhitelist:
+    - group: ''
+      kind: Namespace
+  namespaceResourceBlacklist:
+    - group: ''
+      kind: ResourceQuota
+  roles:
+    - name: developer
+      policies:
+        - p, proj:team-backend:developer, applications, get, team-backend/*, allow
+        - p, proj:team-backend:developer, applications, sync, team-backend/*, allow
+      groups:
+        - backend-devs
+    - name: admin
+      policies:
+        - p, proj:team-backend:admin, applications, *, team-backend/*, allow
+      groups:
+        - backend-leads
+```
+
+### Flux v2 — GitOps Toolkit Controllers
+
+```yaml
+# Flux source controller
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: GitRepository
+metadata:
+  name: app-source
+  namespace: flux-system
+spec:
+  interval: 1m
+  url: https://github.com/org/app
+  ref:
+    branch: main
+  secretRef:
+    name: github-credentials
+---
+# Kustomization controller
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: app
+  namespace: flux-system
+spec:
+  interval: 10m
+  path: ./deploy/overlays/production
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: app-source
+  healthChecks:
+    - apiVersion: apps/v1
+      kind: Deployment
+      name: myapp
+      namespace: production
+  timeout: 5m
+---
+# Helm release controller
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: prometheus
+  namespace: monitoring
+spec:
+  interval: 30m
+  chart:
+    spec:
+      chart: prometheus
+      version: "25.x"
+      sourceRef:
+        kind: HelmRepository
+        name: prometheus-community
+  valuesFrom:
+    - kind: ConfigMap
+      name: prometheus-values
+```
+
+### Flux Image Automation
+
+```yaml
+# Image scanning + auto-update
+apiVersion: image.toolkit.fluxcd.io/v1beta2
+kind: ImageRepository
+metadata:
+  name: myapp
+  namespace: flux-system
+spec:
+  image: ghcr.io/org/myapp
+  interval: 5m
+  secretRef:
+    name: ghcr-credentials
+---
+apiVersion: image.toolkit.fluxcd.io/v1beta2
+kind: ImagePolicy
+metadata:
+  name: myapp
+  namespace: flux-system
+spec:
+  imageRepositoryRef:
+    name: myapp
+  policy:
+    semver:
+      range: ">=1.0.0 <2.0.0"
+  filterTags:
+    pattern: '^(?P<version>[0-9]+\.[0-9]+\.[0-9]+)$'
+---
+# Update marker in Git
+apiVersion: image.toolkit.fluxcd.io/v1beta1
+kind: ImageUpdateAutomation
+metadata:
+  name: myapp-update
+  namespace: flux-system
+spec:
+  interval: 30m
+  sourceRef:
+    kind: GitRepository
+    name: app-source
+  git:
+    checkout:
+      ref:
+        branch: main
+    commit:
+      author:
+        name: fluxbot
+        email: flux@example.com
+      messageTemplate: "Auto-update {{ .Changed.Image }} to {{ .Changed.NewTag }}"
+    push:
+      branch: main
+  update:
+    path: ./deploy
+    strategy: Setters
+```
+
+### Progressive Delivery with GitOps
+
+```yaml
+# Argo Rollouts + ArgoCD
+apiVersion: argoproj.io/v1alpha1
+kind: Rollout
+metadata:
+  name: myapp
+spec:
+  replicas: 5
+  strategy:
+    canary:
+      canaryService: myapp-canary
+      stableService: myapp-stable
+      trafficRouting:
+        istio:
+          virtualServices:
+            - name: myapp-vsvc
+              routes:
+                - primary
+      steps:
+        - setWeight: 5
+        - pause: {duration: 10m}
+        - analysis:
+            templates:
+              - templateName: success-rate
+        - setWeight: 25
+        - pause: {duration: 10m}
+        - setWeight: 50
+        - pause: {duration: 10m}
+        - setWeight: 100
+---
+# AnalysisTemplate for automated rollback
+apiVersion: argoproj.io/v1alpha1
+kind: AnalysisTemplate
+metadata:
+  name: success-rate
+spec:
+  args:
+    - name: service-name
+  metrics:
+    - name: success-rate
+      interval: 2m
+      successCondition: result[0] >= 0.95
+      failureLimit: 3
+      provider:
+        prometheus:
+          address: http://prometheus:9090
+          query: |
+            sum(rate(http_requests_total{service="{{args.service-name}}",code=~"2.."}[5m]))
+            /
+            sum(rate(http_requests_total{service="{{args.service-name}}"}[5m]))
+```
+
+```yaml
+# Flux + Flagger progressive delivery
+apiVersion: flagger.app/v1beta1
+kind: Canary
+metadata:
+  name: myapp
+  namespace: production
+spec:
+  targetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: myapp
+  service:
+    port: 80
+    trafficPolicy:
+      tls:
+        mode: ISTIO_MUTUAL
+  analysis:
+    interval: 1m
+    threshold: 5
+    maxWeight: 50
+    stepWeight: 10
+    metrics:
+      - name: request-success-rate
+        thresholdRange:
+          min: 99
+        interval: 1m
+      - name: request-duration
+        thresholdRange:
+          max: 500
+        interval: 30s
+    webhooks:
+      - name: acceptance-test
+        type: pre-rollout
+        url: http://flagger-loadtester.test/
+        timeout: 30s
+        metadata:
+          cmd: "curl -sd 'test' http://myapp-canary.production/api/health"
+```
+
+---
+
+## Step 28: Service Mesh Deep Dive
+
+Istio traffic management, Linkerd observability, Cilium eBPF service mesh.
+
+### Istio Traffic Management
+
+```yaml
+# VirtualService — traffic routing rules
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: myapp
+spec:
+  hosts:
+    - myapp.example.com
+  gateways:
+    - myapp-gateway
+  http:
+    # Canary: 10% to v2
+    - match:
+        - headers:
+            x-canary:
+              exact: "true"
+      route:
+        - destination:
+            host: myapp
+            subset: v2
+    - route:
+        - destination:
+            host: myapp
+            subset: v1
+          weight: 90
+        - destination:
+            host: myapp
+            subset: v2
+          weight: 10
+      retries:
+        attempts: 3
+        perTryTimeout: 2s
+        retryOn: 5xx,reset,connect-failure
+      timeout: 10s
+      fault:
+        delay:
+          percentage:
+            value: 0.1
+          fixedDelay: 5s
+---
+# DestinationRule — traffic policies per subset
+apiVersion: networking.istio.io/v1beta1
+kind: DestinationRule
+metadata:
+  name: myapp
+spec:
+  host: myapp
+  trafficPolicy:
+    connectionPool:
+      tcp:
+        maxConnections: 100
+      http:
+        h2UpgradePolicy: DEFAULT
+        http1MaxPendingRequests: 100
+        http2MaxRequests: 1000
+    outlierDetection:
+      consecutive5xxErrors: 5
+      interval: 30s
+      baseEjectionTime: 30s
+      maxEjectionPercent: 50
+    loadBalancer:
+      simple: LEAST_REQUEST
+  subsets:
+    - name: v1
+      labels:
+        version: v1
+    - name: v2
+      labels:
+        version: v2
+---
+# Gateway — ingress configuration
+apiVersion: networking.istio.io/v1beta1
+kind: Gateway
+metadata:
+  name: myapp-gateway
+spec:
+  selector:
+    istio: ingressgateway
+  servers:
+    - port:
+        number: 443
+        name: https
+        protocol: HTTPS
+      tls:
+        mode: SIMPLE
+        credentialName: myapp-tls
+      hosts:
+        - myapp.example.com
+---
+# EnvoyFilter — fine-grained proxy customization
+apiVersion: networking.istio.io/v1alpha3
+kind: EnvoyFilter
+metadata:
+  name: custom-header
+spec:
+  workloadSelector:
+    labels:
+      app: myapp
+  configPatches:
+    - applyTo: HTTP_FILTER
+      match:
+        context: SIDECAR_INBOUND
+      patch:
+        operation: INSERT_BEFORE
+        value:
+          name: envoy.filters.http.lua
+          typed_config:
+            "@type": type.googleapis.com/envoy.extensions.filters.http.lua.v3.Lua
+            inlineCode: |
+              function envoy_on_request(handle)
+                local rid = handle:streamInfo():requestHeaders():get("x-request-id")
+                handle:logInfo("Request ID: " .. (rid or "none"))
+              end
+```
+
+### Istio Ambient Mesh (sidecar-less)
+
+```yaml
+# Ambient mesh — no sidecar injection, uses ztunnel (L4) + waypoint proxy (L7)
+# Enable ambient mode per namespace
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: production
+  labels:
+    istio.io/dataplane-mode: ambient
+---
+# Waypoint proxy for L7 policies
+apiVersion: gateway.networking.k8s.io/v1
+kind: Gateway
+metadata:
+  name: waypoint
+  namespace: production
+  annotations:
+    istio.io/waypoint-for: service
+spec:
+  gatewayClassName: istio-waypoint
+  listeners:
+    - name: mesh
+      port: 15008
+      protocol: HBONE
+```
+
+**Ambient vs sidecar:**
+```
+Feature              Sidecar          Ambient
+──────────────────────────────────────────────
+Overhead per pod     ~50MB RAM        0 (shared ztunnel)
+Latency overhead     1-3ms            <0.5ms (L4)
+Upgrade path         Pod restart      Rolling ztunnel update
+L7 policies          Always           Opt-in per namespace
+Resource model       Per-pod          Per-node (ztunnel)
+```
+
+### Linkerd — Observability
+
+```bash
+# Linkerd Viz — built-in observability
+# Real-time traffic stats
+linkerd viz stat deploy -n production
+# NAME       MESHED   SUCCESS      RPS   LATENCY_P50   LATENCY_P99   LATENCY_P999
+# myapp      3/3      99.98%     150.2         12ms         145ms         290ms
+
+# Live traffic tap
+linkerd viz tap deploy/myapp -n production -o json
+# {"source":{"namespace":"frontend","deployment":"web"},"destination":{"namespace":"production","deployment":"myapp"},"route":"/api/v1/users","latencyNs":12300000,"http":{"status":200}}
+
+# Service dependency graph (edges)
+linkerd viz edges deploy -n production
+# SRC          DST       SECURED   LATENCY   SUCCESS
+# web          myapp     true      15ms      99.98%
+# api-gateway  myapp     true      12ms      99.95%
+
+# Top routes
+linkerd viz routes deploy/myapp --to deploy/web -n production
+# ROUTE                      EFFECTIVE_SUCCESS   EFFECTIVE_RPS   P50     P99
+# GET /api/v1/users          99.98%              85.2           12ms    145ms
+# POST /api/v1/orders        99.95%              45.1           18ms    200ms
+# GET /health                100%                2.0            1ms     2ms
+```
+
+**Linkerd performance:** <1ms proxy overhead, ~10MB memory per proxy, Rust-based (linkerd2-proxy).
+
+### Cilium eBPF Service Mesh
+
+```yaml
+# Cilium — sidecar-less L3/L4/L7 mesh via eBPF
+# CiliumNetworkPolicy — L7-aware
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: api-policy
+  namespace: production
+spec:
+  endpointSelector:
+    matchLabels:
+      app: myapp
+  ingress:
+    - fromEndpoints:
+        - matchLabels:
+            app: frontend
+      toPorts:
+        - ports:
+            - port: "8080"
+          rules:
+            http:
+              - method: GET
+                path: "/api/v1/.*"
+              - method: POST
+                path: "/api/v1/orders"
+                headers:
+                  - 'content-type: application/json'
+```
+
+```bash
+# Cilium Hubble — eBPF-powered observability
+# Real-time flow monitoring
+hubble observe --namespace production --verdict DROPPED --follow
+# Jun 8 10:23:45.123: production/frontend:45232 (ID:1234) -> production/myapp:8080 (ID:5678) policy-verdict:DROPPED (TCP Flags: SYN)
+
+# Hubble UI — service dependency map
+hubble ui  # Opens web UI with live traffic graph
+
+# Hubble metrics (Prometheus)
+# hubble_flows_processed_total
+# hubble_drop_total{reason="POLICY_DENIED"}
+# hubble_tcp_flags_total
+```
+
+```yaml
+# Cilium ClusterMesh — multi-cluster
+# Enable on each cluster
+# cilium clustermesh enable --service-type LoadBalancer
+# cilium clustermesh status
+# cilium clustermesh connect --destination-context cluster-b
+# ---
+# CiliumClusterwideNetworkPolicy — cross-cluster policy
+apiVersion: cilium.io/v2
+kind: CiliumClusterwideNetworkPolicy
+metadata:
+  name: cross-cluster-api
+spec:
+  endpointSelector:
+    matchLabels:
+      app: global-api
+  ingress:
+    - fromEndpoints:
+        - matchLabels:
+            k8s:io.cilium.k8s.namespace.labels.team: consumers
+      toPorts:
+        - ports:
+            - port: "443"
+          rules:
+            http:
+              - method: GET
+                path: "/api/.*"
+```
+
+**Service mesh comparison:**
+```
+Feature           Istio              Linkerd           Cilium
+────────────────────────────────────────────────────────────────
+Proxy             Envoy (C++)        linkerd2-proxy    eBPF kernel
+Sidecar           Yes (Ambient=no)   Yes               No (sidecar-less)
+L4 overhead       1-3ms              <1ms              ~0ms (kernel)
+L7 policies       Yes                Yes               Yes
+Multi-cluster     Yes                Yes (cluster)     Yes (ClusterMesh)
+Observability     Kiali, Prometheus  Built-in viz      Hubble
+mTLS              SPIFFE             Automatic         SPIFFE
+Resource cost     High               Low               Lowest
+```
+
+---
+
+## Step 29: Edge Computing Patterns
+
+Cloudflare Workers, Deno Deploy, Lambda@Edge — runtime comparison and decision matrix.
+
+### Cloudflare Workers
+
+```javascript
+// V8 isolate-based (not containers), runs in 300+ PoPs
+// No cold starts, ~0ms startup
+
+export default {
+  async fetch(request, env) {
+    const url = new URL(request.url);
+
+    // KV — eventually-consistent key-value store
+    const cached = await env.MY_KV.get(url.pathname, { type: 'json' });
+    if (cached) return new Response(JSON.stringify(cached), {
+      headers: { 'Content-Type': 'application/json', 'X-Cache': 'HIT' }
+    });
+
+    // R2 — S3-compatible object storage
+    if (url.pathname.startsWith('/assets/')) {
+      const object = await env.MY_BUCKET.get(url.pathname.slice(8));
+      if (object) return new Response(object.body, {
+        headers: { 'Content-Type': object.httpMetadata.contentType }
+      });
+    }
+
+    // D1 — SQLite at the edge
+    const { results } = await env.DB.prepare(
+      "SELECT * FROM products WHERE category = ?1 LIMIT 10"
+    ).bind(url.searchParams.get('category')).all();
+
+    // Cache result in KV
+    await env.MY_KV.put(url.pathname, JSON.stringify(results), {
+      expirationTtl: 300
+    });
+
+    return Response.json(results);
+  }
+};
+```
+
+```javascript
+// Durable Objects — stateful edge compute
+export class RateLimiter {
+  constructor(state, env) {
+    this.state = state;
+    this.requests = [];
+  }
+
+  async fetch(request) {
+    const ip = request.headers.get('CF-Connecting-IP');
+    const now = Date.now();
+
+    // Sliding window rate limit
+    this.requests = this.requests.filter(t => now - t < 60000);
+    if (this.requests.length >= 100) {
+      return new Response('Rate limited', { status: 429 });
+    }
+    this.requests.push(now);
+
+    return new Response('OK');
+  }
+}
+
+// wrangler.toml
+// [[durable_objects.bindings]]
+// name = "RATE_LIMITER"
+// class_name = "RateLimiter"
+```
+
+**Cloudflare Workers limits:** 128MB memory, 30s CPU time (paid), 10ms CPU (free), no filesystem, no native binaries.
+
+### Deno Deploy
+
+```typescript
+// Deno Deploy — V8 isolates, native Deno runtime
+// Deno KV — strongly-consistent globally distributed KV
+Deno.serve(async (req: Request) => {
+  const kv = await Deno.openKv();
+  const url = new URL(req.url);
+
+  // Atomic transactions
+  const key = ["users", url.searchParams.get("id")];
+  const entry = await kv.get(key);
+
+  // CAS (compare-and-swap) update
+  const result = await kv.atomic()
+    .check(entry)
+    .set(key, { ...entry.value, lastAccess: Date.now() })
+    .commit();
+
+  if (!result.ok) {
+    return new Response("Conflict, retry", { status: 409 });
+  }
+
+  return Response.json(entry.value);
+});
+```
+
+```typescript
+// Subhosting — multi-tenant edge apps
+// Each tenant gets isolated Deno Deploy project
+// Managed by host via Deno Deploy API
+const TENANT_APPS: Record<string, string> = {
+  "tenant-a.example.com": "https://tenant-a.deno.dev",
+  "tenant-b.example.com": "https://tenant-b.deno.dev",
+};
+
+Deno.serve((req: Request) => {
+  const hostname = new URL(req.url).hostname;
+  const target = TENANT_APPS[hostname];
+  if (!target) return new Response("Not found", { status: 404 });
+  return fetch(`${target}${new URL(req.url).pathname}`, req);
+});
+```
+
+**Deno Deploy limits:** 50MB memory per request, 50ms CPU (free), 30s CPU (paid), Deno KV 1GB free.
+
+### Lambda@Edge
+
+```javascript
+// 4 trigger points in CloudFront
+// 1. Viewer Request (before cache, per-request)
+exports.viewerRequest = async (event) => {
+  const request = event.Records[0].cf.request;
+  const headers = request.headers;
+
+  // A/B testing at edge
+  const cookie = (headers.cookie || []).find(c => c.value.includes('experiment='));
+  if (!cookie) {
+    const variant = Math.random() < 0.5 ? 'a' : 'b';
+    request.origin = {
+      custom: {
+        domainName: variant === 'a' ? 'origin-a.example.com' : 'origin-b.example.com',
+        port: 443,
+        protocol: 'https',
+      }
+    };
+    headers.cookie = [{ key: 'Cookie', value: `experiment=${variant}` }];
+  }
+  return request;
+};
+
+// 2. Viewer Response (before sending to client)
+exports.viewerResponse = async (event) => {
+  const response = event.Records[0].cf.response;
+  response.headers['x-edge-node'] = [{ key: 'X-Edge-Node', value: event.Records[0].cf.config.requestId }];
+  return response;
+};
+
+// 3. Origin Request (before hitting origin, cache miss)
+exports.originRequest = async (event) => {
+  const request = event.Records[0].cf.request;
+  // Rewrite path for SPA
+  if (!request.uri.includes('.')) {
+    request.uri = '/index.html';
+  }
+  return request;
+};
+
+// 4. Origin Response (after origin responds)
+exports.originResponse = async (event) => {
+  const response = event.Records[0].cf.response;
+  // Cache static assets at edge
+  if (response.status === '200') {
+    response.headers['cache-control'] = [{ key: 'Cache-Control', value: 'public, max-age=86400' }];
+  }
+  return response;
+};
+```
+
+**Lambda@Edge limitations:**
+- 5s timeout (viewer triggers), 30s (origin triggers)
+- 128MB memory (viewer), 10GB (origin)
+- No env vars (use SSM Parameter Store)
+- No Lambda layers
+- Must deploy in us-east-1, then replicate
+- Max 1MB response body (viewer), 40KB headers
+
+### Edge Platform Decision Matrix
+
+```
+Feature              CF Workers       Deno Deploy      Lambda@Edge
+─────────────────────────────────────────────────────────────────────
+Runtime              V8 isolates      V8 isolates      Node.js/Python
+Startup              ~0ms             ~0ms             50-500ms
+Max CPU time         30s (paid)       30s (paid)       5s/30s
+Memory               128MB            50MB             128MB-10GB
+State                KV, R2, D1, DO   Deno KV          DynamoDB/S3
+Global PoPs          300+             35+ (GCP)        220+ (CloudFront)
+Cron                 Yes (free tier)  Yes              EventBridge
+Cost (1M req)        $0.50            Free-$10/mo      $0.60 + compute
+Language             JS/TS/Wasm       JS/TS            JS/Python/Java
+WebSockets           Yes (Durable Obj) Yes             No
+Vendor lock-in       Medium           Low (Deno std)   High (AWS)
+```
+
+**Decision guide:**
+- **Need lowest latency + KV at edge?** → Cloudflare Workers (300+ PoPs, D1, R2, Durable Objects)
+- **Need strong consistency + Deno ecosystem?** → Deno Deploy (Deno KV, atomic transactions)
+- **Already on AWS + CloudFront?** → Lambda@Edge (integrated, but heavier)
+- **Need WebSockets at edge?** → CF Workers (Durable Objects) or Deno Deploy
+- **Need long-running compute?** → Lambda@Edge (30s origin) or CF Workers (30s paid)
+- **Need custom binaries/native modules?** → Lambda@Edge (Node.js full runtime)
+
+---
+
 ## Sources
 
 - Canary deployments: https://docs.flagger.app/usage/deployment-strategies
@@ -3183,6 +4316,29 @@ ci_flag_check:
 - Deno Deploy: https://deno.com/deploy
 - OpenTelemetry Lambda: https://opentelemetry.io/docs/faas/
 - Cold start benchmarks: https://maxday.github.io/lambda-perf/
+- Terratest: https://terratest.gruntwork.io/
+- Checkov: https://www.checkov.io/
+- tfsec: https://aquasecurity.github.io/tfsec/
+- Trivy Config: https://aquasecurity.github.io/trivy/
+- OPA: https://www.openpolicyagent.org/
+- Conftest: https://www.conftest.dev/
+- Gatekeeper: https://open-policy-agent.github.io/gatekeeper/
+- ArgoCD: https://argo-cd.readthedocs.io/
+- ArgoCD app-of-apps: https://argo-cd.readthedocs.io/en/stable/operator-manual/cluster-bootstrapping/
+- ArgoCD ApplicationSets: https://argo-cd.readthedocs.io/en/stable/operator-manual/applicationset/
+- Flux v2: https://fluxcd.io/docs/
+- Flux GitOps Toolkit: https://fluxcd.io/flux/components/
+- Argo Rollouts: https://argoproj.github.io/rollouts/
+- Flagger: https://docs.flagger.app/
+- Istio: https://istio.io/latest/docs/
+- Istio Ambient Mesh: https://istio.io/latest/docs/ops/ambient/
+- Linkerd: https://linkerd.io/docs/
+- Cilium: https://docs.cilium.io/
+- Hubble: https://docs.cilium.io/en/latest/observability/hubble/
+- Cilium ClusterMesh: https://docs.cilium.io/en/latest/network/clustermesh/
+- Cloudflare Workers: https://developers.cloudflare.com/workers/
+- Deno Deploy: https://deno.com/deploy
+- Lambda@Edge: https://docs.aws.amazon.com/lambda/latest/dg/lambda-edge.html
 
 ## Pitfalls
 
@@ -3205,4 +4361,9 @@ ci_flag_check:
 17. **Don't mix X-Ray SDK and OTEL layer** — they conflict; pick one
 18. **Don't use `PutMetricData` in hot paths** — use EMF (Powertools Metrics) for zero-cost custom metrics
 19. **Don't set Cloud Run concurrency too high** — test with your workload; 80 is safe default
-20. **Don't deploy Dapr components without secrets** — use Azure Key Vault references, not inline connection strings
+20. **Don't run Terratest against production** — always use sandbox/ephemeral environments
+21. **Don't skip OPA policy tests in CI** — untested policies block deploys silently
+22. **Don't use Istio EnvoyFilter in production without canary** — misconfigurations break all traffic
+23. **Don't use Lambda@Edge for long operations** — 5s viewer timeout is hard limit
+24. **Don't assume CF Workers KV is strongly consistent** — eventual consistency; use Durable Objects for strong reads
+25. **Don't deploy Dapr components without secrets** — use Azure Key Vault references, not inline connection strings
