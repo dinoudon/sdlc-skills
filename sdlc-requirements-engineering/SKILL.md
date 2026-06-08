@@ -1,7 +1,7 @@
 ---
 name: sdlc-requirements-engineering
 description: "Requirements: user story mapping (Jeff Patton), BDD/Gherkin (Cucumber, pytest-bdd), acceptance criteria (Given/When/Then), impact mapping (Gojko Adzic), example mapping, specification by example, JTBD framework, RICE scoring, WSJF prioritization, user story splitting, NFR patterns, requirements traceability, OKR alignment, design thinking, AI/ML requirements, STRIDE security, OWASP ASVS, WCAG 2.2 AA accessibility, event storming (Brandolini), domain storytelling (Hofer), platform team requirements, cost of delay (Reinertsen), requirements elicitation techniques, ATDD."
-version: 4.0.0
+version: 4.1.0
 author: Hermes Agent
 license: MIT
 platforms: [linux, macos, windows]
