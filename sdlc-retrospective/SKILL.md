@@ -1,13 +1,13 @@
 ---
 name: sdlc-retrospective
-description: "Retrospective formats: Start/Stop/Continue, 4Ls, Mad/Sad/Glad, Sailboat, Kaizen PDCA cycle, Toyota Kata (Mike Rother), blameless postmortems, incident deep-dive (Swiss cheese model), continuous improvement patterns. DORA metrics integration, DORA capability assessment, SPACE framework productivity metrics, Team Topologies awareness, team cognitive load measurement, Value Stream Mapping, flow metrics (lead time, cycle time, flow efficiency, WIP limits), anti-patterns, remote retro patterns, psychological safety measurement, action item tracking, green software retrospective, FinOps retrospective, platform engineering retrospective, Toyota Kata practice, Lean Software Development (7 wastes), Theory of Constraints (5 focusing steps, thinking processes), DORA transformation patterns (24 capabilities, 4 tiers), Platform Engineering Maturity (CNCF maturity model, Gartner predictions), Developer Productivity Research (SPACE applied, Microsoft studies, DORA culture findings), Technical Debt Management (Fowler's quadrant, Strangler Fig, quantification), Inner Source Patterns (InnerSource Commons, trusted committer, 30-day warranty), Staff Engineer Role (Larson's 4 archetypes), Engineering Ladder Design (dual-track IC/management), 1:1 Meeting Patterns (Lara Hogan, SBI, Radical Candor), Technical Decision Making (ADR, RFC, consensus models)."
-version: 4.8.0
+description: "Retrospective formats: Start/Stop/Continue, 4Ls, Mad/Sad/Glad, Sailboat, Kaizen PDCA cycle, Toyota Kata (Mike Rother), blameless postmortems, incident deep-dive (Swiss cheese model), continuous improvement patterns. DORA metrics integration, DORA capability assessment, SPACE framework productivity metrics, Team Topologies awareness, team cognitive load measurement, Value Stream Mapping, flow metrics (lead time, cycle time, flow efficiency, WIP limits), anti-patterns, remote retro patterns, psychological safety measurement, action item tracking, green software retrospective, FinOps retrospective, platform engineering retrospective, Toyota Kata practice, Lean Software Development (7 wastes), Theory of Constraints (5 focusing steps, thinking processes), DORA transformation patterns (24 capabilities, 4 tiers), Platform Engineering Maturity (CNCF maturity model, Gartner predictions), Developer Productivity Research (SPACE applied, Microsoft studies, DORA culture findings), Technical Debt Management (Fowler's quadrant, Strangler Fig, quantification), Inner Source Patterns (InnerSource Commons, trusted committer, 30-day warranty), Staff Engineer Role (Larson's 4 archetypes), Engineering Ladder Design (dual-track IC/management), 1:1 Meeting Patterns (Lara Hogan, SBI, Radical Candor), Technical Decision Making (ADR, RFC, consensus models), Team Topologies (4 team types, 3 interaction modes, cognitive load theory), Inverse Conway Maneuver (org-to-architecture alignment), Value Stream Mapping (flow efficiency, bottleneck elimination), Team API (code API, communication API, work-with-us API)."
+version: 4.9.0
 author: Dinoudon
 license: MIT
 platforms: [linux, macos, windows]
 metadata:
   hermes:
-    tags: [sdlc, retrospective, kaizen, continuous-improvement, postmortem, agile, dora-metrics, team-topologies, value-stream-mapping, psychological-safety, space-framework, toyota-kata, flow-metrics, cognitive-load, incident-deepdive, dora-capabilities, green-software, finops, platform-engineering, sustainable-engineering, cloud-cost-optimization, developer-experience, lean-software-development, theory-of-constraints, dora-transformation, seven-wastes, throughput-accounting, platform-maturity, developer-productivity, technical-debt, inner-source, staff-engineer, engineering-ladder, one-on-ones, adr, rfc, technical-decisions]
+    tags: [sdlc, retrospective, kaizen, continuous-improvement, postmortem, agile, dora-metrics, team-topologies, value-stream-mapping, psychological-safety, space-framework, toyota-kata, flow-metrics, cognitive-load, incident-deepdive, dora-capabilities, green-software, finops, platform-engineering, sustainable-engineering, cloud-cost-optimization, developer-experience, lean-software-development, theory-of-constraints, dora-transformation, seven-wastes, throughput-accounting, platform-maturity, developer-productivity, technical-debt, inner-source, staff-engineer, engineering-ladder, one-on-ones, adr, rfc, technical-decisions, inverse-conway, team-api, stream-aligned, enabling-team]
     related_skills: [sdlc-prd-to-production, sdlc-requirements-engineering]
 ---
 
@@ -4284,3 +4284,507 @@ Practice:
 - "Are RFCs getting stuck in review forever?"
 
 Source: Michael Nygard ADR | IETF RFC process | Rust RFC process | Jeff Bezos Shareholder Letter | Sociocracy consent model
+
+## Step 39: Team Topologies
+
+Source: Matthew Skelton & Manuel Pais, "Team Topologies" (2019) (https://teamtopologies.com/)
+
+### 4 Team Types
+
+| Team Type | Purpose | Size | Example |
+|-----------|---------|------|---------|
+| **Stream-Aligned** | Aligned to single flow of work (product, feature, user journey). Primary value-delivery team. | 5-9 | Product team, feature team, journey team |
+| **Platform** | Provides internal services to reduce cognitive load on stream-aligned teams. Self-service APIs, tooling, infrastructure. | 5-9 | Platform team, developer experience, SRE |
+| **Enabling** | Helps other teams adopt new technologies/practices. Temporary engagement, then disbands. Rotates knowledge. | 3-5 | SRE coaching team, security champions team |
+| **Complicated-Subsystem** | Owns subsystem requiring deep specialist knowledge. Too much cognitive load for stream-aligned team. | 3-7 | ML model team, video codec team, database engine team |
+
+**Rule of thumb:** Most teams (~80%) should be stream-aligned. Platform teams exist to serve them. Enabling teams are temporary catalysts. Complicated-subsystem teams are rare exceptions.
+
+```
+                    ┌─────────────────────┐
+                    │   Stream-Aligned     │ ← primary value delivery
+                    │   (majority)         │
+                    └──────────┬──────────┘
+                               │ uses
+              ┌────────────────┼────────────────┐
+              ▼                ▼                ▼
+   ┌──────────────┐  ┌──────────────┐  ┌──────────────────┐
+   │   Platform    │  │  Enabling    │  │  Complicated-     │
+   │  (services)   │  │  (temporary) │  │  Subsystem        │
+   └──────────────┘  └──────────────┘  └──────────────────┘
+```
+
+### 3 Interaction Modes
+
+| Mode | Duration | Goal | Example |
+|------|----------|------|---------|
+| **Collaboration** | Temporary, time-boxed | Discover new thing together. High communication overhead. | Two teams co-designing a new API boundary |
+| **X-as-a-Service** | Long-term | One team provides, other consumes. Clear API boundary. Low coupling. | Platform team provides CI/CD, stream-aligned consumes |
+| **Facilitating** | Temporary | One team helps another learn/adapt skill. Coach, not do. | Enabling team teaches observability practices |
+
+**Key principle:** Minimize collaboration mode (high cognitive load). Prefer X-as-a-service for stable boundaries. Use facilitating for capability gaps.
+
+### Cognitive Load Theory
+
+Source: John Sweller, Cognitive Load Theory (1988)
+
+| Type | Definition | Engineering Example | Action |
+|------|-----------|---------------------|--------|
+| **Intrinsic** | Difficulty inherent to the problem domain | Understanding payment processing rules, compliance requirements | Can't eliminate. Manage by limiting domain scope per team. |
+| **Extraneous** | Unnecessary load from poor tools/processes | Broken CI, unclear docs, manual deployments, inconsistent environments | Eliminate. This is waste. Platform teams exist to reduce this. |
+| **Germane** | Load from learning/improving | Learning new language, understanding system architecture | Protect this. Essential for growth. Don't squeeze it out. |
+
+**Cognitive load limits:**
+- Individual: ~4-7 chunks of novel information working memory
+- Team: Intrinsic load must fit team capacity. If team feels "always behind," domain scope is too large.
+- Measurement: "How many different services/repos/domains does this team touch?" If >3-5, split.
+
+**Signs of overloaded team:**
+- Context switching > 3 times/day
+- On-call rotation covers systems they didn't build
+- "Bus factor" of 1 on multiple subsystems
+- Sprint velocity declining despite no change in team size
+- Engineers can't explain system architecture in 5 min
+
+### Team Topology Evolution Path
+
+Teams evolve over time. Current state ≠ desired state.
+
+```
+Start:                                  Evolve to:
+─────────                               ──────────
+All teams "full-stack"                  Stream-aligned + Platform
+(mixed load, unclear ownership)         (clear boundaries)
+
+Team with niche expertise               Complicated-Subsystem team
+embedded in stream-aligned              (dedicated, owns specific domain)
+
+Teams struggling with new tech          Enabling team rotates in
+                                         (temporary coaching, then exits)
+
+Repeated collaboration between          Merge into one stream-aligned
+two stream-aligned teams                (or define X-as-a-Service boundary)
+```
+
+**Evolution triggers:**
+- Two teams with >50% shared work → merge or define service boundary
+- Team spending >30% time on platform tasks → spin out platform team
+- Team struggling with new domain for >2 sprints → enabling team helps
+- Subsystem consuming >40% team cognitive load → extract to complicated-subsystem team
+
+### Retrospective Integration
+
+| Retro Phase | Team Topologies Activity |
+|-------------|--------------------------|
+| Set the Stage | Present current team topology map |
+| Gather Data | Measure: cross-team dependencies, wait times, cognitive load surveys |
+| Generate Insights | Identify overloaded teams, misaligned boundaries, missing platform services |
+| Decide What to Do | Propose topology changes: team split, merge, boundary shift |
+| Close | Commit to one topology experiment for next quarter |
+
+**Retro questions:**
+- "Does our team topology match our software architecture?"
+- "Which team has the highest cognitive load? Why?"
+- "Are we spending too much time in collaboration mode instead of defining clear service boundaries?"
+- "What extraneous cognitive load (bad tooling, unclear docs) can we eliminate?"
+- "Are enabling teams actually helping, or are they permanent?"
+
+Source: Matthew Skelton & Manuel Pais, "Team Topologies" | John Sweller, Cognitive Load Theory (1988)
+
+## Step 40: Inverse Conway Maneuver
+
+Source: Melvin Conway, "How Do Committees Invent?" (1967) (https://www.melconway.com/Home/Committees_Paper.html) | Ruth Malan & Dana Bredemeyer, "Conway's Law" (2001)
+
+### Conway's Law
+
+> "Any organization that designs a system will produce a design whose structure is a copy of the organization's communication structure." — Melvin Conway, 1967
+
+**In practice:**
+- 3 teams building a compiler → 3-pass compiler
+- Frontend team + backend team → monolithic API with heavy integration layer
+- Teams organized by technology layer → layered architecture, no team owns end-to-end feature
+
+**Evidence:** Harvard Business School study (MacCormack et al., 2012) confirmed code modular structure mirrors team communication structure in both open-source and proprietary software.
+
+### Inverse Conway Maneuver
+
+Instead of letting org structure dictate architecture, deliberately structure teams to produce desired architecture.
+
+```
+Traditional (Conway's Law):
+  Org Structure ──→ Architecture (unintended)
+
+Inverse Conway Maneuver:
+  Target Architecture ──→ Org Structure (deliberate)
+```
+
+### Process
+
+```
+Step 1: Define Target Architecture
+──────────────────────────────────
+  - What modular structure do we want?
+  - What are the key bounded contexts / service boundaries?
+  - What data flows and API contracts define boundaries?
+  - Example: "We want 6 microservices: Auth, Payments, Catalog, 
+    Orders, Notifications, Analytics"
+
+Step 2: Map Current Org to Target
+──────────────────────────────────
+  - Overlay current teams onto target architecture
+  - Identify: one team spanning multiple services (split)
+  - Identify: multiple teams owning one service (merge or clarify)
+  - Identify: shared services with no clear owner (assign or create)
+  - Gap analysis: "Current org has 4 teams, target needs 6 services 
+    → need 2 more teams or restructure"
+
+Step 3: Restructure Teams
+──────────────────────────
+  - Reorganize teams to align 1:1 with target architecture
+  - Each team owns one service end-to-end
+  - Team naming matches service naming
+  - Reporting structure aligns with technical structure
+  - Cost: short-term productivity loss during transition
+
+Step 4: Architecture Follows
+────────────────────────────
+  - With aligned teams, API boundaries emerge naturally
+  - Teams optimize within their boundary
+  - Cross-team coordination reduces (no need to negotiate shared code)
+  - Deployment independence emerges (team deploys own service)
+```
+
+### Anti-Patterns
+
+| Anti-Pattern | Problem | Fix |
+|-------------|---------|-----|
+| **Team per layer** | Frontend/Backend/DB teams → layered architecture, no team owns feature | Reorganize to feature teams owning full stack |
+| **Shared services team** | One team owns N services for "efficiency" → bus factor, slow changes | Split into one team per critical service |
+| **Architects-in-ivory-tower** | Architects design, teams implement → disconnect, architecture decays | Architects embedded in teams, teams own architecture |
+| **Org mirrors monolith** | Large team owns large codebase → Big Ball of Mud | Split monolith AND team simultaneously |
+
+### When to Use
+
+- Starting a microservices migration: define service boundaries first, then align teams
+- Post-merger: integrating two engineering orgs with different architectures
+- Scaling: team growing beyond Dunbar's number interactions
+- Architecture rot: code structure diverging from org structure
+
+### Retrospective Integration
+
+| Retro Phase | Inverse Conway Activity |
+|-------------|------------------------|
+| Set the Stage | Draw current team-to-service mapping |
+| Gather Data | Count: cross-team PRs, shared repos, services with >1 owner team |
+| Generate Insights | Identify Conway mismatches: team owns 3 services, or service owned by 2 teams |
+| Decide What to Do | Propose team restructure to match target architecture |
+| Close | Commit to one alignment change |
+
+**Retro questions:**
+- "Does our team structure match our desired architecture?"
+- "Which services have unclear ownership (multiple teams or no team)?"
+- "Are we building a layered architecture because our org is layered?"
+- "What would our ideal team-to-service mapping look like?"
+- "If we could restructure teams tomorrow, what would change?"
+
+Source: Melvin Conway (1967) | Ruth Malan & Dana Bredemeyer | Harvard Business School (MacCormack et al., 2012)
+
+## Step 41: Value Stream Mapping
+
+Source: James Womack & Daniel Jones, "Lean Thinking" (1996) | Mike Rother & John Shook, "Learning to See" (1998)
+
+### Mapping Process
+
+Value stream = all steps (value-add and waste) from request to production.
+
+```
+Step 1: Define the Value Stream
+────────────────────────────────
+  Pick one product or feature type. Map end-to-end:
+  
+  Customer Request ──→ Analysis ──→ Design ──→ Development ──→ 
+  Test ──→ Integration ──→ Staging ──→ Deployment ──→ Production
+
+Step 2: Measure Each Step
+──────────────────────────
+  For each step, record:
+  - Process time (active work)    = how long someone actually works on it
+  - Lead time (total time)        = how long item sits in queue + process time
+  - %C&A (percent complete & accurate) = % items that pass without rework
+  
+  ┌────────────┬──────────┬──────────┬─────────┐
+  │ Step       │ Lead Time│ Proc Time│ %C&A    │
+  ├────────────┼──────────┼──────────┼─────────┤
+  │ Analysis   │ 5 days   │ 2 hours  │ 85%     │
+  │ Dev        │ 3 days   │ 2 days   │ 90%     │
+  │ Code Review│ 2 days   │ 4 hours  │ 95%     │
+  │ QA         │ 4 days   │ 1 day    │ 80%     │
+  │ Deploy     │ 1 day    │ 30 min   │ 99%     │
+  └────────────┴──────────┴──────────┴─────────┘
+
+Step 3: Calculate Flow Efficiency
+──────────────────────────────────
+  Flow Efficiency = (Total Process Time / Total Lead Time) × 100
+  
+  Example:
+  - Total process time: 2d + 2d + 0.5d + 1d + 0.06d = 5.56 days
+  - Total lead time: 5d + 3d + 2d + 4d + 1d = 15 days
+  - Flow efficiency = 5.56 / 15 = 37%
+  
+  Industry benchmark: most orgs are 5-15% flow efficient.
+  Good: 25%+. Excellent: 40%+. Most time is waste (waiting).
+```
+
+### Common Bottlenecks
+
+| Bottleneck | Typical Wait Time | Root Cause | Fix |
+|-----------|-------------------|------------|-----|
+| **CAB (Change Advisory Board)** | 3-10 days | Risk aversion, manual gate, "sign-off culture" | Automate change management. Risk-based approvals. Standard changes auto-approved. |
+| **Environment Provisioning** | 5-20 days | Manual infra requests, ticket queues, siloed ops team | Self-service environments. Infrastructure-as-Code. Ephemeral preview environments. |
+| **Code Review Queues** | 1-5 days | Too few reviewers, large PRs, no SLA, no review culture | Small PRs (<400 lines). Review SLA (4 hours). PR assignment rotation. Pair programming. |
+| **Test Execution** | 2-8 hours | Slow E2E suite, flaky tests, manual regression | Parallelize. Quarantine flaky tests. Shift-left testing. Test pyramid. |
+| **Stakeholder Sign-off** | 3-15 days | Missing stakeholders, unclear authority, decision paralysis | Empowered product owner. Async approvals. Type 2 decision delegation. |
+| **Security Review** | 5-30 days | Late-stage security gate, manual review, small security team | Shift-left: security in CI/CD. SAST/DAST automated. Security champions in teams. |
+
+### Reduce Handoffs
+
+Each handoff = delay + context loss + queue time. Goal: minimize.
+
+**Strategy 1: Align to Value Streams**
+```
+Before (functional teams):
+  Feature ──→ Frontend Team ──→ Backend Team ──→ QA Team ──→ Ops Team
+              (3 handoffs, 15 days lead time)
+
+After (stream-aligned team):
+  Feature ──→ Stream-Aligned Team ──→ Production
+              (0 handoffs, 3 days lead time)
+```
+
+**Strategy 2: Automate Handoffs**
+- Manual testing → automated test suite in CI/CD
+- Manual deployment → automated deployment pipeline
+- Manual security review → SAST/DAST in pipeline
+- Manual env provisioning → self-service platform
+
+**Strategy 3: Shift-Left**
+- Security review at design time, not pre-deployment
+- Performance testing in CI, not in staging
+- Operational concerns in dev (observability, runbooks)
+- Compliance checks in PR, not in CAB
+
+### Creating Future State Map
+
+```
+Current State Map (example):
+  Lead Time: 15 days | Process Time: 5.5 days | Flow Eff: 37%
+
+Future State Targets:
+  - Eliminate CAB: -3 days lead time
+  - Automate testing: -2 days lead time  
+  - Self-service env: -5 days lead time
+  - Small PRs + SLA: -1.5 days lead time
+
+Future State Map:
+  Lead Time: 3.5 days | Process Time: 4 days | Flow Eff: 114%*
+  (* process time > lead time = parallel work, pipeline optimization)
+```
+
+### Retrospective Integration
+
+| Retro Phase | VSM Activity |
+|-------------|-------------|
+| Set the Stage | Present current value stream map for one feature type |
+| Gather Data | Measure: lead time per step, wait time, rework %, handoff count |
+| Generate Insights | Identify top 2 bottlenecks by wait time. Calculate cost of delay. |
+| Decide What to Do | Target one bottleneck. Define improvement experiment with measurable goal. |
+| Close | Commit to one flow improvement. Schedule VSM review in 4 weeks. |
+
+**Retro questions:**
+- "Where does work spend the most time waiting?"
+- "How many handoffs does a feature go through before production?"
+- "What's our flow efficiency? (If you don't know, that's the insight.)"
+- "Which bottleneck, if removed, would improve lead time the most?"
+- "Are we automating the right things, or automating a wasteful process?"
+
+Source: James Womack & Daniel Jones, "Lean Thinking" | Mike Rother & John Shook, "Learning to See" | Karen Martin, "Value Stream Mapping" (2014)
+
+## Step 42: Team API
+
+Source: Team Topologies, Skelton & Pais (2019) (https://teamtopologies.com/key-concepts)
+
+### Problem
+
+In growing orgs, engineers waste 1-4 hours/week asking "who owns X?" or "how do I integrate with Y?" Team API makes ownership and interfaces explicit.
+
+### 3 Components
+
+```
+┌─────────────────────────────────────────────────────────┐
+│                      TEAM API                           │
+│                                                         │
+│  ┌───────────────────────────────────────────────────┐  │
+│  │ 1. CODE / RUNTIME API                             │  │
+│  │    - Owned services, repos, libraries              │  │
+│  │    - API endpoints, schemas, contracts             │  │
+│  │    - Deployment pipelines, environments            │  │
+│  │    - SLOs, SLAs, error budgets                     │  │
+│  └───────────────────────────────────────────────────┘  │
+│                                                         │
+│  ┌───────────────────────────────────────────────────┐  │
+│  │ 2. COMMUNICATION / INFORMATION API                 │  │
+│  │    - How to contact the team (Slack channel, hours) │  │
+│  │    - Documentation links, wikis, runbooks           │  │
+│  │    - Tech radar, preferred patterns                 │  │
+│  │    - RFC/ADR process for proposing changes          │  │
+│  │    - Incident response process                      │  │
+│  └───────────────────────────────────────────────────┘  │
+│                                                         │
+│  ┌───────────────────────────────────────────────────┐  │
+│  │ 3. WORK-WITH-US API                                │  │
+│  │    - How to request work from the team              │  │
+│  │    - Team's current priorities and roadmap           │  │
+│  │    - Capacity for cross-team collaboration          │  │
+│  │    - Interaction modes offered (collab/service)     │  │
+│  │    - Onboarding guide for new team members          │  │
+│  └───────────────────────────────────────────────────┘  │
+└─────────────────────────────────────────────────────────┘
+```
+
+### Component Details
+
+**1. Code / Runtime API**
+```yaml
+# team-api-code.yaml (example)
+team: payments-team
+owns:
+  services:
+    - payment-gateway (Go, gRPC)
+    - billing-service (Python, REST)
+    - payment-webhooks (Node.js, EventBridge)
+  repos:
+    - github.com/org/payment-gateway
+    - github.com/org/billing-service
+  libraries:
+    - payment-sdk (Go)
+    - billing-types (TypeScript)
+apis:
+  rest:
+    - api.payments.internal/v2/* (OpenAPI spec: /docs/payments-openapi.yaml)
+  grpc:
+    - payments.internal:443 (proto: payments.proto)
+  async:
+    - payment.completed (AsyncAPI spec: /docs/payments-asyncapi.yaml)
+    - payment.failed
+    - billing.invoice.created
+slos:
+  - payment-gateway: 99.95% availability, p99 < 200ms
+  - billing-service: 99.9% availability
+```
+
+**2. Communication / Information API**
+```yaml
+# team-api-communication.yaml (example)
+team: payments-team
+contact:
+  slack: "#team-payments" (primary, async)
+  office_hours: "Tuesday 14:00-15:00 UTC (drop-in Q&A)"
+  escalation: "@payments-oncall in Slack, or PagerDuty payments rotation"
+documentation:
+  architecture: "https://wiki.internal/payments/architecture"
+  runbooks: "https://wiki.internal/payments/runbooks"
+  onboarding: "https://wiki.internal/payments/onboarding"
+  tech_decisions: "https://github.com/org/payment-gateway/tree/main/docs/adrs"
+patterns:
+  preferred:
+    - "Event-driven for cross-service communication"
+    - "gRPC for internal synchronous calls"
+    - "Idempotency keys on all write endpoints"
+  avoided:
+    - "Shared database across services"
+    - "Synchronous chains > 3 hops"
+change_process:
+  - "Small changes: PR + team review"
+  - "Cross-team changes: RFC in team repo, 1-week review"
+  - "Breaking changes: RFC + 2-week review + migration plan"
+incidents:
+  process: "https://wiki.internal/payments/incident-process"
+  oncall: "PagerDuty: payments-primary"
+  comms: "#incidents-payments Slack channel"
+```
+
+**3. Work-With-Us API**
+```yaml
+# team-api-work.yaml (example)
+team: payments-team
+current_priorities:
+  - "PCI-DSS v4 compliance (Q3)"
+  - "Multi-currency support (Q3-Q4)"
+  - "Payment retry optimization (Q3)"
+capacity:
+  cross_team_collaboration: "Limited until PCI compliance complete"
+  new_integrations: "Can discuss, queue for Q4"
+  consulting: "Available for architecture reviews (2h/week)"
+interaction_modes:
+  - "X-as-a-service: consume our REST/gRPC/async APIs"
+  - "Facilitating: we can coach on payment security best practices"
+  - "Collaboration: only for PCI-related work, by arrangement"
+request_work:
+  method: "Create issue in payments-team repo with 'request' label"
+  sla: "Triage within 3 business days"
+  prioritization: "Product owner reviews weekly"
+```
+
+### Implementation
+
+| Tool/Practice | Maps To | Setup |
+|--------------|---------|-------|
+| **Backstage** (Spotify) | All 3 components | Service catalog, team pages, API docs, tech radar. Auto-discovers services from repos. |
+| **OpenAPI specs** | Code API (REST) | `openapi.yaml` in repo root. Backstage auto-imports. CI validates on PR. |
+| **AsyncAPI specs** | Code API (Async/events) | `asyncapi.yaml` in repo root. Documents event schemas, channels, consumers. |
+| **ADRs in repo** | Communication API | `docs/adrs/` directory. Auto-linked in Backstage. Searchable decision history. |
+| **Team README** | Work-with-us API | `TEAM.md` in team repo. Standard format across all teams. |
+| **Service catalog** | Code API | Backstage or similar. Auto-populated from repo metadata. |
+
+### Reducing "Who Owns This?" Time
+
+**Before Team API:**
+```
+Engineer needs to integrate with payments:
+  1. Ask in #general "who owns payments?" → 2 hours (waiting for reply)
+  2. DM someone, get referred to another person → 4 hours
+  3. Find API docs (outdated wiki) → 1 hour
+  4. Schedule meeting to understand integration → 1 day wait + 1 hour
+  5. Discover breaking change not documented → 2 hours debugging
+  Total: ~2 days of friction for a 4-hour integration task
+```
+
+**After Team API:**
+```
+Engineer needs to integrate with payments:
+  1. Search Backstage: "payments" → find payments-team page → 30 seconds
+  2. Read API docs (auto-generated, current) → 30 minutes
+  3. Read Work-with-us: current priorities, interaction mode → 10 minutes
+  4. AsyncAPI spec tells exact event schema → implement directly → 4 hours
+  5. Questions? #team-payments or office hours → 0-1 hour wait
+  Total: ~5 hours for a 4-hour integration task
+```
+
+### Retrospective Integration
+
+| Retro Phase | Team API Activity |
+|-------------|-------------------|
+| Set the Stage | Show current team's Team API. Ask: "Could a new engineer find this in 5 minutes?" |
+| Gather Data | Track: "who owns X?" questions/week, time to find owner, API doc freshness |
+| Generate Insights | Identify missing Team API components. Stale docs. Unclear ownership boundaries. |
+| Decide What to Do | Update Team API. Add missing components. Automate doc generation. |
+| Close | Commit to one Team API improvement. |
+
+**Retro questions:**
+- "Can a new engineer on another team integrate with our service without talking to us?"
+- "Do other teams know how to request work from us?"
+- "Is our API documentation current or stale?"
+- "How much time do we spend answering 'who owns X?' questions?"
+- "Do we have a clear 'work-with-us' process, or is it ad-hoc Slack DMs?"
+
+Source: Matthew Skelton & Manuel Pais, "Team Topologies" | Spotify Backstage | OpenAPI Initiative | AsyncAPI Initiative

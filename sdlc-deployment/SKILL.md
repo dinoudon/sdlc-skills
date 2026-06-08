@@ -1,13 +1,13 @@
 ---
 name: sdlc-deployment
-description: "Deployment strategies: canary, blue-green, rolling, progressive delivery (Flagger/Argo Rollouts), feature flags (LaunchDarkly/Unleash/OpenFeature), rollback, database migrations, zero-downtime patterns. v3: Gateway API traffic splitting, OpenFeature CNCF standard, FinOps (OpenCost/Karpenter/FOCUS), AnalysisTemplate, multi-cluster progressive delivery. v3.1: Serverless (Lambda/Cloud Run/Container Apps), edge deployment (Cloudflare Workers/Deno Deploy), cold start optimization, serverless observability. v4: Production hardening (health probes, graceful shutdown, PDB), multi-region patterns (active-active/passive, follow-the-sun), disaster recovery (RPO/RTO, failover automation), cost optimization (right-sizing, spot/reserved), deployment verification (smoke tests, synthetic monitoring, canary analysis). v4.3: Deployment failure case studies (Knight Capital, AWS S3, Cloudflare, GitLab, Facebook BGP), successful deployment patterns (Netflix, Google, Amazon, Etsy), database migration war stories (gh-ost, expand-contract, Vitess), feature flag case studies (Facebook Gate, LaunchDarkly, Microsoft flight rings). v4.5: IaC testing (Terratest, Checkov, tfsec, OPA/Rego, 4-layer strategy), GitOps advanced (ArgoCD app-of-apps, Flux v2, progressive delivery), service mesh deep dive (Istio Ambient, Linkerd viz, Cilium eBPF/Hubble), edge computing patterns (Cloudflare Workers, Deno Deploy, Lambda@Edge). v4.6: Automated rollback strategies (metric-based, error-rate-based, synthetic check, Netflix Kayenta/Mann-Whitney), deployment verification testing (smoke tests, Helm test hooks, synthetic monitoring, canary analysis with Kayenta/Flagger), multi-region deployment (active-active CockroachDB/Spanner/CRDTs, active-passive hot standby, failover automation, global LB)."
-version: 4.8.0
+description: "Deployment strategies: canary, blue-green, rolling, progressive delivery (Flagger/Argo Rollouts), feature flags (LaunchDarkly/Unleash/OpenFeature), rollback, database migrations, zero-downtime patterns. v3: Gateway API traffic splitting, OpenFeature CNCF standard, FinOps (OpenCost/Karpenter/FOCUS), AnalysisTemplate, multi-cluster progressive delivery. v3.1: Serverless (Lambda/Cloud Run/Container Apps), edge deployment (Cloudflare Workers/Deno Deploy), cold start optimization, serverless observability. v4: Production hardening (health probes, graceful shutdown, PDB), multi-region patterns (active-active/passive, follow-the-sun), disaster recovery (RPO/RTO, failover automation), cost optimization (right-sizing, spot/reserved), deployment verification (smoke tests, synthetic monitoring, canary analysis). v4.3: Deployment failure case studies (Knight Capital, AWS S3, Cloudflare, GitLab, Facebook BGP), successful deployment patterns (Netflix, Google, Amazon, Etsy), database migration war stories (gh-ost, expand-contract, Vitess), feature flag case studies (Facebook Gate, LaunchDarkly, Microsoft flight rings). v4.5: IaC testing (Terratest, Checkov, tfsec, OPA/Rego, 4-layer strategy), GitOps advanced (ArgoCD app-of-apps, Flux v2, progressive delivery), service mesh deep dive (Istio Ambient, Linkerd viz, Cilium eBPF/Hubble), edge computing patterns (Cloudflare Workers, Deno Deploy, Lambda@Edge). v4.6: Automated rollback strategies (metric-based, error-rate-based, synthetic check, Netflix Kayenta/Mann-Whitney), deployment verification testing (smoke tests, Helm test hooks, synthetic monitoring, canary analysis with Kayenta/Flagger), multi-region deployment (active-active CockroachDB/Spanner/CRDTs, active-passive hot standby, failover automation, global LB). v4.9: Multi-tenancy patterns (namespace isolation, RBAC, NetworkPolicy, Calico/Cilium/Istio, tenant-aware data, vCluster/Capsule/HNC), FinOps practices (showback/chargeback, cost allocation labels, Kubecost/OpenCost, rightsizing VPA/Goldilocks, spot instances Karpenter)."
+version: 4.9.0
 author: Dinoudon
 license: MIT
 platforms: [linux, macos, windows]
 metadata:
   hermes:
-    tags: [sdlc, deployment, canary, blue-green, rolling, feature-flags, progressive-delivery, flagger, argo-rollouts, kubernetes, zero-downtime, gateway-api, openfeature, finops, opencost, karpenter, analysis-template, multi-cluster, database-migration, serverless, lambda, cloud-run, container-apps, edge-deployment, cloudflare-workers, cold-start, serverless-observability, production-hardening, health-checks, graceful-shutdown, pdb, multi-region, disaster-recovery, rpo-rto, cost-optimization, spot-instances, deployment-verification, smoke-tests, synthetic-monitoring, canary-analysis, failure-case-studies, deployment-patterns, database-migration-war-stories, feature-flag-case-studies, iac-testing, terratest, checkov, tfsec, opa, rego, gitops, argocd, flux, service-mesh, istio, linkerd, cilium, ebpf, edge-computing, deno-deploy, lambda-at-edge, automated-rollback, metric-based-rollback, synthetic-check-rollback, kayenta, mann-whitney, helm-tests, datadog-synthetics, cloudwatch-canaries, checkly, multi-region-deployment, active-active, active-passive, cockroachdb, spanner, crdt, failover-automation, global-load-balancer]
+    tags: [sdlc, deployment, canary, blue-green, rolling, feature-flags, progressive-delivery, flagger, argo-rollouts, kubernetes, zero-downtime, gateway-api, openfeature, finops, opencost, karpenter, analysis-template, multi-cluster, database-migration, serverless, lambda, cloud-run, container-apps, edge-deployment, cloudflare-workers, cold-start, serverless-observability, production-hardening, health-checks, graceful-shutdown, pdb, multi-region, disaster-recovery, rpo-rto, cost-optimization, spot-instances, deployment-verification, smoke-tests, synthetic-monitoring, canary-analysis, failure-case-studies, deployment-patterns, database-migration-war-stories, feature-flag-case-studies, iac-testing, terratest, checkov, tfsec, opa, rego, gitops, argocd, flux, service-mesh, istio, linkerd, cilium, ebpf, edge-computing, deno-deploy, lambda-at-edge, automated-rollback, metric-based-rollback, synthetic-check-rollback, kayenta, mann-whitney, helm-tests, datadog-synthetics, cloudwatch-canaries, checkly, multi-region-deployment, active-active, active-passive, cockroachdb, spanner, crdt, failover-automation, global-load-balancer, multi-tenancy, namespace-isolation, network-policies, calico, capsule, vcluster, hnc, tenant-isolation, chargeback, showback, cost-allocation, goldilocks, rightsizing, spot-instances, interruption-handler]
     related_skills: [sdlc-cicd-pipeline, sdlc-testing-qa, sdlc-observability]
 ---
 
@@ -5292,4 +5292,865 @@ resource "aws_globalaccelerator_endpoint_group" "us" {
 2. Budget < $10K/month for infra
 3. Small team (< 5 engineers) — operational overhead is brutal
 4. Strong consistency requirements with high write throughput (conflicts are hard)
+
+## Step 33: Multi-Tenancy Patterns
+
+Shared cluster serving multiple tenants (teams, customers, environments). Isolation at namespace, network, data, and virtual-cluster layers.
+
+### Namespace Isolation
+
+Four-pronged approach per tenant namespace:
+
+**RBAC — tenant-scoped roles:**
+
+```yaml
+# Tenant "acme" gets full control of their namespace only
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: tenant-admin
+  namespace: acme
+rules:
+- apiGroups: ["*"]
+  resources: ["*"]
+  verbs: ["*"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: acme-admins
+  namespace: acme
+subjects:
+- kind: Group
+  name: acme-team
+  apiGroup: rbac.authorization.k8s.io
+roleRef:
+  kind: Role
+  name: tenant-admin
+  apiGroup: rbac.authorization.k8s.io
+```
+
+**NetworkPolicy — default deny + allow within tenant:**
+
+```yaml
+# Default deny all ingress in tenant namespace
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: default-deny-ingress
+  namespace: acme
+spec:
+  podSelector: {}
+  policyTypes:
+  - Ingress
+---
+# Allow traffic only from same tenant namespace
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-same-tenant
+  namespace: acme
+spec:
+  podSelector: {}
+  ingress:
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          tenant: acme
+```
+
+**LimitRange — per-pod/container defaults and caps:**
+
+```yaml
+apiVersion: v1
+kind: LimitRange
+metadata:
+  name: tenant-limits
+  namespace: acme
+spec:
+  limits:
+  - type: Container
+    default:
+      cpu: "500m"
+      memory: "512Mi"
+    defaultRequest:
+      cpu: "100m"
+      memory: "128Mi"
+    max:
+      cpu: "4"
+      memory: "8Gi"
+    min:
+      cpu: "50m"
+      memory: "64Mi"
+  - type: Pod
+    max:
+      cpu: "8"
+      memory: "16Gi"
+```
+
+**ResourceQuota — hard caps per tenant:**
+
+```yaml
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: tenant-quota
+  namespace: acme
+spec:
+  hard:
+    requests.cpu: "20"
+    requests.memory: "40Gi"
+    limits.cpu: "40"
+    limits.memory: "80Gi"
+    pods: "100"
+    services: "20"
+    persistentvolumeclaims: "30"
+    requests.storage: "500Gi"
+    configmaps: "50"
+    secrets: "50"
+  scopes:
+  - NotTerminating   # exclude Jobs/CronJobs from quota
+```
+
+**Namespace provisioning script:**
+
+```bash
+#!/bin/bash
+TENANT=$1
+kubectl create namespace ${TENANT}
+kubectl label namespace ${TENANT} tenant=${TENANT}
+
+# Apply templates
+for f in rbac.yaml networkpolicy.yaml limitrange.yaml resourcequota.yaml; do
+  sed "s/__TENANT__/${TENANT}/g" templates/${f} | kubectl apply -f -
+done
+
+echo "Tenant ${TENANT} provisioned"
+```
+
+### Network Policies with CNI Providers
+
+| Provider | Policy Engine | L3/L4 | L7 (HTTP) | Encryption | Observability |
+|----------|--------------|-------|-----------|------------|---------------|
+| Calico | Calico policy | Yes | Yes (with Envoy) | WireGuard | Flow logs, Kibana |
+| Cilium | eBPF | Yes | Yes (native) | WireGuard, IPsec | Hubble (L3-L7) |
+| Istio | AuthorizationPolicy | No (L4 via CNI) | Yes (native) | mTLS | Kiali, Grafana |
+
+**Calico GlobalNetworkPolicy — cluster-wide defaults:**
+
+```yaml
+apiVersion: projectcalico.org/v3
+kind: GlobalNetworkPolicy
+metadata:
+  name: deny-cross-tenant
+spec:
+  selector: tenant != ""
+  types:
+  - Ingress
+  ingress:
+  - action: Deny
+    source:
+      namespaceSelector: tenant != ""
+    destination: {}
+  - action: Allow
+    source:
+      namespaceSelector: tenant == ""  # allow from ingress-controller, etc.
+```
+
+**Cilium CiliumNetworkPolicy — L7 HTTP filtering per tenant:**
+
+```yaml
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: tenant-api-allow
+  namespace: acme
+spec:
+  endpointSelector:
+    matchLabels:
+      app: acme-api
+  ingress:
+  - fromEndpoints:
+    - matchLabels:
+        tenant: acme
+    toPorts:
+    - ports:
+      - port: "8080"
+        protocol: TCP
+      rules:
+        http:
+        - method: "GET"
+          path: "/api/.*"
+        - method: "POST"
+          path: "/api/.*"
+        - method: "GET"
+          path: "/healthz"
+```
+
+**Istio AuthorizationPolicy — tenant-scoped L7:**
+
+```yaml
+apiVersion: security.istio.io/v1
+kind: AuthorizationPolicy
+metadata:
+  name: acme-api-access
+  namespace: acme
+spec:
+  selector:
+    matchLabels:
+      app: acme-api
+  rules:
+  - from:
+    - source:
+        namespaces: ["acme", "shared-ingress"]
+    to:
+    - operation:
+        methods: ["GET", "POST"]
+        paths: ["/api/*"]
+  - to:
+    - operation:
+        methods: ["GET"]
+        paths: ["/healthz", "/readyz"]
+```
+
+### Tenant-Aware Data Isolation
+
+| Pattern | Isolation Level | Cost | Complexity | Query Perf | Best For |
+|---------|----------------|------|------------|------------|----------|
+| Row-level (shared schema) | Logical | Lowest | Low | Good (with index) | SaaS with < 100 tenants |
+| Schema-per-tenant | Schema | Low-Medium | Medium | Good | Mid-tier SaaS (100-1K tenants) |
+| Database-per-tenant | Physical | Highest | High | Best | Enterprise, compliance-heavy |
+
+**Row-level isolation (PostgreSQL RLS):**
+
+```sql
+-- Add tenant_id column, enable row-level security
+ALTER TABLE orders ADD COLUMN tenant_id TEXT NOT NULL;
+ALTER TABLE orders ENABLE ROW LEVEL SECURITY;
+
+-- Policy: users see only their tenant's rows
+CREATE POLICY tenant_isolation ON orders
+  USING (tenant_id = current_setting('app.tenant_id'));
+
+-- Application sets tenant context per request
+SET LOCAL app.tenant_id = 'acme';
+SELECT * FROM orders;  -- returns only acme rows
+```
+
+**Schema-per-tenant (PostgreSQL):**
+
+```sql
+-- Provision schema per tenant
+CREATE SCHEMA tenant_acme;
+CREATE TABLE tenant_acme.orders (LIKE public.orders_template INCLUDING ALL);
+
+-- Application search_path
+SET search_path TO tenant_acme, public;
+SELECT * FROM orders;  -- hits tenant_acme.orders
+```
+
+**Database-per-tenant (connection routing):**
+
+```python
+# Dynamic connection string per tenant
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': f'tenant_{tenant_id}',
+        'HOST': 'shared-pg.example.com',
+        'OPTIONS': {
+            'options': f'-c search_path=tenant_{tenant_id},public'
+        }
+    }
+}
+```
+
+### Virtual Clusters
+
+Full Kubernetes API per tenant without physical cluster overhead.
+
+| Tool | Isolation | Overhead | Custom CRDs | RBAC Inheritance | Best For |
+|------|-----------|----------|-------------|------------------|----------|
+| vCluster | Virtual API server (k3s/k8s) | ~256MB per vcluster | Yes | Configurable | Full K8s experience per tenant |
+| Capsule | Namespace grouping + RBAC | Minimal | Shared | CapsuleTenant CRD | Low-overhead multi-tenancy |
+| HNC (Hierarchical Namespace) | Namespace tree | Minimal | Shared | Inherited from parent | Org-structure mapping |
+
+**vCluster — per-tenant virtual cluster:**
+
+```yaml
+# vcluster.yaml
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: vcluster-acme
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: vcluster-config
+  namespace: vcluster-acme
+data:
+  config.yaml: |
+    vcluster:
+      image: rancher/k3s:v1.28.2-k3s1
+    sync:
+      services:
+        enabled: true
+      endpoints:
+        enabled: true
+    rbac:
+      clusterRole:
+        enabled: false   # restrict to namespace scope
+    networking:
+      replicateServices:
+        toHost:
+        - from: kube-system/coredns
+```
+
+```bash
+# Deploy vcluster
+vcluster create acme -n vcluster-acme -f vcluster.yaml
+
+# Tenant connects to virtual cluster
+vcluster connect acme -n vcluster-acme
+
+# Inside virtual cluster, tenant has full admin
+kubectl --kubeconfig vcluster-acme.yaml get namespaces
+# Default   (tenant namespace, mapped to host vcluster-acme)
+# kube-system
+```
+
+**Capsule — tenant operator:**
+
+```yaml
+apiVersion: capsule.clastix.io/v1beta2
+kind: Tenant
+metadata:
+  name: acme
+spec:
+  owners:
+  - name: acme-admin
+    kind: User
+  namespaceOptions:
+    quota:
+      items:
+      - hard:
+          pods: "50"
+          services: "10"
+  networkPolicies:
+    items:
+    - ingress:
+      - from:
+        - namespaceSelector:
+            matchLabels:
+              capsule.clastix.io/tenant: acme
+  limitRanges:
+    items:
+    - limits:
+      - default:
+          cpu: "2"
+          memory: "2Gi"
+        type: Container
+  nodeSelector:
+    allowed:
+    - environment: shared
+    allowedRegex: "^tenant-.*$"
+```
+
+**HNC (Hierarchical Namespace Controller):**
+
+```yaml
+# Create parent namespace for organization
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: org-acme
+  labels:
+    hnc.x-k8s.io/included-namespace: "true"
+---
+# Subnamespace for team
+apiVersion: hnc.x-k8s.io/v1alpha2
+kind: SubnamespaceAnchor
+metadata:
+  name: team-backend
+  namespace: org-acme
+---
+apiVersion: hnc.x-k8s.io/v1alpha2
+kind: HierarchyConfiguration
+metadata:
+  name: hierarchy
+  namespace: org-acme
+spec:
+  parent: ""  # root
+---
+# Propagate RBAC and NetworkPolicy from parent to children
+apiVersion: hnc.x-k8s.io/v1alpha2
+kind: HNCConfiguration
+metadata:
+  name: config
+spec:
+  resources:
+  - resource: networkpolicies
+    mode: Propagate
+  - resource: roles
+    mode: Propagate
+  - resource: rolebindings
+    mode: Propagate
+```
+
+**Multi-tenancy decision matrix:**
+
+| Approach | Isolation Strength | Ops Overhead | Cost Efficiency | Tenant Count | Recommended |
+|----------|-------------------|--------------|-----------------|--------------|-------------|
+| Namespace-only (RBAC+Quota) | Weak-Medium | Low | High | < 50 | Default start |
+| + NetworkPolicy (Calico/Cilium) | Medium | Low-Medium | High | < 100 | Production baseline |
+| + Capsule | Medium-Strong | Low | High | < 200 | Org-aligned teams |
+| + vCluster | Strong | Medium | Medium | < 50 | Tenant needs cluster admin |
+| + HNC | Medium | Low | High | < 100 | Hierarchical orgs |
+| Separate clusters | Strongest | Highest | Low | < 20 | Regulatory/compliance |
+
+## Step 34: FinOps Practices
+
+Cloud cost management through visibility, accountability, and optimization. Shift from "infrastructure is free" to cost as a first-class operational metric.
+
+### Showback vs Chargeback
+
+| Model | Invoice? | Purpose | Behavioral Impact |
+|-------|----------|---------|-------------------|
+| Showback | No (report only) | Visibility, awareness | Moderate — teams see cost but don't pay |
+| Chargeback | Yes (internal billing) | Accountability | Strong — teams own their budget |
+
+**Showback:** Finance generates reports, shares with teams. No money moves. Good for building cost culture without political fights.
+
+**Chargeback:** Internal invoices. Team A's AWS bill = $X, deducted from their budget. Requires accurate attribution (labels, namespaces, accounts).
+
+**Hybrid approach (common):**
+
+1. Start with showback (Month 1-3): build labeling discipline, surface waste
+2. Graduate to chargeback (Month 4+): once attribution is > 90% accurate
+3. Shared costs split by formula: headcount, revenue, or compute share
+
+### Cost Allocation
+
+**Label strategy — mandatory tags:**
+
+```yaml
+# OPA/Gatekeeper — enforce cost labels
+apiVersion: constraints.gatekeeper.sh/v1beta1
+kind: K8sRequiredLabels
+metadata:
+  name: require-cost-labels
+spec:
+  match:
+    kinds:
+    - apiGroups: ["apps"]
+      kinds: ["Deployment", "StatefulSet"]
+  parameters:
+    labels:
+    - key: "cost-center"
+    - key: "team"
+    - key: "environment"
+```
+
+```bash
+# Reject pods missing labels (Kyverno alternative)
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: require-cost-labels
+spec:
+  validationFailureAction: Enforce
+  rules:
+  - name: check-cost-labels
+    match:
+      any:
+      - resources:
+          kinds: ["Pod"]
+    validate:
+      message: "cost-center, team, env labels required"
+      pattern:
+        metadata:
+          labels:
+            cost-center: "?*"
+            team: "?*"
+            environment: "?*"
+```
+
+**Kubecost / OpenCost — real-time cost allocation:**
+
+```bash
+# Install Kubecost via Helm
+helm install kubecost cost-analyzer \
+  --repo https://kubecost.github.io/cost-analyzer-helm-chart \
+  --namespace kubecost --create-namespace \
+  --set kubecostToken="your-token" \
+  --set prometheus.server.global.external_labels.cluster_id="prod-1"
+
+# Install open-source OpenCost
+helm install opencost opencost \
+  --repo https://opencost.github.io/opencost-helm-chart \
+  --namespace opencost --create-namespace
+```
+
+```yaml
+# Kubecost Allocation API — query cost by namespace
+# GET /model/allocation?window=7d&aggregate=namespace
+# Response:
+# {
+#   "code": 200,
+#   "data": [
+#     {
+#       "acme": {
+#         "cpuCost": 142.50,
+#         "ramCost": 89.20,
+#         "pvCost": 23.10,
+#         "networkCost": 12.40,
+#         "totalCost": 267.20
+#       }
+#     }
+#   ]
+# }
+```
+
+**Cost categories in Kubecost:**
+
+| Category | Description | Allocation Method |
+|----------|-------------|-------------------|
+| Compute (CPU/RAM) | Pod resource requests/usage | Proportional to requests |
+| Storage (PV/PVC) | Persistent volume claims | Per-PVC billing |
+| Network | Cross-zone/region egress | Flow-based sampling |
+| Shared costs | Cluster overhead, monitoring | Split by: equal, weighted, proportional |
+| Idle costs | Unallocated capacity | Distribute proportionally or leave unallocated |
+| External costs | RDS, S3, ELB | Cloud billing integration |
+
+**Handling shared/idle/external costs:**
+
+```yaml
+# Kubecost shared cost allocation config
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: kubecost-shared-config
+  namespace: kubecost
+data:
+  shared-overhead-config.json: |
+    {
+      "cluster": {
+        "idle": "separate"  # show idle as separate line item
+      },
+      "sharedNamespaces": [
+        "kube-system",
+        "monitoring",
+        "ingress-nginx",
+        "cert-manager"
+      ],
+      "sharedCosts": [
+        {
+          "name": "monitoring-stack",
+          "namespaces": ["monitoring"],
+          "allocation": "proportional"  # split by each team's resource share
+        },
+        {
+          "name": "external-rds",
+          "cost": 2400.00,             # manual entry for cloud-managed services
+          "allocation": "weighted",
+          "weightBy": "cpu"
+        }
+      ]
+    }
+```
+
+### Rightsizing
+
+**VPA (Vertical Pod Autoscaler) — automatic resource adjustment:**
+
+```yaml
+# Install VPA
+# kubectl apply -f https://github.com/kubernetes/autoscaler/releases/download/vertical-pod-autoscaler-0.14.0/vpa-release.yaml
+
+apiVersion: autoscaling.k8s.io/v1
+kind: VerticalPodAutoscaler
+metadata:
+  name: myapp-vpa
+  namespace: acme
+spec:
+  targetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: myapp
+  updatePolicy:
+    updateMode: "Off"       # "Off" = recommend only, "Auto" = restart pods
+    minReplicas: 2           # don't downscale below 2 replicas
+  resourcePolicy:
+    containerPolicies:
+    - containerName: myapp
+      minAllowed:
+        cpu: "100m"
+        memory: "128Mi"
+      maxAllowed:
+        cpu: "4"
+        memory: "8Gi"
+      controlledResources: ["cpu", "memory"]
+```
+
+**VPA update modes:**
+
+| Mode | Behavior | Risk |
+|------|----------|------|
+| Off | Recommendations only (read) | None — safe to deploy everywhere |
+| Initial | Set at pod creation only | Low — new pods get right-sized |
+| Auto | Restart pods to apply | Medium — causes disruption, needs PDB |
+
+**Check VPA recommendations:**
+
+```bash
+kubectl describe vpa myapp-vpa -n acme
+# Status:
+#   Recommendation:
+#     Container Recommendations:
+#       Container Name:  myapp
+#       Lower Bound:     cpu: 80m, memory: 96Mi     # minimum safe
+#       Target:          cpu: 250m, memory: 384Mi    # recommended
+#       Upper Bound:     cpu: 800m, memory: 1Gi      # max expected
+#       Uncapped Target: cpu: 300m, memory: 400Mi    # without limits
+```
+
+**Goldilocks — namespace-level VPA + dashboard:**
+
+```bash
+# Install Goldilocks
+helm install goldilocks fairwinds-stable/goldilocks \
+  --namespace goldilocks --create-namespace \
+  --set vpa.enabled=true
+
+# Label namespace to opt-in
+kubectl label namespace acme goldilocks.fairwinds.io/enabled=true
+
+# Access dashboard
+kubectl -n goldilocks port-forward svc/goldilocks-dashboard 8080:80
+# http://localhost:8080
+```
+
+**Rightsizing workflow:**
+
+1. Deploy VPA in "Off" mode across all namespaces
+2. Wait 7-14 days for data collection
+3. Run Goldilocks dashboard, review recommendations
+4. Apply target values (typically 80th percentile of upper bound)
+5. For critical services: VPA "Auto" with PDB + disruption budget
+6. Continuously monitor, iterate monthly
+
+**Common rightsizing patterns:**
+
+| Problem | Symptom | Fix |
+|---------|---------|-----|
+| Over-provisioned | CPU < 10% utilization | Reduce requests to VPA target |
+| Under-provisioned | OOMKills, throttling | Increase limits, set requests to VPA target |
+| No requests set | Pending pods, cluster fragmentation | Set requests = VPA lower bound |
+| Requests = Limits | No burst capacity | Set requests to target, limits to upper bound |
+
+### Spot Instances
+
+Use preemptible/spot VMs for fault-tolerant workloads. 60-90% cost reduction.
+
+**Karpenter — intelligent spot provisioning:**
+
+```yaml
+# Karpenter NodePool — prefer spot, fallback to on-demand
+apiVersion: karpenter.sh/v1beta1
+kind: NodePool
+metadata:
+  name: spot-general
+spec:
+  template:
+    spec:
+      requirements:
+      - key: karpenter.sh/capacity-type
+        operator: In
+        values: ["spot", "on-demand"]   # spot preferred, on-demand fallback
+      - key: karpenter.k8s.aws/instance-family
+        operator: In
+        values: ["m5", "m6i", "m7i", "c5", "c6i", "r5", "r6i"]
+      - key: karpenter.k8s.aws/instance-size
+        operator: In
+        values: ["xlarge", "2xlarge", "4xlarge"]
+      - key: kubernetes.io/arch
+        operator: In
+        values: ["amd64"]
+      nodeClassRef:
+        name: default
+  disruption:
+    consolidationPolicy: WhenUnderutilized
+    expireAfter: 720h   # recycle nodes after 30 days
+  limits:
+    cpu: "1000"
+    memory: "2000Gi"
+```
+
+```yaml
+# Karpenter EC2NodeClass
+apiVersion: karpenter.k8s.aws/v1beta1
+kind: EC2NodeClass
+metadata:
+  name: default
+spec:
+  amiFamily: AL2
+  subnetSelectorTerms:
+  - tags:
+      karpenter.sh/discovery: "my-cluster"
+  securityGroupSelectorTerms:
+  - tags:
+      karpenter.sh/discovery: "my-cluster"
+  blockDeviceMappings:
+  - deviceName: /dev/xvda
+    ebs:
+      volumeSize: 100Gi
+      volumeType: gp3
+      iops: 3000
+      throughput: 125
+```
+
+**Cluster Autoscaler with spot priority:**
+
+```yaml
+# Priority-based overprovisioning with spot
+apiVersion: scheduling.k8s.io/v1
+kind: PriorityClass
+metadata:
+  name: spot-workload
+value: 1000
+globalDefault: false
+description: "Spot-tolerant workloads"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: myapp
+spec:
+  template:
+    spec:
+      priorityClassName: spot-workload
+      affinity:
+        nodeAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            preference:
+              matchExpressions:
+              - key: karpenter.sh/capacity-type
+                operator: In
+                values: ["spot"]
+      tolerations:
+      - key: "karpenter.sh/capacity-type"
+        operator: "Equal"
+        value: "spot"
+        effect: "NoSchedule"
+```
+
+**Pod Disruption Budget (PDB) for spot safety:**
+
+```yaml
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: myapp-pdb
+  namespace: acme
+spec:
+  minAvailable: "75%"        # at least 75% of pods must stay running
+  selector:
+    matchLabels:
+      app: myapp
+---
+# Alternative: maxUnavailable
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: myapp-pdb
+  namespace: acme
+spec:
+  maxUnavailable: 1          # at most 1 pod can be disrupted at a time
+  selector:
+    matchLabels:
+      app: myapp
+```
+
+**Spot interruption handler (AWS Node Termination Handler):**
+
+```bash
+# Install via Helm
+helm install node-termination-handler aws-node-termination-handler \
+  --repo https://aws.github.io/eks-charts \
+  --namespace kube-system \
+  --set enableSpotInterruptionDraining=true \
+  --set enableRebalanceRecommendationDraining=true \
+  --set enableScheduledEventDraining=true
+```
+
+```yaml
+# DaemonSet config for interruption handling
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: aws-node-termination-handler
+spec:
+  template:
+    spec:
+      containers:
+      - name: handler
+        env:
+        - name: NODE_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: spec.nodeName
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: ENABLE_SPOT_INTERRUPTION_DRAINING
+          value: "true"
+        - name: ENABLE_SCHEDULED_EVENT_DRAINING
+          value: "true"
+        - name: GRACE_PERIOD
+          value: "120"           # seconds to gracefully drain before termination
+        - name: TAINT_NODE
+          value: "true"          # taint node immediately on signal
+```
+
+**Spot interruption flow:**
+
+```
+AWS sends interruption notice (2 min warning)
+    │
+    ▼
+NTH receives IMDS notification
+    │
+    ├──→ Cordon node (no new pods)
+    ├──→ Taint with NoSchedule
+    ├──→ Drain existing pods (GracePeriod)
+    │       │
+    │       ├──→ PDB respected (wait if needed)
+    │       └──→ Pods rescheduled to other nodes
+    │
+    └──→ Karpenter provisions replacement node
+```
+
+**Spot-eligible workload checklist:**
+
+- [ ] Stateless or has persistent storage outside the pod
+- [ ] Graceful shutdown handler (SIGTERM) with < 120s drain
+- [ ] Horizontal scaling (replicas > 1)
+- [ ] PDB configured (minAvailable or maxUnavailable)
+- [ ] No strict latency SLA (p99 < 500ms) for critical path
+- [ ] Interruption handler deployed
+- [ ] Mix of instance types (avoid single family)
+- [ ] Pod anti-affinity to spread across nodes/zones
+
+**FinOps maturity model:**
+
+| Level | Name | Capabilities | Typical Timeline |
+|-------|------|--------------|------------------|
+| 0 | Inform | Basic cloud billing, no K8s visibility | Day 1 |
+| 1 | Showback | Kubecost/OpenCost, namespace allocation | Month 1-2 |
+| 2 | Chargeback | Labels enforced, internal billing, team dashboards | Month 3-6 |
+| 3 | Optimize | VPA rightsizing, spot adoption, reserved planning | Month 6-12 |
+| 4 | Automate | Auto-rightsizing, Karpenter, cost anomaly alerts, budgets as code | Month 12+ |
 

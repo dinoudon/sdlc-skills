@@ -1,7 +1,7 @@
 ---
 name: sdlc-architecture-design
 description: "System design, C4 diagrams, API design (REST/GraphQL/gRPC), database schema, code architecture (Clean/Hexagonal/DDD), ADRs, branching strategies, code review, dependency management, DDIA patterns. Includes architecture fitness functions, DDD context mapping, platform engineering, Gateway API, green software, API governance, serverless architecture, edge computing, multi-cloud patterns, resilience patterns, distributed consensus, eventual consistency, idempotency, OAuth2/OIDC, JWT, authorization (RBAC/ABAC/ReBAC), rate limiting, API versioning, GraphQL Federation, Kafka patterns, database sharding, caching strategies, data pipelines, message queue comparison, 12-Factor App extended, microservices decomposition (Strangler Fig, DDD), service mesh comparison, API gateway comparison, serverless patterns, edge computing patterns, database migration tools, polyglot persistence, event sourcing war stories, CQRS implementation, CDC production patterns, data mesh, distributed monolith detection, service coupling anti-patterns, saga pattern deep dive, service discovery."
-version: 4.8.0
+version: 4.9.0
 author: Dinoudon
 license: MIT
 platforms: [linux, macos, windows]
@@ -4396,3 +4396,960 @@ groups:
 - **Don't omit request_id** — makes debugging impossible in distributed systems
 - **Don't create too many error codes** — group related errors, keep under ~100 per API
 - **Don't ignore error budgets** — track burn rate, alert before budget exhaustion
+
+## Step 60: Hexagonal Architecture (Ports & Adapters)
+
+### Core Concept (Alistair Cockburn, 2005)
+Source: https://alistair.cockburn.us/hexagonal-architecture/
+
+Application surrounded by ports (interfaces) and adapters (implementations). Business logic isolated from all infrastructure.
+
+```
+                    DRIVING SIDE (left)              DRIVEN SIDE (right)
+                    ┌──────────────┐                ┌──────────────┐
+  User/CLI ────────►│ CLI Adapter  │───► Port ───►│ Use Case     │───► Port ───►│ DB Adapter   │
+  Test ────────────►│ Test Adapter │    (in)       │ (App Logic)  │   (out)      │ HTTP Client  │
+  Web Request ─────►│ HTTP Adapter │               │              │              │ MQ Producer  │
+                    └──────────────┘                └──────────────┘
+```
+
+**Driving side (left):** initiates action. Adapters call inward through ports. Examples: REST controllers, CLI handlers, test harnesses.
+
+**Driven side (right):** responds to needs. Application calls outward through ports. Examples: databases, message queues, external APIs.
+
+**Dependency rule:** ALL dependencies point inward. Domain has zero outward dependencies. Ports (interfaces) defined in domain, adapters implement them outside.
+
+```java
+// Port defined IN domain (inner)
+public interface OrderRepository {        // outbound port
+    Order findById(OrderId id);
+    void save(Order order);
+}
+
+public interface OrderService {           // inbound port
+    OrderResult placeOrder(PlaceOrderCmd cmd);
+}
+
+// Adapter OUTSIDE domain (outer)
+@Repository
+public class JpaOrderRepository implements OrderRepository {
+    @PersistenceContext EntityManager em;
+    public Order findById(OrderId id) { /* JPA logic */ }
+    public void save(Order order) { /* JPA logic */ }
+}
+```
+
+**Testability via port replacement:**
+```java
+// In tests: replace real adapter with in-memory stub
+class OrderServiceTest {
+    OrderRepository repo = new InMemoryOrderRepository();  // swap adapter
+    OrderService service = new OrderServiceImpl(repo);
+
+    @Test
+    void placesOrder() {
+        var result = service.placeOrder(new PlaceOrderCmd(...));
+        assertTrue(result.isSuccess());
+        assertEquals(1, repo.findAll().size());
+    }
+}
+```
+
+**Port naming convention:**
+- Inbound ports: `PlaceOrder`, `GetOrderById` (use-case driven)
+- Outbound ports: `OrderRepository`, `PaymentGateway` (infrastructure needs)
+
+**Anti-patterns:**
+- Leaking adapter types into domain (JPA annotations on entities)
+- Fat ports (split by responsibility)
+- Skipping ports — calling adapter directly from domain
+
+## Step 61: Clean Architecture
+
+### Concentric Circles (Robert C. Martin, 2012)
+
+```
+┌─────────────────────────────────────────────────────┐
+│                 Frameworks & Drivers                 │  ← outermost
+│  ┌───────────────────────────────────────────────┐  │
+│  │           Interface Adapters                   │  │
+│  │  ┌─────────────────────────────────────────┐  │  │
+│  │  │          Use Cases                       │  │  │
+│  │  │  ┌───────────────────────────────────┐  │  │  │
+│  │  │  │           Entities                 │  │  │  │  ← innermost
+│  │  │  └───────────────────────────────────┘  │  │  │
+│  │  └─────────────────────────────────────────┘  │  │
+│  └───────────────────────────────────────────────┘  │
+└─────────────────────────────────────────────────────┘
+```
+
+**Layers (inside → outside):**
+
+| Layer | Contains | Knows About |
+|-------|----------|-------------|
+| Entities | Business objects, enterprise rules | Nothing outside |
+| Use Cases | Application-specific business rules | Entities only |
+| Interface Adapters | Controllers, gateways, presenters | Use Cases, Entities |
+| Frameworks & Drivers | DB, web framework, external APIs | Everything (but thin) |
+
+**Dependency Rule:** Source code dependencies point inward ONLY. Outer layers depend on inner layers. Inner layers NEVER know about outer layers.
+
+**Use Cases as Interactors:**
+```python
+# Entity (innermost)
+class Order:
+    def __init__(self, id, items, status="pending"):
+        self.id = id
+        self.items = items
+        self.status = status
+
+    def confirm(self):
+        if not self.items:
+            raise DomainError("Cannot confirm empty order")
+        self.status = "confirmed"
+
+# Use Case / Interactor
+class PlaceOrderUseCase:
+    def __init__(self, order_repo: OrderRepository, event_publisher: EventPublisher):
+        self.order_repo = order_repo
+        self.event_publisher = event_publisher
+
+    def execute(self, request: PlaceOrderRequest) -> OrderResponse:
+        order = Order(id=uuid4(), items=request.items)
+        order.confirm()  # entity enforces its own rules
+        self.order_repo.save(order)
+        self.event_publisher.publish(OrderPlaced(order.id))
+        return OrderResponse.from_entity(order)
+
+# Interface Adapter (outer)
+class OrderController:
+    def __init__(self, use_case: PlaceOrderUseCase):
+        self.use_case = use_case
+
+    def post(self, request):
+        req = PlaceOrderRequest.from_http(request)
+        resp = self.use_case.execute(req)
+        return resp.to_http()
+```
+
+**SOLID at architecture level:**
+- **S** — Each layer has single reason to change
+- **O** — New use cases don't modify entities
+- **L** — Any repository implementation works (substitutable)
+- **I** — Use cases depend on narrow interfaces, not fat abstractions
+- **D** — Depend on abstractions (ports), not concretions (frameworks)
+
+**Dependency Injection wiring:** Composition root at outermost layer. Framework wires adapters into ports.
+
+```python
+# Composition Root (outermost — framework layer)
+def configure_services():
+    order_repo = PostgresOrderRepository(session)
+    event_pub = KafkaEventPublisher(producer)
+    place_order = PlaceOrderUseCase(order_repo, event_pub)
+    order_controller = OrderController(place_order)
+    return order_controller
+```
+
+**Common violations:**
+- Business logic in controllers (skips use case layer)
+- Entities with ORM annotations (leaks framework inward)
+- Use cases returning HTTP response objects (coupling to adapter)
+
+## Step 62: Onion Architecture
+
+### Core Concept (Jeffrey Palermo, 2008)
+
+Domain model at center, NOT database. Infrastructure is outermost concern.
+
+```
+┌─────────────────────────────────────────────┐
+│         Infrastructure                       │  ← HTTP, DB, MQ, External APIs
+│  ┌───────────────────────────────────────┐  │
+│  │     Application Services               │  │  ← Use cases, DTOs, orchestration
+│  │  ┌─────────────────────────────────┐  │  │
+│  │  │    Domain Services               │  │  │  ← Business logic spanning entities
+│  │  │  ┌───────────────────────────┐  │  │  │
+│  │  │  │    Domain Model            │  │  │  │  ← Entities, Value Objects, Domain Events
+│  │  │  └───────────────────────────┘  │  │  │
+│  │  └─────────────────────────────────┘  │  │
+│  └───────────────────────────────────────┘  │
+└─────────────────────────────────────────────┘
+```
+
+**4 Layers:**
+
+| Layer | Responsibility | Example |
+|-------|----------------|---------|
+| Domain Model | Entities, value objects, domain events | `Order`, `Money`, `OrderPlaced` |
+| Domain Services | Business logic spanning multiple entities | `PricingService`, `FraudDetectionService` |
+| Application Services | Use case orchestration, DTOs, transactions | `PlaceOrderService`, `OrderDTO` |
+| Infrastructure | DB, web framework, external adapters | `JpaOrderRepo`, `RestController` |
+
+**Key rule — interfaces in inner layers:**
+```csharp
+// Domain layer (INNER) defines interface
+namespace Domain.Ports {
+    public interface IOrderRepository {
+        Order GetById(OrderId id);
+        void Save(Order order);
+    }
+}
+
+// Infrastructure layer (OUTER) implements
+namespace Infrastructure.Persistence {
+    public class SqlOrderRepository : IOrderRepository {
+        // EF Core / Dapper implementation
+    }
+}
+```
+
+**Contrast with N-tier:**
+```
+Traditional N-tier:              Onion Architecture:
+┌───────────────┐                ┌───────────────┐
+│ Presentation  │                │ Infrastructure │
+│ (UI/API)      │                │ (DB, Web, MQ)  │
+├───────────────┤                ├───────────────┤
+│ Business      │                │ App Services   │
+│ Logic         │                │ (Orchestration)│
+├───────────────┤                ├───────────────┤
+│ Data Access   │                │ Domain Services│
+│ (DAL)         │                ├───────────────┤
+├───────────────┤                │ Domain Model   │ ← CENTER
+│ Database      │ ← CENTER      │ (Entities, VOs)│
+└───────────────┘                └───────────────┘
+Dep: UI → BL → DAL → DB         Dep: Infra → App → Domain
+DB at center = anemic domain     Domain at center = rich model
+```
+
+**Key differences from N-tier:**
+- N-tier: DB at center, domain depends on persistence (Active Record)
+- Onion: Domain at center, persistence depends on domain interfaces
+- N-tier: Easy to leak SQL into business logic
+- Onion: Domain pure — no ORM, no HTTP, no framework references
+
+**Domain service vs Application service:**
+```python
+# Domain Service — pure business logic, no I/O
+class PricingService:
+    def calculate_total(self, order: Order, customer: Customer) -> Money:
+        subtotal = sum(item.price * item.qty for item in order.items)
+        discount = self._loyalty_discount(customer.tier)
+        return subtotal - discount
+
+# Application Service — orchestration, I/O, transactions
+class PlaceOrderService:
+    def __init__(self, repo: IOrderRepository, pricing: PricingService, events: IEventBus):
+        self.repo = repo
+        self.pricing = pricing
+        self.events = events
+
+    def place_order(self, cmd: PlaceOrderCommand) -> OrderDTO:
+        customer = self.repo.get_customer(cmd.customer_id)
+        order = Order.create(cmd.items)
+        total = self.pricing.calculate_total(order, customer)
+        order.confirm(total)
+        self.repo.save(order)
+        self.events.publish(OrderPlaced(order.id))
+        return OrderDTO.from_entity(order)
+```
+
+## Step 63: Modular Monolith
+
+### Concept
+
+Single deployable with enforced module boundaries. Each module has explicit public API. Internal details hidden.
+
+### Shopify Approach (Packwerk)
+
+Ruby ecosystem. Gem `packwerk` enforces boundaries at package level.
+
+```
+app/
+  packages/
+    orders/
+      app/
+        models/order.rb          # private
+        services/                 # private
+      package.yml                 # boundary config
+    inventory/
+      app/
+        models/item.rb           # private
+        services/                 # private
+      package.yml
+```
+
+**package.yml (orders):**
+```yaml
+# app/packages/orders/package.yml
+enforce_privacy: true
+enforce_dependencies: true
+dependencies:
+  - "packages/inventory"    # explicit dependency declaration
+```
+
+**Public API enforcement:**
+```ruby
+# app/packages/orders/app/public_api/orders/create.rb
+module Orders
+  module PublicApi
+    class Create
+      def call(params) # only public entry point
+      end
+    end
+  end
+end
+
+# Inventory accessing Orders — must use public API
+# BAD:  Orders::Order.find(id)          → Packwerk violation
+# GOOD: Orders::PublicApi::Create.new.call(params)
+```
+
+**Packwerk checks:**
+```bash
+bundle exec packwerk check           # detect violations
+bundle exec packwerk update-todo     # create TODO list for existing violations
+```
+
+### Spring Modulith (Java)
+
+Package-per-module convention. Verification at build time.
+
+```
+src/main/java/com/example/
+  order/                           # module "order"
+    Order.java                     # domain entity (package-private)
+    OrderService.java              # public API (@ApplicationModuleService)
+    internal/                      # explicitly internal
+      OrderRepository.java
+      FraudChecker.java
+  inventory/                       # module "inventory"
+    InventoryService.java
+    internal/
+      StockRepository.java
+```
+
+**Module verification:**
+```java
+// In test — verifies no illegal cross-module access
+@SpringBootTest
+class ApplicationTest {
+    @Test
+    void verifyModuleStructure() {
+        ApplicationModules.of(Application.class).verify();
+    }
+}
+```
+
+**Application Events for cross-module communication:**
+```java
+// In order module — publish event
+@Service
+public class OrderService {
+    private final ApplicationEventPublisher events;
+
+    public Order placeOrder(OrderCommand cmd) {
+        Order order = Order.create(cmd);
+        orderRepo.save(order);
+        events.publishEvent(new OrderPlaced(order.getId()));  // decoupled
+        return order;
+    }
+}
+
+// In inventory module — listen to event
+@Service
+public class InventoryEventHandler {
+    @TransactionalEventListener
+    public void onOrderPlaced(OrderPlaced event) {
+        stockService.reserve(event.getOrderId(), event.getItems());
+    }
+}
+```
+
+**Spring Modulith verification features:**
+- Detects illegal package access across modules
+- Verifies all dependencies declared in `package-info.java`
+- Generates documentation (AsciiDoc/PNG) of module structure
+- Named interfaces for explicit module APIs
+
+### Migration Path
+
+```
+Phase 1: Monolith                Phase 2: Modular Monolith         Phase 3: Microservices (if needed)
+┌──────────────────┐            ┌──────────────────┐              ┌────┐  ┌────┐  ┌────┐
+│ All code mixed   │    ──►     │ Module A │ Mod B │      ──►     │ A  │  │ B  │  │ C  │
+│ God classes      │            │ Module C │ Mod D │              │ svc│  │ svc│  │ svc│
+│ Shared DB        │            │ Enforced boundary│              └────┘  └────┘  └────┘
+└──────────────────┘            └──────────────────┘              Separate deployables
+```
+
+**Migration steps:**
+1. Identify module boundaries (DDD bounded contexts)
+2. Create package/directory per module
+3. Define public API per module (service classes, events)
+4. Move internal code behind module boundary
+5. Add enforcement tool (Packwerk, ArchUnit, Spring Modulith verify)
+6. Resolve violations — replace direct calls with events or public API
+7. Extract to separate service ONLY if scaling/deployment requires it
+
+**When to extract (and when not to):**
+- Extract: different scaling needs, team ownership boundary, tech stack divergence
+- Stay monolith: shared data, tight coupling, small team, latency requirements
+
+## Step 64: K8s Operator Patterns
+
+### controller-runtime (Go)
+
+Foundation library for Kubernetes controllers. Used by Kubebuilder and Operator SDK.
+
+**Reconcile Loop (core pattern):**
+```go
+func (r *MyReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
+    // 1. Fetch desired state (CR)
+    cr := &v1alpha1.MyApp{}
+    if err := r.Get(ctx, req.NamespacedName, cr); err != nil {
+        return ctrl.Result{}, client.IgnoreNotFound(err)
+    }
+
+    // 2. Observe current state (check owned resources)
+    deploy := &appsv1.Deployment{}
+    err := r.Get(ctx, types.NamespacedName{
+        Name: cr.Name, Namespace: cr.Namespace,
+    }, deploy)
+
+    // 3. Diff and act (create/update/delete)
+    if apierrors.IsNotFound(err) {
+        deploy = r.buildDeployment(cr)
+        if err := r.Create(ctx, deploy); err != nil {
+            return ctrl.Result{}, err
+        }
+    } else if err == nil {
+        if *deploy.Spec.Replicas != cr.Spec.Replicas {
+            deploy.Spec.Replicas = &cr.Spec.Replicas
+            if err := r.Update(ctx, deploy); err != nil {
+                return ctrl.Result{}, err
+            }
+        }
+    }
+
+    // 4. Update status subresource
+    cr.Status.ReadyReplicas = deploy.Status.ReadyReplicas
+    cr.Status.Phase = "Running"
+    if err := r.Status().Update(ctx, cr); err != nil {
+        return ctrl.Result{}, err
+    }
+
+    return ctrl.Result{}, nil
+}
+```
+
+**Setup — Watches, Predicates, Owns:**
+```go
+func (r *MyReconciler) SetupWithManager(mgr ctrl.Manager) error {
+    return ctrl.NewControllerManagedBy(mgr).
+        For(&v1alpha1.MyApp{}).                          // primary watch
+        Owns(&appsv1.Deployment{}).                      // watch owned deploys
+        WithEventFilter(predicate.GenerationChangedPredicate{}).  // skip status-only updates
+        Complete(r)
+}
+```
+
+**Predicates (event filters):**
+- `GenerationChangedPredicate` — skip updates that don't change spec
+- `AnnotationChangedPredicate` — react to annotation changes only
+- Custom predicates — filter by label, namespace, etc.
+
+**Finalizers (cleanup before delete):**
+```go
+func (r *MyReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
+    cr := &v1alpha1.MyApp{}
+    r.Get(ctx, req.NamespacedName, cr)
+
+    if !cr.DeletionTimestamp.IsZero() {
+        // Being deleted — run cleanup
+        if controllerutil.ContainsFinalizer(cr, "myapp.example.com/cleanup") {
+            // Cleanup external resources (LB, DNS, cloud resources)
+            if err := r.cleanupExternalResources(cr); err != nil {
+                return ctrl.Result{}, err  // retry
+            }
+            controllerutil.RemoveFinalizer(cr, "myapp.example.com/cleanup")
+            r.Update(ctx, cr)
+        }
+        return ctrl.Result{}, nil
+    }
+
+    // Not being deleted — ensure finalizer exists
+    if !controllerutil.ContainsFinalizer(cr, "myapp.example.com/cleanup") {
+        controllerutil.AddFinalizer(cr, "myapp.example.com/cleanup")
+        r.Update(ctx, cr)
+    }
+
+    // Normal reconcile logic...
+}
+```
+
+**Status subresource:**
+```go
+// CRD definition — spec and status separate
+type MyAppSpec struct {
+    Replicas int32  `json:"replicas"`
+    Image    string `json:"image"`
+}
+
+type MyAppStatus struct {
+    Phase         string      `json:"phase"`
+    ReadyReplicas int32       `json:"readyReplicas"`
+    Conditions    []Condition `json:"conditions,omitempty"`
+}
+
+// Update status (does NOT bump metadata.generation)
+if err := r.Status().Update(ctx, cr); err != nil {
+    return ctrl.Result{}, err
+}
+```
+
+### Operator SDK
+
+Three flavors:
+
+| Type | Language | When to Use |
+|------|----------|-------------|
+| Go operator | Go | Complex logic, custom controllers, performance-critical |
+| Helm operator | Helm charts | Existing Helm charts, simple lifecycle (install/upgrade/uninstall) |
+| Ansible operator | Ansible playbooks | Ops team, existing Ansible roles, imperative workflows |
+
+**OLM (Operator Lifecycle Manager) bundles:**
+```yaml
+# Bundle format
+bundle/
+  manifests/
+    myapp-crd.yaml
+    myapp.clusterserviceversion.yaml   # CSV — operator metadata
+  metadata/
+    annotations.yaml                    # bundle metadata
+```
+
+**CSV (ClusterServiceVersion) key fields:**
+```yaml
+apiVersion: operators.coreos.com/v1alpha1
+kind: ClusterServiceVersion
+metadata:
+  name: myapp.v1.0.0
+spec:
+  install:
+    strategy: deployment
+    spec:
+      deployments:
+        - name: myapp-operator
+          spec:
+            # deployment template
+  customresourcedefinitions:
+    owned:
+      - name: myapps.example.com
+        version: v1alpha1
+        kind: MyApp
+  installModes:
+    - type: OwnNamespace
+      supported: true
+```
+
+### Anti-patterns
+
+**1. Polling instead of watching:**
+```go
+// BAD — polling loop
+for {
+    reconcile()
+    time.Sleep(30 * time.Second)
+}
+// GOOD — controller-runtime watches, triggers reconcile on change
+```
+
+**2. Not idempotent reconcile:**
+```go
+// BAD — increments counter every reconcile
+cr.Status.ReconcileCount++
+// GOOD — always derive from observed state
+cr.Status.ReadyReplicas = deploy.Status.ReadyReplicas
+```
+
+**3. Ignoring errors (swallowing):**
+```go
+// BAD
+r.Create(ctx, deploy)
+// GOOD
+if err := r.Create(ctx, deploy); err != nil {
+    return ctrl.Result{}, err  // triggers requeue
+}
+```
+
+**4. Large status objects:**
+- Keep status small (< 1MB etcd limit includes spec+status)
+- Use conditions array, not inline details
+
+**5. Not handling NotFound on primary CR:**
+```go
+// BAD
+r.Get(ctx, key, cr)  // ignore error
+// GOOD
+if err := r.Get(ctx, key, cr); err != nil {
+    return ctrl.Result{}, client.IgnoreNotFound(err)
+}
+```
+
+## Step 65: Serverless Patterns (Advanced)
+
+### Event-Driven with EventBridge/SNS
+
+**EventBridge (preferred for complex routing):**
+```yaml
+# CDK / CloudFormation
+EventBus:
+  Type: AWS::Events::EventBus
+  Properties:
+    Name: order-events
+
+# Rule — route specific events to targets
+OrderPlacedRule:
+  Type: AWS::Events::Rule
+  Properties:
+    EventBusName: !Ref EventBus
+    EventPattern:
+      source: ["order.service"]
+      detail-type: ["OrderPlaced"]
+    Targets:
+      - Arn: !GetAtt InventoryFunction.Arn
+        Id: inventory
+      - Arn: !GetAtt NotificationFunction.Arn
+        Id: notification
+```
+
+**Event structure (CloudEvents-inspired):**
+```json
+{
+  "source": "order.service",
+  "detail-type": "OrderPlaced",
+  "detail": {
+    "order_id": "ord-123",
+    "customer_id": "cust-456",
+    "items": [{"sku": "ABC", "qty": 2}],
+    "total": 59.99
+  },
+  "time": "2024-01-15T10:30:00Z",
+  "id": "evt-789",
+  "account": "123456789012",
+  "region": "us-east-1"
+}
+```
+
+**SNS (simple pub/sub):**
+```python
+import boto3
+sns = boto3.client('sns')
+
+def publish_order_event(order):
+    sns.publish(
+        TopicArn='arn:aws:sns:us-east-1:123456789012:order-events',
+        Message=json.dumps(order.to_event()),
+        MessageAttributes={
+            'event_type': {'DataType': 'String', 'StringValue': 'OrderPlaced'}
+        }
+    )
+```
+
+**EventBridge vs SNS:**
+| Feature | EventBridge | SNS |
+|---------|------------|-----|
+| Routing | Content-based rules | Topic subscription |
+| Schema | Schema registry, discovery | None |
+| Targets | 15+ AWS services, API destinations | Lambda, SQS, HTTP, email |
+| Transform | Input transformers | Message attributes |
+| Use when | Complex routing, event bus pattern | Simple fan-out, high throughput |
+
+### Step Functions
+
+**Sequential workflow:**
+```json
+{
+  "StartAt": "ValidateOrder",
+  "States": {
+    "ValidateOrder": {
+      "Type": "Task",
+      "Resource": "arn:aws:lambda:us-east-1:123:function:validate",
+      "Next": "ProcessPayment",
+      "Catch": [{"ErrorEquals": ["States.ALL"], "Next": "OrderFailed"}]
+    },
+    "ProcessPayment": {
+      "Type": "Task",
+      "Resource": "arn:aws:lambda:us-east-1:123:function:payment",
+      "Next": "ShipOrder"
+    },
+    "ShipOrder": {
+      "Type": "Task",
+      "Resource": "arn:aws:lambda:us-east-1:123:function:ship",
+      "End": true
+    },
+    "OrderFailed": {
+      "Type": "Fail",
+      "Error": "OrderError",
+      "Cause": "Order processing failed"
+    }
+  }
+}
+```
+
+**Parallel execution:**
+```json
+{
+  "StartAt": "ProcessOrder",
+  "States": {
+    "ProcessOrder": {
+      "Type": "Parallel",
+      "Branches": [
+        {
+          "StartAt": "ReserveInventory",
+          "States": {
+            "ReserveInventory": {
+              "Type": "Task",
+              "Resource": "arn:aws:lambda:...:reserve",
+              "End": true
+            }
+          }
+        },
+        {
+          "StartAt": "SendConfirmation",
+          "States": {
+            "SendConfirmation": {
+              "Type": "Task",
+              "Resource": "arn:aws:lambda:...:confirm",
+              "End": true
+            }
+          }
+        }
+      ],
+      "Next": "Done"
+    },
+    "Done": {"Type": "Succeed"}
+  }
+}
+```
+
+**Choice state (branching):**
+```json
+{
+  "CheckOrderType": {
+    "Type": "Choice",
+    "Choices": [
+      {
+        "Variable": "$.order_type",
+        "StringEquals": "express",
+        "Next": "ExpressShipping"
+      },
+      {
+        "Variable": "$.order_type",
+        "StringEquals": "standard",
+        "Next": "StandardShipping"
+      }
+    ],
+    "Default": "StandardShipping"
+  }
+}
+```
+
+**Map state (iterate over collection):**
+```json
+{
+  "ProcessItems": {
+    "Type": "Map",
+    "ItemsPath": "$.items",
+    "Iterator": {
+      "StartAt": "ProcessItem",
+      "States": {
+        "ProcessItem": {
+          "Type": "Task",
+          "Resource": "arn:aws:lambda:...:process_item",
+          "End": true
+        }
+      }
+    },
+    "Next": "Done"
+  }
+}
+```
+
+### Fan-Out / Fan-In
+
+```
+                        ┌─────────────┐
+                        │ Orchestrator│
+                        │ Lambda      │
+                        └──────┬──────┘
+                               │ fan-out
+                ┌──────────────┼──────────────┐
+                ▼              ▼              ▼
+        ┌──────────┐   ┌──────────┐   ┌──────────┐
+        │ Worker 1 │   │ Worker 2 │   │ Worker 3 │
+        └────┬─────┘   └────┬─────┘   └────┬─────┘
+             │              │              │
+             └──────────────┼──────────────┘
+                            ▼
+                    ┌──────────────┐
+                    │ SQS Queue /  │
+                    │ DynamoDB     │
+                    │ (collector)  │
+                    └──────────────┘
+```
+
+**Implementation with SQS + Lambda:**
+```python
+# Fan-out: orchestrator sends N messages to SQS
+def orchestrator(event, context):
+    items = get_items_to_process()
+    sqs = boto3.client('sqs')
+    for item in items:
+        sqs.send_message(
+            QueueUrl=QUEUE_URL,
+            MessageBody=json.dumps(item),
+            MessageGroupId=item['partition_key']  # FIFO queue
+        )
+
+# Fan-in: collector aggregates results
+def collector(event, context):
+    results = []
+    for record in event['Records']:
+        result = json.loads(record['body'])
+        results.append(result)
+
+    if all_complete(results):
+        aggregate_and_store(results)
+```
+
+**Fan-in with Step Functions (Map + callback):**
+```json
+{
+  "FanOutAndCollect": {
+    "Type": "Map",
+    "ItemsPath": "$.batches",
+    "MaxConcurrency": 10,
+    "Iterator": {
+      "StartAt": "ProcessBatch",
+      "States": {
+        "ProcessBatch": {
+          "Type": "Task",
+          "Resource": "arn:aws:states:::lambda:invoke",
+          "Parameters": {
+            "FunctionName": "processBatch",
+            "Payload.$": "$"
+          },
+          "End": true
+        }
+      }
+    },
+    "Next": "Aggregate"
+  },
+  "Aggregate": {
+    "Type": "Task",
+    "Resource": "arn:aws:states:::lambda:invoke",
+    "Parameters": {
+      "FunctionName": "aggregateResults",
+      "Payload.$": "$"
+    },
+    "End": true
+  }
+}
+```
+
+### Saga with Serverless
+
+**Orchestration-based saga (Step Functions):**
+```json
+{
+  "StartAt": "ReserveInventory",
+  "States": {
+    "ReserveInventory": {
+      "Type": "Task",
+      "Resource": "arn:aws:lambda:...:reserve",
+      "Next": "ProcessPayment",
+      "Catch": [{"ErrorEquals": ["States.ALL"], "Next": "Failed"}]
+    },
+    "ProcessPayment": {
+      "Type": "Task",
+      "Resource": "arn:aws:lambda:...:payment",
+      "Next": "ShipOrder",
+      "Catch": [{"ErrorEquals": ["States.ALL"], "Next": "ReleaseInventory"}]
+    },
+    "ShipOrder": {
+      "Type": "Task",
+      "Resource": "arn:aws:lambda:...:ship",
+      "Catch": [{"ErrorEquals": ["States.ALL"], "Next": "RefundPayment"}]
+    },
+    "ReleaseInventory": {
+      "Type": "Task",
+      "Resource": "arn:aws:lambda:...:release_inventory",
+      "Next": "Failed"
+    },
+    "RefundPayment": {
+      "Type": "Task",
+      "Resource": "arn:aws:lambda:...:refund",
+      "Next": "CancelShipment"
+    },
+    "CancelShipment": {
+      "Type": "Task",
+      "Resource": "arn:aws:lambda:...:cancel_ship",
+      "Next": "Failed"
+    },
+    "Failed": {
+      "Type": "Fail",
+      "Error": "SagaFailed",
+      "Cause": "Compensating transactions completed"
+    }
+  }
+}
+```
+
+**Choreography-based saga (EventBridge):**
+```
+OrderPlaced ──► Inventory Lambda ──► InventoryReserved ──► Payment Lambda ──► PaymentProcessed ──► Shipping Lambda
+     │                    │                                         │
+     │                    ▼                                         ▼
+     │            InventoryFailed ──────────────────────► PaymentRefunded
+     │
+     └──► Notification Lambda (listen to all events)
+```
+
+```yaml
+# EventBridge rules for choreography
+InventoryReservedRule:
+  Type: AWS::Events::Rule
+  Properties:
+    EventPattern:
+      source: ["inventory.service"]
+      detail-type: ["InventoryReserved"]
+    Targets:
+      - Arn: !GetAtt PaymentFunction.Arn
+
+InventoryFailedRule:
+  Type: AWS::Events::Rule
+  Properties:
+    EventPattern:
+      source: ["inventory.service"]
+      detail-type: ["InventoryFailed"]
+    Targets:
+      - Arn: !GetAtt OrderCompensation.Arn
+```
+
+**Saga patterns comparison:**
+| Pattern | Coordination | Complexity | When to Use |
+|---------|-------------|------------|-------------|
+| Orchestration (Step Functions) | Central orchestrator | Medium | 3-8 steps, need visibility |
+| Choreography (EventBridge) | Event-driven | High | 2-4 steps, decoupled teams |
+| Hybrid | Orchestrator + events | High | Complex flows, mixed coupling |
+
+**Serverless saga best practices:**
+- Each step must be idempotent (Lambda may retry)
+- Compensating transactions must not fail (infinite retry with DLQ)
+- Use DynamoDB for saga state (Step Functions built-in)
+- Log every state transition for audit
+- Set timeouts per step to prevent stuck sagas
+- Use Dead Letter Queues for failed events
