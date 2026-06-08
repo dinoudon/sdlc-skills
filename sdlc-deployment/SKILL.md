@@ -297,6 +297,17 @@ ALTER TABLE users RENAME COLUMN email_normalized TO email;
 | Prisma Migrate | JS/TS |
 | Atlas | Go, SQL-first |
 
+## Sources
+
+- Canary deployments: https://docs.flagger.app/usage/deployment-strategies
+- Blue-green: https://martinfowler.com/bliki/BlueGreenDeployment.html
+- Argo Rollouts: https://argoproj.github.io/rollouts/
+- Flagger: https://docs.flagger.app/
+- Feature flags: https://openfeature.dev/
+- Unleash: https://docs.getunleash.io/
+- LaunchDarkly: https://docs.launchdarkly.com/home
+- Kubernetes deployments: https://kubernetes.io/docs/concepts/workloads/controllers/deployment/
+
 ## Pitfalls
 
 1. **Don't skip expand-contract for DB migrations** — old and new app versions must coexist
