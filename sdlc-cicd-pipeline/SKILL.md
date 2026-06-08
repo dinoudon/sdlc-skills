@@ -1,13 +1,13 @@
 ---
 name: sdlc-cicd-pipeline
-description: "CI/CD pipeline design with GitHub Actions and GitLab CI. Docker multi-stage builds, caching, matrix builds, test sharding, security scanning, GitOps, DORA metrics, trunk-based development, anti-patterns. SLSA L3 supply chain, SBOM generation, Green CI/CD, AI in pipelines, GitHub Actions hardening."
-version: 3.0.0
+description: "CI/CD pipeline design with GitHub Actions and GitLab CI. Docker multi-stage builds, caching, matrix builds, test sharding, security scanning, GitOps, DORA metrics, trunk-based development, anti-patterns. SLSA L3 supply chain, SBOM generation, Green CI/CD, AI in pipelines, GitHub Actions hardening. Serverless CI/CD (SAM/CDK/Serverless Framework), preview environments, multi-platform builds, advanced dependency caching."
+version: 3.1.0
 author: Hermes Agent
 license: MIT
 platforms: [linux, macos, windows]
 metadata:
   hermes:
-    tags: [sdlc, ci-cd, github-actions, gitlab-ci, docker, devops, pipeline, gitops, dora, accelerate, trunk-based, slsa, sbom, supply-chain, green-ci, security-hardening]
+    tags: [sdlc, ci-cd, github-actions, gitlab-ci, docker, devops, pipeline, gitops, dora, accelerate, trunk-based, slsa, sbom, supply-chain, green-ci, security-hardening, serverless, preview-environments, multi-platform, ai-cicd]
     related_skills: [sdlc-architecture-design, sdlc-testing-qa, sdlc-deployment, github-pr-workflow]
 ---
 
@@ -869,3 +869,642 @@ permissions:
       github.com:443
       api.github.com:443
 ```
+
+## Step 15: Serverless CI/CD Patterns
+
+Source: https://docs.aws.amazon.com/serverless-developer-guide/, https://www.serverless.com/framework/docs
+
+### AWS SAM Build/Deploy Pipeline
+
+```yaml
+# .github/workflows/sam-deploy.yml
+name: SAM Deploy
+on:
+  push:
+    branches: [main]
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  build-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::123456789012:role/GitHubActionsRole
+          aws-region: us-east-1
+
+      - uses: aws-actions/setup-sam@v2
+        with:
+          use-installer: true
+
+      # Build (cached in .aws-sam/)
+      - run: sam build --cached --parallel
+
+      # Deploy with changeset for review
+      - run: >
+          sam deploy
+          --stack-name myapp
+          --resolve-s3
+          --capabilities CAPABILITY_IAM
+          --confirm-changeset false
+          --no-fail-on-empty-changeset
+          --parameter-overrides Env=production
+
+      # Output API endpoint
+      - run: sam list stack-outputs --stack-name myapp
+```
+
+**SAM with layers (shared deps):**
+```yaml
+- run: sam build --cached --parallel --use-container  # Build in container for Linux compat
+```
+
+**SAM local testing in CI:**
+```yaml
+# Integration test against local Lambda runtime
+- run: sam local invoke MyFunction --event events/test.json
+- run: sam local start-api &
+- run: sleep 5 && curl http://localhost:3000/health
+```
+
+### CDK Pipeline (Self-Mutating)
+
+Source: https://docs.aws.amazon.com/cdk/v2/guide/cdk_pipeline.html
+
+```typescript
+// lib/pipeline-stack.ts
+import { CodePipeline, CodePipelineSource, ShellStep } from 'aws-cdk-lib/pipelines';
+
+export class PipelineStack extends Stack {
+  constructor(scope: Construct, id: string) {
+    super(scope, id);
+
+    const pipeline = new CodePipeline(this, 'Pipeline', {
+      pipelineName: 'MyAppPipeline',
+      crossAccountKeys: true,
+      synth: new ShellStep('Synth', {
+        input: CodePipelineSource.gitHub('org/repo', 'main'),
+        commands: ['npm ci', 'npx cdk synth'],
+      }),
+      dockerEnabledForSynth: true,  // If synth needs Docker
+    });
+
+    // Self-mutating: pipeline updates itself when stack changes
+    const stage = pipeline.addStage(new MyAppStage(this, 'Production', {
+      env: { account: '123456789012', region: 'us-east-1' },
+    }));
+
+    stage.addPost(
+      new ShellStep('IntegrationTest', {
+        commands: ['npm run test:integration'],
+      }),
+    );
+  }
+}
+```
+
+**CDK Pipeline with GitHub source (via CodeStar Connection):**
+```yaml
+# CDK CLI deploy (simpler alternative)
+- run: npx cdk deploy --require-approval never --exclusively
+  env:
+    CDK_DEFAULT_ACCOUNT: ${{ secrets.AWS_ACCOUNT }}
+    CDK_DEFAULT_REGION: us-east-1
+```
+
+### Serverless Framework
+
+```yaml
+# .github/workflows/serverless-deploy.yml
+name: Serverless Deploy
+on:
+  push:
+    branches: [main]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: '20' }
+      - run: npm ci
+
+      # Deploy all stages
+      - run: npx serverless deploy --stage production --region us-east-1
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+
+      # Or with OIDC (preferred)
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: us-east-1
+      - run: npx serverless deploy --stage production
+```
+
+**Serverless offline testing in CI:**
+```yaml
+- run: npx serverless offline start &
+- run: sleep 10 && curl http://localhost:3000/dev/health
+- run: npx jest tests/integration
+```
+
+**Serverless packaging optimization:**
+```yaml
+# serverless.yml — exclude dev deps and tests
+package:
+  individually: true
+  patterns:
+    - '!tests/**'
+    - '!**/*.test.*'
+    - '!node_modules/.cache/**'
+    - 'node_modules/aws-sdk/**'  # Only if not in Lambda runtime
+```
+
+## Step 16: Preview Environments (Ephemeral per PR)
+
+Source: https://docs.github.com/en/actions/managing-issues-and-pull-requests/adding-labels-to-issues
+
+Preview environments spin up isolated infrastructure per PR for visual review and integration testing, auto-destroyed on merge/close.
+
+### GitHub Actions Preview Environment
+
+```yaml
+# .github/workflows/preview.yml
+name: Preview Environment
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+concurrency:
+  group: preview-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  deploy-preview:
+    runs-on: ubuntu-latest
+    environment:
+      name: pr-${{ github.event.pull_request.number }}
+      url: https://pr-${{ github.event.pull_request.number }}.preview.example.com
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: us-east-1
+
+      # Deploy unique stack per PR
+      - run: |
+          STACK="myapp-pr-${{ github.event.pull_request.number }}"
+          sam deploy \
+            --stack-name "$STACK" \
+            --resolve-s3 \
+            --capabilities CAPABILITY_IAM \
+            --parameter-overrides \
+              PrNumber=${{ github.event.pull_request.number }} \
+              Environment=preview
+
+      - run: |
+          ENDPOINT=$(aws cloudformation describe-stacks \
+            --stack-name "myapp-pr-${{ github.event.pull_request.number }}" \
+            --query 'Stacks[0].Outputs[?OutputKey==`ApiUrl`].OutputValue' \
+            --output text)
+          echo "### Preview URL" >> $GITHUB_STEP_SUMMARY
+          echo "$ENDPOINT" >> $GITHUB_STEP_SUMMARY
+
+  # Comment URL on PR
+  comment:
+    needs: deploy-preview
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: `🚀 Preview deployed: https://pr-${context.issue.number}.preview.example.com`
+            })
+
+  # Destroy on PR close/merge
+  destroy-preview:
+    if: github.event.action == 'closed'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: us-east-1
+      - run: aws cloudformation delete-stack --stack-name "myapp-pr-${{ github.event.pull_request.number }}"
+```
+
+### Kubernetes Preview (Namespace per PR)
+
+```yaml
+deploy-preview:
+  runs-on: ubuntu-latest
+  steps:
+    - uses: actions/checkout@v4
+    - run: |
+        NS="pr-${{ github.event.pull_request.number }}"
+        kubectl create namespace "$NS" --dry-run=client -o yaml | kubectl apply -f -
+        helm upgrade --install myapp ./chart \
+          --namespace "$NS" \
+          --set ingress.host="pr-${{ github.event.pull_request.number }}.preview.example.com" \
+          --set image.tag="${{ github.sha }}"
+```
+
+**Cleanup with TTL controller:**
+```yaml
+# Add TTL to auto-delete stale preview namespaces
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: pr-123
+  annotations:
+    expiry: "72h"  # Controller deletes after 72h
+```
+
+### Vercel/Netlify Preview (Simpler SaaS)
+
+```yaml
+# Vercel auto-deploys PRs — just configure Vercel GitHub App
+# For custom domains per PR:
+- run: npx vercel deploy --yes --token=${{ secrets.VERCEL_TOKEN }}
+  env:
+    VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+    VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+```
+
+**Preview env best practices:**
+- Use concurrency groups — cancel stale preview deploys on new push
+- Always comment URL on PR for easy access
+- Auto-destroy on PR close/merge (prevent resource leaks)
+- Use lightweight infra (single container, SQLite) for preview — not full production stack
+- Set TTL (72h max) for safety net if webhook misses close event
+- Monitor costs — cap preview envs per org
+
+## Step 17: AI in CI/CD
+
+Source: https://dora.dev/research/2024-dora-report/
+
+### Automated Test Generation in Pipeline
+
+```yaml
+# Generate tests for changed files, post as PR suggestion
+- name: AI test generation
+  uses: coderabbitai/ai-pr-reviewer@v1
+  with:
+    generate-tests: true
+    test-framework: jest
+    review-draft: true  # Also review draft PRs
+  env:
+    GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+```
+
+**Standalone AI test gen (aider in CI):**
+```yaml
+- name: Generate missing tests
+  run: |
+    pip install aider-chat
+    CHANGED=$(git diff --name-only origin/main...HEAD -- '*.py' '*.ts' '*.go')
+    for file in $CHANGED; do
+      test_file=$(echo "$file" | sed 's/\.\(py\|ts\|go\)$/.test.\1/')
+      if [ ! -f "$test_file" ]; then
+        aider --yes --message "Write comprehensive tests for $file" "$file"
+      fi
+    done
+```
+
+### AI Code Review in Pipeline
+
+```yaml
+# CodeRabbit — full AI review
+- uses: coderabbitai/ai-pr-reviewer@v1
+  with:
+    review-type: auto
+    language: en
+    # Focus areas
+    path-instructions: |
+      src/api/**: Security and input validation focus
+      src/db/**: SQL injection and performance focus
+      **/Dockerfile: Security best practices
+  env:
+    GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+# Sourcery — code quality + suggestions
+- uses: sourcery-ai/sourcery-action@v1
+  with:
+    token: ${{ secrets.SOURCERY_TOKEN }}
+    review: true
+```
+
+**Custom AI review with LLM API:**
+```yaml
+- name: AI security review
+  run: |
+    DIFF=$(git diff origin/main...HEAD)
+    RESPONSE=$(curl -s https://api.openai.com/v1/chat/completions \
+      -H "Authorization: Bearer ${{ secrets.OPENAI_API_KEY }}" \
+      -H "Content-Type: application/json" \
+      -d "{
+        \"model\": \"gpt-4o\",
+        \"messages\": [{
+          \"role\": \"system\",
+          \"content\": \"Review this diff for security vulnerabilities. Output JSON: {\\\"issues\\\": [{\\\"file\\\": ..., \\\"line\\\": ..., \\\"severity\\\": ..., \\\"description\\\": ...}]}\"},
+          {\"role\": \"user\", \"content\": $(echo "$DIFF" | jq -Rs .)}
+        ]
+      }")
+    ISSUES=$(echo "$RESPONSE" | jq -r '.choices[0].message.content' | jq '.issues | length')
+    if [ "$ISSUES" -gt 0 ]; then
+      echo "::warning::AI found $ISSUES potential issues"
+      echo "$RESPONSE" | jq -r '.choices[0].message.content'
+    fi
+```
+
+### AI-Powered Flaky Test Detection
+
+```yaml
+- name: Detect flaky tests
+  run: |
+    # Run tests 3 times, flag inconsistency
+    for i in 1 2 3; do
+      npm test -- --json --outputFile=results-$i.json || true
+    done
+    npx ai-flaky-detector compare results-*.json > flaky-report.json
+    FLAKY_COUNT=$(jq '.flaky | length' flaky-report.json)
+    if [ "$FLAKY_COUNT" -gt 0 ]; then
+      echo "::warning::Found $FLAKY_COUNT flaky tests"
+      jq -r '.flaky[] | "- \(.name): \(.reason)"' flaky-report.json
+    fi
+```
+
+**DORA 2024 key findings on AI in CI/CD:**
+- AI that *suggests* (test gen, review hints) improves throughput
+- AI that *replaces* human review gates increases change failure rate
+- Best pattern: AI generates suggestions, human approves before merge
+- AI review catches 30-40% of issues missed by static analysis alone
+- AI test gen increases coverage but needs human curation
+
+## Step 18: Multi-Platform Builds (ARM64 + x86_64)
+
+Source: https://docs.docker.com/build/building/multi-platform/
+
+### Docker Buildx Multi-Platform
+
+```yaml
+# Build for both ARM64 and x86_64
+- uses: docker/setup-qemu-action@v3
+  with:
+    platforms: linux/amd64,linux/arm64
+
+- uses: docker/setup-buildx-action@v3
+
+- uses: docker/login-action@v3
+  with:
+    registry: ghcr.io
+    username: ${{ github.actor }}
+    password: ${{ secrets.GITHUB_TOKEN }}
+
+- uses: docker/build-push-action@v5
+  with:
+    push: true
+    platforms: linux/amd64,linux/arm64
+    tags: |
+      ghcr.io/org/myapp:latest
+      ghcr.io/org/myapp:${{ github.sha }}
+    cache-from: type=gha
+    cache-to: type=gha,mode=max
+```
+
+**Multi-platform Dockerfile (platform-aware):**
+```dockerfile
+FROM --platform=$BUILDPLATFORM node:20-slim AS builder
+WORKDIR /app
+COPY package*.json ./
+RUN npm ci
+COPY . .
+RUN npm run build
+
+FROM node:20-slim AS runner
+# $TARGETPLATFORM is set automatically by buildx
+WORKDIR /app
+COPY --from=builder /app/dist ./dist
+COPY --from=builder /app/node_modules ./node_modules
+CMD ["node", "dist/server.js"]
+```
+
+**Go multi-platform (native cross-compile, no QEMU):**
+```dockerfile
+FROM --platform=$BUILDPLATFORM golang:1.22 AS builder
+ARG TARGETOS TARGETARCH
+WORKDIR /app
+COPY go.* .
+RUN go mod download
+COPY . .
+RUN CGO_ENABLED=0 GOOS=$TARGETOS GOARCH=$TARGETARCH go build -o /app/server .
+
+FROM gcr.io/distroless/static:nonroot
+COPY --from=builder /app/server /server
+CMD ["/server"]
+```
+
+```yaml
+# Go: cross-compile natively (fast, no QEMU overhead)
+- uses: docker/build-push-action@v5
+  with:
+    platforms: linux/amd64,linux/arm64
+    # Buildx uses $BUILDPLATFORM for build stage, $TARGETPLATFORM for final
+```
+
+### Rust Multi-Platform
+
+```dockerfile
+FROM --platform=$BUILDPLATFORM rust:1.77 AS builder
+ARG TARGETPLATFORM
+RUN case "$TARGETPLATFORM" in \
+      "linux/arm64") echo "aarch64-unknown-linux-gnu" > /tmp/target ;; \
+      *) echo "x86_64-unknown-linux-gnu" > /tmp/target ;; \
+    esac && \
+    rustup target add $(cat /tmp/target)
+WORKDIR /app
+COPY Cargo.* ./
+RUN cargo fetch
+COPY . .
+RUN cargo build --release --target $(cat /tmp/target) && \
+    cp target/$(cat /tmp/target)/release/server /app/server
+
+FROM gcr.io/distroless/static:nonroot
+COPY --from=builder /app/server /server
+CMD ["/server"]
+```
+
+### Matrix Build for Native Tests
+
+```yaml
+# Test natively on each platform (faster than QEMU)
+test:
+  strategy:
+    matrix:
+      include:
+        - os: ubuntu-latest
+          platform: linux/amd64
+        - os: ubuntu-24.04-arm  # GitHub ARM runners (preview)
+          platform: linux/arm64
+  runs-on: ${{ matrix.os }}
+  steps:
+    - uses: actions/checkout@v4
+    - run: make test
+```
+
+**Multi-platform checklist:**
+- [ ] Use `$BUILDPLATFORM` for build stage (native speed)
+- [ ] Use `$TARGETPLATFORM` only for final runtime stage
+- [ ] Go: use `CGO_ENABLED=0 GOOS/$GOARCH` — no QEMU needed
+- [ ] Rust: cross-compile with `--target`, avoid QEMU for compilation
+- [ ] Node/Python: QEMU required unless using native ARM runners
+- [ ] Test on both platforms — use matrix with ARM runners or QEMU
+- [ ] Manifest list auto-created when pushing multi-platform
+
+## Step 19: Advanced Dependency Caching
+
+### Go Module Cache
+
+```yaml
+- uses: actions/setup-go@v5
+  with:
+    go-version: '1.22'
+    cache: true  # Auto-caches ~/go/pkg/mod and ~/.cache/go-build
+```
+
+**Manual Go cache (more control):**
+```yaml
+- uses: actions/cache@v4
+  with:
+    path: |
+      ~/go/pkg/mod
+      ~/.cache/go-build
+    key: go-${{ runner.os }}-${{ hashFiles('**/go.sum') }}
+    restore-keys: go-${{ runner.os }}-
+```
+
+### Cargo Registry Cache (Rust)
+
+```yaml
+- uses: actions/cache@v4
+  with:
+    path: |
+      ~/.cargo/registry/index
+      ~/.cargo/registry/cache
+      ~/.cargo/git/db
+      target/
+    key: cargo-${{ runner.os }}-${{ hashFiles('**/Cargo.lock') }}
+    restore-keys: cargo-${{ runner.os }}-
+```
+
+**Cargo with Swatinem/rust-cache (simpler):**
+```yaml
+- uses: Swatinem/rust-cache@v2
+  with:
+    workspaces: "." -> target
+    cache-on-failure: true  # Cache even if build fails
+```
+
+### pnpm Store Cache
+
+```yaml
+- uses: pnpm/action-setup@v4
+  with:
+    version: 9
+
+- uses: actions/setup-node@v4
+  with:
+    node-version: '20'
+    cache: 'pnpm'  # Auto-caches pnpm store
+
+# Or manual:
+- uses: actions/cache@v4
+  with:
+    path: |
+      ~/.local/share/pnpm/store
+      node_modules/.pnpm
+    key: pnpm-${{ runner.os }}-${{ hashFiles('**/pnpm-lock.yaml') }}
+    restore-keys: pnpm-${{ runner.os }}-
+```
+
+### pip Cache (Python)
+
+```yaml
+- uses: actions/setup-python@v5
+  with:
+    python-version: '3.12'
+    cache: 'pip'  # Auto-caches ~/.cache/pip
+
+# Or with poetry:
+- uses: actions/setup-python@v5
+  with:
+    python-version: '3.12'
+    cache: 'poetry'
+
+# Or with uv (fast Python package manager):
+- run: pip install uv
+- uses: actions/cache@v4
+  with:
+    path: ~/.cache/uv
+    key: uv-${{ runner.os }}-${{ hashFiles('**/uv.lock') }}
+```
+
+### Gradle Cache (JVM)
+
+```yaml
+- uses: actions/setup-java@v4
+  with:
+    distribution: 'temurin'
+    java-version: '21'
+    cache: 'gradle'  # Auto-caches ~/.gradle/caches and ~/.gradle/wrapper
+```
+
+### Maven Cache (JVM)
+
+```yaml
+- uses: actions/setup-java@v4
+  with:
+    distribution: 'temurin'
+    java-version: '21'
+    cache: 'maven'  # Auto-caches ~/.m2/repository
+```
+
+### Composite Cache Pattern (Multi-Deps)
+
+```yaml
+# Monorepo with Go + Node + Python
+- uses: actions/cache@v4
+  with:
+    path: |
+      ~/go/pkg/mod
+      ~/.cache/go-build
+      node_modules
+      ~/.npm
+      ~/.cache/pip
+    key: all-deps-${{ runner.os }}-${{ hashFiles('go.sum', 'package-lock.json', 'requirements.txt') }}
+    restore-keys: all-deps-${{ runner.os }}-
+```
+
+**Cache strategy guidelines:**
+- Use lockfile hash in key — deterministic invalidation
+- Always set `restore-keys` — partial cache hit > no cache
+- Cache `target/` for Rust (huge build time savings)
+- Don't cache `node_modules` in npm projects — use `~/.npm` + `npm ci`
+- DO cache `node_modules` for pnpm/yarn (faster than `pnpm install`)
+- Monitor cache size — GitHub limits 10GB per repo
+- Use `actions/cache/save` and `actions/cache/restore` separately for fine-grained control

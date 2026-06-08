@@ -1,19 +1,19 @@
 ---
 name: sdlc-requirements-engineering
-description: "Requirements: user story mapping (Jeff Patton), BDD/Gherkin (Cucumber, pytest-bdd), acceptance criteria (Given/When/Then), impact mapping (Gojko Adzic), example mapping, specification by example, JTBD framework, RICE scoring, WSJF prioritization, user story splitting, NFR patterns, requirements traceability."
-version: 3.0.0
+description: "Requirements: user story mapping (Jeff Patton), BDD/Gherkin (Cucumber, pytest-bdd), acceptance criteria (Given/When/Then), impact mapping (Gojko Adzic), example mapping, specification by example, JTBD framework, RICE scoring, WSJF prioritization, user story splitting, NFR patterns, requirements traceability, OKR alignment, design thinking, AI/ML requirements, STRIDE security, OWASP ASVS, WCAG 2.2 AA accessibility."
+version: 3.1.0
 author: Hermes Agent
 license: MIT
 platforms: [linux, macos, windows]
 metadata:
   hermes:
-    tags: [sdlc, requirements, user-stories, bdd, gherkin, acceptance-criteria, impact-mapping, example-mapping, specification-by-example, jtbd, rice-scoring, wsjf, story-splitting, nfr, traceability]
+    tags: [sdlc, requirements, user-stories, bdd, gherkin, acceptance-criteria, impact-mapping, example-mapping, specification-by-example, jtbd, rice-scoring, wsjf, story-splitting, nfr, traceability, okr, design-thinking, ai-ml, stride, owasp-asvs, wcag-2.2, accessibility]
     related_skills: [sdlc-architecture-design, sdlc-testing-qa, sdlc-prd-to-production]
 ---
 
 # Requirements Engineering
 
-User story mapping, BDD/Gherkin, acceptance criteria, impact mapping, example mapping, specification by example, JTBD, RICE scoring, WSJF, user story splitting, NFR patterns, requirements traceability.
+User story mapping, BDD/Gherkin, acceptance criteria, impact mapping, example mapping, specification by example, JTBD, RICE scoring, WSJF, user story splitting, NFR patterns, requirements traceability, OKR alignment, design thinking, AI/ML requirements, STRIDE security, OWASP ASVS, WCAG 2.2 AA accessibility.
 
 ## When to Use
 
@@ -28,6 +28,11 @@ Trigger when user:
 - Splits large user stories into sprint-sized pieces
 - Defines non-functional requirements (performance, security, accessibility)
 - Creates or audits requirements traceability matrices
+- Aligns requirements to OKRs (Objectives → Key Results → User Stories)
+- Runs design thinking workshops (empathize, define, ideate, prototype, test)
+- Defines requirements for AI/ML features (data, metrics, bias)
+- Maps security requirements using STRIDE or OWASP ASVS
+- Specifies accessibility requirements under WCAG 2.2 AA
 
 ## Step 1: User Story Mapping
 
@@ -623,10 +628,38 @@ ENFORCEMENT: CI pipeline fails if Lighthouse score < 90.
 Budget reviewed monthly with performance dashboard.
 ```
 
-### Security Requirements Patterns
+### Security Requirements Patterns (STRIDE + OWASP ASVS)
+
+Source: Microsoft STRIDE, https://learn.microsoft.com/en-us/azure/security/develop/threat-modeling-tool-threats; OWASP ASVS, https://owasp.org/www-project-application-security-verification-standard/
+
 ```
 SECURITY REQUIREMENTS: Web Application
 =======================================
+
+THREAT MODEL (STRIDE):
+  Spoofing        -> Authentication requirements
+  Tampering       -> Integrity / input validation requirements
+  Repudiation     -> Logging / audit trail requirements
+  Information Disclosure -> Encryption / access control requirements
+  Denial of Service     -> Rate limiting / resource limits requirements
+  Elevation of Privilege -> Authorization / least privilege requirements
+
+OWASP ASVS MAPPING:
+  V1  Architecture      -> Threat model documented, security design review
+  V2  Authentication    -> MFA, password policy, session management
+  V3  Session Mgmt      -> Token rotation, idle timeout, secure cookie flags
+  V4  Access Control     -> RBAC, IDOR testing, admin re-auth
+  V5  Validation        -> Input sanitization, output encoding, parameterized queries
+  V6  Crypto            -> AES-256 at rest, TLS 1.3 in transit, key rotation
+  V7  Error/Logging     -> No PII in logs, audit trail, alerting on anomalies
+  V8  Data Protection   -> PII classification, retention policy, right to erasure
+  V9  Communication     -> HSTS, certificate pinning (mobile), mTLS (service-to-service)
+  V10 Malicious Code    -> Dependency scanning, code signing, SBOM generation
+  V11 Business Logic    -> Race condition testing, rate limiting, abuse case testing
+  V12 Files/Resources   -> Upload validation, path traversal prevention, sandbox
+  V13 API               -> Schema validation, auth on all endpoints, pagination limits
+  V14 Config            -> Hardened defaults, no debug in prod, secrets in vault
+
 Authentication:
   [ ] MFA available for all user accounts
   [ ] Password minimum 12 chars, checked against breach DB
@@ -657,9 +690,29 @@ Dependencies:
   [ ] Automated dependency scanning (Snyk/Dependabot)
   [ ] CVE > 7.0 fixed within 7 days
   [ ] No known high/critical CVEs in production
+
+ABUSE CASES:
+  [ ] Rate limiting on login (max 5 attempts / 15 min)
+  [ ] Rate limiting on API (per-user, per-IP quotas)
+  [ ] Account enumeration prevention (generic error messages)
+  [ ] Mass assignment protection (allowlist fields)
+  [ ] Business logic abuse scenarios documented and tested
 ```
 
-### Accessibility Requirements (WCAG 2.1 AA)
+### Accessibility Requirements (WCAG 2.2 AA)
+
+Source: W3C WCAG 2.2, https://www.w3.org/TR/WCAG22/; WAI-ARIA 1.2, https://www.w3.org/TR/wai-aria-1.2/
+
+WCAG 2.2 new success criteria beyond 2.1:
+  - 2.4.11 Focus Not Obscured (Minimum) - focused element not entirely hidden
+  - 2.4.12 Focus Not Obscured (Enhanced) - focused element fully visible
+  - 2.4.13 Focus Appearance - focus indicator has sufficient size/contrast
+  - 2.5.7 Dragging Movements - alternatives to drag gestures
+  - 2.5.8 Target Size (Minimum) - 24x24 CSS px minimum touch targets
+  - 3.2.6 Consistent Help - help mechanisms in consistent location
+  - 3.3.7 Redundant Entry - don't ask for same info twice in flow
+  - 3.3.8 Accessible Authentication (Minimum) - no cognitive function tests for auth
+  - 3.3.9 Accessible Authentication (Enhanced) - no object recognition or user-supplied media
 ```
 ACCESSIBILITY REQUIREMENTS
 ===========================
@@ -669,19 +722,29 @@ Perceivable:
   [ ] Content readable at 200% zoom without horizontal scroll
   [ ] Captions on all video content
   [ ] No information conveyed by color alone
+  [ ] Reflow at 320px CSS width without loss of content
+  [ ] Text spacing adjustable without breaking layout
+  [ ] Status messages use ARIA live regions (role="status", "alert")
 
 Operable:
   [ ] All interactive elements keyboard-accessible
   [ ] Focus order follows logical reading sequence
   [ ] No keyboard traps
   [ ] Skip-to-content link available
-  [ ] Touch targets >= 44x44 CSS pixels
+  [ ] Touch targets >= 24x24 CSS pixels (WCAG 2.2 min), >= 44x44 preferred
+  [ ] Focus indicator: 2px solid, 3:1 contrast ratio (2.4.13)
+  [ ] Focused element never entirely obscured by sticky/fixed elements (2.4.11)
+  [ ] Drag operations have single-pointer alternative (2.5.7)
+  [ ] Keyboard shortcuts can be remapped or disabled
 
 Understandable:
   [ ] Page language declared in HTML
   [ ] Form labels visible and associated with inputs
   [ ] Error messages identify field + describe error
   [ ] Consistent navigation across pages
+  [ ] Consistent help mechanism location across pages (3.2.6)
+  [ ] No redundant entry in multi-step flows (3.3.7)
+  [ ] Auth does not require cognitive function tests (3.3.8)
 
 Robust:
   [ ] Valid HTML (no duplicate IDs, proper nesting)
@@ -689,8 +752,31 @@ Robust:
   [ ] Works with screen readers (VoiceOver, NVDA)
   [ ] Automated a11y tests in CI (axe-core, pa11y)
 
+  ARIA PATTERNS:
+  - Disclosure: aria-expanded, aria-controls on toggle buttons
+  - Modal dialogs: role="dialog", aria-modal="true", focus trap
+  - Tabs: role="tablist"/"tab"/"tabpanel", aria-selected, keyboard arrows
+  - Combobox: role="combobox", aria-expanded, aria-activedescendant, aria-controls
+  - Alert: role="alert" for assertive, role="status" for polite live regions
+  - Breadcrumb: nav with aria-label="Breadcrumb", aria-current="page" on last
+  - Tree view: role="tree"/"treeitem", aria-expanded, aria-level
+  - Menu: role="menu"/"menuitem", aria-haspopup, keyboard arrow navigation
+  - Progress: role="progressbar", aria-valuenow/min/max
+  - Tooltip: role="tooltip", aria-describedby on trigger
+
+  SCREEN READER TESTING:
+  [ ] NVDA (Windows) - test on each major release
+  [ ] VoiceOver (macOS/iOS) - test on each major release
+  [ ] TalkBack (Android) - test if mobile supported
+  [ ] JAWS (Windows) - test for enterprise/corporate users
+  [ ] Verify: headings structure, landmark regions, form labels, live regions
+  [ ] Verify: dynamic content announcements (AJAX updates, toast messages)
+  [ ] Verify: custom widget keyboard interaction matches ARIA pattern
+  [ ] Include screen reader users in usability testing (not just automated scans)
+
 TESTING: axe-core in CI blocks merge on critical violations.
-Manual audit with screen reader before each release.
+Manual screen reader audit (NVDA + VoiceOver) before each release.
+Pa11y CI for regression on key pages. Lighthouse a11y score >= 95.
 ```
 
 ### NFR Elicitation Checklist
@@ -785,8 +871,126 @@ CODE-FIRST (living traceability):
 
 ## How These Practices Connect
 
+### Design Thinking → OKR Alignment → Impact Mapping
+
+Source: IDEO, https://designthinking.ideo.com/; John Doerr, "Measure What Matters" (2018)
+
+Design thinking discovers user needs. OKRs translate needs into measurable outcomes.
+Impact maps bridge outcomes to deliverables.
+
+DESIGN THINKING PHASES:
+  1. EMPATHIZE - User interviews, shadowing, journey mapping
+     Output: Empathy maps, pain point inventory, user personas (evidence-based)
+  2. DEFINE - Synthesize findings into problem statements
+     Output: "How Might We" statements, problem framing
+  3. IDEATE - Divergent thinking, solution brainstorming
+     Output: Solution concepts, assumption mapping
+  4. PROTOTYPE - Low-fi wireframes, clickable mockups, service blueprints
+     Output: Testable artifacts (paper, Figma, concierge)
+  5. TEST - Validate prototypes with real users
+     Output: Validated learnings, pivoted or refined requirements
+
+INTEGRATION WITH REQUIREMENTS:
+  Empathy maps → JTBD discovery
+  Problem statements → OKR Objectives
+  Validated prototypes → User Stories with acceptance criteria
+  Assumption map → RICE confidence scores
+
+OKR ALIGNMENT PATTERN:
+  OBJECTIVE: [Qualitative, inspiring goal]
+  ├── KEY RESULT 1: [Measurable outcome, specific metric + target]
+  │   ├── USER STORY 1.1: As a [role], I want [capability], so that [benefit]
+  │   │   ├── AC: Given/When/Then
+  │   │   └── NFR: [performance/security/a11y constraint]
+  │   └── USER STORY 1.2: ...
+  ├── KEY RESULT 2: [Measurable outcome]
+  │   ├── USER STORY 2.1: ...
+  │   └── USER STORY 2.2: ...
+  └── KEY RESULT 3: [Measurable outcome]
+      └── USER STORY 3.1: ...
+
+EXAMPLE:
+  OBJECTIVE: Become the most trusted checkout experience in e-commerce
+  ├── KR1: Reduce checkout abandonment from 68% to 45%
+  │   ├── US: Guest checkout (no forced account creation)
+  │   ├── US: Auto-fill address from postal code
+  │   └── US: Save cart across sessions
+  ├── KR2: Achieve 99.9% payment success rate
+  │   ├── US: Retry failed payments with alternate provider
+  │   └── US: Pre-validate card before order submission
+  └── KR3: NPS score from 32 to 55 for checkout flow
+      ├── US: Real-time order total (no surprise fees)
+      └── US: Delivery date estimate before payment
+
+TRACEABILITY: Each User Story traces up to KR, each KR traces to Objective.
+RTM column "Goal" now links to OKR ID, not just business goal ID.
+
+### AI/ML Feature Requirements
+
+When requirements include AI/ML features, add these categories alongside standard requirements.
+
+DATA REQUIREMENTS:
+  [ ] Training data source documented (origin, license, refresh cadence)
+  [ ] Data volume specified (minimum rows/samples for acceptable performance)
+  [ ] Data quality checks: completeness, accuracy, consistency, timeliness
+  [ ] Data labeling process defined (human-in-the-loop, inter-annotator agreement >= 0.8)
+  [ ] Feature store schema documented (feature name, type, source, freshness)
+  [ ] PII handling in training data (anonymization, consent, retention)
+  [ ] Data versioning (DVC, Delta Lake, or equivalent)
+  [ ] Train/validation/test split ratios specified (e.g., 70/15/15)
+
+MODEL METRICS:
+  [ ] Primary metric defined (accuracy, F1, BLEU, AUC-ROC, MAE, etc.)
+  [ ] Minimum threshold for deployment (e.g., F1 >= 0.85)
+  [ ] Baseline model score documented (to measure improvement)
+  [ ] Latency budget: inference time p95/p99 (e.g., < 100ms p95)
+  [ ] Throughput requirement (predictions/second)
+  [ ] Model size constraint (if edge/mobile deployment)
+  [ ] Monitoring: drift detection (data drift, concept drift)
+  [ ] Retraining trigger: metric drop below threshold OR scheduled cadence
+
+BIAS AND FAIRNESS TESTING:
+  [ ] Protected attributes identified (race, gender, age, disability, etc.)
+  [ ] Fairness metrics defined: demographic parity, equalized odds, predictive parity
+  [ ] Bias testing on subgroups (intersectional: e.g., young women of color)
+  [ ] Disparate impact ratio >= 0.8 (four-fifths rule)
+  [ ] Model card published (Mitchell et al., 2019) documenting intended use, limitations, fairness evaluation
+  [ ] Adversarial testing: prompt injection (LLMs), adversarial examples (CV), data poisoning
+  [ ] Human review loop for high-stakes predictions (credit, health, hiring, criminal justice)
+  [ ] Explainability: SHAP/LIME for tabular, attention maps for NLP/CV (when required)
+
+MLOPS REQUIREMENTS:
+  [ ] Model registry (MLflow, SageMaker, Vertex AI)
+  [ ] Experiment tracking (parameters, metrics, artifacts)
+  [ ] CI/CD for model pipeline (train → evaluate → register → deploy)
+  [ ] A/B testing or canary deployment for model updates
+  [ ] Rollback mechanism for model version
+  [ ] Feature pipeline monitoring (stale features, missing data alerts)
+  [ ] Model serving SLA (availability, latency, error rate)
+
+GHERKIN FOR AI/ML:
+  Scenario: Model rejects low-confidence prediction
+    Given the fraud detection model is deployed
+    When a transaction is scored with confidence < 0.7
+    Then the transaction is flagged for human review
+    And the prediction is logged with confidence score
+
+  Scenario: Model retraining triggered on drift
+    Given the model monitors data drift hourly
+    When KL-divergence exceeds 0.15 for any feature
+    Then a retraining job is queued
+    And the on-call engineer is notified
+
+### Connection Diagram
+
 ```
+Design Thinking (empathize + define)
+    │
+    ▼
 JTBD (discover needs)
+    │
+    ▼
+OKR Alignment (Objectives → Key Results)
     │
     ▼
 Impact Mapping (strategic goals)
@@ -810,10 +1014,13 @@ Specification by Example (formalization)
 BDD/Gherkin (automation)
     │
     ▼
-Acceptance Criteria + NFRs (verification)
+Acceptance Criteria + NFRs + Security (STRIDE/ASVS) + A11y (WCAG 2.2) (verification)
     │
     ▼
 Requirements Traceability Matrix (audit)
+    │
+    ▼
+AI/ML Requirements (data, metrics, bias) - if applicable
 ```
 
 ## Pitfalls
@@ -832,3 +1039,8 @@ Requirements Traceability Matrix (audit)
 12. **Don't accept stories > 1 sprint** — split first using patterns
 13. **Don't skip NFRs** — performance, security, accessibility are requirements, not nice-to-haves
 14. **Don't skip traceability** — orphan requirements and gold-plating creep in without RTM
+15. **Don't skip OKR alignment** — requirements without measurable outcomes are guesswork
+16. **Don't confuse empathy with assumptions** — design thinking requires real user contact, not personas from thin air
+17. **Don't treat AI/ML like normal features** — data quality, model metrics, and bias testing are first-class requirements
+18. **Don't bolt on security** — STRIDE threat model early, map to OWASP ASVS, trace to tests
+19. **Don't test accessibility last** — WCAG 2.2 AA baked into acceptance criteria from story creation

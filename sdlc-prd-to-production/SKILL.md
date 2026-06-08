@@ -1,13 +1,13 @@
 ---
 name: sdlc-prd-to-production
-description: "End-to-end workflow: PRD → design doc → implementation → code review → testing → deployment → monitoring → retrospective. Includes Ship/Show/Ask branching, design doc templates, PRD patterns (YC, Amazon Working Backwards), ephemeral environments, DORA 2024 insights, and Score spec."
-version: 3.0.0
+description: "End-to-end workflow: PRD → design doc → implementation → code review → testing → deployment → monitoring → retrospective. Includes Ship/Show/Ask branching, design doc templates, PRD patterns (YC, Amazon Working Backwards), ephemeral environments, DORA 2024 insights, Score spec, AI-augmented development, technical specification templates, GitOps automation, documentation-as-code pipelines, and metrics-driven development."
+version: 3.1.0
 author: Hermes Agent
 license: MIT
 platforms: [linux, macos, windows]
 metadata:
   hermes:
-    tags: [sdlc, prd, design-doc, rfc, ship-show-ask, workflow, end-to-end, product-development, yc, amazon-working-backwards, ephemeral-envs, score-spec, dora]
+    tags: [sdlc, prd, design-doc, rfc, ship-show-ask, workflow, end-to-end, product-development, yc, amazon-working-backwards, ephemeral-envs, score-spec, dora, ai-augmented, gitops, metrics-driven, docs-as-code, tech-spec]
     related_skills: [sdlc-requirements-engineering, sdlc-architecture-design, sdlc-cicd-pipeline, sdlc-deployment, sdlc-retrospective]
 ---
 
@@ -547,6 +547,58 @@ Source: https://dora.dev/research/2024/
 - **Risk:** over-reliance on AI without code review degrades quality
 - **Recommendation:** AI augments review, not replaces it. Pair AI output with human judgment.
 
+### AI-Augmented Development Workflow (Expanded)
+Source: DORA 2024 — AI usage across the SDLC, not just code generation.
+
+**Where AI helps most (DORA findings):**
+1. **Code review:** AI flags style issues, security patterns, test gaps before human review
+2. **Test generation:** AI generates test scaffolds, edge cases, property-based tests
+3. **Documentation:** AI drafts PR descriptions, changelogs, API docs from diffs
+4. **Incident response:** AI triages alerts, suggests root cause, drafts postmortems
+
+**Where AI hurts (anti-patterns):**
+- Blind acceptance of AI-generated code without understanding
+- AI-generated tests that pass but don't test meaningful behavior
+- Over-reliance reducing developer skill atrophy
+- AI suggestions that introduce subtle bugs in concurrent/security code
+
+**Recommended AI integration points in this workflow:**
+
+```
+PRD Step:         AI assists with user story expansion, acceptance criteria
+Design Doc:       AI reviews for completeness, suggests missing sections
+Implementation:  AI generates boilerplate, suggests patterns
+Code Review:      AI pre-reviews for style/security/smell BEFORE human review
+Testing:          AI generates test scaffolds, humans validate coverage quality
+Deployment:       AI generates deployment configs, validates against policy
+Monitoring:       AI triages alerts, suggests runbook actions
+Retrospective:    AI summarizes PR data, identifies patterns in reviews
+```
+
+**AI review integration pattern:**
+```yaml
+# .github/workflows/ai-review.yml
+name: AI Pre-Review
+on: [pull_request]
+jobs:
+  ai-review:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: ai-reviewer/action@v2
+        with:
+          focus: security,performance,test-coverage
+          # AI reviews first, human reviewer sees AI comments
+          mode: pre-review
+          # Do NOT auto-approve — always require human sign-off
+          auto-approve: false
+```
+
+**Metrics to track AI impact:**
+- PR cycle time (before/after AI adoption)
+- Defect escape rate (are AI-reviewed PRs higher quality?)
+- Review comment density (are humans finding fewer issues?)
+- Test coverage delta (is AI generating meaningful tests?)
+
 ### Key Takeaways for This Workflow
 1. Write docs in the PRD/Design Doc step — treat them as first-class deliverables
 2. Use AI for code generation in implementation, but enforce Ship/Show/Ask review
@@ -608,6 +660,548 @@ resources:
 - Design Doc defines technical approach + observability + SLOs
 - Score spec defines workload resource requirements
 - Platform team maps Score resources to actual infra
+
+## Technical Specification Template
+
+Use after design doc approval, before implementation begins. Captures contract-level detail.
+
+### API Specification
+
+```yaml
+# specs/api.yaml (OpenAPI 3.1)
+openapi: 3.1.0
+info:
+  title: [Service Name]
+  version: 1.0.0
+paths:
+  /api/v1/resource:
+    get:
+      summary: [What it does]
+      parameters: [query/path params with types and constraints]
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Resource' }
+        '400': { description: Validation error, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+        '401': { description: Unauthorized }
+        '429': { description: Rate limited }
+        '500': { description: Internal error }
+components:
+  schemas:
+    Resource:
+      type: object
+      required: [id, created_at]
+      properties:
+        id: { type: string, format: uuid }
+        created_at: { type: string, format: date-time }
+    Error:
+      type: object
+      required: [code, message]
+      properties:
+        code: { type: string }
+        message: { type: string }
+        details: { type: array, items: { type: object } }
+```
+
+### Data Model
+
+```
+# specs/data-model.md
+
+## Entity: [Name]
+- Table: [table_name]
+- Primary key: [id type]
+- Indexes: [list with rationale]
+- Constraints: [unique, foreign key, check]
+
+| Field       | Type      | Nullable | Default   | Description       |
+|-------------|-----------|----------|-----------|-------------------|
+| id          | uuid      | no       | gen_...   | Primary key       |
+| created_at  | timestamp | no       | now()     | Creation time     |
+| updated_at  | timestamp | no       | now()     | Last update       |
+
+## Relationships
+- [Entity A] 1:N [Entity B] via [foreign_key]
+- Cascade rules: [delete cascade / restrict / set null]
+
+## Migration Strategy
+- Forward-only migrations (no rollback scripts)
+- Backward-compatible schema changes only in shared tables
+- Blue-green compatible: schema works with N and N+1 code versions
+```
+
+### Error Handling Strategy
+
+```
+# specs/error-handling.md
+
+## Error Taxonomy
+| Code   | Category     | Retryable | User Action          |
+|--------|-------------|-----------|----------------------|
+| 400    | Validation  | No        | Fix input            |
+| 401    | Auth        | No        | Re-authenticate      |
+| 403    | Authorization | No      | Request access       |
+| 404    | Not Found   | No        | Check resource ID    |
+| 409    | Conflict    | Maybe     | Retry or resolve     |
+| 429    | Rate Limit  | Yes       | Backoff + retry      |
+| 500    | Internal    | Yes       | Retry, then escalate |
+| 503    | Unavailable | Yes       | Retry with backoff   |
+
+## Error Response Format
+```json
+{
+  "error": {
+    "code": "VALIDATION_FAILED",
+    "message": "Human-readable description",
+    "details": [
+      { "field": "email", "issue": "invalid format", "value": "abc" }
+    ],
+    "request_id": "req-uuid",
+    "timestamp": "2024-01-15T10:30:00Z"
+  }
+}
+```
+
+## Retry Policy
+- Exponential backoff: base 1s, max 30s, jitter ±50%
+- Max retries: 3 for idempotent operations, 0 for non-idempotent
+- Circuit breaker: open after 5 consecutive failures, half-open after 30s
+
+## Observability Hooks
+- Every error emits structured log: {error_code, request_id, user_id, duration_ms}
+- Error rate tracked per endpoint as SLI input
+- Anomaly alert on error rate > 2x baseline
+```
+
+### Observability Spec
+
+```
+# specs/observability.md
+
+## Structured Logging Format
+```json
+{
+  "timestamp": "ISO8601",
+  "level": "INFO|WARN|ERROR",
+  "service": "service-name",
+  "trace_id": "otel-trace-id",
+  "span_id": "otel-span-id",
+  "request_id": "req-uuid",
+  "user_id": "user-uuid",
+  "method": "GET",
+  "path": "/api/v1/resource",
+  "status": 200,
+  "duration_ms": 42,
+  "message": "Human readable"
+}
+```
+
+## Metrics (OpenTelemetry)
+| Metric Name              | Type      | Labels                      | Description               |
+|--------------------------|-----------|-----------------------------|---------------------------|
+| http_request_duration_ms | Histogram | method, path, status        | Request latency           |
+| http_requests_total      | Counter   | method, path, status        | Total requests            |
+| db_query_duration_ms     | Histogram | operation, table            | Database query latency    |
+| queue_depth              | Gauge     | queue_name                  | Current queue depth       |
+
+## Tracing
+- Propagate W3C traceparent header
+- Span boundaries: HTTP handler → service → repository → external call
+- Sample rate: 100% for errors, 10% for success (adjust per traffic)
+
+## Dashboards (minimum)
+1. Service health: latency p50/p95/p99, error rate, throughput
+2. Business metrics: conversion, adoption, feature usage
+3. Infrastructure: CPU, memory, disk I/O, network
+```
+
+## PRD-to-Production Automation Patterns
+
+### GitOps Workflow
+
+Source: https://opengitops.dev/
+
+```
+PRD → Design Doc → Code → PR → CI → Image → Git Repo → ArgoCD/Flux → Cluster
+
+All infrastructure and app config lives in Git. No kubectl apply in CI.
+ArgoCD/Flux watches Git, reconciles cluster state to desired state.
+```
+
+**GitOps principles:**
+1. Declarative: desired state described declaratively in Git
+2. Versioned: Git is single source of truth, full audit trail
+3. Automated: agents pull and reconcile, CI never pushes to cluster
+4. Self-healing: drift detected and corrected automatically
+
+**GitOps repo structure:**
+```
+environments/
+├── base/
+│   ├── kustomization.yaml
+│   ├── deployment.yaml
+│   ├── service.yaml
+│   └── hpa.yaml
+├── staging/
+│   ├── kustomization.yaml
+│   └── patches/
+│       └── replicas.yaml
+└── production/
+    ├── kustomization.yaml
+    └── patches/
+        ├── replicas.yaml
+        └── resources.yaml
+```
+
+**ArgoCD Application (GitOps):**
+```yaml
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: orders-api-production
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/myorg/k8s-configs
+    targetRevision: main
+    path: environments/production
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: orders
+  syncPolicy:
+    automated:
+      prune: true          # delete resources removed from Git
+      selfHeal: true       # revert manual cluster changes
+    syncOptions:
+      - CreateNamespace=true
+```
+
+### Progressive Delivery
+
+Source: https://fluxcd.io/flux/flagger/
+
+```
+Canary → 5% traffic → 20% → 50% → 100%
+         ↓ (failure)         ↓ (failure)
+      Auto-rollback       Auto-rollback
+```
+
+**Flagger Canary (progressive delivery with automated rollback):**
+```yaml
+apiVersion: flagger.app/v1beta1
+kind: Canary
+metadata:
+  name: orders-api
+spec:
+  targetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: orders-api
+  progressDeadlineSeconds: 600
+  service:
+    port: 8080
+  analysis:
+    # Canary promotion criteria
+    interval: 30s
+    threshold: 5          # max failed checks before rollback
+    maxWeight: 50         # max traffic percentage for canary
+    stepWeight: 10        # traffic increment per step
+    metrics:
+      - name: request-success-rate
+        thresholdRange:
+          min: 99         # rollback if success rate < 99%
+        interval: 1m
+      - name: request-duration
+        thresholdRange:
+          max: 500        # rollback if p99 > 500ms
+        interval: 30s
+    webhooks:             # optional: run tests before promotion
+      - name: integration-tests
+        type: pre-rollout
+        url: http://flagger-loadtester.test/
+        timeout: 120s
+        metadata:
+          cmd: "hey -z 1m -q 10 -c 2 http://orders-api-canary.orders:8080/"
+```
+
+### Automated Rollback Patterns
+
+```
+## Rollback Triggers
+1. Error rate > SLO threshold → immediate rollback
+2. Latency p99 > threshold for 2+ analysis windows → rollback
+3. Health check failures > 3 consecutive → rollback
+4. Integration test failure in canary → rollback
+
+## Rollback Process (Flagger)
+1. Flagger detects metric violation
+2. Flagger shifts traffic back to primary (100%)
+3. Flagger scales canary replica to 0
+4. Alert fires to team with reason
+
+## Manual Rollback (GitOps)
+1. `git revert <commit>` on k8s-configs repo
+2. Push to main
+3. ArgoCD syncs automatically
+4. Cluster returns to previous state
+```
+
+**Blue-Green variant:**
+```yaml
+apiVersion: flagger.app/v1beta1
+kind: Canary
+metadata:
+  name: orders-api
+spec:
+  analysis:
+    interval: 1m
+    iterations: 5        # run 5 checks before switching
+    metrics:
+      - name: request-success-rate
+        thresholdRange:
+          min: 99
+  strategy:
+    blueGreen:           # instead of canary percentage
+      activeService: orders-api-active
+      previewService: orders-api-preview
+```
+
+## Documentation-as-Code Pipeline
+
+Source: DORA 2024 — doc quality predicts org performance.
+
+### Auto-Generated API Docs
+
+```
+# Generate from OpenAPI spec at build time
+openapi-generator generate -i specs/api.yaml -g html2 -o docs/api/
+
+# Or render in Backstage via TechDocs
+# mkdocs.yml at repo root, source in /docs folder
+```
+
+**mkdocs.yml for service docs:**
+```yaml
+site_name: Orders API
+nav:
+  - Home: index.md
+  - API Reference: api.md      # auto-generated from OpenAPI
+  - Data Model: data-model.md
+  - Runbook: runbook.md
+  - Changelog: changelog.md    # auto-generated from commits
+plugins:
+  - techdocs-core              # Backstage integration
+```
+
+### Auto-Generated Changelog
+
+**Conventional Commits + changelog generation:**
+```yaml
+# .github/workflows/changelog.yml
+name: Generate Changelog
+on:
+  push:
+    tags: ['v*']
+jobs:
+  changelog:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: conventional-changelog/standard-version@v1
+        with:
+          release-count: 1
+      - run: git push --follow-tags
+```
+
+**Commit format (enforce via CI):**
+```
+feat: add order cancellation endpoint
+fix: prevent duplicate payment processing
+docs: update API reference for v2
+perf: optimize order query with composite index
+BREAKING CHANGE: remove deprecated /v1/orders/search endpoint
+```
+
+### Architecture Diagrams as Code
+
+**Use Mermaid or Structurizr in design docs:**
+
+```markdown
+## Architecture
+
+```mermaid
+graph LR
+  Client[Web Client] --> Gateway[API Gateway]
+  Gateway --> Orders[Orders Service]
+  Gateway --> Payments[Payments Service]
+  Orders --> DB[(PostgreSQL)]
+  Orders --> Queue[Redis Queue]
+  Queue --> Payments
+  Payments --> Stripe[Stripe API]
+```
+```
+
+**Structurizr DSL for full architecture:**
+```
+workspace {
+  model {
+    user = person "Customer"
+    orders = softwareSystem "Orders Service"
+    payments = softwareSystem "Payments Service"
+    user -> orders "Places orders"
+    orders -> payments "Processes payments"
+  }
+  views {
+    systemContext orders {
+      include *
+      autolayout lr
+    }
+  }
+}
+```
+
+### Documentation Pipeline Integration
+
+```
+PR opened
+  → CI checks: API spec valid, no broken links, diagram renders
+  → TechDocs preview deployed to ephemeral environment
+  → Reviewer validates docs alongside code
+
+PR merged
+  → TechDocs built and published to Backstage
+  → Changelog updated (if conventional commits used)
+  → Architecture diagrams re-rendered
+  → API docs regenerated from OpenAPI spec
+
+Release tagged
+  → Versioned docs snapshot created
+  → Changelog entry generated from commits
+  → Release notes published
+```
+
+## Metrics-Driven Development
+
+Source: Google SRE book — define SLIs before writing code.
+
+### SLI-First Development
+
+**Pattern: define what to measure before writing implementation.**
+
+```
+# In design doc (Step 2), before any code:
+
+## SLI Definitions
+| SLI              | Measurement                    | Target (SLO)     |
+|------------------|--------------------------------|-------------------|
+| Availability     | successful requests / total    | 99.9%             |
+| Latency (p99)    | request duration at 99th pct   | < 250ms           |
+| Correctness      | correct orders / total orders  | 99.99%            |
+| Freshness        | time from event to visibility  | < 5s              |
+
+## Instrumentation Plan
+- Add: http_request_duration_ms histogram in handler
+- Add: http_requests_total counter with status label
+- Add: order_processed_total counter with result label
+- Emit from day 1 of implementation, not after launch
+```
+
+### Instrumentation During Implementation
+
+**Every PR should include instrumentation alongside features:**
+
+```
+# Pattern: instrument in the same PR as the feature
+
+## PR checklist addition:
+- [ ] SLI metrics emitted (latency, error rate, throughput)
+- [ ] Structured logs with correlation IDs
+- [ ] Trace spans for new operations
+- [ ] Dashboard panels defined (or link to existing)
+- [ ] Alert thresholds set based on SLO
+```
+
+**OpenTelemetry instrumentation example:**
+```python
+from opentelemetry import metrics, trace
+
+meter = metrics.get_meter("orders-service")
+request_duration = meter.create_histogram(
+    "http_request_duration_ms",
+    description="Request duration in milliseconds",
+    unit="ms",
+)
+order_counter = meter.create_counter(
+    "orders_processed_total",
+    description="Total orders processed",
+)
+
+tracer = trace.get_tracer("orders-service")
+
+def handle_order(req):
+    with tracer.start_as_current_span("handle_order") as span:
+        span.set_attribute("order.customer_id", req.customer_id)
+        start = time.time()
+        try:
+            result = process_order(req)
+            order_counter.add(1, {"result": "success"})
+            return result
+        except Exception as e:
+            order_counter.add(1, {"result": "error"})
+            span.set_status(trace.Status(trace.StatusCode.ERROR, str(e)))
+            raise
+        finally:
+            duration = (time.time() - start) * 1000
+            request_duration.record(duration, {"method": "POST", "path": "/orders"})
+```
+
+### SLO-Based Alerting
+
+```yaml
+# Prometheus burn-rate alert (multi-window)
+groups:
+  - name: orders-slo
+    rules:
+      - alert: OrdersHighErrorBurnRate
+        expr: |
+          (
+            1 - (
+              sum(rate(http_requests_total{service="orders",status=~"2.."}[1h]))
+              /
+              sum(rate(http_requests_total{service="orders"}[1h]))
+            )
+          ) > (14.4 * 0.001)
+          and
+          (
+            1 - (
+              sum(rate(http_requests_total{service="orders",status=~"2.."}[5m]))
+              /
+              sum(rate(http_requests_total{service="orders"}[5m]))
+            )
+          ) > (14.4 * 0.001)
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Orders API error budget burning 14.4x faster than allowed"
+          runbook: "https://wiki/runbooks/orders-high-error-rate"
+```
+
+### Metrics Review in Retrospective
+
+```
+## Retrospective addition — metrics review:
+- Did we hit SLOs this sprint?
+- Which SLIs are we missing?
+- Are alerts actionable? (false positive rate)
+- Should we tighten or loosen any SLO?
+- What new instrumentation should we add next sprint?
+```
 
 ## Pitfalls
 
