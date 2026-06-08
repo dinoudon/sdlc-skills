@@ -1,13 +1,13 @@
 ---
 name: sdlc-retrospective
-description: "Retrospective formats: Start/Stop/Continue, 4Ls, Mad/Sad/Glad, Sailboat, Kaizen PDCA cycle, Toyota Kata (Mike Rother), blameless postmortems, incident deep-dive (Swiss cheese model), continuous improvement patterns. DORA metrics integration, DORA capability assessment, SPACE framework productivity metrics, Team Topologies awareness, team cognitive load measurement, Value Stream Mapping, flow metrics (lead time, cycle time, flow efficiency, WIP limits), anti-patterns, remote retro patterns, psychological safety measurement, action item tracking."
-version: 4.1.0
+description: "Retrospective formats: Start/Stop/Continue, 4Ls, Mad/Sad/Glad, Sailboat, Kaizen PDCA cycle, Toyota Kata (Mike Rother), blameless postmortems, incident deep-dive (Swiss cheese model), continuous improvement patterns. DORA metrics integration, DORA capability assessment, SPACE framework productivity metrics, Team Topologies awareness, team cognitive load measurement, Value Stream Mapping, flow metrics (lead time, cycle time, flow efficiency, WIP limits), anti-patterns, remote retro patterns, psychological safety measurement, action item tracking, green software retrospective, FinOps retrospective, platform engineering retrospective."
+version: 4.2.0
 author: Hermes Agent
 license: MIT
 platforms: [linux, macos, windows]
 metadata:
   hermes:
-    tags: [sdlc, retrospective, kaizen, continuous-improvement, postmortem, agile, dora-metrics, team-topologies, value-stream-mapping, psychological-safety, space-framework, toyota-kata, flow-metrics, cognitive-load, incident-deepdive, dora-capabilities]
+    tags: [sdlc, retrospective, kaizen, continuous-improvement, postmortem, agile, dora-metrics, team-topologies, value-stream-mapping, psychological-safety, space-framework, toyota-kata, flow-metrics, cognitive-load, incident-deepdive, dora-capabilities, green-software, finops, platform-engineering, sustainable-engineering, cloud-cost-optimization, developer-experience]
     related_skills: [sdlc-prd-to-production, sdlc-requirements-engineering]
 ---
 
@@ -2076,3 +2076,334 @@ Total Score: Sum of all 20 items (max 100)
 
 Source: https://qualitysafety.bmj.com/content/13/suppl_2/ii22
 DORA reference: https://dora.dev/capabilities/generative-organizational-culture/
+
+## Step 24: Green Software Retrospective
+
+Source: https://greensoftware.foundation/ | https://learn.greensoftware.foundation/
+
+Carbon-aware and energy-efficiency focused retro topics. Engineering for sustainability alongside delivery and reliability.
+
+### Carbon-Aware Retro Topics
+
+Questions to surface in "Gather Data" phase:
+
+| Topic | Data Source | Retro Question |
+|-------|-----------|---------------|
+| **Carbon intensity of deploys** | Cloud provider carbon APIs, Electricity Maps | "Are we deploying during high-carbon-intensity windows?" |
+| **Compute efficiency** | CPU/memory utilization metrics, instance right-sizing data | "Are we over-provisioned? What's our utilization target?" |
+| **Idle resource waste** | Cloud billing, resource scheduling tools | "What resources run 24/7 but only serve traffic 8 hours/day?" |
+| **Data transfer volume** | CDN logs, egress metrics | "Are we transferring unnecessary data across regions?" |
+| **Build pipeline energy** | CI/CD duration, runner utilization | "How much compute time do our pipelines consume? Can we optimize?" |
+
+### Energy Efficiency Review
+
+During retro "Generate Insights" phase, review:
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│  ENERGY EFFICIENCY REVIEW                                   │
+├─────────────────────────────────────────────────────────────┤
+│                                                             │
+│  1. RESOURCE UTILIZATION                                    │
+│     - Average CPU utilization (target: 60-80%)              │
+│     - Memory utilization (target: 70-85%)                   │
+│     - Storage: cold vs hot data segregation                 │
+│                                                             │
+│  2. ARCHITECTURE PATTERNS                                   │
+│     - Event-driven vs polling (reduce idle compute)         │
+│     - Caching hit rates (avoid recomputation)               │
+│     - Batch vs streaming (right-size for workload)          │
+│                                                             │
+│  3. CODE EFFICIENCY                                         │
+│     - Algorithm complexity hotspots                         │
+│     - N+1 queries, unnecessary database calls               │
+│     - Large dependency trees increasing build/compile time  │
+│                                                             │
+│  4. INFRASTRUCTURE CHOICES                                  │
+│     - ARM vs x86 instances (ARM: 30-40% more efficient)     │
+│     - Spot/preemptible for batch workloads                  │
+│     - Serverless vs always-on for bursty traffic            │
+│                                                             │
+└─────────────────────────────────────────────────────────────┘
+```
+
+### Sustainable Engineering Practices
+
+| Practice | Description | Retro Measurement |
+|----------|-------------|-------------------|
+| **Carbon-aware scheduling** | Defer non-urgent batch jobs to low-carbon grid hours | % of batch jobs scheduled in low-carbon windows |
+| **Efficient CI/CD** | Cache deps, parallelize, skip unchanged modules | Pipeline compute-minutes trend per sprint |
+| **Demand shaping** | Throttle/degrade gracefully to reduce peak resource needs | Peak-to-average resource ratio |
+| **Green coding standards** | Lint rules for wasteful patterns (e.g., polling loops) | Linter adoption rate, violation count trend |
+| **Measurement tooling** | Integrate carbon dashboards into dev workflow | % of PRs with carbon/energy impact estimate |
+
+### Green Retro Format
+
+| Column | Prompt |
+|--------|--------|
+| **🌿 Green Wins** | What reduced our carbon/energy footprint this sprint? |
+| **🔥 Hot Spots** | Where did we consume the most energy/carbon? |
+| **💡 Ideas** | What sustainable practice should we adopt next? |
+
+### Carbon Metrics Integration
+
+Add to DORA dashboard or retro data slide:
+
+| Metric | Source | Target Direction |
+|--------|--------|-----------------|
+| gCO2eq per deployment | Cloud carbon footprint tools | Decreasing |
+| Compute utilization % | Cloud monitoring | Increasing (60-80%) |
+| Idle resource hours | Cloud billing | Decreasing |
+| CI/CD compute-minutes | CI platform analytics | Decreasing |
+| Data egress (GB/month) | Cloud billing | Decreasing |
+
+Source: https://greensoftware.foundation/articles/the-green-software-foundation-impact-framework
+SCI specification: https://sci-guide.greensoftware.foundation/
+
+## Step 25: FinOps Retrospective
+
+Source: https://www.finops.org/framework/ | https://www.finops.org/what-is-finops/
+
+Cost trend review, right-sizing opportunities, waste elimination, cloud cost health check integrated into sprint retrospective.
+
+### Cost Trend Review
+
+During "Gather Data" phase, present cloud cost data:
+
+| Data Point | Source | What to Look For |
+|-----------|--------|-----------------|
+| **Sprint cost** | Cloud billing (tagged by service/team) | Trend vs previous sprints |
+| **Cost per deployment** | Cost / deployment count | Increasing = concern |
+| **Cost per user/request** | Cost / active users or requests | Efficiency metric |
+| **Anomalous spend** | Billing alerts, cost anomaly detection | Spikes, unexpected charges |
+| **Commitment utilization** | Reserved instances, savings plans, CUDs | < 80% = waste |
+
+### Right-Sizing Opportunities
+
+Review during retro "Generate Insights":
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│  RIGHT-SIZING REVIEW                                        │
+├─────────────────────────────────────────────────────────────┤
+│                                                             │
+│  1. COMPUTE                                                 │
+│     - Instances with < 30% avg CPU → downsize               │
+│     - Instances with < 40% avg memory → downsize            │
+│     - Oversized dev/staging environments                    │
+│                                                             │
+│  2. DATABASES                                               │
+│     - Over-provisioned read replicas                        │
+│     - Unused or underused database instances                │
+│     - Storage: provisioned vs actually used                 │
+│                                                             │
+│  3. STORAGE                                                 │
+│     - Unattached volumes (zombie storage)                   │
+│     - Old snapshots past retention                          │
+│     - Wrong storage tier (SSD for archival data)            │
+│                                                             │
+│  4. NETWORK                                                 │
+│     - Unused load balancers                                 │
+│     - Cross-AZ/region traffic that could be co-located      │
+│     - NAT gateway costs from inefficient routing            │
+│                                                             │
+└─────────────────────────────────────────────────────────────┘
+```
+
+### Waste Elimination Checklist
+
+| Waste Type | Detection Method | Typical Savings | Owner |
+|-----------|-----------------|----------------|-------|
+| **Zombie resources** | Cloud asset inventory, unused tag analysis | 5-15% | Platform team |
+| **Oversized instances** | Monitoring + billing comparison | 20-40% | Service team |
+| **Idle resources** | Utilization < 5% for 7+ days | 10-20% | Platform team |
+| **Expired commitments** | Savings plan/RI coverage reports | 5-10% | FinOps lead |
+| **Dev/staging after hours** | Scheduling or auto-shutdown | 30-60% of dev cost | DevOps |
+| **Duplicate services** | Service catalog audit | Varies | Architecture |
+| **Over-logging** | Log volume analysis, retention policy | 5-15% | Platform team |
+| **Test environment sprawl** | Environment inventory | 10-25% | DevOps |
+
+### Cloud Cost Health Check
+
+Scorecard for retro discussion:
+
+| Dimension | Question | Score 1-5 |
+|-----------|----------|-----------|
+| **Visibility** | Does every team see their own cloud spend in real time? | |
+| **Allocation** | Are 90%+ of resources tagged to team/service/env? | |
+| **Optimization** | Are right-sizing recommendations reviewed monthly? | |
+| **Governance** | Are there budget alerts at 50%, 80%, 100% thresholds? | |
+| **Accountability** | Is cost part of service ownership responsibilities? | |
+| **Forecasting** | Is there a rolling 3-month cost forecast? | |
+| **Unit economics** | Do we track cost per customer/transaction/feature? | |
+| **Commitment coverage** | Are savings plans/RI covering baseline compute? | |
+
+**Scoring:**
+- 32-40: Mature FinOps practice
+- 24-31: Developing — pick 1-2 areas to improve
+- < 24: Early — prioritize visibility and allocation first
+
+### FinOps Retro Format
+
+| Column | Prompt |
+|--------|--------|
+| **💰 Cost Wins** | Where did we reduce spend or improve efficiency? |
+| **💸 Cost Concerns** | Where did spend increase or surprise us? |
+| **📊 Actions** | What cost optimization will we commit to next sprint? |
+
+### Integrating FinOps into Retro Agenda
+
+| Retro Phase | FinOps Activity |
+|-------------|----------------|
+| Set the Stage | Share sprint cost summary (2 min) |
+| Gather Data | Display cost trends, anomalies, right-sizing report |
+| Generate Insights | Correlate cost changes with delivery events |
+| Decide What to Do | 1 cost action item per sprint (not every sprint) |
+| Close | Acknowledge cost wins |
+
+Source: https://www.finops.org/framework/
+FinOps Maturity Model: https://www.finops.org/writings/finops-maturity-model/
+
+## Step 26: Platform Engineering Retrospective
+
+Source: https://platformengineering.org/ | https://internaldeveloperplatform.org/
+
+Platform adoption metrics, developer satisfaction, self-service ratio, golden path compliance integrated into platform team retros.
+
+### Platform Adoption Metrics
+
+Track these in "Gather Data" phase:
+
+| Metric | Definition | Calculation | Target |
+|--------|-----------|-------------|--------|
+| **Platform adoption rate** | % of teams using platform services | Teams using platform / Total teams | > 80% |
+| **Service onboarding time** | Time from team request to running service | Median hours from request to deployed | < 1 hour |
+| **Self-service ratio** | % of tasks completed without platform team help | Self-service ops / Total ops | > 90% |
+| **Golden path compliance** | % of services using approved patterns | Compliant services / Total services | > 70% |
+| **Platform NPS** | Developer satisfaction with platform | Survey score (-100 to +100) | > 40 |
+| **API reliability** | Platform API uptime | Uptime % of platform control plane | > 99.9% |
+| **Documentation coverage** | % of platform features with docs | Documented features / Total features | > 95% |
+| **Time to first deploy** | New team member to first production deploy | Median hours | < 4 hours |
+
+### Developer Satisfaction Survey
+
+Run quarterly or bi-monthly, present results in retro:
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│  DEVELOPER SATISFACTION (Platform DX)                       │
+├─────────────────────────────────────────────────────────────┤
+│                                                             │
+│  Rate 1-5 (1=Strongly Disagree, 5=Strongly Agree):         │
+│                                                             │
+│  EASE OF USE                                                │
+│  □ Platform is easy to learn                                │
+│  □ Documentation answers my questions                       │
+│  □ I can self-serve most tasks                              │
+│  □ Error messages are clear and actionable                  │
+│                                                             │
+│  RELIABILITY                                                │
+│  □ Platform services are reliable (low downtime)            │
+│  □ API response times are acceptable                        │
+│  □ I trust the platform for production workloads            │
+│                                                             │
+│  PRODUCTIVITY                                               │
+│  □ Platform makes me more productive                        │
+│  □ I spend less time on infrastructure tasks                │
+│  □ Onboarding to the platform was fast                      │
+│  □ I can get help when I need it                            │
+│                                                             │
+│  AUTONOMY                                                   │
+│  □ I can make changes without waiting for platform team     │
+│  □ The platform supports my workflow, not the other way     │
+│  □ I understand what the platform does for me               │
+│                                                             │
+│  SCORE = avg(all items) × 20 → NPS-style (-100 to +100)    │
+│                                                             │
+└─────────────────────────────────────────────────────────────┘
+```
+
+### Self-Service Ratio Deep Dive
+
+Track what developers can do alone vs need platform team help:
+
+| Task | Self-Service? | Time (Self) | Time (Assisted) | Improvement Target |
+|------|--------------|-------------|-----------------|-------------------|
+| Create new service | ✅/❌ | min | hours | Automate |
+| Add environment variable | ✅/❌ | min | hours | Self-service |
+| Scale service up/down | ✅/❌ | min | hours | Self-service |
+| View service logs | ✅/❌ | min | min | Already fast |
+| Create database | ✅/❌ | min | days | Automate |
+| Set up CI/CD pipeline | ✅/❌ | min | days | Golden path |
+| Configure monitoring | ✅/❌ | min | hours | Template |
+| Manage secrets | ✅/❌ | min | hours | Self-service |
+| Provision infrastructure | ✅/❌ | min | days | IaC templates |
+| Rollback deployment | ✅/❌ | min | hours | Self-service |
+
+**Self-service ratio formula:**
+```
+Self-Service Ratio = (Tasks completed without ticket) / (Total tasks) × 100%
+Target: > 90%
+```
+
+### Golden Path Compliance
+
+Golden paths = recommended, well-supported ways to build and run services.
+
+| Golden Path Element | Compliance Check | Current % | Target % |
+|-------------------|-----------------|-----------|----------|
+| **Service template** | New services from approved template | | > 90% |
+| **CI/CD pipeline** | Using standard pipeline config | | > 85% |
+| **Observability stack** | Integrated with standard logging/metrics/tracing | | > 90% |
+| **Security baseline** | Meets minimum security checklist | | > 95% |
+| **API standards** | Following API design guidelines | | > 70% |
+| **Dependency management** | Using approved base images/dependencies | | > 80% |
+| **Infrastructure as Code** | All infra defined in version-controlled IaC | | > 90% |
+| **Testing standards** | Minimum test coverage thresholds | | > 75% |
+
+**Why track compliance:**
+- Low compliance → golden path not attractive enough (platform problem)
+- High compliance → golden path working (optimize and expand)
+- Non-compliance with good reason → golden path needs updating
+
+### Platform Retro Format
+
+| Column | Prompt |
+|--------|--------|
+| **🚀 Platform Wins** | What reduced cognitive load for developers this sprint? |
+| **🚧 Platform Pain** | What blocked developers or caused platform team toil? |
+| **🗺️ Platform Roadmap** | What should we build/improve next to increase adoption? |
+
+### Platform Engineering Retro Questions
+
+| Question | Category | Frequency |
+|----------|----------|-----------|
+| "What did developers have to ask us for that they shouldn't?" | Self-service gaps | Every retro |
+| "Which golden path is least adopted and why?" | Compliance | Monthly |
+| "What's our toil-to-feature ratio?" | Platform team health | Every retro |
+| "Did any platform change break developer workflows?" | Stability | Every retro |
+| "What new capability would unblock the most teams?" | Roadmap | Quarterly |
+| "Are we building what developers need or what we think they need?" | Alignment | Quarterly |
+
+### Platform Team Health
+
+| Metric | Definition | Healthy Range |
+|--------|-----------|---------------|
+| **Toil ratio** | Time on manual ops / total time | < 30% |
+| **Feature vs maintenance** | New capability work / total work | > 50% |
+| **Ticket volume trend** | Support tickets per sprint | Decreasing |
+| **Incident count** | Platform-caused incidents | < 2/sprint |
+| **Team cognitive load** | Subjective team health score | > 3.5/5 |
+
+### Integrating Platform Metrics into Retro Agenda
+
+| Retro Phase | Platform Activity |
+|-------------|------------------|
+| Set the Stage | Share adoption metrics summary (3 min) |
+| Gather Data | Developer satisfaction scores, self-service ratio, golden path compliance |
+| Generate Insights | Correlate adoption with developer feedback, identify friction points |
+| Decide What to Do | 1-2 platform improvements prioritized by developer impact |
+| Close | Acknowledge platform wins, preview roadmap items |
+
+Source: https://platformengineering.org/blog/what-is-platform-engineering
+Team Topologies platform team: https://teamtopologies.com/key-concepts-content/what-is-a-platform-team

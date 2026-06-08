@@ -1,19 +1,19 @@
 ---
 name: sdlc-requirements-engineering
-description: "Requirements: user story mapping (Jeff Patton), BDD/Gherkin (Cucumber, pytest-bdd), acceptance criteria (Given/When/Then), impact mapping (Gojko Adzic), example mapping, specification by example, JTBD framework, RICE scoring, WSJF prioritization, user story splitting, NFR patterns, requirements traceability, OKR alignment, design thinking, AI/ML requirements, STRIDE security, OWASP ASVS, WCAG 2.2 AA accessibility, event storming (Brandolini), domain storytelling (Hofer), platform team requirements, cost of delay (Reinertsen), requirements elicitation techniques, ATDD."
-version: 4.1.0
+description: "Requirements: user story mapping (Jeff Patton), BDD/Gherkin (Cucumber, pytest-bdd), acceptance criteria (Given/When/Then), impact mapping (Gojko Adzic), example mapping, specification by example (Gojko Adzic), JTBD framework, RICE scoring, WSJF prioritization, user story splitting, NFR patterns, requirements traceability, OKR alignment (Doerr), design thinking, Lean UX (Gothelf), design sprint (Knapp), dual-track agile (Cagan), AI/ML requirements, STRIDE security, OWASP ASVS, WCAG 2.2 AA accessibility, event storming (Brandolini), domain storytelling (Hofer), platform team requirements, cost of delay (Reinertsen), requirements elicitation techniques, ATDD."
+version: 4.2.0
 author: Hermes Agent
 license: MIT
 platforms: [linux, macos, windows]
 metadata:
   hermes:
-    tags: [sdlc, requirements, user-stories, bdd, gherkin, acceptance-criteria, impact-mapping, example-mapping, specification-by-example, jtbd, rice-scoring, wsjf, story-splitting, nfr, traceability, okr, design-thinking, ai-ml, stride, owasp-asvs, wcag-2.2, accessibility, event-storming, domain-storytelling, platform-teams, cost-of-delay, elicitation, atdd]
+    tags: [sdlc, requirements, user-stories, bdd, gherkin, acceptance-criteria, impact-mapping, example-mapping, specification-by-example, jtbd, rice-scoring, wsjf, story-splitting, nfr, traceability, okr, design-thinking, lean-ux, design-sprint, dual-track-agile, ai-ml, stride, owasp-asvs, wcag-2.2, accessibility, event-storming, domain-storytelling, platform-teams, cost-of-delay, elicitation, atdd]
     related_skills: [sdlc-architecture-design, sdlc-testing-qa, sdlc-prd-to-production]
 ---
 
 # Requirements Engineering
 
-User story mapping, BDD/Gherkin, acceptance criteria, impact mapping, example mapping, specification by example, JTBD, RICE scoring, WSJF, user story splitting, NFR patterns, requirements traceability, OKR alignment, design thinking, AI/ML requirements, STRIDE security, OWASP ASVS, WCAG 2.2 AA accessibility, event storming (Brandolini), domain storytelling (Hofer), platform team requirements, cost of delay analysis (Reinertsen), requirements elicitation techniques, ATDD.
+User story mapping, BDD/Gherkin, acceptance criteria, impact mapping, example mapping, specification by example, JTBD, RICE scoring, WSJF, user story splitting, NFR patterns, requirements traceability, OKR alignment, design thinking, Lean UX, design sprint, dual-track agile, AI/ML requirements, STRIDE security, OWASP ASVS, WCAG 2.2 AA accessibility, event storming (Brandolini), domain storytelling (Hofer), platform team requirements, cost of delay analysis (Reinertsen), requirements elicitation techniques, ATDD.
 
 ## When to Use
 
@@ -39,6 +39,12 @@ Trigger when user:
 - Analyzes cost of delay using CD3 or WSJF prioritization
 - Conducts requirements elicitation (interviews, surveys, observation, prototyping, brainstorming)
 - Sets up ATDD (acceptance test-driven development) workflows
+- Runs design sprint workshops (5-day: Understand/Diverge/Decide/Prototype/Validate)
+- Applies Lean UX hypothesis-driven design (Think/Make/Check loop, assumptions mapping)
+- Uses dual-track agile (discovery validates before delivery builds)
+- Aligns requirements to OKRs and traces KRs to user stories
+- Scopes via impact mapping (Goal→Actor→Impact→Deliverable, cutting deliverables)
+- Formalizes specification by example (6 practices, BDD at scale, living documentation)
 
 ## Step 1: User Story Mapping
 
@@ -1831,6 +1837,759 @@ ATDD + BDD COMBINED WORKFLOW
 7. **Don't skip the demo** — stakeholder feedback catches missed requirements
 8. **Don't treat test code as second-class** — refactor test code too
 
+## Step 19: Impact Mapping (Gojko Adzic)
+
+Source: Gojko Adzic, "Impact Mapping" (2012), https://www.impactmapping.org/
+
+4-level mind map connecting business goals to deliverables. Scoping tool: cut deliverables that don't serve the goal.
+
+### 4 Levels
+```
+IMPACT MAP STRUCTURE
+====================
+
+Level 1: GOAL (WHY are we doing this?)
+  - Measurable business objective
+  - Time-bound
+  - Example: "Increase trial-to-paid conversion from 12% to 25% by Q3"
+
+Level 2: ACTORS (WHO can help/hinder the goal?)
+  - Primary: direct users
+  - Secondary: indirect stakeholders (admins, support, partners)
+  - Example: "Trial user", "Account manager", "Support agent"
+
+Level 3: IMPACTS (HOW should actors' behavior change?)
+  - Behavior changes that achieve the goal
+  - NOT deliverables — think "user does X" not "we build Y"
+  - Example: "Trial user explores 3+ features in first session"
+
+Level 4: DELIVERABLES (WHAT can we build/do to cause impacts?)
+  - Features, campaigns, process changes
+  - Multiple deliverables per impact (brainstorm)
+  - Example: "Interactive product tour", "Feature recommendation email"
+```
+
+### Scoping by Cutting Deliverables
+```
+SCOPING PROCESS
+===============
+
+Step 1: Map all 4 levels (diverge — brainstorm everything)
+Step 2: For each deliverable ask: "Does this DIRECTLY cause the impact?"
+Step 3: Cut deliverables where impact is uncertain or indirect
+Step 4: For remaining deliverables ask: "Is there a simpler way to cause this impact?"
+Step 5: Prioritize remaining deliverables by effort vs impact certainty
+
+CUTTING EXAMPLE:
+  GOAL: Reduce support tickets by 40%
+  ├── ACTOR: End user
+  │   ├── IMPACT: Solves common issues without contacting support
+  │   │   ├── DELIVERABLE: In-app help center ← KEEP (direct)
+  │   │   ├── DELIVERABLE: AI chatbot ← CUT (high effort, uncertain impact)
+  │   │   └── DELIVERABLE: Video tutorials ← KEEP (low effort, direct)
+  │   └── IMPACT: Avoids errors that cause tickets
+  │       ├── DELIVERABLE: Input validation ← KEEP (direct)
+  │       └── DELIVERABLE: Complete UI redesign ← CUT (scope creep)
+  │
+  └── ACTOR: Support agent
+      └── IMPACT: Resolves tickets faster
+          ├── DELIVERABLE: Canned responses ← KEEP (direct)
+          └── DELIVERABLE: AI-powered ticket routing ← CUT (defer to Phase 2)
+```
+
+### Impact Map Anti-Patterns
+1. **Too many goals** — one map = one goal; multiple goals = multiple maps
+2. **Vague goals** — "improve UX" is not measurable; "reduce task completion time from 5min to 2min" is
+3. **Missing actors** — forgetting internal actors (ops, support, compliance)
+4. **Impacts as deliverables** — "build feature X" is not an impact; "user completes task Y" is
+5. **No cutting** — the map becomes a wishlist, not a scoping tool
+6. **Building full map alone** — collaborative with business + tech + UX
+
+### Integration with User Story Mapping
+Impact map deliverables → Story map backbone tasks → User stories in backlog
+Each deliverable from impact map maps to one or more user activities on story map.
+
+## Step 20: Specification by Example
+
+Source: Gojko Adzic, "Specification by Example" (2011), https://specificationbyexample.com/
+
+6 key practices for executable specifications. Living documentation that stays in sync with code.
+
+### 6 Key Practices
+```
+PRACTICE 1: DERIVING SCOPE FROM GOALS
+  Start from business goals, not features
+  Impact map → Example mapping → Spec
+  Example: Goal "reduce returns" → Spec "Size recommendation accuracy"
+
+PRACTICE 2: SPECIFYING COLLABORATIVELY
+  Three Amigos: BA + Dev + Tester
+  Example mapping (25 min) before writing specs
+  Shared ownership — not BA throws docs over wall
+
+PRACTICE 3: ILLUSTRATING WITH EXAMPLES
+  Concrete examples > abstract rules
+  "Valid email" → "user@example.com ✓", "user@ ✗"
+  Examples are the specification, not illustrations of it
+
+PRACTICE 4: EXTRACTING SPECIFICATION
+  From examples, extract rules (business logic)
+  Group examples by rule
+  Identify gaps: "What about edge case X?"
+
+PRACTICE 5: IMPLEMENTING SPECIFICATION
+  Convert examples to executable tests (Gherkin)
+  Automation layer: step definitions drive system
+  Tests ARE the specification
+
+PRACTICE 6: VALIDATING FREQUENTLY
+  Run specs as regression suite
+  Failing spec = requirement change detected
+  Specs always reflect current behavior
+```
+
+### BDD at Scale
+```
+SCALING PATTERN
+===============
+
+Level 1: Feature Files (per capability)
+  features/
+    checkout/
+      discount.feature
+      shipping.feature
+    account/
+      registration.feature
+      profile.feature
+
+Level 2: Step Definitions (reusable)
+  steps/
+    common.py      # shared steps: "Given user is logged in"
+    checkout.py    # domain-specific steps
+    account.py
+
+Level 3: Domain-Specific Language (DSL)
+  Page objects, API clients, test helpers
+  Abstraction layer: specs speak business, DSL speaks system
+
+Level 4: Living Documentation (auto-generated)
+  Tools: Pickles, Relish, SpecFlow LivingDoc
+  Publish spec status: green = all pass, red = regression
+  Non-technical stakeholders read living docs, not code
+```
+
+### Living Documentation
+```
+LIVING DOCUMENTATION PIPELINE
+=============================
+
+  Source Code (Gherkin .feature files)
+      │
+      ▼
+  CI/CD Pipeline (run all specs)
+      │
+      ├── PASS → Generate HTML report
+      │           │
+      │           ▼
+      │     Publish to docs portal
+      │     (auto-updated on every commit)
+      │
+      └── FAIL → Alert team
+                  │
+                  ▼
+            Spec = living regression test
+            Failure = requirement change detected
+
+BENEFITS:
+  - Specs always current (failing tests break build)
+  - Single source of truth (code IS the spec)
+  - Non-technical stakeholders can verify behavior
+  - Onboarding: read specs to understand system
+```
+
+### Specification by Example Anti-Patterns
+1. **Specs written by one person** — collaborative or they're just tests, not specs
+2. **Specs too detailed** — one scenario = one behavior, not end-to-end workflow
+3. **Specs too abstract** — "system handles errors properly" is not a spec
+4. **Specs not automated** — manual specs rot; automate or they become fiction
+5. **Specs as documentation afterthought** — write specs FIRST, code second
+6. **Specs not maintained** — red specs must be triaged: bug or requirement change?
+7. **Ignoring gaps** — example mapping should surface "we don't know X" as questions
+8. **Coupling specs to implementation** — specs should survive code refactoring
+
+## Step 21: Lean UX
+
+Source: Jeff Gothelf & Josh Seiden, "Lean UX" (2nd ed., 2016)
+
+Hypothesis-driven design. Replace deliverable-based requirements with testable assumptions.
+
+### Hypothesis Format
+```
+LEAN UX HYPOTHESIS
+==================
+
+WE BELIEVE THAT [building this feature / making this change]
+FOR [these users/personas]
+WILL RESULT IN [this outcome / behavior change]
+WE WILL KNOW WE ARE RIGHT WHEN [this measurable signal]
+
+EXAMPLE:
+  We believe that adding social proof (purchase notifications)
+  for new visitors
+  will result in a 15% increase in first-purchase conversion
+  we will know we are right when conversion rate >= 15% (currently 0%)
+  AND average order value does not decrease
+
+ASSUMPTIONS BREAKDOWN:
+  Desirability: Do users want this?
+  Feasibility: Can we build this?
+  Viability: Should we build this (business value)?
+  Usability: Can users figure this out?
+```
+
+### Think → Make → Check Loop
+```
+LEAN UX CYCLE
+=============
+
+THINK (Hypothesize)
+  ├── Identify assumptions (what do we believe?)
+  ├── Rank by risk (what could kill us if wrong?)
+  ├── Convert to hypotheses (testable statements)
+  └── Define success metrics (how will we know?)
+      │
+      ▼
+MAKE (Build Experiment)
+  ├── Choose MVP type (see below)
+  ├── Build minimum to test hypothesis
+  ├── Define experiment parameters (sample size, duration)
+  └── Set up measurement (analytics, heatmaps, surveys)
+      │
+      ▼
+CHECK (Learn)
+  ├── Run experiment
+  ├── Measure results against success criteria
+  ├── Decide: pivot, persevere, or kill
+  └── Document learning, update assumptions map
+      │
+      ▼
+  (Back to THINK with updated knowledge)
+```
+
+### Assumptions Mapping
+```
+ASSUMPTION MAP (2x2 Matrix)
+============================
+
+          HIGH RISK
+              │
+  ┌───────────┼───────────┐
+  │  RISKY    │   MOST    │
+  │  (test    │   RISKY   │
+  │  first)   │  (test    │
+  │           │  ASAP)    │
+  ├───────────┼───────────┤
+  │  SAFE     │  RISKY    │
+  │  (assume  │  (test    │
+  │  for now) │  if time) │
+  └───────────┼───────────┘
+              │
+         LOW RISK
+    LOW CERTAINTY    HIGH CERTAINTY
+
+PROCESS:
+  1. List all assumptions (brainstorm with team)
+  2. Rate each: risk (impact if wrong) x certainty (how sure are we?)
+  3. Plot on 2x2 matrix
+  4. Test top-right quadrant first (high risk, low certainty)
+  5. Bottom-left quadrant: assume true until evidence suggests otherwise
+```
+
+### MVP Types for Experiments
+```
+MVP TYPES (ordered by effort)
+==============================
+
+1. LANDING PAGE MVP
+   - Single page describing the feature
+   - Measure: sign-up rate, click-through
+   - Effort: 1-2 days
+   - Tests: desirability
+
+2. WIZARD OF OZ MVP
+   - Looks automated, actually manual behind the scenes
+   - Measure: usage patterns, willingness to pay
+   - Effort: 1 week
+   - Tests: usability + desirability
+
+3. CONCIERGE MVP
+   - Manual service replacing automated feature
+   - Measure: value delivered, user satisfaction
+   - Effort: 1-2 weeks
+   - Tests: viability + desirability
+
+4. PIECE OF FAKEWORK (Fake Door)
+   - Button/link that doesn't exist yet, measure clicks
+   - Measure: click-through rate on non-existent feature
+   - Effort: hours
+   - Tests: desirability (demand signal)
+
+5. SINGLE-FEATURE MVP
+   - Minimal working feature
+   - Measure: adoption, retention, satisfaction
+   - Effort: 2-4 weeks
+   - Tests: all four (desirability, feasibility, usability, viability)
+
+6. EMAIL MVP
+   - Manual email workflow simulating automated process
+   - Measure: response rate, conversion
+   - Effort: days
+   - Tests: desirability + viability
+
+CHOOSING:
+  If testing demand → Landing Page or Fake Door
+  If testing usability → Wizard of Oz or Concierge
+  If testing viability → Concierge or Email
+  If testing feasibility → Single-Feature MVP
+```
+
+### Lean UX Anti-Patterns
+1. **Building before testing** — MVP first, full feature second
+2. **No success criteria** — "we'll see how it goes" is not a hypothesis
+3. **Testing everything** — use assumptions map to prioritize
+4. **No experiment discipline** — define sample size and duration upfront
+5. **Ignoring negative results** — learning what doesn't work IS progress
+6. **Premature optimization** — don't optimize until hypothesis validated
+
+## Step 22: Design Sprint
+
+Source: Jake Knapp, "Sprint" (2016), https://designsprintkit.withgoogle.com/
+
+5-day process to answer critical business questions through design, prototyping, and testing with users.
+
+### 5-Day Process
+```
+DESIGN SPRINT SCHEDULE
+======================
+
+DAY 1: UNDERSTAND (Map the problem)
+  Morning:
+    - Lightning Talks (experts present context, 10-15 min each)
+    - How Might We notes (on every insight)
+    - Map: user journey on whiteboard (start → end)
+  Afternoon:
+    - Target selection: which part of map to sprint on?
+    - Define sprint questions: "What do we need to learn?"
+    - Long-term goal: "6 months from now, what does success look like?"
+  Output: Sprint map, target, sprint questions, long-term goal
+
+DAY 2: DIVERSE (Sketch competing solutions)
+  Morning:
+    - Lightning Demos (3-min demos of existing solutions, 10-15 min research)
+    - Note-taking: "What's interesting? Steal-worthy?"
+  Afternoon:
+    - Four-Step Sketch (individual, silent):
+      1. Notes (20 min): gather key information
+      2. Ideas (20 min): rough, rough, rough ideas
+      3. Crazy 8s (8 min): 8 variations of best idea, 1 min each
+      4. Solution Sketch (30-90 min): detailed 3-panel storyboard
+    - All sketches anonymous (quality ideas, not politics)
+  Output: Solution sketches (one per participant)
+
+DAY 3: DECIDE (Choose the best solution)
+  Morning:
+    - Art Museum: post all solution sketches on wall
+    - Heat Map: everyone places dot stickers on interesting parts
+    - Speed Critique (3 min per sketch):
+      1. Narrator describes sketch
+      2. Team calls out standout ideas
+      3. Creator explains missed points
+      4. Scribe captures key ideas
+    - Straw Poll: each person votes for one solution
+    - Super Vote: Decider picks final direction
+  Afternoon:
+    - Storyboard: 10-15 frames showing user's journey through solution
+    - Detail: what user sees, does, and experiences
+  Output: Storyboard (ready for prototyping)
+
+DAY 4: PROTOTYPE (Build just enough to test)
+  Morning:
+    - Assign roles: Makers (build), Stitcher (assembles), Writer (copy), Asset Collector (images/data)
+    - Choose tools: Figma, Keynote, HTML/CSS, slides, paper
+  All Day:
+    - Build prototype (ONE DAY, not a real product)
+    - Trick: look real, not functional
+    - Stitcher assembles pieces into coherent experience
+  Afternoon:
+    - Trial Run: team walks through prototype
+    - Fix obvious issues, note edge cases
+  Output: Clickable/interactive prototype
+
+DAY 5: VALIDATE (Test with real users)
+  Morning:
+    - 5 user interviews (60 min each, back-to-back)
+    - Interview script:
+      1. Friendly conversation (5 min)
+      2. Context questions (10 min)
+      3. Introduction to prototype (5 min)
+      4. Detailed tasks (25 min)
+      5. Quick questions (5 min)
+    - Team observes via live video stream
+  Afternoon:
+    - Notes review: what patterns emerged?
+    - Categorize: positive, negative, neutral per user
+    - Identify patterns (3/5 users did X → pattern)
+    - Decide: persevere, pivot, or kill
+  Output: User feedback, decision (go/no-go/pivot)
+```
+
+### Crazy 8s (Detailed)
+```
+CRAZY 8S FORMAT
+===============
+
+Setup:
+  - Fold paper into 8 panels
+  - Set timer: 1 minute per panel (8 minutes total)
+  - Start with your best idea from Notes/Ideas phase
+
+Rules:
+  1. One minute per panel — no exceptions
+  2. Push for variation: try the opposite, try a different UI, try a different user flow
+  3. Ugly is fine — speed matters, not polish
+  4. If stuck: sketch the same idea from different user's perspective
+  5. Quantity over quality — force divergent thinking
+
+Common mistakes:
+  - Spending too long on first panel
+  - Drawing same solution 8 times (not variation)
+  - Policking instead of sketching
+  - Judging ideas during sketching
+
+After Crazy 8s:
+  - Review all 8 panels
+  - Combine best elements into Solution Sketch (3-panel storyboard)
+```
+
+### Design Sprint Rules
+1. **No devices during sprint activities** — laptops/phones closed
+2. **Timebox everything** — strict timekeeper role
+3. **One conversation at a time** — facilitator enforces
+4. **Everyone sketches** — no spectators, even CEO
+5. **Anonymous sketches** — ideas compete on merit, not politics
+6. **Decider decides** — one person has final vote (usually product lead or exec)
+7. **Test with 5 users** — enough to find patterns, not statistical significance
+8. **Prototype in one day** — if it takes longer, scope down
+
+### Design Sprint Anti-Patterns
+1. **Skipping Day 1** — understanding problem wastes Day 3-4 building wrong thing
+2. **Consensus voting** — Super Vote, not committee consensus
+3. **Building real product** — prototype is for learning, not shipping
+4. **Testing with team members** — real users only
+5. **No follow-up** — sprint result needs next steps (MVP, further sprints, kill)
+
+## Step 23: Dual-Track Agile
+
+Source: Marty Cagan, "Inspired" (2nd ed., 2017); Jeff Patton, "Dual Track Development"
+
+Discovery track validates what to build. Delivery track builds validated items. Both run in parallel.
+
+### Discovery vs Delivery Tracks
+```
+DUAL-TRACK WORKFLOW
+===================
+
+DISCOVERY TRACK (1-2 sprints ahead)
+  Purpose: Validate ideas BEFORE committing to build
+  Activities:
+    - User interviews
+    - Prototype testing
+    - Assumption validation
+    - Feasibility spikes
+    - Opportunity assessment
+  Output: Validated backlog items (ready for delivery)
+
+DELIVERY TRACK (builds validated items)
+  Purpose: Build, test, ship validated solutions
+  Activities:
+    - Sprint planning (from validated backlog)
+    - Development
+    - Testing (ATDD/BDD)
+    - Deployment
+  Output: Shipped features
+
+FLOW:
+  Discovery: [Idea] → [Prototype] → [Test] → [Validated] → to Delivery backlog
+  Delivery:  [Sprint Planning] → [Build] → [Test] → [Ship]
+
+  DISCOVERY                          DELIVERY
+  ┌─────────────────────┐           ┌─────────────────────┐
+  │ Interview users     │           │ Sprint 10           │
+  │ Prototype solution A│           │ Build feature X     │
+  │ Test with 5 users   │           │ (validated in Sprint│
+  │ → VALIDATED         │──────────▶│  8 discovery)       │
+  │                     │           │                     │
+  │ Prototype solution B│           │ Sprint 11           │
+  │ Test with 5 users   │           │ Build feature Y     │
+  │ → INVALIDATED (kill)│           │ (validated in Sprint│
+  │                     │           │  9 discovery)       │
+  └─────────────────────┘           └─────────────────────┘
+```
+
+### Validation Methods (4 Lenses)
+```
+VALIDATION MATRIX
+=================
+
+1. VALUE VALIDATION (Do users want this?)
+   Methods:
+   - User interviews (qualitative)
+   - Fake door MVP (demand signal)
+   - Landing page conversion rate
+   - Prototype testing (preference, willingness)
+   Signal: Users try to use it, ask for it, or pay for it
+
+2. USABILITY VALIDATION (Can users use this?)
+   Methods:
+   - Usability testing (task completion rate)
+   - A/B test UI variations
+   - Heatmap analysis
+   - Cognitive walkthrough
+   Signal: Users complete tasks without help, low error rate
+
+3. FEASIBILITY VALIDATION (Can we build this?)
+   Methods:
+   - Technical spikes (timeboxed proof-of-concept)
+   - API/dependency analysis
+   - Performance modeling
+   - Architecture review
+   Signal: Prototype works within constraints (time, cost, tech)
+
+4. VIABILITY VALIDATION (Should we build this for business?)
+   Methods:
+   - Business model canvas review
+   - Legal/compliance check
+   - Cost-benefit analysis
+   - Stakeholder alignment
+   Signal: Revenue/cost model works, no blockers from legal/compliance
+
+ALL FOUR MUST PASS:
+  Value ✓ + Usability ✓ + Feasibility ✓ + Viability ✓ = Ready for Delivery
+  Any fail → iterate in Discovery or kill idea
+```
+
+### Dual-Track Anti-Patterns
+1. **Discovery as research-only** — must produce validated backlog items, not just reports
+2. **No handoff** — discovery findings must reach delivery team, not sit in wiki
+3. **Same team, no split** — some overlap OK, but dedicated discovery members help
+4. **Discovery sprint = delivery sprint** — discovery should be 1-2 sprints ahead
+5. **Skipping validation** — "we know what users want" is assumption, not validation
+6. **Testing only value** — all four lenses required (value, usability, feasibility, viability)
+
+## Step 24: OKR Alignment
+
+Source: John Doerr, "Measure What Matters" (2018); Christina Wodtke, "Radical Focus" (2016)
+
+Connect requirements to measurable business outcomes via Objectives and Key Results.
+
+### OKR Structure
+```
+OKR ANATOMY
+===========
+
+OBJECTIVE (What do we want to achieve?)
+  - Qualitative, inspiring, time-bound
+  - Answers: "Where do we want to go?"
+  - Example: "Become the fastest checkout in e-commerce"
+  - NOT a feature, NOT a metric
+
+KEY RESULTS (How do we measure progress?)
+  - Quantitative, measurable, outcome-based
+  - Answers: "How do we know we got there?"
+  - 2-5 KRs per Objective
+  - Each KR = metric + target + timeframe
+  - Example: "Reduce checkout time from 45s to 15s by Q3"
+
+INITIATIVES (What will we do to achieve KRs?)
+  - Projects, features, experiments
+  - Answers: "What will we try?"
+  - Multiple initiatives per KR
+  - Example: "One-click checkout feature", "Auto-fill address"
+```
+
+### Engineering Examples
+```
+OKR EXAMPLES FOR ENGINEERING
+=============================
+
+OBJECTIVE 1: Achieve world-class platform reliability
+  KR1: Uptime from 99.5% to 99.95% (measured monthly)
+  KR2: P95 latency from 800ms to 200ms for core APIs
+  KR3: Mean time to recovery (MTTR) from 4h to 30min
+  Initiatives:
+    - Implement circuit breakers on all external calls
+    - Add distributed tracing (Jaeger/Zipkin)
+    - Build automated rollback on deployment failure
+
+OBJECTIVE 2: Eliminate security as a blocker for enterprise sales
+  KR1: Complete SOC 2 Type II audit by Q2
+  KR2: Reduce critical vulnerabilities from 12 to 0
+  KR3: Achieve 100% OWASP ASVS L2 compliance for auth module
+  Initiatives:
+    - Implement SAST/DAST in CI/CD pipeline
+    - Migrate to OAuth 2.0 + PKCE for all auth flows
+    - Encrypt PII at rest with customer-managed keys
+
+OBJECTIVE 3: Make data-driven product decisions
+  KR1: 100% of features ship with analytics instrumentation
+  KR2: A/B test coverage from 5% to 40% of user-facing features
+  KR3: Time to insight from 2 weeks to 2 hours (self-serve analytics)
+  Initiatives:
+    - Build event tracking SDK (auto-capture user actions)
+    - Implement feature flag framework (LaunchDarkly/Unleash)
+    - Create self-serve analytics dashboard (Metabase/Superset)
+```
+
+### Alignment Cascade
+```
+OKR ALIGNMENT CASCADE
+=====================
+
+COMPANY OKR
+  Objective: "Become market leader in [category]"
+  KR1: Revenue from $10M to $50M
+  KR2: Active users from 100K to 500K
+      │
+      ▼
+PRODUCT OKR
+  Objective: "Deliver best-in-class onboarding experience"
+  KR1: Trial-to-paid conversion from 12% to 30%
+  KR2: Time to value from 7 days to 1 day
+      │
+      ▼
+ENGINEERING OKR
+  Objective: "Eliminate onboarding friction"
+  KR1: Onboarding completion rate from 45% to 85%
+  KR2: Setup time from 30min to 5min
+      │
+      ▼
+TEAM OKR
+  Objective: "One-click project setup"
+  KR1: First project created in < 2 minutes
+  KR2: Zero configuration errors in setup flow
+
+CASCADE RULES:
+  - Each level's KRs contribute to parent's KR
+  - Alignment is bottom-up AND top-down (not just top-down mandate)
+  - Teams set their own initiatives to achieve KRs
+  - No more than 3-5 objectives per level
+```
+
+### Common OKR Mistakes
+```
+OKR ANTI-PATTERNS
+=================
+
+1. OBJECTIVE AS TASK LIST
+   Wrong: "Implement feature X, Y, Z"
+   Right: "Become the preferred choice for [user segment]"
+   Fix: Objectives are outcomes, not outputs
+
+2. KEY RESULT AS TASK
+   Wrong: "Launch new pricing page"
+   Right: "Increase conversion rate from 2% to 5%"
+   Fix: KRs measure outcomes, not completion
+
+3. TOO MANY OKRs
+   Wrong: 7 objectives, 35 key results
+   Right: 3 objectives, 9-12 key results
+   Fix: Focus; if everything is priority, nothing is
+
+4. SET-AND-FORGET
+   Wrong: Set in Q1, review in Q4
+   Right: Weekly check-ins, monthly reviews, quarterly resets
+   Fix: OKRs need active management
+
+5. SAND-BAGGING
+   Wrong: Set easy targets to guarantee 100% completion
+   Right: Set ambitious targets; 70% completion = success
+   Fix: OKRs should be stretch goals, not forecasts
+
+6. CONFUSING OUTPUT WITH OUTCOME
+   Wrong: "Ship 10 features" (output)
+   Right: "Increase user retention from 40% to 60%" (outcome)
+   Fix: Measure impact, not activity
+
+7. NO FEEDBACK LOOP
+   Wrong: OKRs don't influence backlog prioritization
+   Right: Every sprint goal connects to at least one KR
+   Fix: OKRs drive prioritization decisions
+```
+
+### KR vs Tasks: Clear Distinction
+```
+KEY RESULTS vs TASKS
+====================
+
+KEY RESULT:
+  - Measures OUTCOME (what changed in the world)
+  - Specific metric + target + timeframe
+  - Answer: "Did we achieve the outcome?"
+  - Example: "Reduce checkout abandonment from 68% to 45%"
+  - Proof: dashboard showing metric change
+
+TASK:
+  - Describes OUTPUT (what we built/did)
+  - Specific action or deliverable
+  - Answer: "Did we do the work?"
+  - Example: "Implement guest checkout feature"
+  - Proof: feature shipped, PR merged
+
+RELATIONSHIP:
+  Tasks are INITIATIVES toward KRs
+  One KR may require many tasks
+  Tasks without KRs = busywork
+  KRs without tasks = wishful thinking
+
+EXAMPLE MAPPING:
+  KR: "Reduce checkout abandonment from 68% to 45%"
+  ├── Task 1: Implement guest checkout
+  ├── Task 2: Add auto-fill address
+  ├── Task 3: Show total before payment step
+  ├── Task 4: Remove unnecessary form fields
+  └── Task 5: Add progress indicator
+
+  If all tasks done but abandonment still 60%:
+    → Tasks complete, KR not achieved
+    → Need different approach (re-think, re-discover)
+```
+
+### OKR Integration with Requirements Engineering
+```
+OKR → REQUIREMENTS FLOW
+========================
+
+OKR Objective
+    │
+    ▼
+Key Results (measurable outcomes)
+    │
+    ├── Impact Map (KR = Goal in impact map)
+    │       │
+    │       ▼
+    │   Actors → Impacts → Deliverables
+    │
+    ├── User Stories (each deliverable = stories)
+    │       │
+    │       ▼
+    │   Acceptance Criteria (Given/When/Then)
+    │
+    └── Traceability Matrix
+            │
+            ▼
+        Each story traces: Story → KR → Objective
+```
+
 ## How These Practices Connect
 
 ### Design Thinking → OKR Alignment → Impact Mapping
@@ -1949,7 +2708,13 @@ GHERKIN FOR AI/ML:
 Design Thinking (empathize + define)
     │
     ▼
+Lean UX (hypothesize, test assumptions)
+    │
+    ▼
 JTBD (discover needs)
+    │
+    ▼
+Design Sprint (Understand/Diverge/Decide/Prototype/Validate)
     │
     ▼
 Requirements Elicitation (interviews, surveys, observation, prototyping, brainstorming)
@@ -1976,6 +2741,9 @@ User Story Mapping (release planning)
 User Story Splitting (sprint-sized)
     │
     ▼
+Dual-Track Agile (Discovery validates → Delivery builds)
+    │
+    ▼
 Example Mapping (story refinement)
     │
     ▼
@@ -1998,6 +2766,9 @@ Requirements Traceability Matrix (audit)
     │
     ▼
 AI/ML Requirements (data, metrics, bias) - if applicable
+    │
+    ▼
+OKR Feedback Loop (KR results → next cycle objectives)
 ```
 
 ## Pitfalls
@@ -2027,3 +2798,9 @@ AI/ML Requirements (data, metrics, bias) - if applicable
 23. **Don't prioritize by gut feel alone** — CD3 and WSJF make cost of delay explicit and comparable
 24. **Don't rely on single elicitation technique** — combine interviews, surveys, observation, prototyping, brainstorming
 25. **Don't write acceptance tests after code** — ATDD with Three Amigos catches requirement gaps before implementation
+26. **Don't skip scoping in impact maps** — cutting deliverables is the whole point; maps without cuts are wishlists
+27. **Don't write specs alone** — specification by example requires collaborative Three Amigos, not solo documentation
+28. **Don't skip Lean UX experiments** — build-measure-learn replaces opinion-driven feature decisions with evidence
+29. **Don't prototype for a week in design sprints** — prototype in ONE DAY, test with 5 users on day 5
+30. **Don't skip discovery track** — dual-track means validating BEFORE building, not after shipping
+31. **Don't confuse KRs with tasks** — key results measure outcomes (metric changed), tasks measure outputs (work done)

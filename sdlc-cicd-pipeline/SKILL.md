@@ -1,13 +1,13 @@
 ---
 name: sdlc-cicd-pipeline
-description: "CI/CD pipeline design with GitHub Actions and GitLab CI. Docker multi-stage builds, caching, matrix builds, test sharding, security scanning, GitOps, DORA metrics, trunk-based development, anti-patterns. SLSA L3 supply chain, SBOM generation, Green CI/CD, AI in pipelines, GitHub Actions hardening. Serverless CI/CD (SAM/CDK/Serverless Framework), preview environments, multi-platform builds, advanced dependency caching. Pipeline security hardening, build reproducibility, pipeline observability, monorepo CI patterns, pipeline cost optimization."
-version: 4.1.0
+description: "CI/CD pipeline design with GitHub Actions and GitLab CI. Docker multi-stage builds, caching, matrix builds, test sharding, security scanning, GitOps, DORA metrics, trunk-based development, anti-patterns. SLSA L3 supply chain, SBOM generation, Green CI/CD, AI in pipelines, GitHub Actions hardening. Serverless CI/CD (SAM/CDK/Serverless Framework), preview environments, multi-platform builds, advanced dependency caching. Pipeline security hardening, build reproducibility, pipeline observability, monorepo CI patterns, pipeline cost optimization. FinOps for CI/CD, Green CI/CD (SCI), pipeline governance."
+version: 4.2.0
 author: Hermes Agent
 license: MIT
 platforms: [linux, macos, windows]
 metadata:
   hermes:
-    tags: [sdlc, ci-cd, github-actions, gitlab-ci, docker, devops, pipeline, gitops, dora, accelerate, trunk-based, slsa, sbom, supply-chain, green-ci, security-hardening, serverless, preview-environments, multi-platform, ai-cicd, oidc, secrets-rotation, audit-logging, reproducible-builds, hermetic-builds, build-provenance, build-observability, monorepo-ci, cost-optimization]
+    tags: [sdlc, ci-cd, github-actions, gitlab-ci, docker, devops, pipeline, gitops, dora, accelerate, trunk-based, slsa, sbom, supply-chain, green-ci, security-hardening, serverless, preview-environments, multi-platform, ai-cicd, oidc, secrets-rotation, audit-logging, reproducible-builds, hermetic-builds, build-provenance, build-observability, monorepo-ci, cost-optimization, finops, green-cicd, sci, pipeline-governance, compliance-gates]
     related_skills: [sdlc-architecture-design, sdlc-testing-qa, sdlc-deployment, github-pr-workflow]
 ---
 
@@ -2122,3 +2122,459 @@ on:
 - [ ] Reuse artifacts between jobs (`actions/upload-artifact` + `download`)
 - [ ] Self-hosted runners for high-volume repos
 - [ ] Audit expensive workflows monthly (sort by minutes consumed)
+
+## Step 25: FinOps for CI/CD
+
+Source: https://www.finops.org/framework/ | https://focus.finops.org/
+
+FinOps applies financial accountability to cloud spend. CI/CD is often 10-30% of cloud compute costs.
+
+### FinOps Foundation Framework
+
+Three phases, continuous cycle:
+
+**Inform:**
+- Visibility into CI/CD spend by team, repo, workflow, environment
+- Showback reports (who spends what, no chargeback yet)
+- Benchmark cost per build, cost per deployment, cost per test run
+- Link CI minutes to business outcomes (cost per feature, cost per release)
+
+**Optimize:**
+- Right-size runners (don't use macOS if Linux suffices)
+- Eliminate waste: unused caches, redundant workflows, idle self-hosted runners
+- Autoscale self-hosted runners to zero when idle
+- Spot/preemptible instances for non-critical jobs
+
+**Operate:**
+- Budget alerts per team/repo
+- Chargeback: teams pay from their cloud budget for CI usage
+- Continuous cost review in sprint retrospectives
+- Governance policies (max runner size, max matrix width)
+
+### FOCUS Specification
+
+FinOps Open Cost and Usage Specification. Standardized billing data format.
+
+```yaml
+# Map CI/CD costs to FOCUS dimensions
+# FOCUS columns relevant to CI/CD:
+# - BillingAccountId / BillingAccountName
+# - ServiceName: "GitHub Actions", "GitLab CI", "CircleCI"
+# - ChargeCategory: "Usage", "Commitment"
+# - EffectiveCost: actual cost after discounts
+# - ConsumedQuantity: minutes consumed
+# - ConsumedUnit: "minutes"
+
+# Export billing data to FOCUS format for unified reporting
+# GitHub: use Billing API + webhooks
+# GitLab: use CI/CD minutes API
+```
+
+### Cost Allocation
+
+**Tagging strategy for CI/CD resources:**
+
+```yaml
+# GitHub Actions — use repository/environment tags
+# All cost tags: team, project, cost-center, environment
+env:
+  COST_TEAM: platform-engineering
+  COST_PROJECT: payment-service
+  COST_CENTER: CC-1042
+  COST_ENV: ${{ github.ref == 'refs/heads/main' && 'production' || 'development' }}
+
+# Self-hosted runners — label with cost metadata
+# Runner labels: team=platform, cost-center=CC-1042
+```
+
+**Showback model:**
+- Weekly reports: CI minutes per team, per repo, per environment
+- Trend analysis: cost trajectory over sprints
+- Anomaly detection: sudden cost spikes trigger alerts
+
+**Chargeback model:**
+- Teams own CI budget from cloud allocation
+- Overage requires approval from platform lead
+- Reserved capacity pools shared across teams (discount leverage)
+
+### CI Runner Cost Optimization
+
+```yaml
+# Tiered runner strategy
+# Tier 1: Free/cheap (default)
+# - ubuntu-latest, ubuntu-24.04-arm (GitHub hosted, 1x cost)
+# - Self-hosted on owned hardware (0 per-minute)
+
+# Tier 2: Moderate (when needed)
+# - windows-latest (2x) — only for Windows-specific builds
+# - Larger runners (2-4x) — only when standard runners OOM
+
+# Tier 3: Expensive (minimize)
+# - macos-13 (10x) — only for macOS/iOS native builds
+# - macos-13-xlarge M1 (20x) — only for Apple Silicon validation
+
+# Self-hosted autoscaling (Kubernetes-based)
+# Scale to zero when no jobs queued
+# Scale up on demand, scale down after 5min idle
+# Spot instances for non-release builds
+```
+
+**Cost optimization checklist:**
+- [ ] Tag all CI resources with team/cost-center/project
+- [ ] Generate monthly showback reports
+- [ ] Set per-team CI minutes budgets with alerts
+- [ ] Default to cheapest runner tier, escalate only on failure
+- [ ] Use spot/preemptible for self-hosted runners (non-release)
+- [ ] Monitor cost per build metric — track over time
+- [ ] Review and eliminate unused workflows monthly
+
+## Step 26: Green CI/CD
+
+Source: https://greensoftware.foundation/ | https://sci-guide.greensoftware.foundation/
+
+### SCI Formula
+
+Software Carbon Intensity. ISO-standardized (ISO 21031).
+
+```
+SCI = ((E * I) + M) per R
+
+Where:
+  E = Energy consumed by software (kWh)
+  I = Location-based carbon intensity (gCO2eq/kWh)
+  M = Embodied carbon (gCO2eq) — hardware lifecycle emissions
+  R = Functional unit (e.g., per build, per request, per user)
+
+Lower SCI = greener software.
+```
+
+For CI/CD specifically:
+```
+SCI_pipeline = ((runner_energy_kWh * grid_carbon_intensity) + embodied_carbon) / total_builds
+```
+
+### Energy-Efficient CI Patterns
+
+**Build optimization (less compute = less energy):**
+- Incremental builds — only rebuild what changed
+- Build caching — avoid redundant compilation
+- Test impact analysis — only run tests affected by changes
+- Aggressive parallelism reduces wall-clock time (but total energy similar)
+
+```yaml
+# Incremental Docker builds with BuildKit
+- uses: docker/build-push-action@v5
+  with:
+    cache-from: type=gha
+    cache-to: type=gha,mode=max  # Cache all layers, skip unchanged
+
+# Test impact analysis (example with Jest)
+- run: npx jest --onlyChanged  # Only tests affected by changed files
+
+# Path-based filtering — skip CI entirely for irrelevant changes
+on:
+  push:
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
+      - '.github/CODEOWNERS'
+```
+
+**Runtime optimization:**
+- Use slim/minimal base images (smaller = faster pull = less energy)
+- Multi-stage builds — final image has only what's needed
+- Remove dev dependencies from production images
+
+### Carbon-Aware Scheduling
+
+Shift compute to times/regions when grid is cleanest.
+
+```yaml
+# Carbon-aware scheduling with Electricity Maps or WattTime
+# Run heavy jobs when grid carbon intensity is lowest
+
+# Option 1: Schedule during low-carbon windows
+on:
+  schedule:
+    - cron: '0 4 * * *'  # 4am UTC — often low demand, more renewables
+
+# Option 2: Region-aware runner selection
+# Pick runner region based on current carbon intensity
+jobs:
+  build:
+    runs-on: ${{ steps.region.outputs.runner }}
+    steps:
+      - id: region
+        run: |
+          # Query carbon intensity API, pick cleanest region
+          REGION=$(curl -s "https://api.electricitymap.org/v3/carbon-intensity/latest?zone=$ZONES" \
+            | jq -r 'min_by(.carbonIntensity) | .zone')
+          echo "runner=ubuntu-latest"  # Map zone to runner label
+```
+
+**Carbon-aware tools:**
+- Electricity Maps API — real-time grid carbon intensity
+- WattTime API — marginal emissions data
+- Green Software Foundation SCI toolkit
+- Kepler (Kubernetes-based Energy/Emissions Probe)
+
+### ARM Runners
+
+ARM uses less energy per instruction than x86 for equivalent workloads.
+
+```yaml
+# GitHub-hosted ARM runner (same price as x86)
+jobs:
+  build:
+    runs-on: ubuntu-24.04-arm  # Native ARM, no QEMU overhead
+
+# Self-hosted ARM (AWS Graviton, Ampere Altra)
+# 60% less energy than equivalent x86, often 20% cheaper
+jobs:
+  build:
+    runs-on: [self-hosted, linux, arm64]
+```
+
+**When to use ARM:**
+- Native ARM targets (mobile, IoT, AWS Graviton deployments)
+- Java, Go, Rust, Node.js — all have excellent ARM support
+- Docker multi-arch builds — build ARM natively, skip QEMU emulation
+- CI runners on Graviton/Altra instances — lower energy + lower cost
+
+### Incremental Builds
+
+```yaml
+# Bazel — hermetic incremental builds
+- run: bazel test //...  # Only rebuilds changed targets
+
+# Nx (monorepo) — affected-only builds
+- run: npx nx affected --target=test --base=origin/main
+
+# Gradle — build cache + incremental compilation
+- run: ./gradlew build --build-cache --parallel
+
+# Go — module cache + incremental compilation
+- uses: actions/cache@v4
+  with:
+    path: |
+      ~/.cache/go-build
+      ~/go/pkg/mod
+    key: go-${{ hashFiles('go.sum') }}
+```
+
+**Green CI checklist:**
+- [ ] Measure baseline: total CI minutes, estimated energy/carbon
+- [ ] Enable build caching everywhere (Docker, deps, compilation)
+- [ ] Use path filters — skip CI for docs/non-code changes
+- [ ] Prefer ARM runners for compatible workloads
+- [ ] Schedule heavy jobs during low-carbon grid hours
+- [ ] Track SCI score per pipeline over time
+- [ ] Report CI carbon footprint in quarterly sustainability reports
+
+## Step 27: Pipeline Governance
+
+Policy enforcement, compliance, auditability in CI/CD pipelines.
+
+### Policy Enforcement in Pipelines
+
+Enforce organizational rules automatically — no human gatekeepers needed.
+
+```yaml
+# OPA/Gatekeeper policy check in pipeline
+jobs:
+  policy-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: OPA policy evaluation
+        run: |
+          # Check infrastructure manifests against policy
+          opa eval --data policies/ --input manifests/ \
+            --format pretty 'data.cicd.deny[msg]'
+      - name: Conftest (OPA-based)
+        run: |
+          conftest test --policy policies/ manifests/
+          conftest test --policy policies/ docker-compose.yml
+
+# Kyverno CLI for K8s policy validation
+      - name: Kyverno policy check
+        run: kyverno apply policies/ --resource manifests/
+```
+
+**Policy categories:**
+- **Security policies:** no privileged containers, no root user, required labels
+- **Compliance policies:** approved base images only, required SBOM, license allowlist
+- **Operational policies:** resource limits required, health checks required
+- **Cost policies:** max CPU/memory requests, no GPU without approval
+
+### Compliance Gates
+
+Automated gates that block non-compliant deployments.
+
+```yaml
+# Compliance gate job — runs after build, before deploy
+jobs:
+  compliance-gate:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      # 1. SBOM verification
+      - name: Verify SBOM exists
+        run: |
+          if [ ! -f sbom.spdx.json ]; then
+            echo "::error::SBOM missing — required for compliance"
+            exit 1
+          fi
+
+      # 2. Vulnerability threshold
+      - name: Vulnerability gate
+        run: |
+          CRITICAL=$(trivy image --format json myapp:${{ github.sha }} \
+            | jq '[.Results[].Vulnerabilities[] | select(.Severity=="CRITICAL")] | length')
+          if [ "$CRITICAL" -gt 0 ]; then
+            echo "::error::$CRITICAL critical vulnerabilities found"
+            exit 1
+          fi
+
+      # 3. License compliance
+      - name: License check
+        run: |
+          # Reject copyleft licenses in production deps
+          license-checker --production --failOn 'GPL-3.0;AGPL-3.0'
+
+      # 4. Image provenance verification
+      - name: Verify image signature
+        run: |
+          cosign verify ${{ env.REGISTRY }}/${{ env.IMAGE }}@${{ github.sha }}
+
+      # 5. Approved base image check
+      - name: Base image policy
+        run: |
+          # Only allow base images from approved registry
+          BASE=$(grep '^FROM' Dockerfile | head -1 | awk '{print $2}')
+          if [[ ! "$BASE" =~ ^ghcr\.io/org/ ]]; then
+            echo "::error::Base image must come from approved registry"
+            exit 1
+          fi
+```
+
+### Audit Trails
+
+Immutable record of who did what, when, with what artifacts.
+
+```yaml
+# Audit logging in pipeline
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      # Capture full pipeline context
+      - name: Generate audit record
+        run: |
+          cat > audit-record.json <<EOF
+          {
+            "timestamp": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
+            "pipeline_id": "${{ github.run_id }}",
+            "commit_sha": "${{ github.sha }}",
+            "actor": "${{ github.actor }}",
+            "event": "${{ github.event_name }}",
+            "ref": "${{ github.ref }}",
+            "repository": "${{ github.repository }}",
+            "workflow": "${{ github.workflow }}",
+            "environment": "${{ inputs.environment }}",
+            "image_digest": "${{ needs.build.outputs.digest }}",
+            "sbom_hash": "$(sha256sum sbom.spdx.json | awk '{print $1}')",
+            "policy_results": "$(cat policy-results.json)",
+            "approvals": $(cat approvals.json)
+          }
+          EOF
+
+      # Immutable audit log — append to transparency log
+      - name: Record in transparency log
+        run: |
+          # Sigstore Rekor — public immutable log
+          rekor-cli upload \
+            --artifact audit-record.json \
+            --artifact-type application/json \
+            --public-key keys/org-signing.pub
+
+      # Ship to SIEM/compliance system
+      - name: Send to audit backend
+        run: |
+          curl -X POST "${{ secrets.AUDIT_ENDPOINT }}" \
+            -H "Content-Type: application/json" \
+            -d @audit-record.json
+```
+
+**Audit requirements:**
+- Every deployment must record: actor, commit, image digest, policy results
+- Audit logs are append-only (use Rekor, DynamoDB with immutability, or WORM storage)
+- Retention: minimum 1 year (SOC 2), 7 years (financial regulations)
+- Logs must be queryable for incident investigation
+
+### Approval Workflows
+
+Structured approval gates for high-risk deployments.
+
+```yaml
+# GitHub Environments with required reviewers
+# Configure in repo settings: Settings > Environments > production
+
+jobs:
+  deploy-production:
+    runs-on: ubuntu-latest
+    environment:
+      name: production
+      url: https://app.example.com
+    steps:
+      - uses: actions/checkout@v4
+      - run: ./deploy.sh
+
+# Multi-stage approval with conditions
+jobs:
+  deploy-production:
+    needs: [compliance-gate, staging-validation]
+    runs-on: ubuntu-latest
+    environment:
+      name: production
+    # Additional runtime checks before deploy
+    steps:
+      - name: Verify all gates passed
+        run: |
+          if [ "${{ needs.compliance-gate.result }}" != "success" ]; then
+            echo "::error::Compliance gate must pass"
+            exit 1
+          fi
+          if [ "${{ needs.staging-validation.result }}" != "success" ]; then
+            echo "::error::Staging validation must pass"
+            exit 1
+          fi
+      - run: ./deploy.sh
+
+# GitLab: protected environments + manual approval
+deploy_production:
+  stage: deploy
+  environment:
+    name: production
+    deployment_tier: production
+  rules:
+    - if: $CI_COMMIT_BRANCH == "main"
+      when: manual
+      allow_failure: false
+```
+
+**Approval workflow patterns:**
+- **Auto-deploy to staging:** no human approval needed (CI passes = deploy)
+- **Manual approval for production:** required reviewer in environment settings
+- **Separation of duties:** deployer cannot be code author
+- **Time-based approvals:** approvals expire after 4 hours (re-verify)
+- **Emergency bypass:** break-glass procedure with mandatory post-incident review
+
+**Governance checklist:**
+- [ ] Define policy-as-code (OPA/Conftest/Kyverno) for all compliance rules
+- [ ] Compliance gates block non-compliant builds (not advisory)
+- [ ] Every deployment has immutable audit trail
+- [ ] Production requires human approval + separation of duties
+- [ ] Audit logs retained per regulatory requirements
+- [ ] Quarterly review of governance policies for relevance
+- [ ] Emergency bypass documented with mandatory post-mortem
