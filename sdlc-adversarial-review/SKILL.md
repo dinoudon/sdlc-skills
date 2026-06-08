@@ -281,6 +281,57 @@ PR opened
     └────────┘  └────────┘  └────────┘
 ```
 
+## Advanced: Stacked Diffs
+
+Source: https://blog.pragmaticengineer.com/stacked-diffs/ (Gergely Orosz)
+
+Instead of one large PR, create chain of small dependent diffs stacked on each other. Each diff is one logical change.
+
+**Meta's approach:** Small, focused diffs (~100-300 lines). Each depends on parent but can be reviewed independently. Enables parallel review while developer continues building on top.
+
+**ghstack** (Edward Yang, PyTorch/Meta): https://github.com/ezyang/ghstack
+```bash
+# Creates stacked PRs from stacked commits
+ghstack submit
+```
+
+**Other tools:**
+- Graphite (https://graphite.dev/) — commercial stacked PR tool
+- Sapling (Meta's VCS): https://sapling-scm.com/ — built-in stacking
+
+**Key benefit:** Reviewer sees small, logical units instead of massive diffs.
+
+## Advanced: AI-Assisted Review
+
+| Tool | Focus | Source |
+|------|-------|--------|
+| CodeRabbit | Line-by-line review, bug detection | https://coderabbit.ai/ |
+| Sourcery | Python-focused, inline suggestions | https://sourcery.ai/ |
+| GitHub Copilot PR review | Native GitHub integration | https://github.com/features/copilot |
+
+**Pattern:** AI handles first pass (style, obvious bugs, boilerplate). Humans focus on architecture, logic, design decisions.
+
+## Advanced: Review Metrics
+
+**Process metrics:**
+- Review turnaround time (request to first response)
+- Total review cycle time (request to merge)
+- PR size distribution (lines changed, files touched)
+- Review iteration count (comments-to-merge cycles)
+
+**Quality metrics:**
+- Defect escape rate (bugs found post-merge vs during review)
+- Comment density (comments per 100 lines changed)
+- Post-merge revert rate
+
+**Research findings (SmartBear 2024):**
+- Best defect detection: patches under 400 lines
+- Diminishing returns after 200-400 LOC per review
+- Review rate >500 LOC/hour drops defect detection significantly
+- Sweet spot: 60-90 min review sessions
+
+Source: https://smartbear.com/learn/code-review/best-practices-for-peer-code-review/
+
 ## Pitfalls
 
 1. **Don't run on every PR** — use for significant changes (>100 LOC, security-sensitive)

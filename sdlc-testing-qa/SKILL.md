@@ -521,6 +521,122 @@ Targets: Statements > 80%, Branches > 75%, Functions > 80%.
 
 If ANY phase fails → STOP and fix.
 
+## Step 16: Snapshot Testing
+
+Source: https://jestjs.io/docs/snapshot-testing, https://vitest.dev/guide/snapshot.html
+
+Captures component/string output as .snap file, diffs on next run.
+
+```typescript
+// Jest/Vitest
+expect(component).toMatchSnapshot();
+expect(value).toMatchInlineSnapshot();  // Embeds in test file
+```
+
+**Key patterns:**
+- Keep snapshots small, focused
+- Use `toMatchInlineSnapshot()` for simple values (easier review)
+- Mock non-deterministic data (dates, IDs) before snapshotting
+- Treat .snap files as code — review diffs in PRs
+
+## Step 17: Visual Regression Testing
+
+### Percy (BrowserStack)
+Source: https://docs.percy.io/docs/visual-testing-overview
+
+Captures DOM snapshots, renders in consistent browser environment. Smart diffing ignores anti-aliasing.
+
+### Chromatic (Storybook)
+Source: https://www.chromatic.com/docs/visual-tests
+
+Renders Storybook stories in real browsers. Turbosnap: only re-screenshots changed stories.
+
+### Playwright Screenshots
+Source: https://playwright.dev/docs/test-snapshots
+
+```typescript
+await page.screenshot({ path: 'screenshot.png' });
+expect(page).toHaveScreenshot('name.png');  // Built-in visual comparison
+```
+
+**Key patterns:**
+- Mask dynamic regions (ads, timestamps) with `mask` option
+- Set consistent viewport, disable animations
+- Threshold tuning: 0.1-0.3 for most UI
+
+## Step 18: Fuzz Testing
+
+### AFL++
+Source: https://aflplus.plus/docs/
+
+Coverage-guided fuzzer. Mutates inputs based on code coverage feedback.
+
+### libFuzzer
+Source: https://llvm.org/docs/LibFuzzer.html
+
+In-process, coverage-guided fuzzer. Define `LLVMFuzzerTestOneInput()`.
+
+### OSS-Fuzz (Google)
+Source: https://google.github.io/oss-fuzz/
+
+Continuous fuzzing service for open-source projects. Combines AFL++, libFuzzer, honggfuzz.
+
+**Key patterns:**
+- Provide seed corpus (valid inputs) for faster coverage
+- Use sanitizer builds: `-fsanitize=address,undefined`
+- Target parsers, decoders, protocol handlers, file format handlers
+
+## Step 19: Load Testing Patterns
+
+Source: https://grafana.com/docs/k6/latest/testing-guides/types-of-load-testing/
+
+| Pattern | Description | k6 Scenario |
+|---------|-------------|-------------|
+| Smoke | Minimal load, verify system works | 1-2 VUs, short duration |
+| Load | Expected concurrent users | Ramp to target, hold, ramp down |
+| Stress | Push beyond expected load | Incrementally increase until failure |
+| Soak | Sustained moderate load | 2+ hours, detect memory/connection leaks |
+| Spike | Sudden burst of traffic | Quick ramp up, hold, quick ramp down |
+| Breakpoint | Find breaking point | Incrementally increase until failure |
+
+## Step 20: Test Data Management
+
+**Factories > fixtures** for isolation.
+
+```typescript
+// Factory pattern
+const createUser = (overrides = {}) => ({
+  id: faker.string.uuid(),
+  email: faker.internet.email(),
+  name: faker.person.fullName(),
+  ...overrides,
+});
+```
+
+**Faker:** https://fakerjs.dev/ — generates realistic random data
+
+**Key patterns:**
+- Use sequences for unique fields: `(n) => user_${n}@test.com`
+- Reset/auto-cleanup between tests (transaction rollback, truncate)
+- Freeze faker seed for reproducibility when needed
+
+## Step 21: Flaky Test Management
+
+Source: https://testing.googleblog.com/2016/05/flaky-tests-at-google-and-how-we.html
+
+**Detection:**
+- Track pass/fail history per test across N runs
+- Google: automated flakiness detection by re-running failed tests once
+
+**Management:**
+- Quarantine: exclude flaky from main suite, fix or delete
+- Retry policies: `jest.retryTimes(3)`, `pytest-rerunfailures`
+- Root causes: timing/race conditions, shared state, external deps
+
+**Industry data:**
+- Google found ~1.5% of tests flaky at any time
+- Flaky tests erode trust, mask real failures
+
 ## Pitfalls
 
 1. **Don't write more E2E than unit tests** — E2E is slow and brittle

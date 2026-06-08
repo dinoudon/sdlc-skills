@@ -521,6 +521,119 @@ Source of truth (DB) → Event log → Derived views (caches, search indexes)
 3. Identify shallow modules
 4. Propose deepening: extract, consolidate, reduce coupling
 
+## Step 12: Event-Driven Architecture (EDA)
+
+Source: https://martinfowler.com/articles/201701-event-driven.html
+
+Components communicate by producing and consuming events rather than direct calls.
+
+**Patterns:**
+- **Event Notification:** Producer sends event, doesn't care about consumers. Loose coupling.
+- **Event-Carried State Transfer:** Event carries enough data so consumer doesn't need to call back.
+- **Choreography:** Services react to events, no central coordinator.
+- **Orchestration:** Central coordinator (saga orchestrator) manages workflow.
+
+**Event brokers:** Kafka, RabbitMQ, AWS EventBridge, NATS, Pulsar
+
+**Key concepts:** eventual consistency, idempotent consumers, dead letter queues, schema registry (Avro/Protobuf)
+
+## Step 13: CQRS + Event Sourcing
+
+### CQRS (Command Query Responsibility Segregation)
+Source: https://martinfowler.com/bliki/CQRS.html (Greg Young, 2010)
+
+Separate write model (commands) from read model (queries).
+
+```
+Commands → Write Side (Domain Model) → Events → Read Side (Projections) → Queries
+```
+
+- Write side: domain model, validates commands, emits events
+- Read side: denormalized projections, optimized for specific queries
+- Can use different databases for read/write (polyglot persistence)
+- Tradeoff: eventual consistency between write and read
+
+### Event Sourcing
+Source: https://martinfowler.com/eaaDev/EventSourcing.html (Greg Young)
+
+Instead of storing current state, store all state changes as immutable sequence of events.
+
+```
+Events: [OrderCreated, ItemAdded, ItemAdded, PaymentProcessed, OrderShipped]
+Current state = replay events from beginning (or from snapshot)
+```
+
+**Benefits:**
+- Complete audit trail built-in
+- Temporal queries: reconstruct state at any point in time
+- Pairs naturally with CQRS
+
+**Challenges:**
+- Event schema migration complexity
+- Querying current state requires building read models
+- Event store choice matters (EventStoreDB, Axon, Kafka-based)
+
+Source: https://eventstore.com/blog/what-is-event-sourcing/
+
+## Step 14: Microservices Patterns
+
+Source: https://microservices.io/patterns/index.html (Chris Richardson)
+
+### Saga Pattern
+Distributed transactions across microservices via sequence of local transactions.
+
+- **Choreography:** Each service listens for events, performs action, publishes next event
+- **Orchestration:** Central orchestrator coordinates steps, tells services what to do
+- Compensating transactions for rollback (no 2PC)
+
+### Circuit Breaker
+Source: https://microservices.io/patterns/reliability/circuit-breaker.html
+
+Track failures. When threshold exceeded, "open" circuit, fail fast.
+
+```
+Closed → (failures exceed threshold) → Open → (timeout) → Half-Open → (probe succeeds) → Closed
+```
+
+**Implementations:** Resilience4j, Polly (.NET), AWS App Mesh
+
+### API Gateway
+Source: https://microservices.io/patterns/apigateway.html
+
+Single entry point that routes, aggregates, and handles cross-cutting concerns.
+
+**Responsibilities:** request routing, composition, protocol translation, auth, rate limiting, SSL termination
+
+**API Gateway vs Service Mesh:**
+- Gateway: north-south traffic (external → internal)
+- Service Mesh: east-west traffic (service → service)
+
+## Step 15: Service Mesh
+
+Source: https://istio.io/latest/docs/concepts/
+
+Infrastructure layer for service-to-service communication. Sidecar proxy pattern.
+
+| Feature | Istio | Linkerd |
+|---------|-------|---------|
+| Proxy | Envoy | Rust-based (linkerd2-proxy) |
+| Complexity | High | Low |
+| mTLS | ✓ | ✓ |
+| Traffic management | ✓ | ✓ |
+| Observability | ✓ | ✓ |
+| CNCF status | Graduated | Graduated |
+
+Source: https://linkerd.io/2.15/overview/
+
+## Step 16: API Gateway Tools
+
+| Tool | Base | Key Features | Source |
+|------|------|-------------|--------|
+| Kong | OpenResty/Nginx | Plugin architecture, JWT, OAuth2, rate limiting | https://docs.konghq.com/gateway/latest/ |
+| Ambassador | Envoy | K8s-native, CRD-based, GitOps friendly | https://www.getambassador.io/docs/emissary/latest/ |
+| Traefik | Go | Auto-discovery, Let's Encrypt, Docker/K8s native | https://doc.traefik.io/traefik/ |
+| AWS API Gateway | Managed | Serverless-friendly, pay-per-call | https://docs.aws.amazon.com/apigateway/ |
+
 ## Pitfalls
 
 1. **Don't start with microservices** — modular monolith first
