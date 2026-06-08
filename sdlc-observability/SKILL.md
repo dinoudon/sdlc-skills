@@ -1,7 +1,7 @@
 ---
 name: sdlc-observability
-description: "Observability: OpenTelemetry 2024, GenAI semantic conventions, eBPF (Cilium/Hubble/Tetragon), sidecar-less mesh, profiling signal, structured logging, SLIs/SLOs/SLAs, error budgets, burn-rate alerting, Grafana LGTM, distributed tracing, cost optimization, serverless observability, LLM/AI observability, edge observability, OTel Collector deployment patterns, microservices golden signals, log aggregation (ELK/Loki/ClickHouse), metrics aggregation, alert design patterns, observability maturity model, LLM platform comparison, ML model monitoring, AI agent observability, MLOps observability."
-version: 4.6.0
+description: "Observability: OpenTelemetry 2024, GenAI semantic conventions, eBPF (Cilium/Hubble/Tetragon), sidecar-less mesh, profiling signal, structured logging, SLIs/SLOs/SLAs, error budgets, burn-rate alerting, Grafana LGTM stack (Loki/Tempo/Mimir/Pyroscope), Honeycomb wide events & Bubble Up, OTel GenAI semantic conventions, eBPF observability (Cilium Hubble, Pixie, Falco), distributed tracing, cost optimization, serverless observability, LLM/AI observability, edge observability, OTel Collector deployment patterns, microservices golden signals, log aggregation (ELK/Loki/ClickHouse), metrics aggregation, alert design patterns, observability maturity model, LLM platform comparison, ML model monitoring, AI agent observability, MLOps observability."
+version: 4.8.0
 author: Dinoudon
 license: MIT
 platforms: [linux, macos, windows]
@@ -4234,4 +4234,836 @@ async def create_incident(alert):
                 "severity": alert["labels"]["severity"],
             }
         )
+
+## Step 38: Grafana LGTM Stack — Production Architecture
+
+Source: https://grafana.com/oss/
+
+### Architecture Overview
+
+Grafana LGTM = Loki (logs) + Grafana (viz) + Tempo (traces) + Mimir (metrics). Add Pyroscope for continuous profiling. All open-source, all integrate natively via Grafana Explore.
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                    GRAFANA LGTM STACK                           │
+│                                                                 │
+│  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌──────────────┐   │
+│  │  MIMIR   │  │  LOKI    │  │  TEMPO   │  │  PYROSCOPE   │   │
+│  │ metrics  │  │  logs    │  │  traces  │  │  profiles    │   │
+│  └────┬─────┘  └────┬─────┘  └────┬─────┘  └──────┬───────┘   │
+│       │             │             │               │            │
+│       │    ┌────────┴─────────────┴───────────────┘            │
+│       │    │                                                    │
+│       ▼    ▼                                                    │
+│  ┌─────────────────────────────────────────────────────────┐   │
+│  │                    GRAFANA                               │   │
+│  │  Explore (correlated queries) | Dashboards | Alerts     │   │
+│  └─────────────────────────────────────────────────────────┘   │
+│                                                                 │
+│  Cross-signal linking: traceID → logs | exemplars → traces     │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+**Component roles:**
+
+| Component   | Signal     | Storage Backend           | Query Language |
+|-------------|-----------|---------------------------|----------------|
+| Mimir       | Metrics   | S3/GCS/Azure Blob         | PromQL         |
+| Loki        | Logs      | S3/GCS/Azure Blob         | LogQL          |
+| Tempo       | Traces    | S3/GCS/Azure Blob         | TraceQL        |
+| Pyroscope   | Profiles  | S3/GCS/Azure Blob         | ProfileQL      |
+
+### Production Deployment (Helm, Microservices Mode)
+
+```yaml
+# values-mimir.yaml — microservices mode (production-grade)
+mimir:
+  structuredConfig:
+    alertmanager_storage:
+      backend: s3
+      s3:
+        bucket_name: mimir-alertmanager
+        endpoint: s3.us-east-1.amazonaws.com
+    blocks_storage:
+      backend: s3
+      s3:
+        bucket_name: mimir-blocks
+        endpoint: s3.us-east-1.amazonaws.com
+    ruler_storage:
+      backend: s3
+      s3:
+        bucket_name: mimir-ruler
+        endpoint: s3.us-east-1.amazonaws.com
+
+  ingester:
+    replicas: 3
+    statefulSet:
+      enabled: true
+    resources:
+      requests:
+        cpu: 2
+        memory: 4Gi
+
+  compactor:
+    replicas: 1
+    resources:
+      requests:
+        cpu: 1
+        memory: 2Gi
+
+  store_gateway:
+    replicas: 2
+    statefulSet:
+      enabled: true
+
+  query_frontend:
+    replicas: 2
+
+  querier:
+    replicas: 3
+```
+
+```yaml
+# values-loki.yaml — microservices mode
+loki:
+  deploymentMode: SimpleScalable
+
+  commonConfig:
+    replication_factor: 3
+    path_prefix: /var/loki
+
+  storage:
+    type: s3
+    s3:
+      endpoint: s3.us-east-1.amazonaws.com
+      bucketnames: loki-chunks
+
+  schemaConfig:
+    configs:
+      - from: "2024-01-01"
+        store: tsdb
+        object_store: s3
+        schema: v13
+        index:
+          prefix: loki_index_
+          period: 24h
+
+  read:
+    replicas: 3
+  write:
+    replicas: 3
+  backend:
+    replicas: 2
+```
+
+```yaml
+# values-tempo.yaml — microservices mode
+tempo:
+  storage:
+    trace:
+      backend: s3
+      s3:
+        bucket: tempo-traces
+        endpoint: s3.us-east-1.amazonaws.com
+      wal:
+        path: /var/tempo/wal
+      local:
+        path: /var/tempo/blocks
+      pool:
+        max_workers: 100
+        queue_depth: 10000
+
+  ingester:
+    replicas: 3
+  querier:
+    replicas: 3
+  query_frontend:
+    replicas: 2
+  compactor:
+    replicas: 1
+```
+
+```bash
+# Deploy all with Helm
+helm repo add grafana https://grafana.github.io/helm-charts
+helm repo update
+
+# Mimir (metrics)
+helm install mimir grafana/mimir-distributed \
+  -f values-mimir.yaml -n monitoring
+
+# Loki (logs)
+helm install loki grafana/loki \
+  -f values-loki.yaml -n monitoring
+
+# Tempo (traces)
+helm install tempo grafana/tempo-distributed \
+  -f values-tempo.yaml -n monitoring
+
+# Pyroscope (profiles)
+helm install pyroscope grafana/pyroscope \
+  -n monitoring
+
+# Grafana (UI + correlation)
+helm install grafana grafana/grafana \
+  -n monitoring \
+  --set persistence.enabled=true \
+  --set adminPassword=$GRAFANA_ADMIN_PW
+```
+
+### Cross-Signal Correlation
+
+**TraceID exemplars on metrics (Mimir + Tempo):**
+```yaml
+# OTel Collector config to add traceID exemplars
+processors:
+  spanmetrics:
+    metrics_exporter: prometheus
+    dimensions:
+      - name: http.method
+      - name: http.status_code
+    exemplars:
+      enabled: true
+  tail_sampling:
+    policies:
+      - name: errors
+        type: status_code
+        status_code: { status_codes: [ERROR] }
+      - name: slow
+        type: latency
+        latency: { threshold_ms: 1000 }
+```
+
+**Grafana Explore correlation config:**
+```yaml
+# Grafana provisioning — link Loki logs to Tempo traces
+apiVersion: 1
+datasources:
+  - name: Loki
+    type: loki
+    uid: loki
+    url: http://loki-gateway:3100
+    jsonData:
+      derivedFields:
+        - datasourceUid: tempo
+          matcherRegex: '"traceID":"(\w+)"'
+          name: TraceID
+          url: "$${__value.raw}"
+
+  - name: Tempo
+    type: tempo
+    uid: tempo
+    url: http://tempo-query-frontend:3100
+    jsonData:
+      tracesToLogsV2:
+        datasourceUid: loki
+        filterByTraceID: true
+      tracesToMetrics:
+        datasourceUid: mimir
+        queries:
+          - name: Request rate
+            query: "sum(rate(traces_spanmetrics_calls_total{$$__tags}[1m]))"
+      serviceMap:
+        datasourceUid: mimir
+      nodeGraph:
+        enabled: true
+
+  - name: Mimir
+    type: prometheus
+    uid: mimir
+    url: http://mimir-nginx:80
+    jsonData:
+      exemplarTraceIdDestinations:
+        - name: traceID
+          datasourceUid: tempo
+```
+
+**Query workflow — navigate between signals:**
+```
+1. Metric spike in Mimir → click exemplar → jump to Tempo trace
+2. Trace shows slow span → click "Logs for this trace" → Loki logs
+3. Loki log shows error → click TraceID link → back to Tempo trace
+4. From Tempo service map → click service → Mimir metrics dashboard
+```
+
+---
+
+## Step 39: Honeycomb Observability Practices
+
+Source: https://www.honeycomb.io/
+
+### Wide Events (Not Metrics)
+
+Honeycomb philosophy: emit wide events with 100s of dimensions per request, not pre-aggregated metrics. Store everything, aggregate at query time.
+
+```python
+# Wide event — every request emits rich context
+import honeycomb_sdk as hc
+
+span = hc.current_span()
+
+# Standard HTTP fields
+span.add_field("http.method", "POST")
+span.add_field("http.path", "/api/v1/orders")
+span.add_field("http.status_code", 201)
+span.add_field("http.request.duration_ms", 145)
+
+# Business context
+span.add_field("user.id", "usr_abc123")
+span.add_field("user.tier", "enterprise")
+span.add_field("user.region", "us-east-1")
+span.add_field("user.signup_days_ago", 365)
+
+# Request-specific dimensions
+span.add_field("order.item_count", 5)
+span.add_field("order.total_usd", 299.99)
+span.add_field("order.payment_method", "credit_card")
+span.add_field("order.discount_applied", True)
+span.add_field("order.promo_code", "SUMMER25")
+
+# Infrastructure context
+span.add_field("host.instance_id", "i-0abc123")
+span.add_field("host.availability_zone", "us-east-1a")
+span.add_field("k8s.pod.name", "order-svc-7b8c9d")
+span.add_field("k8s.node.name", "ip-10-0-1-42")
+
+# Dependency timings
+span.add_field("db.query.duration_ms", 12)
+span.add_field("cache.hit", True)
+span.add_field("payment_api.duration_ms", 89)
+span.add_field("payment_api.status_code", 200)
+
+# Error context (when applicable)
+span.add_field("error.type", "TimeoutError")
+span.add_field("error.retried", True)
+span.add_field("error.retry_count", 2)
+```
+
+**Why wide events, not metrics:**
+```
+Metrics approach: pre-aggregate → lose individual request context
+  - "p99 latency was 500ms" (but which requests? which users?)
+
+Wide events: store every dimension → slice/dice at query time
+  - "p99 for enterprise users in us-east-1 paying with credit_card = 320ms"
+  - No need to predict which dimensions matter upfront
+```
+
+### Bubble Up (Automatic Anomaly Surfacing)
+
+Bubble Up uses chi-squared statistical analysis to automatically find which dimensions correlate with anomalies. No manual query building.
+
+```
+┌──────────────────────────────────────────────────────────────┐
+│                    BUBBLE UP WORKFLOW                         │
+│                                                              │
+│  1. Select anomaly region on heatmap/time series             │
+│  2. Honeycomb computes chi-squared for ALL dimensions        │
+│  3. Surfaces top contributing dimensions automatically       │
+│  4. Shows heatmaps for each correlated dimension             │
+│                                                              │
+│  Example output:                                             │
+│  ┌─────────────────────────────────────────────────┐         │
+│  │ Dimension          | Anomaly | Baseline | Score  │         │
+│  │ user.region        | 95% err | 2% err   | 98.3  │         │
+│  │ host.instance_id   | 100% err| 3% err   | 96.1  │         │
+│  │ k8s.node.name      | 88% err | 2% err   | 94.7  │         │
+│  │ db.query.duration  | 450ms   | 15ms     | 91.2  │         │
+│  └─────────────────────────────────────────────────┘         │
+│                                                              │
+│  → Root cause: node ip-10-0-1-42 in us-east-1a              │
+│  → Chi-squared found it without manual querying              │
+└──────────────────────────────────────────────────────────────┘
+```
+
+### Query-Driven Exploration (Not Dashboard-Driven)
+
+Honeycomb rejects the "build dashboard first" approach. Start from questions, not visualizations.
+
+```
+Dashboard-driven (anti-pattern):
+  → Build dashboard for every metric
+  → Dashboards become shelfware
+  → Unknown unknowns invisible
+
+Query-driven (Honeycomb way):
+  → Start with a question: "Why are orders slow?"
+  → Explore interactively: GROUP BY, FILTER, VISUALIZE
+  → Discover unexpected patterns
+  → Save queries that answer real questions
+```
+
+**SLO burn-rate alerts as entry point:**
+```yaml
+# Honeycomb SLO — error budget burn rate
+slo:
+  name: "Order API Availability"
+  service: order-service
+  sli:
+    type: threshold_based
+    column: http.status_code
+    op: "<"
+    value: 500
+  target: 99.9  # 99.9% of requests < 500
+  time_window: 30d
+
+  burn_rate_alerts:
+    - name: "Critical burn (14x, 1h window)"
+      burn_rate_threshold: 14.4
+      lookback_window: 1h
+      severity: critical
+
+    - name: "High burn (6x, 6h window)"
+      burn_rate_threshold: 6
+      lookback_window: 6h
+      severity: warning
+```
+
+**When burn-rate fires → use as exploration entry point:**
+```
+1. SLO alert fires: burn-rate 14.4x over 1h
+2. Click alert → opens Honeycomb with time window pre-set
+3. Bubble Up auto-finds: "us-west-2 region has 100% error rate"
+4. GROUP BY pod.name → one pod returning 503
+5. Query pod logs → OOMKilled, insufficient memory
+6. Fix: increase memory limit
+```
+
+---
+
+## Step 40: OpenTelemetry GenAI Semantic Conventions
+
+Source: https://opentelemetry.io/docs/specs/semconv/gen-ai/
+
+### gen_ai Attributes
+
+Standardized attributes for LLM/AI observability under OpenTelemetry semantic conventions.
+
+```yaml
+# gen_ai system attributes
+gen_ai.system: "openai"          # openai, anthropic, cohere, vertex_ai, etc.
+gen_ai.request.model: "gpt-4o"   # requested model
+gen_ai.response.model: "gpt-4o-2024-08-06"  # actual model used (may differ)
+gen_ai.operation.name: "chat"    # chat, text_completion, embeddings, image
+
+# Usage metrics
+gen_ai.usage.input_tokens: 150
+gen_ai.usage.output_tokens: 350
+gen_ai.usage.total_tokens: 500
+
+# Request parameters
+gen_ai.request.temperature: 0.7
+gen_ai.request.top_p: 0.95
+gen_ai.request.max_tokens: 4096
+gen_ai.request.top_k: 40
+gen_ai.request.stop_sequences: ["\n\n"]
+
+# Response attributes
+gen_ai.response.finish_reason: "stop"  # stop, length, content_filter
+gen_ai.response.id: "chatcmpl-abc123"
+```
+
+### Span Naming Conventions
+
+```
+# Span name format: {operation} {model}
+"chat gpt-4o"                    # Chat completion
+"embed text-embedding-3-small"   # Embeddings
+"image dall-e-3"                 # Image generation
+"generate_content gemini-pro"    # Generic content generation
+"text_completion gpt-3.5-turbo"  # Legacy completions
+```
+
+### Metrics
+
+```yaml
+# Standard GenAI metrics (OTel semantic conventions)
+metrics:
+  gen_ai.client.token.usage:
+    description: "Number of tokens used per request"
+    unit: "{token}"
+    type: counter
+    attributes:
+      - gen_ai.system
+      - gen_ai.request.model
+      - gen_ai.usage.input_tokens  # or output_tokens
+      - gen_ai.operation.name
+
+  gen_ai.client.operation.duration:
+    description: "Duration of GenAI operation"
+    unit: "s"
+    type: histogram
+    attributes:
+      - gen_ai.system
+      - gen_ai.request.model
+      - gen_ai.operation.name
+      - gen_ai.response.finish_reason
+      - error.type  # if error occurred
+
+  gen_ai.server.token.usage:
+    description: "Server-side token usage (if available)"
+    unit: "{token}"
+    type: counter
+
+  gen_ai.server.time_to_first_token:
+    description: "Time to first token in streaming response"
+    unit: "s"
+    type: histogram
+```
+
+### Span Events (Messages as Events)
+
+LLM messages captured as span events, not attributes. Preserves ordered conversation.
+
+```python
+# Python instrumentation example
+from opentelemetry import trace
+
+tracer = trace.get_tracer("gen_ai")
+
+with tracer.start_as_current_span("chat gpt-4o") as span:
+    span.set_attribute("gen_ai.system", "openai")
+    span.set_attribute("gen_ai.request.model", "gpt-4o")
+    span.set_attribute("gen_ai.request.temperature", 0.7)
+    span.set_attribute("gen_ai.operation.name", "chat")
+
+    # System message as event
+    span.add_event("gen_ai.system.message", attributes={
+        "gen_ai.system": "You are a helpful assistant.",
+        "gen_ai.content": "You are a helpful coding assistant.",
+    })
+
+    # User message as event
+    span.add_event("gen_ai.user.message", attributes={
+        "gen_ai.role": "user",
+        "gen_ai.content": "How do I reverse a linked list?",
+    })
+
+    # Call LLM...
+    response = openai.chat.completions.create(
+        model="gpt-4o",
+        messages=[
+            {"role": "system", "content": "You are a helpful coding assistant."},
+            {"role": "user", "content": "How do I reverse a linked list?"},
+        ],
+        temperature=0.7,
+    )
+
+    # Assistant message as event
+    span.add_event("gen_ai.assistant.message", attributes={
+        "gen_ai.role": "assistant",
+        "gen_ai.content": response.choices[0].message.content[:500],
+    })
+
+    # Set response attributes
+    span.set_attribute("gen_ai.response.model", response.model)
+    span.set_attribute("gen_ai.usage.input_tokens", response.usage.prompt_tokens)
+    span.set_attribute("gen_ai.usage.output_tokens", response.usage.completion_tokens)
+    span.set_attribute("gen_ai.response.finish_reason", response.choices[0].finish_reason)
+```
+
+### Agent / Tool Call Conventions
+
+```python
+# Agent span with tool calls
+with tracer.start_as_current_span("agent.run") as agent_span:
+    agent_span.set_attribute("gen_ai.agent.name", "code-assistant")
+    agent_span.set_attribute("gen_ai.agent.max_iterations", 10)
+
+    # Tool call event
+    agent_span.add_event("gen_ai.tool.message", attributes={
+        "gen_ai.role": "tool",
+        "gen_ai.tool_call.id": "call_abc123",
+        "gen_ai.tool_call.name": "search_docs",
+        "gen_ai.tool_call.arguments": '{"query": "linked list reversal"}',
+    })
+
+    # Nested span for tool execution
+    with tracer.start_as_current_span("tool.search_docs") as tool_span:
+        tool_span.set_attribute("gen_ai.tool.name", "search_docs")
+        tool_span.set_attribute("gen_ai.tool.type", "function")
+        result = search_docs("linked list reversal")
+        tool_span.set_attribute("gen_ai.tool.result_size", len(result))
+
+    # Nested span for LLM call within agent
+    with tracer.start_as_current_span("chat gpt-4o") as llm_span:
+        llm_span.set_attribute("gen_ai.system", "openai")
+        llm_span.set_attribute("gen_ai.request.model", "gpt-4o")
+        # ... LLM call
+
+    agent_span.set_attribute("gen_ai.agent.iterations", 3)
+    agent_span.set_attribute("gen_ai.agent.total_tokens", 2500)
+```
+
+**Attribute reference table:**
+
+| Attribute                      | Description                        | Example           |
+|-------------------------------|------------------------------------|-------------------|
+| gen_ai.system                 | LLM provider                      | openai            |
+| gen_ai.request.model          | Requested model                   | gpt-4o            |
+| gen_ai.response.model         | Actual model used                 | gpt-4o-2024-08-06 |
+| gen_ai.operation.name         | Operation type                    | chat              |
+| gen_ai.usage.input_tokens     | Prompt tokens                     | 150               |
+| gen_ai.usage.output_tokens    | Completion tokens                 | 350               |
+| gen_ai.request.temperature    | Temperature param                 | 0.7               |
+| gen_ai.request.top_p          | Top-p param                       | 0.95              |
+| gen_ai.response.finish_reason | Stop reason                       | stop              |
+| gen_ai.tool_call.id           | Tool call ID                      | call_abc123       |
+| gen_ai.tool_call.name         | Tool function name                | search_docs       |
+| gen_ai.agent.name             | Agent identifier                  | code-assistant    |
+| gen_ai.agent.iterations       | Agent loop count                  | 3                 |
+
+---
+
+## Step 41: eBPF Observability — Cilium Hubble, Pixie, Falco
+
+Source: https://ebpf.io/
+
+### Cilium Hubble — Network Observability
+
+Hubble provides L3-L7 network flow visibility with zero application instrumentation. Built on Cilium/eBPF.
+
+```bash
+# Install Cilium with Hubble enabled
+helm install cilium cilium/cilium \
+  --namespace kube-system \
+  --set hubble.enabled=true \
+  --set hubble.relay.enabled=true \
+  --set hubble.ui.enabled=true \
+  --set hubble.metrics.enabled="{dns,drop,tcp,flow,icmp,http}"
+```
+
+**Hubble features:**
+- **L3-L7 flow visibility:** TCP connections, DNS queries, HTTP requests — captured at kernel level
+- **DNS-aware:** resolves IPs to domain names, tracks DNS failures
+- **Zero-instrumentation:** no sidecars, no code changes, eBPF hooks into kernel networking stack
+- **Service dependency map:** auto-discovers service communication patterns
+
+```bash
+# Observe flows in real-time
+hubble observe --namespace production --verdict dropped
+hubble observe --to-pod production/api-server --protocol http
+hubble observe --from-pod production/payment-svc --to-fqdn api.stripe.com
+
+# DNS monitoring
+hubble observe --protocol dns --type response --verdict error
+
+# Export to Prometheus/Grafana
+curl http://hubble-metrics:9965/metrics
+```
+
+**Hubble flow JSON example:**
+```json
+{
+  "flow": {
+    "time": "2024-01-15T10:30:00Z",
+    "verdict": "FORWARDED",
+    "ethernet": { "destination": "02:42:ac:11:00:02" },
+    "IP": { "source": "10.0.0.5", "destination": "10.0.0.10" },
+    "l4": { "TCP": { "destination_port": 8080 } },
+    "l7": {
+      "type": "REQUEST",
+      "http": {
+        "method": "POST",
+        "url": "/api/v1/payments",
+        "headers": [{ "key": "host", "value": "payment-svc:8080" }]
+      }
+    },
+    "source": { "namespace": "production", "pod_name": "api-server-abc" },
+    "destination": { "namespace": "production", "pod_name": "payment-svc-xyz" },
+    "dns": { "query": "api.stripe.com", "response": ["52.84.1.1"] }
+  }
+}
+```
+
+### Pixie — Auto-Instrumented Observability
+
+Pixie auto-collects telemetry data via eBPF without any instrumentation. Runs compute at the edge (on-cluster).
+
+```bash
+# Install Pixie
+px deploy
+```
+
+**PxL scripts — auto-collected data sources:**
+```python
+# PxL: HTTP request metrics
+import px
+df = px.DataFrame(table='http_events')
+df = df.ctx.plugin('http', request_id=df.req_id)
+df = df[['time_ns', 'source', 'destination', 'req_path',
+          'resp_status', 'resp_latency_ns']]
+df = df[df.resp_status >= 400]
+px.display(df, 'http_errors')
+
+# PxL: gRPC request analysis
+df = px.DataFrame(table='grpc_events')
+df = df[['time_ns', 'source', 'destination', 'service',
+          'method', 'status', 'latency_ns']]
+px.display(df, 'grpc_requests')
+
+# PxL: MySQL query analysis
+df = px.DataFrame(table='mysql_events')
+df = df[['time_ns', 'source', 'destination', 'req_cmd',
+          'resp_latency_ns', 'resp_status']]
+df = df[df.resp_latency_ns > 1000000000]  # > 1s queries
+px.display(df, 'slow_queries')
+
+# PxL: TCP connection stats
+df = px.DataFrame(table='tcp_stats')
+df = df[['time_ns', 'source', 'destination', 'sent_bytes',
+          'recv_bytes', 'retransmits']]
+df = df[df.retransmits > 0]
+px.display(df, 'tcp_retransmits')
+```
+
+**Pixie auto-collects:**
+- HTTP/1.1 & HTTP/2 request/response metadata
+- gRPC request/response metadata
+- MySQL, PostgreSQL, Kafka, Redis, AMQP, DNS protocol traces
+- TCP connection stats (including retransmits)
+- OpenSSL encrypted traffic (via uprobe on libssl)
+- Process-level CPU/memory/network
+
+### Falco — Runtime Security via eBPF
+
+Falco detects unexpected runtime behavior using kernel-level syscall monitoring.
+
+```yaml
+# falco_rules.yaml — custom rules
+- rule: Unexpected Outbound Connection
+  desc: Detect outbound connections to non-allowlisted IPs
+  condition: >
+    outbound and not
+    (fd.sip in (allowed_outbound_ips) or
+     container.image.repository in (allowed_outbound_images))
+  output: >
+    Unexpected outbound connection
+    (command=%proc.cmdline connection=%fd.name
+     image=%container.image.repository)
+  priority: WARNING
+  tags: [network, container]
+
+- rule: Shell in Container
+  desc: Detect shell started in container (possible compromise)
+  condition: >
+    spawned_process and container and
+    proc.name in (bash, sh, zsh, csh) and
+    not proc.pname in (init, containerd-shim)
+  output: >
+    Shell spawned in container
+    (user=%user.name container=%container.name
+     shell=%proc.name parent=%proc.pname)
+  priority: CRITICAL
+  tags: [container, shell]
+
+- rule: Sensitive File Read
+  desc: Detect reads of sensitive files in containers
+  condition: >
+    open_read and container and
+    fd.name startswith /etc and
+    fd.name in (/etc/shadow, /etc/passwd, /etc/kubernetes)
+  output: >
+    Sensitive file read
+    (file=%fd.name command=%proc.cmdline
+     container=%container.name)
+  priority: HIGH
+  tags: [file, container]
+```
+
+```bash
+# Install Falco with eBPF driver (no kernel module)
+helm install falco falcosecurity/falco \
+  --namespace falco --create-namespace \
+  --set driver.kind=ebpf \
+  --set falcosidekick.enabled=true \
+  --set falcosidekick.config.slack.webhookurl="$SLACK_WEBHOOK"
+
+# Falcosidekick routes alerts to multiple backends
+# Supports: Slack, PagerDuty, Elasticsearch, Loki, Prometheus,
+#           Datadog, OpsGenie, webhook, AWS SQS/SNS, GCP Pub/Sub
+```
+
+### eBPF Programming Patterns
+
+**Kprobes — kernel function instrumentation:**
+```c
+// Attach to kernel function entry/exit
+SEC("kprobe/tcp_sendmsg")
+int trace_tcp_send(struct pt_regs *ctx) {
+    struct sock *sk = (struct sock *)PT_REGS_PARM1(ctx);
+    u32 pid = bpf_get_current_pid_tgid() >> 32;
+    u32 daddr = 0;
+    bpf_probe_read_kernel(&daddr, sizeof(daddr), &sk->__sk_common.skc_daddr);
+    bpf_printk("tcp_send: pid=%d dst=%x\n", pid, daddr);
+    return 0;
+}
+```
+
+**Tracepoints — stable kernel instrumentation points:**
+```c
+// Tracepoints are stable API (unlike kprobes)
+SEC("tracepoint/syscalls/sys_enter_openat")
+int trace_open(struct trace_event_raw_sys_enter *ctx) {
+    const char *filename = (const char *)ctx->args[1];
+    char buf[256];
+    bpf_probe_read_user_str(&buf, sizeof(buf), filename);
+    bpf_printk("open: %s\n", buf);
+    return 0;
+}
+```
+
+**BPF maps — kernel-user data sharing:**
+```c
+// Hash map for tracking per-PID data
+struct {
+    __uint(type, BPF_MAP_TYPE_HASH);
+    __uint(max_entries, 10240);
+    __type(key, u32);    // PID
+    __type(value, u64);  // timestamp
+} start_time SEC(".maps");
+
+// Ring buffer for streaming events to userspace
+struct {
+    __uint(type, BPF_MAP_TYPE_RINGBUF);
+    __uint(max_entries, 1 << 24);  // 16MB
+} events SEC(".maps");
+
+// Per-CPU array for counters
+struct {
+    __uint(type, BPF_MAP_TYPE_PERCPU_ARRAY);
+    __uint(max_entries, 256);
+    __type(key, u32);
+    __type(value, u64);
+} counters SEC(".maps");
+```
+
+**CO-RE (Compile Once, Run Everywhere):**
+```c
+// CO-RE enables portable eBPF programs across kernel versions
+// Uses BTF (BPF Type Format) for field relocation
+#include <vmlinux.h>
+#include <bpf/bpf_helpers.h>
+#include <bpf/bpf_core_read.h>
+
+SEC("kprobe/tcp_connect")
+int trace_connect(struct pt_regs *ctx) {
+    struct sock *sk = (struct sock *)PT_REGS_PARM1(ctx);
+    // CO-RE: field access works across kernel versions
+    u32 daddr = BPF_CORE_READ(sk, __sk_common.skc_daddr);
+    u16 dport = BPF_CORE_READ(sk, __sk_common.skc_dport);
+    bpf_printk("connect: dst=%x:%d\n", daddr, bpf_ntohs(dport));
+    return 0;
+}
+```
+
+**eBPF observability tool comparison:**
+
+| Tool      | Focus              | Instrumentation | Query Lang   | Scale     |
+|-----------|--------------------|-----------------|-------------|-----------|
+| Cilium    | Network (L3-L7)    | Kernel network  | Hubble CLI  | Per-node  |
+| Hubble    | Network flows      | eBPF + Cilium   | Observers   | Cluster   |
+| Pixie     | Full-stack APM     | eBPF + kprobe   | PxL         | Edge      |
+| Falco     | Runtime security   | Syscall (eBPF)  | Rules YAML  | Per-node  |
+| Tetragon  | Security + observ  | eBPF + kprobe   | JSON filters| Per-node  |
 ```

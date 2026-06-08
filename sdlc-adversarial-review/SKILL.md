@@ -1,13 +1,13 @@
 ---
 name: sdlc-adversarial-review
-description: "Multi-agent PR review: 3 specialized reviewers (architecture, security, quality) run in parallel, orchestrator synthesizes findings and applies fixes. Includes Google/Stripe/Meta code review culture, DORA velocity metrics (5 metrics incl. reliability), SLSA supply chain verification, AI-assisted review guardrails, automated tooling integration, advanced threat modeling (attack trees, kill chain, MITRE ATT&CK), secure code review patterns, compliance-aware review (SOC2/GDPR/HIPAA), AI/ML model review, performance review patterns, OWASP API Security Top 10 2023, supply chain security (SLSA levels/SolarWinds/npm/PyPI), LLM/AI security (OWASP LLM Top 10), container security scanning, IaC security scanning, secret detection, SOC2 Trust Services Criteria (5 categories/9 control families), GDPR technical implementation (6 data subject rights/CMP/DPIA), HIPAA technical safeguards (AES-256/audit logging/break-glass), ISO 27001 for engineering (ISMS/Annex A 93 controls), policy as code (OPA/Kyverno/Sentinel/Cloud Custodian), zero trust architecture (NIST SP 800-207/BeyondCorp), service identity (SPIFFE/SPIRE/SVIDs), mTLS (Istio/Linkerd/Cilium), secret management (Vault/Sealed Secrets/External Secrets), and container runtime security (Falco/Sysdig/KubeArmor)."
-version: 4.6.0
+description: "Multi-agent PR review: 3 specialized reviewers (architecture, security, quality) run in parallel, orchestrator synthesizes findings and applies fixes. Includes Google/Stripe/Meta code review culture, DORA velocity metrics (5 metrics incl. reliability), SLSA supply chain verification, AI-assisted review guardrails, automated tooling integration, advanced threat modeling (attack trees, kill chain, MITRE ATT&CK), secure code review patterns, compliance-aware review (SOC2/GDPR/HIPAA), AI/ML model review, performance review patterns, OWASP API Security Top 10 2023, supply chain security (SLSA levels/SolarWinds/npm/PyPI), LLM/AI security (OWASP LLM Top 10), container security scanning, IaC security scanning, secret detection, SOC2 Trust Services Criteria (5 categories/9 control families), GDPR technical implementation (6 data subject rights/CMP/DPIA), HIPAA technical safeguards (AES-256/audit logging/break-glass), ISO 27001 for engineering (ISMS/Annex A 93 controls), policy as code (OPA/Kyverno/Sentinel/Cloud Custodian), zero trust architecture (NIST SP 800-207/BeyondCorp), service identity (SPIFFE/SPIRE/SVIDs), mTLS (Istio/Linkerd/Cilium), secret management (Vault/Sealed Secrets/External Secrets), container runtime security (Falco/Sysdig/KubeArmor), OWASP SAMM maturity assessment, DevSecOps pipeline security gates, CSPM patterns, API security testing automation, and supply chain security (Sigstore/SLSA/SBOM)."
+version: 4.8.0
 author: Dinoudon
 license: MIT
 platforms: [linux, macos, windows]
 metadata:
   hermes:
-    tags: [sdlc, code-review, pr-review, adversarial, multi-agent, security, architecture, google, stripe, dora, semgrep, codeql, slsa, supply-chain, sbom, sigstore, ai-review, threat-modeling, mitre-attack, kill-chain, attack-trees, crypto-review, compliance, soc2, gdpr, hipaa, iso27001, policy-as-code, ai-ml-review, performance-review, concurrency, owasp-api, api-security, llm-security, container-security, iac-security, secret-detection, trivy, grype, snyk, checkov, tfsec, kics, trufflehog, detect-secrets, opa, rego, kyverno, sentinel, cloud-custodian, vanta, drata, cmp, tcfs, zero-trust, nist-800-207, beyondcorp, spiffe, spire, mtls, istio, linkerd, cilium, vault, sealed-secrets, external-secrets, falco, sysdig, kubearmor]
+    tags: [sdlc, code-review, pr-review, adversarial, multi-agent, security, architecture, google, stripe, dora, semgrep, codeql, slsa, supply-chain, sbom, sigstore, ai-review, threat-modeling, mitre-attack, kill-chain, attack-trees, crypto-review, compliance, soc2, gdpr, hipaa, iso27001, policy-as-code, ai-ml-review, performance-review, concurrency, owasp-api, api-security, llm-security, container-security, iac-security, secret-detection, trivy, grype, snyk, checkov, tfsec, kics, trufflehog, detect-secrets, opa, rego, kyverno, sentinel, cloud-custodian, vanta, drata, cmp, tcfs, zero-trust, nist-800-207, beyondcorp, spiffe, spire, mtls, istio, linkerd, cilium, vault, sealed-secrets, external-secrets, falco, sysdig, kubearmor, owasp-samm, devsecops, cspm, cwpp, cnapp, burp-suite, zap, cosign, fulcio, rekor, syft]
     related_skills: [sdlc-architecture-design, sdlc-testing-qa, github-code-review, github-pr-workflow]
 ---
 
@@ -4103,4 +4103,703 @@ spec:
 - [ ] Alert noise tuning: false positive rate < 5%
 - [ ] Forensic capture on critical alerts (process tree, file diffs)
 - [ ] Runtime security in CI/CD: test policies against known-bad containers
+```
+
+
+## Step 42: OWASP SAMM Maturity Assessment
+
+OWASP Software Assurance Maturity Model (SAMM) — structured framework to assess and improve software security posture across the entire SDLC.
+
+### 5 Business Functions and 15 Security Practices
+
+| Business Function | Security Practices | Description |
+|-------------------|-------------------|-------------|
+| **Governance** | Strategy & Metrics | Define security strategy, measure and track |
+| | Policy & Compliance | Establish policies, ensure regulatory compliance |
+| | Education & Guidance | Train developers, provide security guidance |
+| **Design** | Threat Assessment | Identify and model threats to the application |
+| | Security Requirements | Define security requirements for all projects |
+| | Security Architecture | Establish secure design patterns and architecture |
+| **Implementation** | Secure Build | Manage build pipeline securely |
+| | Secure Deployment | Deploy with security controls |
+| | Defect Management | Track and manage security defects |
+| **Verification** | Architecture Assessment | Verify security architecture meets requirements |
+| | Requirements-driven Testing | Test against security requirements |
+| | Security Testing | Perform security-specific testing |
+| **Operations** | Incident Management | Detect and respond to security incidents |
+| | Environment Management | Secure runtime environments |
+| | Operational Management | Manage security in production |
+
+### Maturity Levels
+
+| Level | Name | Description |
+|-------|------|-------------|
+| **0** | Implicit | No formal practice, ad-hoc security |
+| **1** | Initial | Some awareness, basic practices in place |
+| **2** | Defined | Documented and standardized practices |
+| **3** | Managed | Measured and controlled practices |
+| **4** | Optimized | Continuous improvement, metrics-driven |
+
+### Assessment Scoring
+
+```
+# Per practice: score 0-3 based on maturity level achieved
+# Per function: average of its 3 practices
+# Overall: average of 5 functions
+
+# Scoring criteria per practice:
+#   Level 0: No formal practice (score: 0)
+#   Level 1: ~33% of activities performed (score: 1)
+#   Level 2: ~67% of activities performed, documented (score: 2)
+#   Level 3: ~100% of activities, measured, optimized (score: 3)
+
+# Example assessment output:
+Governance:     2.0/3  (Strategy: 2, Policy: 2, Education: 2)
+Design:         1.7/3  (Threat: 2, Requirements: 1, Architecture: 2)
+Implementation: 2.3/3  (Build: 2, Deployment: 3, Defects: 2)
+Verification:   1.3/3  (Architecture: 1, Requirements: 1, Testing: 2)
+Operations:     1.0/3  (Incident: 1, Environment: 1, Operational: 1)
+Overall:        1.66/3
+```
+
+### SAMM Review Checklist
+
+```
+- [ ] SAMM assessment completed for each of 5 business functions
+- [ ] Each of 15 practices scored 0-3 with evidence
+- [ ] Maturity gaps identified between current and target levels
+- [ ] Improvement roadmap created with prioritized initiatives
+- [ ] Metrics defined for each practice at target maturity level
+- [ ] Re-assessment scheduled (quarterly or per release cycle)
+- [ ] Executive summary with business risk context
+- [ ] Comparison against industry benchmarks
+```
+
+## Step 43: DevSecOps Pipeline Security Gates
+
+Embed security gates at every SDLC phase. Shift-left security — catch issues early, fail fast, fix cheap.
+
+### Security Gates by SDLC Phase
+
+| Phase | Gate | Tools | FAIL BUILD Criteria |
+|-------|------|-------|---------------------|
+| **Plan** | Threat Model Review | STRIDE, OWASP Threat Dragon, Microsoft TMT | Unmitigated HIGH threats |
+| **Code** | Pre-commit Hooks | pre-commit, husky, git-secrets, detect-secrets | Any secret detected in diff |
+| **Build** | SCA + SAST | Snyk, Trivy, Grype, Semgrep, CodeQL, Bandit | CRITICAL CVE in dependency; HIGH+ SAST finding |
+| **Test** | DAST + IAST | OWASP ZAP, Burp Suite, Contrast, Checkmarx | OWASP Top 10 vuln confirmed; auth bypass |
+| **Deploy** | IaC + Config Scan | Checkov, tfsec, KICS, Terrascan | Public S3 bucket; unencrypted DB; root privilege |
+| **Operate** | Runtime Monitoring | Falco, Sysdig, Aqua, Prisma Cloud | Anomalous process exec; crypto mining detected |
+
+### Tools Per Phase Detail
+
+**Plan Phase — Threat Modeling:**
+```
+# STRIDE analysis for each data flow
+# Tools: OWASP Threat Dragon (open source), Microsoft TMT
+# Output: threat model document, tracked mitigations
+# Gate: Review blocks merge if HIGH/CRITICAL threats unmitigated
+```
+
+**Code Phase — Pre-commit Hooks:**
+```yaml
+# .pre-commit-config.yaml
+repos:
+  - repo: https://github.com/Yelp/detect-secrets
+    rev: v1.4.0
+    hooks:
+      - id: detect-secrets
+        args: ['--baseline', '.secrets.baseline']
+  - repo: https://github.com/trufflesecurity/trufflehog
+    rev: v3.63.2
+    hooks:
+      - id: trufflehog
+        entry: trufflehog git file://. --since-commit HEAD --only-verified --fail
+```
+
+**Build Phase — SCA + SAST:**
+```bash
+# SCA — dependency vulnerability scanning
+trivy fs --severity CRITICAL,HIGH --exit-code 1 .
+# or
+grype dir:. --fail-on high
+
+# SAST — static analysis
+semgrep --config=auto --severity=ERROR --error .
+# or
+bandit -r src/ -ll --fail-on medium
+```
+
+**Test Phase — DAST + IAST:**
+```bash
+# DAST with ZAP
+docker run -t ghcr.io/zaproxy/zaproxy:stable zap-full-scan.py \
+  -t https://staging.example.com \
+  -r report.html \
+  -c zap-rules.conf
+
+# IAST with Contrast (example)
+CONTRAST__AGENT__JAVA__STANDALONE_APP_NAME=myapp \
+  java -javaagent:contrast.jar -jar myapp.jar &
+# Run functional tests, IAST instruments runtime
+# FAIL if: SQL injection confirmed, auth bypass, XSS confirmed
+```
+
+**Deploy Phase — IaC + Config:**
+```bash
+# Terraform/K8s manifest scanning
+checkov -d . --framework terraform kubernetes --hard-fail-on HIGH
+# or
+tfsec . --severity HIGH --soft-fail=false
+
+# Container image scanning before push
+trivy image --severity CRITICAL,HIGH --exit-code 1 myimage:latest
+```
+
+**Operate Phase — Runtime Monitoring:**
+```yaml
+# Falco rule — fail build if test container exhibits bad behavior
+- rule: Unauthorized Process in Production
+  desc: Detect unexpected process execution
+  condition: >
+    spawned_process and container and
+    not proc.name in (allowed_procs) and
+    k8s.ns.name = "production"
+  output: "Unauthorized process (user=%user.name command=%proc.cmdline container=%container.name)"
+  priority: CRITICAL
+  tags: [runtime, process]
+```
+
+### FAIL BUILD Criteria Summary
+
+```
+NEVER FAIL BUILD:
+  - INFO severity findings
+  - Low severity CVEs with no known exploit
+  - Development-only dependency vulnerabilities
+
+ALWAYS FAIL BUILD:
+  - Secrets detected in code (any severity)
+  - CRITICAL CVE with known exploit
+  - OWASP Top 10 confirmed vulnerability (DAST)
+  - Public storage/bucket with sensitive data (IaC)
+  - Root/admin container running in production manifest
+  - Unencrypted PII store in IaC config
+  - Zero-day in actively-exploited dependency (CVE + EPSS > 0.7)
+
+CONDITIONAL (team decides):
+  - HIGH severity without known exploit
+  - MEDIUM SAST findings in non-critical paths
+  - Deprecated API usage
+```
+
+## Step 44: Cloud Security Posture Management (CSPM)
+
+Continuous monitoring and remediation of cloud resource misconfigurations.
+
+### Core Capabilities
+
+| Capability | Description | Key Actions |
+|-----------|-------------|-------------|
+| **Asset Inventory** | Discover all cloud resources across accounts/regions | Auto-discover EC2, S3, RDS, Lambda, IAM roles, security groups |
+| **Config Assessment** | Evaluate resource configurations against benchmarks | CIS Benchmarks, AWS Foundational Security, PCI-DSS, SOC2 |
+| **Compliance Monitoring** | Map configs to regulatory frameworks | Continuous compliance dashboards, gap analysis, evidence export |
+| **Drift Detection** | Detect configuration changes from baseline | Alert on unauthorized changes, track who/what/when |
+| **Risk Prioritization** | Rank findings by exploitability and blast radius | Context-aware scoring: internet-facing, data sensitivity, IAM scope |
+| **Auto-Remediation** | Automatically fix known misconfigurations | Lambda-based remediation, SSM documents, Terraform drift correction |
+
+### Common Cloud Misconfigurations
+
+**Critical Misconfigurations (FAIL BUILD):**
+
+| Misconfig | Cloud | Risk | Detection | Fix |
+|-----------|-------|------|-----------|-----|
+| Public S3 bucket | AWS | Data exfiltration | `s3:GetBucketAcl` -> `AllUsers` | Block public access, enable ACLs disabled |
+| Open Security Group (0.0.0.0/0) | AWS | Lateral movement | SG allows 0.0.0.0/0 on any port | Restrict to known CIDRs, use NACLs |
+| Unencrypted RDS/EBS | AWS | Data breach at rest | StorageEncryption=false | Enable KMS encryption, re-encrypt |
+| Over-permissive IAM | AWS | Privilege escalation | `*:*` on `*` resource | Least privilege, access analyzer |
+| Default VPC in use | AWS | Flat network | Resources in default VPC | Custom VPCs with private subnets |
+| Public IP on DB instance | AWS | Direct DB access | PubliclyAccessible=true | Set false, use bastion/PrivateLink |
+
+**Detection Script (AWS CLI):**
+```bash
+# Find public S3 buckets
+aws s3api list-buckets --query 'Buckets[].Name' --output text | while read bucket; do
+  acl=$(aws s3api get-bucket-acl --bucket "$bucket" 2>/dev/null)
+  if echo "$acl" | grep -q "AllUsers"; then
+    echo "CRITICAL: $bucket is publicly accessible"
+  fi
+done
+
+# Find security groups with 0.0.0.0/0
+aws ec2 describe-security-groups \
+  --filters Name=ip-permission.cidr,Values='0.0.0.0/0' \
+  --query 'SecurityGroups[*].[GroupId,GroupName]' --output table
+```
+
+### CSPM vs CWPP vs CNAPP
+
+| Feature | CSPM | CWPP | CNAPP |
+|---------|------|------|-------|
+| **Full Name** | Cloud Security Posture Management | Cloud Workload Protection Platform | Cloud-Native Application Protection Platform |
+| **Focus** | Infrastructure misconfig | Runtime workload protection | Unified (CSPM + CWPP + more) |
+| **Scope** | Cloud control plane (IAM, networking, storage) | VMs, containers, serverless at runtime | Full cloud-native stack |
+| **Detection** | Config drift, compliance violations | Malware, exploits, anomalous behavior | Both + shift-left |
+| **Agent** | API-based (agentless) | Agent-based on workloads | Both agentless + agent |
+| **Shift-Left** | Limited (IaC scanning) | Limited | Full pipeline integration |
+| **Examples** | AWS Config, Prisma Cloud CSPM, Lacework | Aqua, Sysdig, CrowdStrike | Wiz, Orca, Prisma Cloud Complete |
+| **Best For** | Compliance automation, config hygiene | Runtime threat detection | Full-lifecycle cloud security |
+| **Gap** | No runtime protection | No config visibility alone | Complexity, cost |
+
+## Step 45: API Security Testing
+
+Comprehensive API security testing using OWASP API Top 10 2023, Burp Suite, and ZAP.
+
+### OWASP API Security Top 10 2023
+
+| # | Name | Attack Vector | Test Method | Fix |
+|---|------|--------------|-------------|-----|
+| **API1** | Broken Object Level Authorization (BOLA) | Manipulate object IDs in requests | Change user_id in requests, check if other user data returned | Per-object authorization checks, use indirect references |
+| **API2** | Broken Authentication | Weak passwords, missing rate limiting, token leakage | Brute force login, test token expiration, check refresh token rotation | Strong auth, rate limiting, short-lived tokens, MFA |
+| **API3** | Broken Object Property Level Authorization | Excessive data exposure, mass assignment | Send extra fields in POST/PUT, check response for sensitive fields | Explicit allowlists for input and output properties |
+| **API4** | Unrestricted Resource Consumption | No rate limiting, no pagination limits | Send 1000s of requests, huge payloads, deep pagination | Rate limiting, pagination caps, payload size limits, query cost limits |
+| **API5** | Broken Function Level Authorization | Access admin endpoints via IDOR or method manipulation | Try DELETE/PATCH on admin endpoints with regular user token | Role-based access control on every endpoint |
+| **API6** | Unrestricted Access to Sensitive Business Flows | Bot abuse, credential stuffing | Automated scripts to abuse business flows | Bot detection, CAPTCHA, behavioral analysis, rate limiting per flow |
+| **API7** | Server-Side Request Forgery (SSRF) | Supply URLs pointing to internal services | Send internal hostnames as URL parameters | URL allowlist, block internal IPs, disable HTTP redirects |
+| **API8** | Security Misconfiguration | Missing headers, verbose errors, CORS wildcards | Check response headers, error messages, CORS policy | Security headers, minimal error info, strict CORS, disable debug |
+| **API9** | Improper Inventory Management | Shadow APIs, deprecated endpoints | Compare API docs to actual endpoints, test old API versions | API inventory, deprecate old versions, consistent documentation |
+| **API10** | Unsafe Consumption of APIs | Trusting third-party API responses | Inject malicious data via third-party APIs | Validate all third-party responses, dont expose raw data |
+
+### Burp Suite Automation
+
+**CI/CD Integration:**
+```bash
+# Burp Suite Enterprise — headless scan
+curl -X POST "https://burp-enterprise:8443/api/v1/scans" \
+  -H "Authorization: Bearer *** \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "API Security Scan",
+    "scope": {
+      "include": [{"host": "api.example.com"}],
+      "exclude": [{"host": "internal.example.com"}]
+    },
+    "scan_config": "API Audit",
+    "application": {"id": "app-123"}
+  }'
+
+# Check scan status and retrieve report
+curl "https://burp-enterprise:8443/api/v1/scans/{scan_id}" \
+  -H "Authorization: Bearer *** | jq '.issues'
+```
+
+**Key Burp Suite BApps for API Testing:**
+```
+- Autorize — Authorization testing (BOLA/BFLA)
+- JSON Web Tokens — JWT manipulation and testing
+- Active Scan++ — Enhanced active scanning
+- Logger++ — Advanced request logging
+- Param Miner — Hidden parameter discovery
+- HTTP Request Smuggler — Request smuggling detection
+- Turbo Intruder — High-speed fuzzing
+- InQL — GraphQL introspection and testing
+```
+
+### OWASP ZAP Automation
+
+**OpenAPI Import:**
+```bash
+# Import OpenAPI spec into ZAP
+docker run -t ghcr.io/zaproxy/zaproxy:stable zap-api-scan.py \
+  -t https://api.example.com/openapi.json \
+  -f openapi \
+  -r zap-api-report.html \
+  -J zap-api-report.json
+```
+
+**Docker CI/CD Integration:**
+```yaml
+# GitHub Actions — ZAP API scan
+api-security:
+  runs-on: ubuntu-latest
+  steps:
+    - name: ZAP API Scan
+      uses: zaproxy/action-api-scan@v0.7.0
+      with:
+        target: https://staging.example.com/openapi.json
+        format: openapi
+        cmd_options: '-a -j -l WARN -z "-config api.disablekey=true"'
+    - name: Upload results
+      uses: actions/upload-artifact@v4
+      with:
+        name: zap-api-report
+        path: zap-api-report.*
+```
+
+**ZAP Automation Framework YAML:**
+```yaml
+# zap-automation.yaml
+---
+env:
+  contexts:
+    - name: "API Context"
+      urls:
+        - "https://api.example.com"
+      includePaths:
+        - "https://api.example.com/.*"
+      excludePaths:
+        - "https://api.example.com/health"
+      authentication:
+        method: "bearer"
+        parameters:
+          token: "${env.API_TOKEN}"
+        verification:
+          method: "response"
+          loggedInRegex: "\\Q200\\E"
+  parameters:
+    failOnError: true
+    progressToStdout: true
+
+jobs:
+  - type: "openapi"
+    parameters:
+      targetUrl: "https://api.example.com/openapi.json"
+      context: "API Context"
+
+  - type: "activeScan"
+    parameters:
+      context: "API Context"
+      maxRuleDurationInMins: 5
+      maxScanDurationInMins: 30
+      policyDefinition:
+        defaultStrength: "medium"
+        defaultThreshold: "medium"
+
+  - type: "report"
+    parameters:
+      template: "traditional-json"
+      reportDir: "/zap/wrk"
+      reportFile: "zap-report"
+      reportTitle: "API Security Report"
+```
+
+## Step 46: Policy as Code
+
+Define and enforce security/compliance policies as code. Version-controlled, testable, auditable.
+
+### OPA / Rego
+
+**General-Purpose Policy Engine:**
+```
+# OPA — Open Policy Agent
+# Language: Rego (declarative, Datalog-inspired)
+# Use case: Any policy decision (K8s admission, API authz, IaC, CI/CD)
+
+# Example: Deny containers running as root
+package kubernetes.admission
+
+deny[msg] {
+  input.request.kind.kind == "Pod"
+  container := input.request.object.spec.containers[_]
+  container.securityContext.runAsUser == 0
+  msg := sprintf("Container %s must not run as root", [container.name])
+}
+```
+
+**Conftest — Test config files against Rego policies:**
+```bash
+# Test Terraform plans, K8s YAML, Dockerfiles against policies
+conftest test deployment.yaml --policy policy/
+conftest test terraform.tf --policy policy/ -o json
+```
+
+**Conftest policy example — no public S3 buckets:**
+```rego
+# policy/s3.rego
+package main
+
+deny[msg] {
+  resource := input.resource_changes[_]
+  resource.type == "aws_s3_bucket"
+  resource.change.after.acl == "public-read"
+  msg := sprintf("S3 bucket %s must not be public", [resource.name])
+}
+```
+
+**Gatekeeper — K8s admission controller:**
+```yaml
+# ConstraintTemplate — define what to check
+apiVersion: templates.gatekeeper.sh/v1
+kind: ConstraintTemplate
+metadata:
+  name: k8spspprivilegedcontainer
+spec:
+  crd:
+    spec:
+      names:
+        kind: K8sPSPPrivilegedContainer
+  targets:
+    - target: admission.k8s.gatekeeper.sh
+      rego: |
+        package k8spspprivilegedcontainer
+        violation[{"msg": msg}] {
+          container := input.review.object.spec.containers[_]
+          container.securityContext.privileged == true
+          msg := sprintf("Privileged container not allowed: %s", [container.name])
+        }
+
+# Constraint — apply the template
+apiVersion: constraints.gatekeeper.sh/v1beta1
+kind: K8sPSPPrivilegedContainer
+metadata:
+  name: psp-privileged-container
+spec:
+  match:
+    kinds:
+      - apiGroups: [""]
+        kinds: ["Pod"]
+    namespaces: ["production", "staging"]
+```
+
+### Kyverno
+
+**K8s-Native Policy Engine (YAML, no Rego):**
+```yaml
+# Validate — reject non-compliant resources
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: require-labels
+spec:
+  validationFailureAction: Enforce  # Enforce or Audit
+  rules:
+    - name: require-team-label
+      match:
+        any:
+          - resources:
+              kinds: ["Deployment"]
+      validate:
+        message: "Label 'team' is required"
+        pattern:
+          metadata:
+            labels:
+              team: "?*"
+
+# Mutate — add defaults to resources
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: add-security-context
+spec:
+  rules:
+    - name: add-run-as-non-root
+      match:
+        any:
+          - resources:
+              kinds: ["Pod"]
+      mutate:
+        patchStrategicMerge:
+          spec:
+            containers:
+              - (name): "*"
+                securityContext:
+                  runAsNonRoot: true
+                  readOnlyRootFilesystem: true
+                  allowPrivilegeEscalation: false
+
+# Generate — create resources automatically
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: generate-network-policy
+spec:
+  rules:
+    - name: default-deny-ingress
+      match:
+        any:
+          - resources:
+              kinds: ["Namespace"]
+      generate:
+        kind: NetworkPolicy
+        name: default-deny
+        namespace: "{{request.object.metadata.name}}"
+        data:
+          spec:
+            podSelector: {}
+            policyTypes: ["Ingress"]
+```
+
+### Sentinel (HashiCorp)
+
+**Policy as Code for Terraform/Consul/Vault:**
+```hcl
+# Sentinel — embedded policy framework for HashiCorp tools
+# Access: tfplan, tfconfig, tfstate, tfconfig.resources
+
+# Example: require encryption on all S3 buckets
+import "tfplan/v2" as tfplan
+
+s3_buckets = filter tfplan.resource_changes as _, rc {
+    rc.type is "aws_s3_bucket" and
+    (rc.change.actions contains "create" or rc.change.actions contains "update")
+}
+
+main = rule {
+    all s3_buckets as _, bucket {
+        bucket.change.after.server_side_encryption_configuration is not null
+    }
+}
+
+# Example: restrict instance types
+import "tfplan/v2" as tfplan
+
+allowed_types = ["t3.micro", "t3.small", "t3.medium"]
+
+main = rule {
+    all tfplan.resource_changes as _, rc {
+        rc.type is not "aws_instance" or
+        rc.change.after.instance_type in allowed_types
+    }
+}
+```
+
+### Policy as Code Comparison
+
+| Feature | OPA/Rego | Kyverno | Sentinel |
+|---------|----------|---------|----------|
+| **Language** | Rego (custom Datalog) | YAML (native K8s) | Sentinel HCL-like |
+| **Scope** | Universal (K8s, API, IaC, CI) | Kubernetes only | HashiCorp only (TF, Consul, Vault) |
+| **Learning Curve** | High (new language) | Low (YAML) | Medium (HCL-like) |
+| **K8s Integration** | Gatekeeper (admission controller) | Native admission controller | N/A (not K8s) |
+| **Mutation Support** | Via Gatekeeper (limited) | Yes (full patchStrategicMerge) | No (validate only) |
+| **Resource Generation** | No | Yes (generate other resources) | No |
+| **Test Framework** | opa test (built-in) | kyverno test (YAML) | sentinel test |
+| **Terraform Integration** | Conftest, tf-plan evaluation | N/A | Native (tfplan/tfconfig/tfstate) |
+| **Community Policies** | OPA Library, Conftest Hub | Kyverno policies repo | Sentinel policies repo |
+| **Best For** | Multi-platform policy | K8s-focused teams | Terraform-heavy orgs |
+| **License** | Apache 2.0 | Apache 2.0 | Commercial (HCP) |
+
+## Step 47: Supply Chain Security
+
+Protect the software supply chain from source to deployment. SLSA, Sigstore, SBOM generation.
+
+### SLSA Levels Detailed
+
+| Level | Build | Source | Provenance | Key Guarantee |
+|-------|-------|--------|------------|---------------|
+| **SLSA 0** | No requirements | No requirements | None | No guarantees |
+| **SLSA 1** | Build process documented | Version controlled | Provenance exists (unsigned) | Provenance available |
+| **SLSA 2** | Hosted build platform (CI) | Version controlled + authenticated | Signed provenance (hosted service) | Tamper resistance from build platform |
+| **SLSA 3** | Hardened, isolated, ephemeral build | Version controlled + authenticated + audited | Signed provenance (non-falsifiable) | Tamper proof, build isolation |
+| **SLSA 4** | Hermetic, reproducible | Same as L3 | Same as L3 + comprehensive review | Fully auditable, hermetic builds |
+
+**SLSA Requirements Deep Dive:**
+```
+Build Requirements:
+  L1: Build process is scripted (not manual)
+  L2: Build runs on hosted platform (not dev laptop)
+  L3: Build is isolated (no network, ephemeral), provenance is signed by build platform
+  L4: Build is hermetic (all inputs declared) and reproducible
+
+Source Requirements:
+  L1: Source is version controlled
+  L2: Source is version controlled + authenticated (signed commits)
+  L3: Source changes are reviewed by 2+ persons, audit log retained
+
+Provenance Requirements:
+  L1: Provenance exists (any format, unsigned acceptable)
+  L2: Provenance signed by build platform, available in standard format
+  L3: Provenance signed by build platform key (not service account), non-falsifiable
+```
+
+### Sigstore
+
+**Keyless signing ecosystem: Fulcio + Rekor + Cosign.**
+
+**Workflow:**
+```
+1. Developer authenticates via OIDC (GitHub, Google, etc.)
+2. Fulcio issues short-lived certificate bound to OIDC identity
+3. Developer signs artifact with private key
+4. Signature + certificate uploaded to Rekor (transparency log)
+5. Verifier checks: signature valid + cert matches identity + entry in Rekor
+
+# No long-lived keys to manage or rotate
+```
+
+**Cosign Usage:**
+```bash
+# Sign a container image (keyless — uses OIDC)
+cosign sign --yes ghcr.io/org/app@sha256:abc123
+# Automatically: uses Fulcio cert + logs to Rekor
+
+# Sign with explicit key
+cosign sign --key cosign.key ghcr.io/org/app:v1.0
+
+# Verify signature
+cosign verify \
+  --certificate-identity=user@example.com \
+  --certificate-oidc-issuer=https://token.actions.githubusercontent.com \
+  ghcr.io/org/app@sha256:abc123
+
+# Verify and check Rekor transparency log
+cosign verify \
+  --certificate-identity=user@example.com \
+  --certificate-oidc-issuer=https://token.actions.githubusercontent.com \
+  --rekor-url=https://rekor.sigstore.dev \
+  ghcr.io/org/app@sha256:abc123
+
+# Attach SBOM to image
+cosign attest --predicate sbom.spdx.json --type spdxjson \
+  ghcr.io/org/app@sha256:abc123
+
+# Verify attestation
+cosign verify-attestation \
+  --type spdxjson \
+  --certificate-identity=user@example.com \
+  --certificate-oidc-issuer=https://token.actions.githubusercontent.com \
+  ghcr.io/org/app@sha256:abc123
+```
+
+### SBOM Generation
+
+| Tool | Ecosystem | Format | Strengths | Weaknesses |
+|------|-----------|--------|-----------|------------|
+| **Syft** | Container, filesystem, repos | SPDX, CycloneDX | Fast, accurate, multiple formats | Limited vuln scanning (use with Grype) |
+| **Grype** | SBOM scanner | Reads SPDX/CycloneDX | Fast vuln matching, EPSS scoring | Needs SBOM input (pairs with Syft) |
+| **Trivy** | All-in-one | SPDX, CycloneDX | SBOM + vuln + secret + IaC in one tool | Slower than specialized tools |
+
+**SBOM Generation Commands:**
+```bash
+# Syft — generate SBOM
+syft dir:. -o spdx-json > sbom.spdx.json
+syft dir:. -o cyclonedx-json > sbom.cdx.json
+syft ghcr.io/org/app:v1.0 -o spdx-json > image-sbom.spdx.json
+
+# Grype — scan SBOM for vulnerabilities
+grype sbom:sbom.spdx.json --fail-on high
+grype sbom:sbom.spdx.json -o json > vuln-report.json
+
+# Trivy — generate SBOM and scan in one step
+trivy image --format cyclonedx --output sbom.cdx.json ghcr.io/org/app:v1.0
+trivy sbom sbom.cdx.json --severity CRITICAL,HIGH --exit-code 1
+```
+
+### Supply Chain Security Review Checklist
+
+```
+- [ ] SLSA level assessed for each build pipeline (target: L2 minimum)
+- [ ] All container images signed with Sigstore/Cosign
+- [ ] SBOM generated at build time (SPDX or CycloneDX)
+- [ ] SBOM includes all dependencies (direct + transitive)
+- [ ] Dependency pins use hash, not mutable tags
+- [ ] No unpinned GitHub Actions (use @sha256 not @v1)
+- [ ] No curl|bash or wget|sh install patterns
+- [ ] Dependency confusion protection (private registry scoping)
+- [ ] Provenance attestation generated and stored (Rekor)
+- [ ] Vulnerability scanning integrated in pipeline (Grype/Trivy)
+- [ ] Signature verification in deployment pipeline (cosign verify)
+- [ ] Transparency log checked for all deployed artifacts
+- [ ] Renovate/Dependabot configured for dependency updates
+- [ ] License compliance scanning (syft + license check)
+- [ ] No known typosquatting-susceptible package names
 ```
