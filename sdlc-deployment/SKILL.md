@@ -1,13 +1,13 @@
 ---
 name: sdlc-deployment
-description: "Deployment strategies: canary, blue-green, rolling, progressive delivery (Flagger/Argo Rollouts), feature flags (LaunchDarkly/Unleash/OpenFeature), rollback, database migrations, zero-downtime patterns. v3: Gateway API traffic splitting, OpenFeature CNCF standard, FinOps (OpenCost/Karpenter/FOCUS), AnalysisTemplate, multi-cluster progressive delivery. v3.1: Serverless (Lambda/Cloud Run/Container Apps), edge deployment (Cloudflare Workers/Deno Deploy), cold start optimization, serverless observability. v4: Production hardening (health probes, graceful shutdown, PDB), multi-region patterns (active-active/passive, follow-the-sun), disaster recovery (RPO/RTO, failover automation), cost optimization (right-sizing, spot/reserved), deployment verification (smoke tests, synthetic monitoring, canary analysis)."
-version: 4.2.0
+description: "Deployment strategies: canary, blue-green, rolling, progressive delivery (Flagger/Argo Rollouts), feature flags (LaunchDarkly/Unleash/OpenFeature), rollback, database migrations, zero-downtime patterns. v3: Gateway API traffic splitting, OpenFeature CNCF standard, FinOps (OpenCost/Karpenter/FOCUS), AnalysisTemplate, multi-cluster progressive delivery. v3.1: Serverless (Lambda/Cloud Run/Container Apps), edge deployment (Cloudflare Workers/Deno Deploy), cold start optimization, serverless observability. v4: Production hardening (health probes, graceful shutdown, PDB), multi-region patterns (active-active/passive, follow-the-sun), disaster recovery (RPO/RTO, failover automation), cost optimization (right-sizing, spot/reserved), deployment verification (smoke tests, synthetic monitoring, canary analysis). v4.3: Deployment failure case studies (Knight Capital, AWS S3, Cloudflare, GitLab, Facebook BGP), successful deployment patterns (Netflix, Google, Amazon, Etsy), database migration war stories (gh-ost, expand-contract, Vitess), feature flag case studies (Facebook Gate, LaunchDarkly, Microsoft flight rings)."
+version: 4.3.0
 author: Hermes Agent
 license: MIT
 platforms: [linux, macos, windows]
 metadata:
   hermes:
-    tags: [sdlc, deployment, canary, blue-green, rolling, feature-flags, progressive-delivery, flagger, argo-rollouts, kubernetes, zero-downtime, gateway-api, openfeature, finops, opencost, karpenter, analysis-template, multi-cluster, database-migration, serverless, lambda, cloud-run, container-apps, edge-deployment, cloudflare-workers, cold-start, serverless-observability, production-hardening, health-checks, graceful-shutdown, pdb, multi-region, disaster-recovery, rpo-rto, cost-optimization, spot-instances, deployment-verification, smoke-tests, synthetic-monitoring, canary-analysis]
+    tags: [sdlc, deployment, canary, blue-green, rolling, feature-flags, progressive-delivery, flagger, argo-rollouts, kubernetes, zero-downtime, gateway-api, openfeature, finops, opencost, karpenter, analysis-template, multi-cluster, database-migration, serverless, lambda, cloud-run, container-apps, edge-deployment, cloudflare-workers, cold-start, serverless-observability, production-hardening, health-checks, graceful-shutdown, pdb, multi-region, disaster-recovery, rpo-rto, cost-optimization, spot-instances, deployment-verification, smoke-tests, synthetic-monitoring, canary-analysis, failure-case-studies, deployment-patterns, database-migration-war-stories, feature-flag-case-studies]
     related_skills: [sdlc-cicd-pipeline, sdlc-testing-qa, sdlc-observability]
 ---
 
@@ -2493,6 +2493,663 @@ spec:
 4. If all metrics pass → increase traffic weight
 5. Repeat at 30%, 60%, 100%
 6. Any metric fails → auto-rollback, alert team
+
+## Step 22: Deployment Failure Case Studies
+
+Learn from catastrophic production failures. Each case study includes root cause, lesson, and prevention.
+
+### Knight Capital (August 1, 2012) — $440M Loss in 45 Minutes
+
+**What happened:** Knight Capital deployed new trading software to 8 servers. Server #7 had dead code from a decommissioned feature (Power Peg) still using the same flag (SMRI). The new code repurposed the flag. When activated, server #7 executed rogue trades at extreme volumes.
+
+**Root cause:**
+- Dead code left in production — Power Peg feature was obsolete but never removed
+- Deployment reused old feature flag (SMRI) for new purpose
+- No automated verification that all servers ran identical code
+- Manual deployment process on 8 servers (human error window)
+
+**Impact:** $440M loss in 45 minutes. Company required $400M emergency rescue. Stock dropped 75%.
+
+**Prevention:**
+```bash
+# Dead code detection in CI
+# Fail build if deprecated features aren't fully removed
+grep -rn "Power Peg\|SMRI\|DEPRECATED" src/ && \
+  echo "ERROR: Dead code detected" && exit 1
+
+# Automated deployment verification — all servers must report same version
+for server in $(cat server_list.txt); do
+  deployed=$(ssh "$server" "cat /app/VERSION")
+  [[ "$deployed" == "$EXPECTED_VERSION" ]] || \
+    echo "MISMATCH on $server: $deployed vs $EXPECTED_VERSION" && exit 1
+done
+```
+
+**Lesson:** Remove dead code aggressively. Never reuse feature flags. Automate deployment verification across all instances. Dead code is a ticking time bomb.
+
+---
+
+### AWS S3 Outage (February 28, 2017) — Cascading Restart
+
+**What happened:** During routine capacity addition to S3 index subsystem, an operator executed a command that removed more servers than intended. The subsystem entered a full restart. During restart, S3 couldn't serve any requests. Dependent services (Lambda, ECS, EC2 status checks, CloudWatch) cascaded.
+
+**Root cause:**
+- Human operator removed too many S3 index servers in single command
+- Subsystem required full restart (not incremental recovery)
+- S3 was a hidden dependency for nearly all AWS services
+- No blast radius limit on operational commands
+
+**Impact:** ~4 hours of S3 unavailability in us-east-1. Cascading failures across dozens of AWS services. Estimated $150M+ in customer losses.
+
+**Prevention:**
+```yaml
+# Blast radius controls — limit operational actions
+apiVersion: policy/v1
+kind: LimitRange
+metadata:
+  name: max-servers-per-action
+spec:
+  rules:
+  - maxAffectedServers: 5
+    cooldownPeriod: 300s  # Wait 5 min between batches
+    requiresApproval: true
+```
+
+**Lesson:** Every operational command needs blast radius limits. Critical subsystems must support incremental recovery (not all-or-nothing restarts). Hidden dependencies create cascading failures — map them before incidents.
+
+---
+
+### Cloudflare Outage (July 2, 2019) — ReDoS Regex
+
+**What happened:** A WAF rule update contained a poorly written regex. When triggered by specific attack patterns, the regex entered catastrophic backtracking (ReDoS). CPU spiked to 100% on all Cloudflare edge servers globally.
+
+**Root cause:**
+- Regex with exponential backtracking: `(?:(?:\"|'|\]|\}|\\|\d|(?:nan|infinity|true|false|null|undefined|...(truncated)`
+- No regex complexity analysis in CI/CD pipeline
+- WAF rules deployed globally simultaneously (no staged rollout)
+- No CPU timeout on regex evaluation
+
+**Impact:** Global Cloudflare outage. All websites behind Cloudflare returned 502 errors for 27 minutes.
+
+**Prevention:**
+```python
+# Regex complexity checker — detect catastrophic backtracking
+import re2  # Google RE2 engine (no backtracking, guaranteed linear time)
+
+# Alternative: timeout-based regex execution
+import signal
+
+def regex_with_timeout(pattern, text, timeout=1):
+    """Fail fast on slow regex."""
+    signal.signal(signal.SIGALRM, lambda *a: TimeoutError())
+    signal.alarm(timeout)
+    try:
+        result = re.search(pattern, text)
+        signal.alarm(0)
+        return result
+    except TimeoutError:
+        raise ValueError(f"Regex timeout after {timeout}s — likely ReDoS: {pattern[:80]}")
+
+# CI check: reject regexes with nested quantifiers
+REDOSSUSPECT = re.compile(r'\(.*[+*].*\)[+*]')  # (a+)+ style
+```
+
+**Lesson:** Never deploy regex rules globally at once — stage them. Test regex complexity in CI (use RE2 or timeout guards). Catastrophic backtracking is a real attack vector.
+
+---
+
+### GitLab Database Outage (January 31, 2017) — `rm -rf` on Production
+
+**What happened:** A GitLab engineer was investigating replication lag on the production database. During manual recovery, he ran `rm -rf` on the wrong directory — deleting the production database. Backup systems were broken: LVM snapshots were 24h old, regular backups hadn't run in months, Azure snapshots had failed silently.
+
+**Root cause:**
+- `rm -rf /var/opt/gitlab/postgresql/data` instead of target directory
+- No safeguards on destructive commands against production
+- Backup systems silently broken (no monitoring/alerting)
+- Single engineer with root access performing live surgery on production DB
+
+**Impact:** 6 hours of downtime. ~5,000 projects, ~5,000 comments, ~700 users permanently lost. Real-time recovery streamed on YouTube.
+
+**Prevention:**
+```bash
+# Shell alias — refuse rm -rf on known production paths
+alias rm='rm_w_check'
+rm_w_check() {
+  for arg in "$@"; do
+    case "$arg" in
+      /var/opt/gitlab/*|/data/postgresql/*|/var/lib/postgresql/*)
+        echo "BLOCKED: Would delete production data: $arg"
+        echo "Use 'command rm' to override (requires 2-person approval)"
+        return 1 ;;
+    esac
+  done
+  command rm "$@"
+}
+
+# Backup verification — alert if backup age > threshold
+backup_age=$(find /backups -name "*.tar.gz" -mmin -1440 | wc -l)
+[[ "$backup_age" -eq 0 ]] && alert "NO BACKUPS IN LAST 24 HOURS"
+```
+
+**Lesson:** Never run destructive commands on production without safeguards. Monitor backup systems as carefully as production. Automate backup verification. One engineer should never have unilateral delete access to production data.
+
+---
+
+### Facebook/Meta BGP Outage (October 4, 2021) — 6-Hour Global Outage
+
+**What happened:** During routine maintenance, a BGP configuration change was applied that inadvertently withdrew all Facebook BGP routes from the internet. Facebook's DNS servers became unreachable. Internal tools that relied on Facebook's own infrastructure also went down, creating a chicken-and-egg problem for recovery.
+
+**Root cause:**
+- BGP route withdrawal propagated globally within minutes
+- Audit tool that should have caught the issue had a bug
+- Physical access to data centers was controlled by systems that were now down
+- Internal communication tools (Workplace, Messenger) were also down
+
+**Impact:** ~6 hours of total Facebook/Instagram/WhatsApp/ Messenger outage. $60M+ in lost revenue. Physical access to data centers required manual intervention with security escorts.
+
+**Prevention:**
+```yaml
+# BGP safety — route leak prevention
+# Use RPKI (Resource Public Key Infrastructure) to validate route origins
+bgp_safety:
+  rpki_validation: required
+  max_prefix_limit: 1000  # Alert if withdrawing more than N prefixes
+  commit_confirm_timeout: 300  # Auto-revert if not confirmed in 5 min
+  out_of_band_management:
+    - independent_ssh_bastion
+    - serial_console_access
+    - physical_key_card_access  # Never depend on same infra for access
+```
+
+**Lesson:** Out-of-band access is mandatory — never depend on your own infrastructure for recovery. BGP changes need staged rollout (like any deployment). Audit tools need their own audits. Chicken-and-egg dependencies in recovery paths are lethal.
+
+## Step 23: Successful Deployment Patterns
+
+Learn from organizations that do deployments at extreme scale.
+
+### Netflix — Spinnaker, Red/Black Deploys, Chaos Engineering
+
+**Stack:** Spinnaker (deployment orchestrator), Kayenta (canary analysis), Chaos Monkey/Simian Army.
+
+**Deployment pattern (red/black, aka blue/green):**
+```json
+// Spinnaker pipeline config
+{
+  "stages": [{
+    "type": "deploy",
+    "strategy": "redblack",
+    "rollback": { "onFailure": true },
+    "maxRemainingAsgs": 2,
+    "delayBeforeDisableSec": 60,
+    "delayBeforeScaleDownSec": 600
+  }, {
+    "type": "canary",
+    "analysis": {
+      "canaryConfig": {
+        "canaryAnalysisIntervalMins": 5,
+        "canaryResultScore": 95,
+        "metricsAccountName": "atlas"
+      }
+    }
+  }]
+}
+```
+
+**Key practices:**
+- Immutable infrastructure — never patch, always replace
+- Red/black (not rolling) — instant rollback by re-enabling old ASG
+- Kayenta automated canary analysis — statistical comparison, not thresholds
+- Chaos engineering validates resilience continuously (not just during deploys)
+- 100+ deployments per day across 1000+ microservices
+
+**Why it works:** Spinnaker decouples deployment from CI. Red/black means zero mixed-version traffic. Chaos engineering proves the system handles failure *before* real failures hit.
+
+---
+
+### Google — SRE Error Budgets, Progressive Delivery
+
+**Stack:** Borg (orchestration), SRE practices, error budgets, progressive rollouts.
+
+**Error budget model:**
+```yaml
+# SRE error budget definition
+service:
+  name: search-api
+  slo:
+    availability: 99.99%    # 52.6 minutes downtime/year
+    latency_p99: 200ms
+  error_budget:
+    monthly: 4.32 minutes   # 99.99% of 30 days
+    burn_rate_alert:
+      - window: 1h
+        burn_rate: 14.4x    # Budget exhausted in 2 hours
+        severity: page
+      - window: 6h
+        burn_rate: 6x       # Budget exhausted in 5 days
+        severity: ticket
+
+# Progressive rollout gated by error budget
+rollout:
+  stages: [1%, 5%, 25%, 50%, 100%]
+  promotion_criteria:
+    - error_budget_remaining > 50%  # Can't push if budget depleted
+    - no_active_incidents
+    - latency_within_slo
+  pause_on_budget_exhaustion: true
+```
+
+**Key practices:**
+- Error budgets balance reliability vs velocity — if budget remains, ship fast; if depleted, focus on reliability
+- Progressive rollout with automated promotion/rollback at each stage
+- Change velocity gated by reliability metrics
+- Postmortems are blameless and mandatory for any budget breach
+
+**Why it works:** Error budgets give teams a quantitative framework for risk. No subjective "is it safe to deploy?" — the budget tells you.
+
+---
+
+### Amazon — Two-Pizza Teams, Cell Architecture
+
+**Stack:** Cell-based architecture, two-pizza team ownership, automated deployments.
+
+**Cell architecture pattern:**
+```
+                    ┌─────────────────┐
+                    │   Traffic       │
+                    │   Router        │
+                    └────────┬────────┘
+                             │
+              ┌──────────────┼──────────────┐
+              │              │              │
+         ┌────┴────┐   ┌────┴────┐   ┌────┴────┐
+         │ Cell 1  │   │ Cell 2  │   │ Cell 3  │
+         │ (1/100  │   │ (1/100  │   │ (1/100  │
+         │ users)  │   │ users)  │   │ users)  │
+         └─────────┘   └─────────┘   └─────────┘
+```
+
+**Key practices:**
+- Each cell serves a subset of users (hash user_id → cell)
+- Blast radius = 1/N of traffic (deploy to one cell at a time)
+- Two-pizza teams (6-10 people) own full lifecycle: build, deploy, operate
+- "You build it, you run it" — no separate ops team
+- Deploy pipeline: bake → test → 1 cell → all cells (hours apart)
+
+**Why it works:** Cell architecture limits blast radius structurally, not just procedurally. Team ownership means code quality and operational readiness are aligned incentives.
+
+---
+
+### Etsy — Deployinator
+
+**Stack:** Deployinator (custom web UI), feature flags, trunk-based development.
+
+**Deployinator pattern:**
+```ruby
+# Deployinator — one-click deploy with instant rollback
+class Deployinator
+  def deploy(environment, branch)
+    # 1. Run smoke tests against staging
+    run_smoke_tests!(environment)
+    # 2. Feature-flag the new code (dark launch)
+    enable_feature_flags!(branch)
+    # 3. Deploy to production (trunk-based, always deploy HEAD)
+    deploy_to_production!(branch)
+    # 4. Monitor dashboards for 15 minutes
+    monitor_rollout!(duration: 15.minutes)
+  end
+
+  def rollback(environment)
+    # Instant: disable feature flags, revert to last known good
+    disable_new_flags!
+    revert_to_last_good_deploy!
+  end
+end
+```
+
+**Key practices:**
+- 50+ deploys per day from single web interface
+- Trunk-based development — no long-lived branches
+- Feature flags for every change — deploy ≠ release
+- Deploy button visible to entire engineering (transparency)
+- Instant rollback = one click (flag toggle or revert)
+
+**Why it works:** Low friction deployment + feature flags = developers ship small changes frequently. Small changes are easy to debug and rollback.
+
+## Step 24: Database Migration War Stories
+
+Schema changes are the hardest part of zero-downtime deployments. These patterns solve them.
+
+### GitHub — gh-ost (Online Schema Migration via Binlog Streaming)
+
+**Problem:** `ALTER TABLE` on large MySQL tables locks the table (or requires expensive copy). pt-online-schema-change has triggers overhead.
+
+**gh-ost approach:** Stream binlog events to apply changes incrementally, no triggers needed.
+
+**Step-by-step:**
+```bash
+# 1. gh-ost creates a ghost table with new schema
+#    (does NOT use triggers — reads binlog instead)
+
+gh-ost \
+  --host=production-db.example.com \
+  --database=github \
+  --table=pull_requests \
+  --alter="ADD COLUMN merged_by_id BIGINT DEFAULT NULL" \
+  --chunk-size=1000 \
+  --max-load=Threads_running=25 \      # Pause if DB overloaded
+  --critical-load=Threads_running=100 \ # Abort if dangerously loaded
+  --initially-drop-ghost-table \
+  --initially-drop-old-table \
+  --serve-socket-file=/tmp/gh-ost.sock \ # Interactive control
+  --postpone-cut-over-flag-file=/tmp/gh-ost-cut-over \
+  --execute
+
+# 2. gh-ost process:
+#    a) Create _pull_requests_gho (ghost table) with new schema
+#    b) Copy rows from pull_requests → _pull_requests_gho (chunked)
+#    c) Stream binlog: apply INSERT/UPDATE/DELETE to ghost table in real-time
+#    d) When copy catches up → atomic table swap (cut-over)
+#    e) Old table becomes _pull_requests_del (dropped later)
+
+# 3. Interactive control via socket:
+echo "throttle" | nc -U /tmp/gh-ost.sock  # Pause migration
+echo "chunk-size=500" | nc -U /tmp/gh-ost.sock  # Adjust speed
+echo "cut-over" | nc -U /tmp/gh-ost.sock  # Trigger final swap
+```
+
+**Key details:**
+- Binlog streaming = no triggers = less write amplification
+- Interactive throttling: slow down during peak hours, speed up at night
+- Atomic cut-over: rename tables in single transaction (<1ms lock)
+- Automatic rollback if cut-over fails
+
+---
+
+### Stripe — Expand-Contract Pattern (Dual-Write)
+
+**Problem:** Rename a column used by hundreds of services. Can't do it atomically — old code reads old column, new code reads new column.
+
+**Expand-contract steps:**
+
+```
+Phase 1: EXPAND (add new column, keep old)
+┌─────────────────────────────────────────────────┐
+│ ALTER TABLE customers ADD COLUMN email_new TEXT; │
+│ -- App code: write to BOTH email and email_new   │
+│ -- Read from: email (old column)                 │
+└─────────────────────────────────────────────────┘
+
+Phase 2: MIGRATE DATA (backfill + dual-write)
+┌──────────────────────────────────────────────────────┐
+│ UPDATE customers SET email_new = email WHERE email_new│
+│   IS NULL LIMIT 10000;  -- Batched backfill           │
+│ -- App code: still reads from email                   │
+│ -- App code: writes to BOTH columns                   │
+│ -- Background job: backfills remaining rows            │
+└──────────────────────────────────────────────────────┘
+
+Phase 3: SWITCH READS
+┌──────────────────────────────────────────────────────┐
+│ -- App code: read from email_new (after verifying     │
+│   backfill complete)                                  │
+│ -- App code: still writes to BOTH columns             │
+│ -- Verify: no reads from old column in monitoring     │
+└──────────────────────────────────────────────────────┘
+
+Phase 4: CONTRACT (remove old column)
+┌──────────────────────────────────────────────────────────┐
+│ -- Stop writing to old column                            │
+│ ALTER TABLE customers DROP COLUMN email;                 │
+│ ALTER TABLE customers RENAME COLUMN email_new TO email;  │
+└──────────────────────────────────────────────────────────┘
+```
+
+**Stripe's implementation details:**
+```ruby
+# Dual-write in application code (Ruby)
+class Customer < ApplicationRecord
+  # Expand phase: write both columns
+  def update_email(new_email)
+    self.email = new_email
+    self.email_new = new_email
+    save!
+  end
+
+  # Migration status checked via feature flag
+  def read_email
+    if Feature.enabled?(:read_from_email_new)
+      email_new
+    else
+      email
+    end
+  end
+end
+```
+
+**Why it works:** Every phase is independently deployable and rollback-safe. Old code and new code coexist at every step. No atomic cutover required.
+
+---
+
+### Vitess — Large-Scale MySQL Schema Migration
+
+**Problem:** GitHub's gh-ost works for single-shard MySQL. What about 1000+ shards?
+
+**Vitess approach:**
+```
+1. Schema migration submitted as DDL to vtctld
+2. Vitess applies migration to each shard independently
+3. Each shard migration uses online DDL (no table locks)
+4. Progress tracked per-shard, aggregated globally
+5. Throttle based on replication lag across all shards
+```
+
+```bash
+# Submit online DDL via Vitess
+vtctldclient ApplySchema \
+  --ddl_strategy="online" \
+  --sql="ALTER TABLE orders ADD COLUMN shipping_method VARCHAR(50)" \
+  commerce
+
+# Monitor migration progress
+vtctldclient OnlineDDL show commerce
+
+# Throttle all migrations if replication lag > 10s
+vtctldclient --server localhost:15999 ThrottledApp online-ddl --throttle
+```
+
+**Vitess-specific features:**
+- `gh-ost` and `pt-osc` integrated per-shard
+- Automatic retry on transient failures
+- Cross-shard consistency guarantees
+- Throttle based on replication lag (protects replicas)
+- Cancel/rollback individual shard migrations
+
+**When to use which:**
+
+| Tool | Scale | Complexity | Best For |
+|------|-------|------------|----------|
+| Direct ALTER | <1M rows | Low | Small tables, off-peak |
+| gh-ost | 1M-1B rows | Medium | Single-shard MySQL/Postgres |
+| Vitess | 1B+ rows, 100+ shards | High | Distributed MySQL |
+| pt-osc | 1M-1B rows | Medium | Legacy MySQL (triggers OK) |
+| Online DDL (MySQL 8+) | <100M rows | Low | Instant DDL for supported ops |
+
+## Step 25: Feature Flag Case Studies
+
+### Facebook Gate — Thousands of Feature Flags at Scale
+
+**Scale:** Facebook runs thousands of concurrent feature flags ("gates") controlling everything from UI experiments to backend infrastructure changes.
+
+**Gate system architecture:**
+```python
+# Facebook Gate — simplified model
+class Gate:
+    """Each gate has: name, owner, audience rules, kill switch."""
+    def __init__(self, name, owner, default=False):
+        self.name = name
+        self.owner = owner  # Required: who to page if gate causes issues
+        self.default = default
+        self.audience_rules = []  # User segments, % rollout, etc.
+        self.kill_switch = False   # Emergency disable
+
+    def evaluate(self, user, context):
+        if self.kill_switch:
+            return self.default
+        for rule in self.audience_rules:
+            if rule.matches(user, context):
+                return rule.value
+        return self.default
+
+# Gate categories (Facebook taxonomy):
+# 1. Release gates: control new feature rollout
+# 2. Experiment gates: A/B test variants
+# 3. Ops gates: operational kill switches
+# 4. Permission gates: access control
+```
+
+**Key practices at scale:**
+- Every gate has an owner (mandatory) — no orphaned flags
+- Kill switches for every gate — instant disable without deploy
+- Gate dependencies tracked — disabling parent gate cascades
+- Automated cleanup — unused gates flagged after 90 days
+- Gate audit log — who changed what, when, why
+
+---
+
+### LaunchDarkly — Feature Flag Patterns
+
+**Flag types and lifecycles:**
+```yaml
+# Flag taxonomy (LaunchDarkly model)
+flags:
+  # 1. Release flag — controls feature rollout, short-lived
+  - name: new-checkout-flow
+    type: release
+    lifecycle: create → ramp (1% → 10% → 50% → 100%) → cleanup
+    ttl: 30 days  # Auto-remind to clean up
+
+  # 2. Experiment flag — A/B test, medium-lived
+  - name: checkout-button-color
+    type: experiment
+    variants: [control, variant_a, variant_b]
+    metric: conversion_rate
+    ttl: 90 days
+
+  # 3. Ops flag — operational control, long-lived
+  - name: payment-provider-fallback
+    type: ops
+    default: stripe
+    fallback: paypal
+    ttl: indefinite
+
+  # 4. Permission flag — access control, permanent
+  - name: admin-dashboard-access
+    type: permission
+    targeting: admins_only
+    ttl: indefinite
+```
+
+**SDK pattern:**
+```javascript
+// LaunchDarkly SDK — Node.js
+const LDClient = require('launchdarkly-node-server-sdk');
+const client = LDClient.init('sdk-key');
+
+// Evaluate flag with context
+const context = {
+  kind: 'user',
+  key: 'user-123',
+  email: 'user@example.com',
+  plan: 'enterprise',
+  country: 'US'
+};
+
+const showNewCheckout = await client.variation('new-checkout-flow', context, false);
+if (showNewCheckout) {
+  // New checkout flow
+}
+
+// Flag change listener — react to flag changes in real-time
+client.on('update:checkout-button-color', (flag) => {
+  console.log(`Flag changed: ${flag.key}, new value: ${flag.value}`);
+});
+```
+
+---
+
+### Microsoft — Flight Rings
+
+**Ring-based rollout:**
+```
+Ring 0 (Canary)     → Microsoft internal employees (~1% of users)
+Ring 1 (Preview)    → Windows Insiders, early adopters (~5%)
+Ring 2 (Broad)      → General availability (all remaining users)
+Ring 3 (Enterprise) → Managed enterprise deployments (controlled)
+```
+
+**Implementation:**
+```xml
+<!-- Windows Update targeting via rings -->
+<DeploymentRing>
+  <Ring name="Canary" percentage="1">
+    <Criteria>
+      <EmployeeStatus>Microsoft</EmployeeStatus>
+      <DeviceType>Internal</DeviceType>
+    </Criteria>
+  </Ring>
+  <Ring name="Preview" percentage="5">
+    <Criteria>
+      <InsiderStatus>Dev|Beta|ReleasePreview</InsiderStatus>
+    </Criteria>
+  </Ring>
+  <Ring name="Broad" percentage="100">
+    <Criteria>
+      <Exclusions>
+        <BlockedDriver>version<2.0</BlockedDriver>
+      </Exclusions>
+    </Criteria>
+  </Ring>
+</DeploymentRing>
+```
+
+**Key practices:**
+- Ring progression requires sign-off at each stage
+- Automatic hold if crash rate exceeds threshold
+- Separate ring for enterprise (managed, not experimental)
+- Rollback propagates backward through rings
+- Metrics compared between rings before promotion
+
+---
+
+### Feature Flag Taxonomy (Comprehensive)
+
+| Type | Purpose | Lifetime | Cleanup | Example |
+|------|---------|----------|---------|---------|
+| **Release** | Decouple deploy from release | Days-weeks | Mandatory after 100% rollout | `new-search-algorithm` |
+| **Experiment** | A/B test, measure impact | Weeks-months | Mandatory after winner chosen | `checkout-button-red` |
+| **Ops** | Runtime operational control | Long-lived | Not needed (permanent) | `enable-circuit-breaker` |
+| **Permission** | Access control | Permanent | Not needed | `beta-user-access` |
+
+**Flag hygiene rules:**
+```yaml
+flag_hygiene:
+  max_age_release_flags: 60d      # Auto-create ticket to clean up
+  max_age_experiment_flags: 120d  # Auto-create ticket to clean up
+  max_concurrent_flags: 200       # Alert if exceeding
+  required_fields:
+    - owner                       # Who owns this flag
+    - type                        # release/experiment/ops/permission
+    - ticket                      # Link to issue/ticket
+    - expected_removal_date       # When to clean up
+  automated_checks:
+    - stale_flag_detection        # Flags with no evaluation in 30 days
+    - orphan_flag_detection       # Flags with no owner
+    - dependency_check            # Flags referenced in code but not in system
+
+# CI check: fail build if release flags exceed threshold
+ci_flag_check:
+  command: "flag-audit --type release --max-age 60d --fail-on-stale"
+```
 
 ## Sources
 

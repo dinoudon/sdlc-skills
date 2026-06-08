@@ -1,7 +1,7 @@
 ---
 name: sdlc-observability
 description: "Observability: OpenTelemetry 2024, GenAI semantic conventions, eBPF (Cilium/Hubble/Tetragon), sidecar-less mesh, profiling signal, structured logging, SLIs/SLOs/SLAs, error budgets, burn-rate alerting, Grafana LGTM, distributed tracing, cost optimization, serverless observability, LLM/AI observability, edge observability, OTel Collector deployment patterns, microservices golden signals, log aggregation (ELK/Loki/ClickHouse), metrics aggregation, alert design patterns, observability maturity model, LLM platform comparison, ML model monitoring, AI agent observability, MLOps observability."
-version: 4.2.0
+version: 4.3.0
 author: Hermes Agent
 license: MIT
 platforms: [linux, macos, windows]
@@ -2263,4 +2263,892 @@ with tracer.start_as_current_span("model.deploy") as span:
 | `ml.data.version` | Training data version | dataset-2024-06 |
 | `ml.feature.store_version` | Feature store snapshot | feast-v2-materialized |
 | `ml.metric.roc_auc` | Training metric | 0.95 |
-| `ml.training.git_commit` | Source code version | abc123f |
+|| `ml.training.git_commit` | Source code version | abc123f |
+
+## Step 30: Google SRE Deep Dive
+
+Source: https://sre.google/sre-book/table-of-contents/
+
+### SLI/SLO/SLA — Detailed
+
+**SLI (Service Level Indicator)** — Quantitative measure of service behavior. Must be:
+- Meaningful to users (they notice when it degrates)
+- Collectable (measured from existing telemetry)
+- Expressed as good events / valid events
+
+**SLI Examples by Service Type:**
+
+| Service Type | SLI | Good Event | Valid Event |
+|-------------|-----|-----------|-------------|
+| Web API | Availability | response.code < 500 | all requests |
+| Web API | Latency | response.time < 300ms | all requests |
+| Storage | Durability | object not lost after 1 year | objects written |
+| Storage | Availability | read/write succeeds | all read/write attempts |
+| Data Pipeline | Freshness | data available within SLA | all expected outputs |
+| Data Pipeline | Correctness | output matches expected | all outputs |
+| Batch Job | Throughput | jobs completed per period | all scheduled jobs |
+
+**Prometheus SLI Recording:**
+```yaml
+# recording_rules.yml
+groups:
+  - name: sli_recordings
+    rules:
+      # Availability SLI (success ratio)
+      - record: sli:availability:ratio
+        expr: |
+          sum(rate(http_requests_total{code!~"5.."}[30d]))
+          /
+          sum(rate(http_requests_total[30d]))
+
+      # Latency SLI (fraction of fast requests)
+      - record: sli:latency:ratio
+        expr: |
+          sum(rate(http_request_duration_seconds_bucket{le="0.3"}[30d]))
+          /
+          sum(rate(http_request_duration_seconds_count[30d]))
+
+      # Composite SLI (availability AND latency)
+      - record: sli:composite:ratio
+        expr: |
+          (
+            sum(rate(http_requests_total{code!~"5..",le="0.3"}[30d]))
+          )
+          /
+          sum(rate(http_requests_total[30d]))
+```
+
+**SLO (Service Level Objective)** — Target for SLI. Structure:
+```
+SLO = {
+  sli: "sli:availability:ratio",
+  target: 0.999,           # 99.9%
+  window: "30d rolling",   # or "calendar month"
+  alerting: {
+    fast_burn: { rate: 14.4, window: "1h", severity: page },
+    slow_burn: { rate: 6, window: "6d", severity: ticket }
+  }
+}
+```
+
+**SLA (Service Level Agreement)** — External contract with financial penalties.
+- SLA target < SLO target < actual measured reliability
+- Example: SLA guarantees 99.5%, internal SLO targets 99.9%, actual is 99.95%
+- Buffer prevents SLA breach even when SLO is missed
+
+### Error Budget Math
+
+**Burn Rate Calculation:**
+```
+burn_rate = actual_error_rate / error_rate_budget
+error_rate_budget = (1 - SLO_target)
+
+Example: SLO = 99.9%, actual error rate = 1.44%
+burn_rate = 0.0144 / (1 - 0.999) = 0.0144 / 0.001 = 14.4x
+```
+
+**Multi-Window Multi-Burn-Rate Alerts:**
+```yaml
+# Fast burn: 14.4x over 1h means 2% of 30d budget consumed in 1h
+# math: 14.4 * (1-0.999) * (1h/30d) = 14.4 * 0.001 * 0.00139 = 0.02 = 2%
+groups:
+  - name: burn_rate_alerts
+    rules:
+      # Page: 2% budget consumed in 1 hour (fast burn)
+      - alert: SLOBudgetFastBurn
+        expr: |
+          (
+            sum(rate(http_requests_total{code=~"5.."}[1h]))
+            / sum(rate(http_requests_total[1h]))
+          ) > (14.4 * (1 - 0.999))
+          and
+          (
+            sum(rate(http_requests_total{code=~"5.."}[5m]))
+            / sum(rate(http_requests_total[5m]))
+          ) > (14.4 * (1 - 0.999))
+        for: 2m
+        labels:
+          severity: page
+        annotations:
+          summary: "Fast burn: 14.4x rate, 2% budget/hour"
+
+      # Ticket: 5% budget consumed in 6 days (slow burn)
+      - alert: SLOBudgetSlowBurn
+        expr: |
+          (
+            sum(rate(http_requests_total{code=~"5.."}[6d]))
+            / sum(rate(http_requests_total[6d]))
+          ) > (6 * (1 - 0.999))
+          and
+          (
+            sum(rate(http_requests_total{code=~"5.."}[30m]))
+            / sum(rate(http_requests_total[30m]))
+          ) > (6 * (1 - 0.999))
+        for: 30m
+        labels:
+          severity: ticket
+        annotations:
+          summary: "Slow burn: 6x rate, 5% budget/6d"
+```
+
+**Burn Rate Quick Reference:**
+
+| Burn Rate | Time to Exhaust 30d Budget | Budget Consumed |
+|-----------|---------------------------|-----------------|
+| 1x | 30 days | 100% (normal) |
+| 3.5x | 8.5 days | — |
+| 6x | 5 days | 5% in 6d |
+| 14.4x | 50 hours | 2% in 1h |
+| 1000x | 43 minutes | total failure |
+
+### Toil Reduction
+
+**Toil definition (Google SRE):** Manual, repetitive, automatable, reactive, no lasting value.
+
+**Measurement:**
+```
+toil_fraction = toil_hours / total_engineering_hours
+target: < 50% (Google SRE book), < 30% (mature orgs)
+```
+
+**Toil taxonomy:**
+| Category | Example | Automation Priority |
+----------|---------|-------------------|
+| Deployments | Manual deploy steps | High — CI/CD pipeline |
+| On-call response | Repeated incident with known fix | High — runbook automation |
+| Ticket routing | Manual triage of support tickets | Medium — ML classifier |
+| Config changes | PRs for simple threshold changes | Medium — self-service UI |
+| Capacity scaling | Manual scaling during traffic spikes | High — autoscaling |
+| Certificate renewal | Manual cert rotation | Critical — cert-manager |
+
+**Automation priority matrix:**
+```
+High frequency × High duration = automate first (deployments, scaling)
+High frequency × Low duration = automate second (ticket routing)
+Low frequency  × High duration = automate third (disaster recovery)
+Low frequency  × Low duration = document, skip automation
+```
+
+### Capacity Planning
+
+**Utilization model:**
+```
+headroom = 1 - current_utilization
+time_to_saturation = headroom / growth_rate
+
+# Example: CPU at 70%, growing 5%/month
+# headroom = 30%, time_to_saturation = 0.30 / 0.05 = 6 months
+```
+
+**Load forecasting (Prometheus):**
+```promql
+# Linear regression: predict when disk hits 90%
+predict_linear(node_filesystem_avail_bytes[30d], 90*24*3600) < 0
+
+# Request rate growth
+predict_linear(sum(rate(http_requests_total[7d]))[30d:], 30*24*3600)
+```
+
+**Capacity signals to monitor:**
+| Signal | Metric | Threshold |
+|--------|--------|-----------|
+| CPU saturation | container_cpu_cfs_throttled_periods | > 25% throttled |
+| Memory pressure | container_memory_working_set / limit | > 80% |
+| Disk I/O | node_disk_io_time_seconds | > 90% busy |
+| Network bandwidth | node_network_transmit_bytes | > 70% link capacity |
+| Queue depth | kafka_consumer_group_lag | growing > 10%/hour |
+| Connection pools | db_connections_active / max | > 80% |
+
+**Google SRE capacity formula:**
+```
+provisioned = peak_load * (1 + headroom_factor) / (1 - failure_domain_fraction)
+# headroom_factor: 0.15-0.30 (15-30% buffer)
+# failure_domain_fraction: if N+1 redundancy across 3 zones = 1/3
+```
+
+## Step 31: Chaos Engineering
+
+Source: https://principlesofchaos.org/
+
+### Netflix Chaos Tools
+
+**Chaos Monkey** — Randomly terminates VM instances in production during business hours. Forces engineers to build resilient services.
+
+**Chaos Kong** — Simulates entire AWS region failure. Runs during "Game Day" events. Tests multi-region failover.
+
+**FIT (Failure Injection Testing)** — Framework for injecting failures at application level: latency, exceptions, network partitions. More granular than infrastructure-level chaos.
+
+**Litmus (CNCF)** — Kubernetes-native chaos engineering. ChaosHub for reusable experiments.
+```yaml
+# LitmusChaos: pod-delete experiment
+apiVersion: litmuschaos.io/v1alpha1
+kind: ChaosEngine
+metadata:
+  name: api-chaos
+spec:
+  appinfo:
+    appns: production
+    applabel: app=api
+    appkind: deployment
+  chaosServiceAccount: litmus-admin
+  experiments:
+    - name: pod-delete
+      spec:
+        components:
+          env:
+            - name: TOTAL_CHAOS_DURATION
+              value: "30"
+            - name: CHAOS_INTERVAL
+              value: "10"
+            - name: FORCE
+              value: "false"
+```
+
+### Principles of Chaos Engineering
+
+1. **Build steady-state hypothesis** — define "normal" (e.g., p99 < 200ms, error rate < 0.1%)
+2. **Vary real-world events** — server failure, network partition, resource exhaustion, clock skew
+3. **Run experiments in production** — staging ≠ production (different scale, traffic, state)
+4. **Automate experiments to run continuously** — one-off game days aren't enough
+5. **Minimize blast radius** — start small, increase scope as confidence grows
+
+### Chaos Maturity Model (4 Levels)
+
+| Level | Name | Characteristics | Prerequisites |
+|-------|------|----------------|---------------|
+| 1 | **Ad-hoc** | Manual experiments, no automation, staging only | Basic monitoring |
+| 2 | **Exploratory** | Regular game days, defined experiments, some prod testing | SLOs defined, rollback automation |
+| 3 | **Automated** | Continuous chaos in CI/CD, automated rollback, blast radius controls | Error budget policies, comprehensive monitoring |
+| 4 | **Resilient** | Self-healing systems, chaos as default, chaos-informed architecture | Full observability stack, automated remediation |
+
+**Level 1 → 2 progression:**
+- Define steady-state metrics (SLIs)
+- Create first experiment: kill one replica of non-critical service
+- Observe: does monitoring catch it? Does the service recover?
+
+**Level 2 → 3 progression:**
+- Add chaos experiments to CI pipeline (canary → chaos → promote)
+- Implement automated rollback when SLO violated
+- Build experiment library covering: pod kill, network delay, CPU stress, DNS failure
+
+**Level 3 → 4 progression:**
+- Chaos runs in production on schedule (not just during game days)
+- Systems auto-remediate common failures (circuit breaker, retry, fallback)
+- Architecture decisions informed by chaos findings
+
+### Game Day Format
+
+**Structure (4-hour event):**
+```
+00:00 - 00:30  Kickoff
+  - Review steady-state hypothesis (SLIs)
+  - Confirm monitoring dashboards open
+  - Assign roles: Game Master, Observers, Responders
+
+00:30 - 01:30  Round 1: Known failure modes
+  - Kill primary database replica
+  - Inject 500ms latency on payment service
+  - Fill disk on logging node
+  - Observe: alerts fire? runbooks work? recovery time?
+
+01:30 - 01:45  Break + Debrief Round 1
+
+01:45 - 02:45  Round 2: Unknown territory
+  - Simulate region failure (DNS + failover)
+  - Network partition between services (split brain test)
+  - Certificate expiry on internal TLS
+  - Cascading failure: slow dependency → thread pool exhaustion
+
+02:45 - 03:00  Break + Debrief Round 2
+
+03:00 - 03:45  Round 3: Combined scenarios
+  - Traffic spike + dependency failure
+  - Deploy during partial outage
+  - Multiple simultaneous failures
+
+03:45 - 04:00  Final Debrief
+  - What broke? What didn't?
+  - Action items (fix gaps in monitoring, automation, architecture)
+  - Update runbooks and SLOs
+```
+
+**Game Day roles:**
+| Role | Responsibility |
+------|----------------|
+| Game Master | Controls experiments, manages blast radius, calls abort |
+| Observers | Watch dashboards, log what they see, timestamp events |
+| Responders | Act as on-call, follow runbooks, escalate as needed |
+| Scribe | Documents timeline, decisions, findings in real-time |
+
+## Step 32: Honeycomb Observability
+
+Source: https://www.honeycomb.io/
+
+### Wide Events (80-200 fields)
+
+Honeycomb's core model: emit rich, wide events instead of narrow metrics. A single event contains all context needed to understand what happened.
+
+**Traditional (narrow):**
+```
+# Metric: http_requests_total{method="GET", status="200", service="api"}
+# Log: "GET /api/users 200 45ms"
+# Separate signals, can't correlate arbitrary dimensions
+```
+
+**Honeycomb (wide event):**
+```json
+{
+  "timestamp": "2024-06-15T10:30:00.123Z",
+  "service": "api",
+  "trace.trace_id": "abc123",
+  "trace.span_id": "span-42",
+  "trace.parent_id": "span-41",
+  "name": "GET /api/users",
+  "http.method": "GET",
+  "http.path": "/api/users",
+  "http.status_code": 200,
+  "http.request_duration_ms": 45,
+  "http.request.header.user-agent": "Mozilla/5.0...",
+  "http.request.header.x-request-id": "req-789",
+  "user.id": "u-1001",
+  "user.tier": "enterprise",
+  "user.org_id": "org-42",
+  "user.country": "US",
+  "db.system": "postgresql",
+  "db.query": "SELECT * FROM users WHERE id = ?",
+  "db.duration_ms": 12,
+  "db.rows_returned": 1,
+  "cache.hit": true,
+  "cache.ttl_remaining_sec": 300,
+  "feature.flag.new_checkout": true,
+  "deploy.version": "v2.3.1",
+  "deploy.commit": "abc123f",
+  "k8s.pod": "api-7b8d9-x2k4j",
+  "k8s.node": "node-3",
+  "k8s.namespace": "production",
+  "k8s.zone": "us-east-1a",
+  "queue.depth": 42,
+  "rate_limit.remaining": 950,
+  "billing.tier_cost_usd": 0.0023
+}
+```
+
+**Why 80-200 fields?**
+- Any field is queryable without pre-aggregation
+- No need to decide "what to index" ahead of time
+- Post-hoc debugging: ask questions you didn't anticipate
+- High-cardinality fields (user_id, request_id) work fine
+
+**Python wide event instrumentation:**
+```python
+import beeline  # Honeycomb Beeline
+
+beeline.init(writekey="YOUR_KEY", dataset="api-production", service_name="api")
+
+@beeline.traced(name="get_users")
+def get_users(request):
+    # Add context as it becomes available
+    beeline.add_context({
+        "user.id": request.user_id,
+        "user.tier": request.user_tier,
+        "http.path": request.path,
+        "feature.flag.new_ui": is_enabled("new-ui", request.user_id),
+    })
+
+    users = db.query("SELECT * FROM users WHERE org = ?", request.org_id)
+
+    # Add post-execution context
+    beeline.add_context({
+        "db.rows_returned": len(users),
+        "db.query_duration_ms": db.last_duration,
+        "cache.hit": cache.was_hit,
+    })
+
+    return users
+```
+
+### Bubble Up Pattern
+
+Honeycomb's signature debugging workflow. When you see a spike in latency/errors:
+
+1. **Select the spike** on a graph (time range + value range)
+2. **Bubble Up auto-calculates** which fields differ between "interesting" (spike) and "normal" (baseline) data
+3. **Ranked list of suspect fields** — sorted by statistical significance
+4. **Click to drill down** into specific field values
+
+```
+Problem: p99 latency jumped from 200ms to 2s
+
+Bubble Up result:
+  1. db.system = "redis" (latency contribution: 85%)  ← was this slow?
+  2. user.tier = "free" (80% of slow requests)        ← only free tier?
+  3. k8s.node = "node-7" (75% on one node)            ← node issue?
+  4. deploy.version = "v2.3.2" (started after deploy)  ← regression?
+
+Conclusion: Redis connection pooling broke on node-7 after v2.3.2 deploy, affecting free-tier users hitting that node.
+```
+
+### Query Patterns
+
+**Honeycomb query building blocks:**
+```
+VISUALIZATION: HEATMAP (duration_ms)
+WHERE: http.status_code >= 500
+GROUP BY: http.path
+CALCULATION: P99(duration_ms)
+ORDER BY: P99(duration_ms) DESC
+LIMIT: 100
+```
+
+**Common investigation queries:**
+```
+# "Which endpoints are slow?"
+VISUALIZATION: HEATMAP
+CALCULATION: P95(duration_ms)
+GROUP BY: http.path
+WHERE: http.status_code < 500
+
+# "Which users are affected by errors?"
+VISUALIZATION: TABLE
+CALCULATION: COUNT
+GROUP BY: user.id, user.tier
+WHERE: http.status_code >= 500
+
+# "What changed between now and last week?"
+VISUALIZATION: COMPARISON (compare two time ranges)
+CALCULATION: P99(duration_ms)
+GROUP BY: *
+  Range A: last 1 hour
+  Range B: same hour last week
+
+# "How does deploy version affect latency?"
+VISUALIZATION: LINE
+CALCULATION: AVG(duration_ms)
+GROUP BY: deploy.version
+WHERE: http.path = "/api/checkout"
+```
+
+### High-Cardinality Queries
+
+Honeycomb's key differentiator: query on any field, regardless of cardinality.
+
+```
+# These work without pre-indexing:
+GROUP BY: user.id              # millions of users
+GROUP BY: request.id           # billions of requests
+GROUP BY: http.request.header.x-request-id  # any header
+GROUP BY: db.query             # full SQL text
+
+# Traditional systems choke on this (Elasticsearch mapping explosion, Prometheus label cardinality)
+# Honeycomb uses columnar storage (ClickHouse-based) optimized for high-cardinality GROUP BY
+```
+
+**When to use high-cardinality:**
+- Debugging: "What's different about this one user's requests?"
+- Tracing: "Show me all spans for request_id X"
+- Comparison: "How does latency differ between user.tier=free vs enterprise?"
+
+### Observability vs Monitoring
+
+| Aspect | Monitoring | Observability |
+--------|-----------|---------------|
+| Question | "Is the system broken?" | "Why is it broken?" |
+| Approach | Pre-defined dashboards + alerts | Exploratory queries on raw events |
+| Data model | Aggregated metrics (counters, gauges) | Wide events (80-200 fields) |
+| Cardinality | Low (pre-aggregated) | High (any field queryable) |
+| New questions | Requires new instrumentation | Ask immediately on existing data |
+| Debugging | Check known failure modes | Discover unknown unknowns |
+| Tool | Prometheus, Datadog metrics | Honeycomb, Lightstep, Grafana Tempo |
+| Good for | Known problems, capacity planning | Unknown problems, novel failures |
+
+**Key insight:** Monitoring tells you THAT something is wrong. Observability lets you figure out WHY, even for problems you've never seen before.
+
+**Honeycomb's stance:** If you need to add a new metric to debug a problem, your system lacks observability. Observability means you can answer novel questions from existing telemetry.
+
+## Step 33: Grafana LGTM Stack Deep Dive
+
+Source: https://grafana.com/oss/
+
+### Architecture Overview
+```
+[Applications]
+    ├── metrics (remote_write) ──→ [Mimir] ──→ [Grafana]
+    ├── logs (OTLP/Push)     ──→ [Loki]  ──→ [Grafana]
+    ├── traces (OTLP)        ──→ [Tempo] ──→ [Grafana]
+    └── profiles (OTLP)      ──→ [Pyroscope] → [Grafana]
+
+[Alloy Agent] runs on every node, collects and forwards all signals
+```
+
+### Grafana Loki — Label-Only Indexing
+
+**Core design:** Index labels (service, namespace, level), NOT full text. Chunks stored in object storage (S3/GCS). Dramatically cheaper than full-text indexing (Elasticsearch).
+
+```yaml
+# loki-config.yaml
+auth_enabled: false
+server:
+  http_listen_port: 3100
+common:
+  ring:
+    kvstore:
+      store: inmemory
+  replication_factor: 1
+  storage:
+    s3:
+      endpoint: minio:9000
+      bucketnames: loki-chunks
+      access_key_id: loki
+      secret_access_key: loki123
+      insecure: true
+      s3forcepathstyle: true
+schema_config:
+  configs:
+    - from: 2024-01-01
+      store: tsdb
+      object_store: s3
+      schema: v13
+      index:
+        prefix: index_
+        period: 24h
+compactor:
+  working_directory: /loki/compactor
+  compaction_interval: 10m
+limits_config:
+  max_query_series: 5000
+  max_query_parallelism: 32
+```
+
+**LogQL advanced queries:**
+```logql
+# Pattern parsing (auto-extract fields from log lines)
+{service="api"} | pattern `<method> <path> <status> <duration_ms>ms` | duration_ms > 500
+
+# Label filters with numeric comparison
+{namespace="prod"} | json | response_time > 1.0 | status >= 500
+
+# Rate of errors per service (metric from logs)
+sum(rate({namespace="prod"} |= "error" [5m])) by (service)
+
+# Unwrap for numeric aggregation (extract numeric value and aggregate)
+{service="api"} | json | unwrap duration_ms | quantile_over_time(0.99, {service="api"} | json | unwrap duration_ms [5m]) by (service)
+
+# Pipeline: parse → filter → format
+{job="nginx"} | json | status >= 500
+  | line_format "{{.client_ip}} {{.method}} {{.path}} {{.status}} {{.duration}}ms"
+  | label_format latency="{{.duration}}ms"
+```
+
+**Loki vs Elasticsearch cost model:**
+```
+100GB logs/day:
+  Elasticsearch: ~50GB index storage + 100GB raw = 150GB, 3-node cluster, ~$2000/mo
+  Loki: label index ~2GB + chunks in S3 100GB = 102GB, single binary, ~$200/mo (mostly S3 cost)
+  Savings: ~90%
+```
+
+### Grafana Tempo — Distributed Tracing + TraceQL
+
+**Core design:** Stores traces only (no metrics/logs derived from traces). Object storage backend. TraceQL for querying.
+
+```yaml
+# tempo-config.yaml
+server:
+  http_listen_port: 3200
+distributor:
+  receivers:
+    otlp:
+      protocols:
+        grpc:
+          endpoint: 0.0.0.0:4317
+        http:
+          endpoint: 0.0.0.0:4318
+metrics_generator:
+  registry:
+    external_labels:
+      source: tempo
+  storage:
+    path: /var/tempo/generator/wal
+    remote_write:
+      - url: http://mimir:9009/api/v1/push
+        send_exemplars: true
+storage:
+  trace:
+    backend: s3
+    s3:
+      bucket: tempo-traces
+      endpoint: s3.us-east-1.amazonaws.com
+    wal:
+      path: /var/tempo/wal
+    local:
+      path: /var/tempo/blocks
+overrides:
+  defaults:
+    metrics_generator:
+      processors: [service-graphs, span-metrics]
+```
+
+**TraceQL — query language for traces:**
+```
+# Find slow traces for a specific service
+{ resource.service.name = "api" && duration > 2s }
+
+# Find error traces
+{ status = error }
+
+# Find traces where a specific span took too long
+{ span.db.system = "postgresql" && span.duration > 500ms }
+
+# Structural queries: find traces where service A calls service B
+{ resource.service.name = "api" } >> { resource.service.name = "payment" }
+# >> means "child of" (direct descendant)
+
+# Find traces with specific attributes
+{ span.http.method = "POST" && span.http.status_code = 500 }
+
+# Aggregation: p99 duration of traces matching filter
+{ resource.service.name = "api" } | select(duration) | quantile(0.99)
+
+# Find traces that hit both Redis AND Postgres
+{ span.db.system = "redis" } && { span.db.system = "postgresql" }
+
+# Filter by resource attributes
+{ resource.service.name = "api" && resource.k8s.namespace = "production" }
+```
+
+**Service graph auto-generation:**
+Tempo generates service graphs from trace data automatically. Exposed as Prometheus metrics:
+```
+traces_service_graph_request_total{client="api", server="payment", connection_type="server"}
+traces_service_graph_request_duration_seconds_bucket{client="api", server="payment"}
+```
+
+### Grafana Mimir — Long-Term Prometheus
+
+**Core design:** Horizontally scalable, multi-tenant TSDB. Receives metrics via `remote_write` from Prometheus. Stores in object storage. 100% PromQL compatible.
+
+```yaml
+# mimir-config.yaml
+multitenancy_enabled: false
+
+blocks_storage:
+  backend: s3
+  s3:
+    bucket_name: mimir-blocks
+    endpoint: s3.us-east-1.amazonaws.com
+  tsdb:
+    dir: /data/mimir/tsdb
+    retention_period: 90d
+    ship_interval: 1m
+
+compactor:
+  data_dir: /data/mimir/compactor
+  sharding_ring:
+    kvstore:
+      store: memberlist
+  block_ranges: [2h, 12h, 24h]
+
+distributor:
+  shard_by_all_labels: true
+  ring:
+    kvstore:
+      store: memberlist
+
+ingester:
+  ring:
+    kvstore:
+      store: memberlist
+    replication_factor: 3
+
+limits:
+  max_global_series_per_user: 10000000
+  max_query_length: 90d
+  max_query_parallelism: 128
+```
+
+**Prometheus remote_write to Mimir:**
+```yaml
+# prometheus.yml
+remote_write:
+  - url: https://mimir-gateway:9009/api/v1/push
+    queue_config:
+      max_samples_per_send: 5000
+      batch_send_deadline: 5s
+      max_shards: 200
+    metadata_config:
+      send_interval: 1m
+```
+
+**Mimir vs Thanos:**
+
+| Aspect | Mimir | Thanos |
+|--------|-------|--------|
+| Architecture | Microservices (single binary mode available) | Sidecar + Compactor + Store |
+| Multi-tenant | Native (X-Scope-OrgID header) | Manual (separate buckets) |
+| Query path | Single endpoint | Query + Store Gateway |
+| Long-term storage | Object storage (S3/GCS) | Object storage (S3/GCS) |
+| Compaction | Built-in compactor | Thanos Compactor |
+| Best for | Green-field, Grafana-native | Existing Prometheus + Thanos sidecar |
+
+### Grafana Alloy — Unified Agent
+
+**Replaces:** Promtail (logs), Grafana Agent (metrics/traces), OTel Collector for Grafana pipelines.
+
+```alloy
+# alloy-config.alloy (River syntax)
+
+// Collect logs from journald
+loki.source.journal "system" {
+  forward_to = [loki.write.default.receiver]
+  labels     = { job = "system" }
+}
+
+// Collect logs from files
+loki.source.file "app" {
+  targets    = discovery.relabel.app_logs.output
+  forward_to = [loki.write.default.receiver]
+}
+
+// Write logs to Loki
+loki.write "default" {
+  endpoint {
+    url = "http://loki:3100/loki/api/v1/push"
+  }
+}
+
+// Collect metrics (Prometheus scrape)
+prometheus.scrape "api" {
+  targets    = [{"__address__" = "api:8080"}]
+  forward_to = [prometheus.remote_write.mimir.receiver]
+}
+
+// Remote write to Mimir
+prometheus.remote_write "mimir" {
+  endpoint {
+    url = "http://mimir:9009/api/v1/push"
+  }
+}
+
+// Collect traces via OTLP
+otelcol.receiver.otlp "default" {
+  grpc { endpoint = "0.0.0.0:4317" }
+  http { endpoint = "0.0.0.0:4318" }
+
+  output {
+    traces = [otelcol.exporter.otlp.tempo.input]
+  }
+}
+
+otelcol.exporter.otlp "tempo" {
+  client {
+    endpoint = "tempo:4317"
+    tls { insecure = true }
+  }
+}
+```
+
+### Exemplars
+
+Exemplars link metrics to traces. Click a data point on a metric graph → jump to the specific trace that produced that metric.
+
+```yaml
+# Prometheus config: enable exemplars
+global:
+  scrape_interval: 15s
+
+# Application exposes exemplar with metric
+# http_request_duration_seconds_bucket{le="0.1"} 1234 # {trace_id="abc123"}
+```
+
+**Mimir + Tempo exemplar flow:**
+```
+1. App emits metric with exemplar (trace_id)
+2. Prometheus remote_writes to Mimir (exemplar included)
+3. Grafana queries Mimir, sees exemplar on data point
+4. User clicks exemplar → Grafana queries Tempo with trace_id
+5. Tempo returns full trace → Grafana shows trace view
+```
+
+**Enabling in Grafana:**
+1. Add Mimir as Prometheus datasource
+2. Add Tempo as trace datasource
+3. In Mimir datasource config → set "Exemplar trace ID destination" to Tempo
+4. In Tempo datasource config → set "Derived fields" to link to logs in Loki
+
+### Correlation Across LGTM
+
+**The correlation loop:**
+```
+Metric spike (Mimir/Prometheus)
+    → click exemplar → Trace view (Tempo)
+    → click span → Logs for that span (Loki)
+    → click service → Metrics for that service (back to Mimir)
+```
+
+**Grafana data source correlation config:**
+```yaml
+# Grafana provisioning: link Tempo → Loki
+apiVersion: 1
+datasources:
+  - name: Tempo
+    type: tempo
+    uid: tempo
+    url: http://tempo:3200
+    jsonData:
+      tracesToLogsV2:
+        datasourceUid: loki
+        filterByTraceID: true
+        filterBySpanID: true
+        tags: ['service']
+      tracesToMetrics:
+        datasourceUid: prometheus
+        tags: ['service']
+        queries:
+          - name: "Request rate"
+            query: "sum(rate(http_requests_total{$$__tags}[5m]))"
+          - name: "Error rate"
+            query: "sum(rate(http_requests_total{$$__tags, code=~\"5..\"}[5m]))"
+      serviceMap:
+        datasourceUid: prometheus
+
+  - name: Loki
+    type: loki
+    uid: loki
+    url: http://loki:3100
+    jsonData:
+      derivedFields:
+        - datasourceUid: tempo
+          matcherRegex: "trace_id=(\\w+)"
+          name: TraceID
+          url: "$${__value.raw}"
+
+  - name: Mimir
+    type: prometheus
+    uid: prometheus
+    url: http://mimir:9009
+    jsonData:
+      exemplarTraceIdDestinations:
+        - name: trace_id
+          datasourceUid: tempo
+```
+
+**Full correlation flow example:**
+```
+1. Dashboard: "API error rate spiking" (Mimir metric)
+2. Click data point → see exemplar trace_id=abc123
+3. Tempo opens: full trace showing api → payment → postgres
+4. payment span shows db.duration_ms = 5000 (slow query)
+5. Click "Logs" on payment span → Loki shows:
+   "ERROR: connection pool exhausted, waiting for available connection"
+6. Root cause: connection pool misconfigured after v2.3.1 deploy
+```
+
+**LGTM cost optimization:**
+```
+100GB logs/day  → Loki (S3)     ~$200/mo
+10M active series → Mimir (S3)  ~$300/mo
+500GB traces/day → Tempo (S3)   ~$400/mo
+Total: ~$900/mo for full observability stack
+
+vs. equivalent SaaS: Datadog/New Relic $5000-15000/mo
+```

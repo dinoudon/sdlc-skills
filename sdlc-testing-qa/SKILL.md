@@ -1,19 +1,19 @@
 ---
 name: sdlc-testing-qa
-description: "Test pyramid (unit/integration/e2e), TDD/BDD, property-based testing, mutation testing, contract testing, chaos engineering, performance testing (k6/Locust), security testing (SAST/DAST), accessibility testing, AI-assisted test generation, serverless testing patterns, ML model testing, API contract testing, database testing, concurrency testing, observability-driven testing, visual regression testing, test data management. Includes Google testing culture and test architecture patterns."
-version: 4.2.0
+description: "Test pyramid (unit/integration/e2e), TDD/BDD, property-based testing, mutation testing, contract testing, chaos engineering, performance testing (k6/Locust), security testing (SAST/DAST), accessibility testing, AI-assisted test generation, serverless testing patterns, ML model testing, API contract testing, database testing, concurrency testing, observability-driven testing, visual regression testing, test data management. Includes Google testing culture, Netflix testing culture, Spotify Squad Health Check, Observability-Driven Development, and test architecture patterns."
+version: 4.3.0
 author: Hermes Agent
 license: MIT
 platforms: [linux, macos, windows]
 metadata:
   hermes:
-    tags: [sdlc, testing, tdd, bdd, playwright, pytest, k6, security, sast, dast, accessibility, google, contract-testing, chaos-engineering, mutation-testing, property-based, ai-test-generation, serverless-testing, ml-testing, api-contract, database-testing, concurrency-testing, observability-testing, visual-regression, performance-testing, security-automation, test-data-management, hypothesis, fast-check]
+    tags: [sdlc, testing, tdd, bdd, playwright, pytest, k6, security, sast, dast, accessibility, google, contract-testing, chaos-engineering, mutation-testing, property-based, ai-test-generation, serverless-testing, ml-testing, api-contract, database-testing, concurrency-testing, observability-testing, visual-regression, performance-testing, security-automation, test-data-management, hypothesis, fast-check, netflix, spotify, simian-army, squad-health-check, observability-driven, game-day, TAP]
     related_skills: [sdlc-cicd-pipeline, sdlc-deployment, test-driven-development, security-review-owasp]
 ---
 
 # Testing & Quality Assurance
 
-Test pyramid, TDD/BDD, property-based testing, mutation testing, contract testing, chaos engineering, performance, security, accessibility testing, AI-assisted test generation, serverless testing patterns. Includes Google testing culture and test architecture patterns.
+Test pyramid, TDD/BDD, property-based testing, mutation testing, contract testing, chaos engineering, performance, security, accessibility testing, AI-assisted test generation, serverless testing patterns. Includes Netflix testing culture, Google testing culture, Spotify Squad Health Check, Observability-Driven Development, and test architecture patterns.
 
 ## When to Use
 
@@ -2953,3 +2953,658 @@ fc.assert(
 | Auto-generation | `hypothesis write` ghostwriter | None built-in |
 | CI integration | pytest plugin | Jest/AVA/Vitest plugin |
 | Performance | Python — slower | JS engine — faster |
+
+## Step 35: Netflix Testing Culture
+
+### Philosophy: Test in Production
+
+Netflix pioneered "test in production" — the belief that staging environments
+are fundamentally different from production. Instead of maintaining fragile
+mirror environments, Netflix builds systems that are resilient in production
+itself.
+
+**Core principles:**
+- Confidence comes from production observability, not staging validation
+- Staging is useful for developer velocity, not production confidence
+- Production is the only environment that matters
+- Design for failure: if it can fail, it will fail
+
+### Chaos Engineering Principles
+
+Source: https://principlesofchaos.org/
+
+```markdown
+Chaos Engineering: discipline of experimenting on a system to build confidence
+in its ability to withstand turbulent conditions in production.
+
+Steps:
+1. Define "steady state" — measurable output (latency, error rate, throughput)
+2. Hypothesize: steady state continues during experiment
+3. Introduce real-world events: server crash, disk full, network partition
+4. Look for deviation from steady state
+5. Fix or document the gap
+```
+
+### Simian Army
+
+Netflix created the **Simian Army** — automated tools that inject failures:
+
+| Monkey | What it does |
+|--------|-------------|
+| **Chaos Monkey** | Randomly kills production instances during business hours |
+| **Chaos Kong** | Simulates entire AWS region failure |
+| **Latency Monkey** | Injects network delays between services |
+| **Conformity Monkey** | Finds instances not following best practices |
+| **Security Monkey** | Finds security violations (open ports, SG changes) |
+| **Doctor Monkey** | Detects unhealthy instances, removes from service |
+| **Janitor Monkey** | Finds unused resources, cleans up waste |
+| **10-18 Monkey** | Detects localized problems (specific time/region) |
+
+Modern successor: **Chaos Monkey for Spring Boot** and **Litmus Chaos** (K8s).
+
+### Chaos Kong Execution
+
+```yaml
+# Chaos Kong: simulate region failure
+experiment:
+  name: "chaos-kong-us-east-1"
+  type: "region-failure"
+  target:
+    cloud: aws
+    region: us-east-1
+  steady_state:
+    - metric: "availability"
+      threshold: ">99.9%"
+    - metric: "p99_latency"
+      threshold: "<500ms"
+  actions:
+    - type: "dns-failover"
+      config:
+        origin: "us-east-1"
+        failover_to: "us-west-2"
+    - type: "traffic-shift"
+      config:
+        from: "us-east-1"
+        to: "us-west-2"
+        duration: "30m"
+  rollback:
+    automatic: true
+    conditions:
+      - "availability < 99.0%"
+      - "p99_latency > 2000ms"
+```
+
+### Game Day Format
+
+Netflix runs structured **Game Day** exercises to practice incident response:
+
+```markdown
+## Game Day Template
+
+### Pre-Game (1 week before)
+- [ ] Define scope: blast radius, duration, rollback plan
+- [ ] Identify participants: on-call, observers, scribes
+- [ ] Prepare runbooks and rollback procedures
+- [ ] Notify stakeholders (NO notification to on-call — surprise element)
+
+### Game Day Script (2-4 hours)
+[00:00] Injection begins
+  - Inject failure via Chaos Monkey / manual trigger
+  - Start timer
+
+[00:02] Detection phase
+  - Monitor: does alerting fire?
+  - Measure: time from injection to alert
+
+[00:10] Triage phase
+  - On-call responds to alert
+  - Measure: time from alert to diagnosis
+  - Scribe documents: what was tried, what worked
+
+[00:30] Mitigation phase
+  - Apply fix / mitigation
+  - Measure: time from diagnosis to mitigation
+
+[01:00] Recovery verification
+  - Confirm steady state restored
+  - Run smoke tests
+
+[02:00] Blameless Retrospective
+  - What went well?
+  - What surprised us?
+  - What do we need to fix?
+  - Action items with owners and deadlines
+
+### Metrics to Track
+| Metric | Target |
+|--------|--------|
+| MTTD (Mean Time to Detect) | < 5 min |
+| MTTR (Mean Time to Resolve) | < 30 min |
+| Alert accuracy | > 95% (no false positives) |
+| Runbook coverage | 100% of critical services |
+```
+
+### Netflix Testing in CI/CD Pipeline
+
+```python
+# Netflix-style: test chaos in CI before going to production
+import pytest
+from chaos_engineering import inject_fault, steady_state_check
+
+class TestPaymentServiceResilience:
+    """Run chaos experiments as part of CI pipeline."""
+
+    @pytest.fixture
+    def payment_service(self):
+        svc = PaymentService()
+        svc.start()
+        yield svc
+        svc.stop()
+
+    def test_survives_database_connection_loss(self, payment_service):
+        """Service should degrade gracefully when DB is unavailable."""
+        # Measure steady state
+        baseline = steady_state_check(
+            payment_service,
+            metrics=["success_rate", "latency_p99"],
+            duration_seconds=30
+        )
+        assert baseline["success_rate"] > 0.99
+
+        # Inject fault
+        with inject_fault("database", "connection_refused", duration="60s"):
+            degraded = steady_state_check(
+                payment_service,
+                metrics=["success_rate", "latency_p99"],
+                duration_seconds=30
+            )
+            # Service should use fallback/cache, not crash
+            assert degraded["success_rate"] > 0.90
+            assert payment_service.health_status != "dead"
+
+        # Verify recovery
+        recovered = steady_state_check(
+            payment_service,
+            metrics=["success_rate", "latency_p99"],
+            duration_seconds=30
+        )
+        assert recovered["success_rate"] > 0.99
+```
+
+---
+
+## Step 36: Google Testing Culture
+
+Source: https://testing.googleblog.com/
+Book: "Software Engineering at Google" (O'Reilly, 2020)
+
+### Test Size Classification
+
+Google classifies all tests by **size** (not by test pyramid layer):
+
+| Size | Wall time | Resources | Network | I/O | Sleep/lock |
+|------|-----------|-----------|---------|-----|------------|
+| **Small** | < 1 min | 1 process, 1 machine | No | No | No |
+| **Medium** | < 5 min | 1 machine, localhost OK | Localhost only | Allowed | Allowed |
+| **Large** | Unlimited | Multiple machines | Real network | Allowed | Allowed |
+
+```python
+# Google test size annotations (pytest equivalent)
+import pytest
+
+@pytest.mark.small  # Pure logic, no I/O, no network
+def test_calculate_tax():
+    assert calculate_tax(100, 0.08) == 8.0
+
+@pytest.mark.medium  # May use localhost DB, file I/O
+def test_save_user(tmp_path):
+    db = Database(f"sqlite:///{tmp_path}/test.db")
+    db.create_user("alice")
+    assert db.get_user("alice").name == "alice"
+
+@pytest.mark.large  # Full integration, real network, slow
+def test_end_to_end_checkout(live_api, payment_gateway):
+    response = live_api.post("/checkout", items=[...])
+    assert response.status_code == 200
+    assert payment_gateway.last_charge.amount == 100.0
+```
+
+### TAP (Test Automation Platform)
+
+Google's **TAP** is the central test execution system:
+
+```markdown
+TAP Architecture:
+┌─────────────┐    ┌──────────────┐    ┌─────────────┐
+│  Developer   │───>│  TAP Service │───>│  Test Farm  │
+│  (submit)    │    │  (scheduler) │    │ (executors) │
+└─────────────┘    └──────────────┘    └─────────────┘
+        │                  │                   │
+        v                  v                   v
+   Presubmit          Test results         Artifacts
+   (must pass)        (CQ dashboard)       (logs, traces)
+
+TAP Responsibilities:
+- Schedules test execution across distributed fleet
+- Aggregates results across all test shards
+- Tracks flakiness metrics per test
+- Enforces presubmit blocking rules
+```
+
+### Presubmit vs Post-Submit
+
+```markdown
+## Presubmit (before merge)
+- Runs SMALL tests (must be < 1 minute total)
+- Runs MEDIUM tests for changed components
+- LARGES tests run as advisory (not blocking)
+- ALL presubmit tests must pass for merge
+
+## Post-Submit (after merge)
+- Runs full test suite including LARGE tests
+- Results on CQ (Continuous Quality) dashboard
+- Failures create bugs automatically (owner attribution)
+- Rollback if post-submit fails (broken build policy)
+
+## Implementation with Bazel
+```bash
+# Presubmit: run only affected small/medium tests
+bazel test --test_tag_filters=small,medium --test_timeout=300 //...
+
+# Post-submit: run everything
+bazel test --test_tag_filters=small,medium,large //...
+
+# Sharded execution for speed
+bazel test --test_sharding_strategy=disabled //path/to/tests:all
+```
+
+### Hermetic Tests
+
+**Hermetic tests** are deterministic and self-contained:
+
+```python
+# ❌ NON-HERMETIC: depends on external state
+def test_current_weather():
+    response = requests.get("https://api.weather.com/current")
+    assert response.status_code == 200  # Fails offline, varies by time
+
+# ✅ HERMETIC: all dependencies under test control
+def test_weather_processing():
+    # Use recorded fixture, not live API
+    with open("fixtures/weather_response.json") as f:
+        weather_data = json.load(f)
+
+    result = process_weather(weather_data)
+    assert result["temperature_f"] == 72
+    assert result["conditions"] == "sunny"
+```
+
+**Hermeticity checklist:**
+- No dependence on external network services (use stubs/fakes)
+- No dependence on current time (inject clock)
+- No dependence on filesystem outside test sandbox
+- No dependence on environment variables not in test config
+- No shared mutable state between tests
+- Tests can run in any order, any parallelism
+
+### Flakiness Policy
+
+Google's strict flakiness policy:
+
+```markdown
+## Flaky Test Policy
+
+Definition: A test is flaky if it passes on one run and fails on the next
+with NO code changes.
+
+### Detection
+- TAP tracks pass/fail history per test across all CLs
+- Threshold: >1% flake rate over last 1000 runs = "flaky"
+- Automatic flagging in CQ dashboard
+
+### Consequences
+1. Flaky test is removed from presubmit (reduces confidence)
+2. Bug filed automatically, assigned to last modifier
+3. Owner has 2 weeks to fix or delete
+4. If unfixed after 2 weeks → test is deleted automatically
+
+### Flakiness Budget
+- Team gets 2% flakiness budget per quarter
+- Exceeding budget → all presubmit tests blocked until fixed
+- Drives teams to invest in test quality
+
+### Anti-Flakiness Patterns
+```python
+# ❌ BAD: depends on timing
+def test_cache_expiry():
+    cache.set("key", "value", ttl=1)
+    sleep(1.1)  # Flaky! Race condition on slow CI
+    assert cache.get("key") is None
+
+# ✅ GOOD: inject time dependency
+def test_cache_expiry():
+    clock = FakeClock()
+    cache = Cache(clock=clock)
+    cache.set("key", "value", ttl=1)
+    clock.advance(seconds=1.1)
+    assert cache.get("key") is None
+```
+```
+
+### Testing on the Toilet (TotT)
+
+Google publishes internal **Testing on the Toilet** — short (1-page) articles
+posted in bathroom stalls to spread testing knowledge:
+
+```markdown
+## Sample TotT Articles (Examples)
+
+### "Test Behaviors, Not Methods"
+Don't write one test per method. Write tests per behavior.
+
+❌ test_getUser(), test_getUser_notFound(), test_getUser_invalidId()
+✅ test_returnsUser_whenExists(), test_returns404_whenNotFound()
+
+### "Who Tests the Tests?"
+Mutation testing: if you change the production code, does a test fail?
+If not, the test is not adding value.
+
+### "Don't Mock What You Don't Own"
+Wrap external APIs in your own interface, then mock your wrapper.
+If the external API changes, you only update the wrapper.
+
+### "The Practical Test Pyramid"
+Small tests: 80% (fast, cheap, many)
+Medium tests: 15% (reasonable speed, integration)
+Large tests: 5% (slow, expensive, critical paths only)
+```
+
+---
+
+## Step 37: Spotify Squad Health Check
+
+Source: https://engineering.atspotify.com/2014/09/16/squad-health-check/
+
+### The 11 Health Indicators
+
+Spotify's Squad Health Check uses **11 indicators** to assess team health:
+
+| # | Indicator | Green (Good) | Yellow (Some Concern) | Red (Not Good) |
+|---|-----------|--------------|----------------------|----------------|
+| 1 | **Easy to release** | Releasing is simple, push-button | Releasing takes some coordination | Releasing is painful, risky |
+| 2 | **Suitable process** | Process fits the work | Process is OK but could improve | Process is heavy, doesn't fit |
+| 3 | **Tech quality** | Code is clean, easy to change | Some tech debt, manageable | Tech debt slows everything |
+| 4 | **Value** | Delivering high user value | Value is OK, could be better | Not sure we're building the right thing |
+| 5 | **Speed** | Fast feedback, quick iterations | Reasonable speed | Slow, waiting on others |
+| 6 | **Mission** | Clear purpose, aligned goals | Somewhat clear | Unclear, conflicting priorities |
+| 7 | **Fun** | Enjoy working here | It's OK | Not fun, demotivating |
+| 8 | **Learning** | Growing skills, exploring | Some learning opportunities | Stagnating |
+| 9 | **Support** | Good support from org | Some support | Lack of support, blockers |
+| 10 | **Pawns or players** | Team controls their destiny | Some autonomy | Team has no say in decisions |
+| 11 | **Health of codebase** | Tests pass, CI green, docs current | Some gaps | Flaky tests, broken CI, no docs |
+
+### Health Check Facilitation
+
+```markdown
+## Squad Health Check — Facilitator Guide
+
+### Preparation (15 min)
+1. Print one "Health Board" per team (11 rows, 3 columns: green/yellow/red)
+2. Prepare sticky notes (3 colors: green, yellow, red)
+3. Book 60 minutes per team
+4. NO managers in the room (psychological safety)
+
+### Execution (45 min)
+
+[00:00] Introduction (5 min)
+  "This is not a performance review. It's a conversation about how we feel.
+   There are no right answers. Be honest."
+
+[00:05] Individual Voting (10 min)
+  - For each of the 11 indicators:
+  - Each person places a sticky in green/yellow/red column
+  - Vote simultaneously (no anchoring)
+
+[00:15] Discussion (25 min)
+  - For each indicator, look at the spread:
+  - All same color → quick consensus, move on
+  - Mixed colors → 2 min discussion: "Yellow voter, what concerns you?"
+  - Focus on indicators with most red/yellow
+  - Don't try to solve everything — identify top 2-3 concerns
+
+[00:40] Action Items (10 min)
+  - Pick 1-3 actionable improvements
+  - Each gets: owner, deadline, success criteria
+  - Document in team wiki / retro tool
+
+### Follow-up
+- Run health check every 6-8 weeks
+- Track trends over time (is it getting better or worse?)
+- Share anonymized trends with leadership (never individual team data)
+- Compare across squads — what are green teams doing differently?
+```
+
+### Health Check Visualization
+
+```python
+# Simple health check tracking script
+import json
+from datetime import datetime
+
+HEALTH_INDICATORS = [
+    "easy_to_release", "suitable_process", "tech_quality",
+    "value", "speed", "mission", "fun", "learning",
+    "support", "autonomy", "health_of_codebase"
+]
+
+def record_health_check(team: str, votes: dict[str, str]) -> dict:
+    """Record a squad health check with green/yellow/red votes."""
+    score_map = {"green": 2, "yellow": 1, "red": 0}
+
+    result = {
+        "team": team,
+        "date": datetime.now().isoformat(),
+        "scores": {},
+        "actions": []
+    }
+
+    for indicator in HEALTH_INDICATORS:
+        color = votes.get(indicator, "yellow")
+        result["scores"][indicator] = {
+            "color": color,
+            "score": score_map[color]
+        }
+
+    # Flag areas needing attention
+    red_areas = [k for k, v in result["scores"].items() if v["color"] == "red"]
+    yellow_areas = [k for k, v in result["scores"].items() if v["color"] == "yellow"]
+
+    result["priority_focus"] = red_areas[:3]  # Top 3 reds
+    result["avg_score"] = sum(v["score"] for v in result["scores"].values()) / len(HEALTH_INDICATORS)
+
+    return result
+
+def compare_teams(checks: list[dict]) -> dict:
+    """Compare health across teams to identify patterns."""
+    all_teams = {}
+    for check in checks:
+        team = check["team"]
+        all_teams[team] = check["avg_score"]
+
+    # Find what green teams do differently
+    sorted_teams = sorted(all_teams.items(), key=lambda x: x[1], reverse=True)
+    return {
+        "rankings": sorted_teams,
+        "healthiest": sorted_teams[0][0],
+        "needs_support": sorted_teams[-1][0]
+    }
+```
+
+---
+
+## Step 38: Observability-Driven Development
+
+Source: Charity Majors (Honeycomb CTO) — https://charity.wtf/
+
+### Philosophy
+
+**Observability-Driven Development (ODD)** argues that instrumentation is not
+an afterthought — it's a core part of code quality, as important as tests.
+
+```markdown
+Key insight from Charity Majors:
+"If you can't understand what your code is doing in production,
+ you can't understand it at all. Production is the only place
+ where code meets reality."
+
+Traditional testing: "Did I build the thing right?"
+Observability: "Is the thing I built doing what I expected in production?"
+
+You need both. Testing catches known unknowns.
+Observability catches unknown unknowns.
+```
+
+### Wide Structured Events
+
+Instead of metrics (thin counters) or logs (flat strings), use **wide structured
+events** — rich, high-cardinality data points that can be queried flexibly.
+
+```python
+# ❌ THIN: traditional metrics (low cardinality, hard to debug)
+request_counter.inc({"method": "POST", "path": "/api/users", "status": 200})
+latency_histogram.observe(0.15, {"method": "POST", "path": "/api/users"})
+
+# ❌ FLAT: traditional logs (parsing nightmares, no structure)
+logger.info(f"POST /api/users 200 150ms user_id={user_id}")
+
+# ✅ WIDE STRUCTURED EVENT: one rich event per request
+from opentelemetry import trace
+import structlog
+
+logger = structlog.get_logger()
+
+def handle_create_user(request):
+    span = trace.get_current_span()
+    span.set_attributes({
+        "user.id": user_id,
+        "user.plan": plan,
+        "user.region": region,
+        "request.idempotency_key": idempotency_key,
+        "request.source": "mobile_app",
+        "db.query_count": 0,
+        "cache.hit": False,
+    })
+
+    # ... execute business logic ...
+
+    # Wide event at the END of the request (not scattered log lines)
+    logger.info("request.complete",
+        method="POST",
+        path="/api/users",
+        status_code=201,
+        duration_ms=duration_ms,
+        user_id=user_id,
+        user_plan=plan,
+        user_region=region,
+        idempotency_key=idempotency_key,
+        source="mobile_app",
+        db_queries=span.get_attribute("db.query_count"),
+        cache_hit=span.get_attribute("cache.hit"),
+        error_message=None,
+        version=get_deploy_version(),
+    )
+```
+
+### Instrumentation as Code Quality Signal
+
+```markdown
+## The Observability Checklist (PR Review)
+
+When reviewing a PR, instrumention quality = code quality:
+
+### Must-have (block merge)
+- [ ] New endpoints have a "request.complete" wide event
+- [ ] Database queries are traced with query text + duration
+- [ ] External service calls are traced with latency + status
+- [ ] Error paths emit structured events (not just exceptions)
+
+### Should-have (flag in review)
+- [ ] Business-critical values are captured in events (order amount, user plan)
+- [ ] Request-scoped context propagates through call stack
+- [ ] No PII in events (user email, password, token)
+- [ ] High-cardinality fields (user_id, request_id) for debugging
+
+### Nice-to-have (mention)
+- [ ] Custom span attributes for domain-specific queries
+- [ ] Dashboard/alerting queries documented in PR
+- [ ] Trace sampling strategy documented if not default
+```
+
+### Observability-Driven Development Workflow
+
+```python
+# ODD workflow: instrument BEFORE you test, instrument WITH your tests
+
+def test_new_refund_feature():
+    """Test that also verifies observability instrumentation."""
+    with capture_telemetry() as telemetry:
+        result = process_refund(order_id="ORD-123", amount=50.00, reason="defective")
+
+    # Verify behavior
+    assert result.status == "refunded"
+    assert result.amount == 50.00
+
+    # Verify observability (instrumentation quality)
+    events = telemetry.find_events("request.complete")
+    assert len(events) == 1
+    event = events[0]
+    assert event["refund.order_id"] == "ORD-123"
+    assert event["refund.amount"] == 50.00
+    assert event["refund.reason"] == "defective"
+    assert event["refund.duration_ms"] < 5000
+    assert "refund.processing_fee" in event  # Ensure fee is tracked
+```
+
+### Production Debugging with Wide Events
+
+```sql
+-- Honeycomb-style query: find slow refunds by customer segment
+SELECT
+  customer_segment,
+  COUNT(*) as total_refunds,
+  P95(duration_ms) as p95_latency,
+  AVG(refund_amount) as avg_amount
+FROM request_complete
+WHERE path = '/api/refunds'
+  AND status_code = 200
+  AND start_time > NOW() - INTERVAL '7 days'
+GROUP BY customer_segment
+ORDER BY p95_latency DESC
+
+-- Debug a specific slow refund
+SELECT *
+FROM request_complete
+WHERE request_id = 'abc-123-def'
+-- Wide event gives you EVERYTHING in one query
+```
+
+### Charity Majors' Rules for Production
+
+```markdown
+## Production Rules (from @mipsytipsy)
+
+1. "If you haven't tested it in production, you haven't tested it."
+   → Canaries, synthetic checks, real-user monitoring are mandatory.
+
+2. "Observability is for understanding NEW code, not just monitoring old code."
+   → Every deploy should be instrumented for understanding behavior.
+
+3. "The first question is 'what changed?' — deploy frequency answers this."
+   → Small, frequent deploys = easier to correlate cause and effect.
+
+4. "Dashboards are for known problems. Explore/debug tools are for unknowns."
+   → Invest in tools that let you ask questions you didn't anticipate.
+
+5. "If you can't find out what your code is doing in production,
+    your code is not ready to ship."
+   → Add observability before merging, not after a production incident.
