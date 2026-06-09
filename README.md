@@ -1,43 +1,57 @@
-# SDLC Skills for AI Agents
+# SDLC Skills
 
-Skills covering the Software Development Life Cycle, designed for AI coding agents (Hermes Agent, Claude Code, Cursor, Copilot, etc.).
+Comprehensive SDLC skill library for AI agents. Three tiers for different needs.
 
-Each skill has: trigger conditions, step-by-step workflows, CLI commands, code examples, tool comparisons, and pitfalls.
+## Tiers
 
-## Skills
+| Tier | Lines | Tokens | Use Case |
+|------|-------|--------|----------|
+| **slim/** | ~8K total (~800/skill) | ~8-10K/skill | Quick reference, daily use |
+| **moderate/** | ~20K total (~2K/skill) | ~20-25K/skill | Planning, deep dives |
+| **full/** | ~50K total (~5K/skill) | ~40-50K/skill | Complete reference |
 
-| Skill | Description |
-|-------|-------------|
-| [sdlc-requirements-engineering](sdlc-requirements-engineering/) | User stories, BDD/Gherkin, estimation, backlog prioritization, sprint planning |
-| [sdlc-architecture-design](sdlc-architecture-design/) | C4 diagrams, API design (REST/GraphQL/gRPC), DB schema, Clean/DDD, ADRs |
-| [sdlc-cicd-pipeline](sdlc-cicd-pipeline/) | GitHub Actions, GitLab CI, Docker, GitOps, DORA metrics |
-| [sdlc-testing-qa](sdlc-testing-qa/) | Test pyramid, TDD/BDD, property-based testing, k6, SAST/DAST, accessibility |
-| [sdlc-deployment](sdlc-deployment/) | Canary, blue-green, rolling deployments, feature flags, chaos engineering |
-| [sdlc-developer-tooling](sdlc-developer-tooling/) | Python/JS/Go/Rust tooling, DevEx, Team Topologies |
-| [sdlc-observability](sdlc-observability/) | Logging, metrics, tracing, SRE (SLIs/SLOs), post-mortems |
-| [sdlc-adversarial-review](sdlc-adversarial-review/) | Multi-agent PR review, code review culture |
-| [sdlc-prd-to-production](sdlc-prd-to-production/) | PRD → spec → plan → implement → review → ship → deploy pipeline |
-| [sdlc-retrospective](sdlc-retrospective/) | Retrospective formats, blameless post-mortems, team culture |
-
-## Usage
+## Install
 
 ```bash
-# Hermes Agent
-cp -r sdlc-* ~/.hermes/skills/software-development/
+# Slim (default, lightweight)
+cp -r slim/sdlc-* ~/.hermes/skills/software-development/
 
-# Claude Code
-cp -r sdlc-* .claude/skills/
+# Moderate (balanced)
+cp -r moderate/sdlc-* ~/.hermes/skills/software-development/
 
-# Cursor
-cp -r sdlc-* .cursor/skills/
+# Full (comprehensive reference)
+cp -r full/sdlc-* ~/.hermes/skills/software-development/
 ```
 
-Skills auto-load based on context, or load manually.
+## Skills (10)
 
-## Based On
+| Skill | Focus |
+|-------|-------|
+| sdlc-adversarial-review | Security review, threat modeling, compliance |
+| sdlc-architecture-design | System design, patterns, distributed systems |
+| sdlc-cicd-pipeline | CI/CD, build systems, pipeline security |
+| sdlc-deployment | Deployment strategies, infrastructure, DR |
+| sdlc-developer-tooling | Dev environments, monorepo, platform eng |
+| sdlc-observability | Monitoring, tracing, SRE, SLOs |
+| sdlc-prd-to-production | Product lifecycle, incident mgmt |
+| sdlc-requirements-engineering | Requirements, DDD, BDD, user research |
+| sdlc-retrospective | Retrospectives, team health, org design |
+| sdlc-testing-qa | Testing strategies, automation, quality |
 
-Patterns from Accelerate, Team Topologies, Staff Engineer, DDIA, Phoenix Project, Google SRE, Software Engineering at Google, and engineering practices at Netflix, Stripe, Meta, Amazon.
+## Content Sources
 
-## License
+- DORA / State of DevOps reports
+- Google SRE book
+- OWASP guidelines
+- Team Topologies (Skelton & Pais)
+- Accelerate (Forsgren, Humble, Kim)
+- CNCF best practices
+- Industry case studies (Netflix, Google, Stripe, Shopify)
 
-MIT
+## Author
+
+Dinoudon
+
+## Version
+
+v5.0.0 - Three-tier structure (slim/moderate/full)
