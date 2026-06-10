@@ -23,7 +23,7 @@ cp -r moderate/sdlc-* ~/.hermes/skills/software-development/
 cp -r full/sdlc-* ~/.hermes/skills/software-development/
 ```
 
-## Skills (10)
+## Skills (11)
 
 | Skill | Focus |
 |-------|-------|
@@ -37,6 +37,7 @@ cp -r full/sdlc-* ~/.hermes/skills/software-development/
 | sdlc-requirements-engineering | Requirements, DDD, BDD, user research |
 | sdlc-retrospective | Retrospectives, team health, org design |
 | sdlc-testing-qa | Testing strategies, automation, quality |
+| sdlc-throwaway-projects | Prototypes, MVPs, spikes, vibe coding, validation |
 
 ## Content Sources
 
