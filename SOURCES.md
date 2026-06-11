@@ -219,6 +219,78 @@ Last updated: 2026-06-11
 
 ---
 
+## Database Design
+
+| Source | URL | Used In |
+|--------|-----|---------|
+| PostgreSQL Docs | https://www.postgresql.org/docs/ | database-design |
+| Use The Index Luke | https://use-the-index-luke.com/ | database-design |
+| Flyway Docs | https://docs.flyway.io/ | database-design |
+| Alembic Docs | https://alembic.sqlalchemy.org/ | database-design |
+| Atlas Docs | https://atlasgo.io/ | database-design |
+| Prisma Migrate | https://www.prisma.io/docs/orm/prisma-migrate | database-design |
+| Vitess Docs | https://vitess.io/docs/ | database-design |
+| PgBouncer Config | https://www.pgbouncer.org/config.html | database-design |
+| HikariCP | https://github.com/brettwooldridge/HikariCP | database-design |
+| Debezium Docs | https://debezium.io/documentation/ | database-design |
+| MongoDB Data Modeling | https://www.mongodb.com/docs/manual/core/data-model-design/ | database-design |
+| Redis Docs | https://redis.io/docs/ | database-design |
+| Neo4j Docs | https://neo4j.com/docs/ | database-design |
+| TimescaleDB Docs | https://docs.timescale.com/ | database-design |
+| Microservices.io Data Patterns | https://microservices.io/patterns/data/ | database-design |
+
+## ML Engineering
+
+| Source | URL | Used In |
+|--------|-----|---------|
+| Google MLOps Whitepaper | https://cloud.google.com/architecture/mlops-continuous-delivery-and-automation-pipelines-in-machine-learning | ml-engineering |
+| Hidden Technical Debt in ML (NeurIPS 2015) | https://papers.nips.cc/paper/2015/hash/86df7dcfd896f0254d54811f70a25e3e-Abstract.html | ml-engineering |
+| MLflow Docs | https://mlflow.org/docs/ | ml-engineering |
+| Kubeflow Docs | https://www.kubeflow.org/docs/ | ml-engineering |
+| Feast Docs | https://docs.feast.dev/ | ml-engineering |
+| Tecton Docs | https://www.tecton.ai/docs/ | ml-engineering |
+| Hopsworks Docs | https://docs.hopsworks.ai/ | ml-engineering |
+| TorchServe | https://pytorch.org/serve/ | ml-engineering |
+| TF Serving | https://www.tensorflow.org/tfx/guide/serving | ml-engineering |
+| Triton Inference Server | https://docs.nvidia.com/deeplearning/triton-inference-server/ | ml-engineering |
+| BentoML Docs | https://docs.bentoml.com/ | ml-engineering |
+| Seldon Core | https://docs.seldon.io/projects/seldon-core/ | ml-engineering |
+| Evidently AI | https://docs.evidentlyai.com/ | ml-engineering |
+| NannyML | https://nannyml.readthedocs.io/ | ml-engineering |
+| Alibi Detect | https://docs.seldon.io/projects/alibi-detect/ | ml-engineering |
+| whylogs | https://docs.whylabs.ai/ | ml-engineering |
+| W&B Docs | https://docs.wandb.ai/ | ml-engineering |
+| Neptune Docs | https://docs.neptune.ai/ | ml-engineering |
+| DVC Docs | https://dvc.org/doc | ml-engineering |
+| HuggingFace Hub | https://huggingface.co/docs/hub/ | ml-engineering |
+| LangChain Docs | https://docs.langchain.com/ | ml-engineering |
+| LlamaIndex Docs | https://docs.llamaindex.ai/ | ml-engineering |
+| Ragas Docs | https://docs.ragas.io/ | ml-engineering |
+| HuggingFace TRL | https://huggingface.co/docs/trl/ | ml-engineering |
+| Airflow Docs | https://airflow.apache.org/docs/ | ml-engineering |
+| Prefect Docs | https://docs.prefect.io/ | ml-engineering |
+| Dagster Docs | https://docs.dagster.io/ | ml-engineering |
+
+## Incident Management
+
+| Source | URL | Used In |
+|--------|-----|---------|
+| Google SRE Workbook - Incident Response | https://sre.google/workbook/incident-response/ | incident-management |
+| Google SRE Workbook - Postmortem Culture | https://sre.google/workbook/postmortem-culture/ | incident-management |
+| PagerDuty Incident Response | https://response.pagerduty.com/ | incident-management |
+| PagerDuty Severity Levels | https://response.pagerduty.com/before/severity_levels/ | incident-management |
+| Atlassian Incident Management | https://www.atlassian.com/incident-management | incident-management |
+| incident.io Blog | https://incident.io/blog | incident-management |
+| Rootly | https://rootly.com/ | incident-management |
+| Gremlin Chaos Engineering | https://www.gremlin.com/ | incident-management |
+| AWS Fault Injection Simulator | https://aws.amazon.com/fis/ | incident-management |
+| LitmusChaos | https://litmuschaos.io/ | incident-management |
+| Firehydrant | https://firehydrant.com/ | incident-management |
+| Opsgenie | https://www.atlassian.com/software/opsgenie | incident-management |
+| Squadcast | https://www.squadcast.com/ | incident-management |
+
+---
+
 ## Maintenance Schedule
 
 - **Quarterly**: Check for major version updates to key sources
