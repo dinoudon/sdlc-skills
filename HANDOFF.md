@@ -1,7 +1,7 @@
 # SDLC Skills — Handoff Document
 
 **Date:** 2026-06-09
-**Status:** 11 skills × 3 tiers complete
+**Status:** 12 skills (11 complete × 3 tiers + api-documentation moderate-only)
 **Repository:** /root/sdlc-skills/ (local), `dinoudon/sdlc-skills` (GitHub)
 
 ---
@@ -20,6 +20,7 @@
 
 | Skill | Full | Moderate | Slim |
 |:------|:-----|:---------|:-----|
+| api-documentation | — | 1566 | — |
 | sdlc-adversarial-review | 4805 | 1999 | 803 |
 | sdlc-architecture-design | 5354 | 1901 | 1565 |
 | sdlc-cicd-pipeline | 4420 | 1928 | 1091 |
@@ -31,7 +32,7 @@
 | sdlc-retrospective | 4790 | 2198 | 652 |
 | sdlc-testing-qa | 5030 | 2065 | 798 |
 | sdlc-throwaway-projects | 1762 | 1016 | 741 |
-| **TOTAL** | **51,122** | **20,866** | **10,179** |
+| **TOTAL** | **51,122** | **22,432** | **10,179** |
 
 ## Directory Structure
 
