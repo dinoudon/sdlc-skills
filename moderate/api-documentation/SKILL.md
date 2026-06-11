@@ -1323,6 +1323,53 @@ def verify_webhook_signature(payload: bytes, signature: str, secret: str) -> boo
 
 ---
 
+---
+
+## Step 12b: NestJS API Documentation
+
+NestJS uses decorators to define routes and guards. Extract these to auto-document your API.
+
+**Map auth boundaries by guard:**
+
+| Guard | Auth Type | Routes | Document As |
+|-------|-----------|--------|-------------|
+| `TokenAuthGuard` | Bearer token | External/partner | OAuth2 or API key |
+| `JwtAuthGuard` | JWT | Internal/dashboard | JWT bearer |
+| `ApiKeyGuard` | API key | Machine-to-machine | X-API-Key header |
+
+```bash
+# Find all controllers
+find src -name "*.controller.ts"
+
+# Extract routes and guards
+grep -n "@Controller\|@Get\|@Post\|@Put\|@Patch\|@Delete\|@UseGuards" src/path/to/controller.ts
+
+# Map auth boundaries
+grep -rn "TokenAuthGuard" src/ --include="*.controller.ts" -l
+grep -rn "JwtAuthGuard"   src/ --include="*.controller.ts" -l
+grep -rn "ApiKeyGuard"    src/ --include="*.controller.ts" -l
+```
+
+**Generate OpenAPI spec:**
+
+```typescript
+// main.ts
+import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+
+const config = new DocumentBuilder()
+  .setTitle('User API')
+  .setVersion('1.0')
+  .addBearerAuth()
+  .addApiKey({ type: 'apiKey', name: 'X-API-Key', in: 'header' }, 'ApiKeyAuth')
+  .build();
+
+const document = SwaggerModule.createDocument(app, config);
+SwaggerModule.setup('api', app, document);
+```
+
+Source: https://docs.nestjs.com/openapi/introduction
+
+---
 ## Step 13: Authentication Documentation
 
 ### Auth Methods Comparison

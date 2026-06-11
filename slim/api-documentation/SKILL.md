@@ -533,6 +533,32 @@ webhooks:
 **Webhook signature verification (Node.js):**
 ```js
 const crypto = require('crypto');
+
+**NestJS auth boundary mapping:**
+
+| Guard | Auth Type | Document As |
+|-------|-----------|-------------|
+| `TokenAuthGuard` | Bearer token | OAuth2 or API key |
+| `JwtAuthGuard` | JWT | JWT bearer |
+| `ApiKeyGuard` | API key | X-API-Key header |
+
+```bash
+# Map auth boundaries across all controllers
+grep -rn "TokenAuthGuard" src/ --include="*.controller.ts" -l  # external
+grep -rn "JwtAuthGuard"   src/ --include="*.controller.ts" -l  # internal
+grep -rn "ApiKeyGuard"    src/ --include="*.controller.ts" -l  # machine-to-machine
+```
+
+```typescript
+// Auto-generate OpenAPI spec with @nestjs/swagger
+const config = new DocumentBuilder()
+  .setTitle('API')
+  .addBearerAuth()
+  .addApiKey({ type: 'apiKey', name: 'X-API-Key', in: 'header' }, 'ApiKeyAuth')
+  .build();
+const document = SwaggerModule.createDocument(app, config);
+SwaggerModule.setup('api', app, document);
+```
 const sig = crypto.createHmac('sha256', secret).update(rawBody).digest('hex');
 if (`sha256=${sig}` !== req.headers['x-webhook-signature']) throw new Error('Invalid');
 ```

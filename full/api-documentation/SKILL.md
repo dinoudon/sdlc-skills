@@ -408,6 +408,79 @@ rules:
 
 ---
 
+### 7b. NestJS API Documentation
+
+NestJS uses decorators to define routes and guards for auth boundaries. Extract these to auto-document your API.
+
+**Find all controllers:**
+```bash
+find src -name "*.controller.ts"
+```
+
+**Extract routes and guards from a controller:**
+```bash
+grep -n "@Controller\|@Get\|@Post\|@Put\|@Patch\|@Delete\|@UseGuards" src/path/to/controller.ts
+```
+
+**Map auth boundaries by guard usage:**
+```bash
+# External/partner routes (token-based auth)
+grep -rn "TokenAuthGuard" src/ --include="*.controller.ts" -l
+
+# Internal/dashboard routes (JWT auth)
+grep -rn "JwtAuthGuard" src/ --include="*.controller.ts" -l
+
+# API key routes (machine-to-machine)
+grep -rn "ApiKeyGuard" src/ --include="*.controller.ts" -l
+```
+
+**Generate OpenAPI spec from NestJS:**
+```typescript
+// main.ts
+import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+
+const config = new DocumentBuilder()
+  .setTitle('User API')
+  .setDescription('Manage users')
+  .setVersion('1.0')
+  .addBearerAuth()
+  .addApiKey({ type: 'apiKey', name: 'X-API-Key', in: 'header' }, 'ApiKeyAuth')
+  .build();
+
+const document = SwaggerModule.createDocument(app, config);
+SwaggerModule.setup('api', app, document);
+```
+
+**Guard-based auth documentation pattern:**
+| Guard | Auth Type | Routes | Document As |
+|-------|-----------|--------|-------------|
+| `TokenAuthGuard` | Bearer token | External/partner endpoints | OAuth2 or API key |
+| `JwtAuthGuard` | JWT | Internal/dashboard endpoints | JWT bearer |
+| `ApiKeyGuard` | API key | Machine-to-machine endpoints | X-API-Key header |
+
+**Auto-document with `@nestjs/swagger` decorators:**
+```typescript
+import { ApiOperation, ApiResponse, ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+
+@ApiTags('Users')
+@ApiBearerAuth()
+@Controller('users')
+export class UserController {
+  @Get()
+  @ApiOperation({ summary: 'List all users' })
+  @ApiResponse({ status: 200, description: 'User list', type: [UserDto] })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @UseGuards(JwtAuthGuard)
+  findAll(): Promise<UserDto[]> {
+    // ...
+  }
+}
+```
+
+Source: https://docs.nestjs.com/openapi/introduction
+
+---
+
 ### 8. Auth Documentation
 
 **Methods comparison:**
