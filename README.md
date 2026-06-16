@@ -1,6 +1,6 @@
-# SDLC Skills
+# SDLC Skills — Complete Software Company Package
 
-Comprehensive SDLC skill library for AI coding agents. Works with any IDE or CLI that loads context from files.
+Comprehensive skill library for building software companies. From idea to IPO. Works with any AI coding agent that loads context from files.
 
 ## Tiers
 
@@ -10,7 +10,9 @@ Comprehensive SDLC skill library for AI coding agents. Works with any IDE or CLI
 | **moderate/** | ~25K total (~1.7K/skill) | ~17-25K/skill | Planning, deep dives |
 | **full/** | ~55K total (~3.7K/skill) | ~37-55K/skill | Complete reference |
 
-## Skills (15)
+## Skills (23)
+
+### Engineering SDLC
 
 | Skill | Focus |
 |-------|-------|
@@ -24,11 +26,29 @@ Comprehensive SDLC skill library for AI coding agents. Works with any IDE or CLI
 | sdlc-incident-management | On-call, severity levels, runbooks, blameless postmortems, chaos eng |
 | sdlc-ml-engineering | MLOps, feature stores, model serving, drift monitoring, LLMOps |
 | sdlc-observability | Monitoring, tracing, SRE, SLOs, eBPF, LGTM stack |
-| sdlc-prd-to-production | Product lifecycle, stakeholder mgmt, launch, High Growth Handbook |
+| sdlc-prd-to-production | Product lifecycle, stakeholder mgmt, launch, gstack CEO review, unicorn patterns |
 | sdlc-requirements-engineering | Requirements, DDD, BDD, user research, domain modeling |
-| sdlc-retrospective | Retrospectives, team health, org design, Team Topologies |
+| sdlc-retrospective | Retrospectives, team health, Spotify model, Netflix culture, Two-Pizza teams |
 | sdlc-testing-qa | Testing strategies, automation, quality, contract testing |
 | sdlc-throwaway-projects | Prototypes, MVPs, spikes, vibe coding, validation |
+
+### Business & Growth
+
+| Skill | Focus |
+|-------|-------|
+| sdlc-product-growth | PLG, developer-led growth, SaaS metrics, pricing, experimentation, A/B testing |
+| sdlc-developer-relations | DevRel, community building, SDK strategy, developer marketing, DX |
+| sdlc-gtm-strategy | Go-to-market, positioning, sales enablement, partnerships, enterprise sales |
+| sdlc-finance-ops | Unit economics, fundraising (seed→IPO), cap table, SaaS metrics, burn rate |
+| sdlc-hiring-talent | Recruiting, interview design, engineering levels, onboarding, retention |
+| sdlc-legal-compliance | GDPR, SOC 2, CCPA, IP protection, open source licensing, privacy |
+
+### Platform & Operations
+
+| Skill | Focus |
+|-------|-------|
+| sdlc-platform-engineering | Backstage, golden paths, service catalog, self-service infra, DORA metrics |
+| sdlc-technical-writing | Docs-as-code, changelogs, runbooks, style guides, diagramming |
 
 ## Install
 
@@ -184,9 +204,23 @@ Most AI agents load `.md` files from project directories. Copy skills wherever y
 | Large context window (100K+) | moderate or full |
 | Reference documentation | full (don't load into context) |
 
+## Unicorn Company Patterns Included
+
+| Company | Pattern | Skills |
+|---------|---------|--------|
+| **Stripe** | Developer-led growth, API-first, 7 lines of code | product-growth, developer-relations, prd-to-production |
+| **Slack** | Viral team adoption, freemium, integrations | product-growth, prd-to-production |
+| **Notion** | PLG, community templates, power-user advocacy | product-growth |
+| **Figma** | Collaboration as growth, browser-based, sharing loops | product-growth |
+| **Spotify** | Squad model, Backstage, engineering culture | platform-engineering, retrospective |
+| **Netflix** | Chaos engineering, microservices, culture deck | retrospective, testing-qa |
+| **Google** | SRE, error budgets, Two-Pizza teams | observability, retrospective |
+| **Amazon** | Two-Pizza teams, leadership principles | retrospective |
+| **gstack** | CEO review, product judgment, ship workflow | prd-to-production |
+
 ## Content Sources
 
-See [SOURCES.md](SOURCES.md) for complete source list (160+ sources across 15 categories).
+See [SOURCES.md](SOURCES.md) for complete source list (200+ sources across 20+ categories).
 
 Key sources:
 - DORA / State of DevOps reports
@@ -195,10 +229,11 @@ Key sources:
 - Team Topologies (Skelton & Pais)
 - Accelerate (Forsgren, Humble, Kim)
 - CNCF best practices
-- Industry case studies (Netflix, Google, Stripe, Shopify)
-- NestJS, PostgreSQL, Redis, MongoDB official docs
-- MLflow, Kubeflow, Feast, BentoML docs
-- PagerDuty, Gremlin, incident.io docs
+- gstack (Gary Tan / YC)
+- Industry case studies (Netflix, Google, Stripe, Shopify, Spotify, Airbnb, Figma)
+- Reforge, OpenView, Bessemer (growth/SaaS metrics)
+- April Dunford, First Round Review (GTM)
+- Will Larson, Holloway (hiring/equity)
 
 ## Author
 
@@ -206,4 +241,4 @@ Dinoudon
 
 ## Version
 
-v5.2.1 - Three-tier structure (slim/moderate/full) with 15 skills
+v6.0.0 — 23 skills, three-tier structure (slim/moderate/full), unicorn company patterns, complete software company package

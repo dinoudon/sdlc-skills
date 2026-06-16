@@ -2,7 +2,7 @@
 
 Single source of truth for all research sources used across SDLC skills.
 
-Last updated: 2026-06-11
+Last updated: 2026-06-16
 
 ---
 
@@ -22,6 +22,11 @@ Last updated: 2026-06-11
 | Sigstore | https://sigstore.dev/ | adversarial-review, cicd-pipeline |
 | OpenAPI Specification | https://spec.openapis.org/oas/v3.1.1.html | api-documentation, architecture-design |
 | AsyncAPI Specification | https://www.asyncapi.com/ | api-documentation |
+| SPACE Framework | https://queue.acm.org/detail.cfm?id=3454121 | platform-engineering, retrospective |
+| Team Topologies | https://teamtopologies.com/ | platform-engineering, retrospective |
+| CNCF Platform White Paper | https://tag-app-delivery.cncf.io/ | platform-engineering |
+| Keep a Changelog | https://keepachangelog.com/ | technical-writing |
+| ADR GitHub | https://adr.github.io/ | technical-writing |
 
 ---
 
@@ -30,16 +35,16 @@ Last updated: 2026-06-11
 | Book | Author(s) | Year | Used In |
 |------|-----------|------|---------|
 | Accelerate | Forsgren, Humble, Kim | 2018 | retrospective, deployment, testing-qa |
-| Team Topologies | Skelton & Pais | 2019 | retrospective, prd-to-production |
-| The Manager's Path | Camille Fournier | 2017 | prd-to-production |
-| An Elegant Puzzle | Will Larson | 2019 | prd-to-production, retrospective |
-| Staff Engineer | Will Larson | 2019 | retrospective |
+| Team Topologies | Skelton & Pais | 2019 | retrospective, prd-to-production, platform-engineering |
+| The Manager's Path | Camille Fournier | 2017 | prd-to-production, hiring-talent |
+| An Elegant Puzzle | Will Larson | 2019 | prd-to-production, retrospective, hiring-talent |
+| Staff Engineer | Will Larson | 2019 | retrospective, hiring-talent |
 | Observability Engineering | Charity Majors, Liz Fong-Jones, George Miranda | 2022 | observability |
 | Chaos Engineering | Casey Rosenthal, Nora Jones | 2020 | testing-qa, observability |
 | Impact Mapping | Gojko Adzic | 2012 | requirements-engineering |
 | Specification by Example | Gojko Adzic | 2011 | requirements-engineering |
-| Continuous Discovery Habits | Teresa Torres | 2021 | prd-to-production |
-| Inspired | Marty Cagan | 2017 | prd-to-production |
+| Continuous Discovery Habits | Teresa Torres | 2021 | prd-to-production, product-growth |
+| Inspired | Marty Cagan | 2017 | prd-to-production, product-growth |
 | Lean UX | Jeff Gothelf, Josh Seiden | 2013 | requirements-engineering |
 | Sprint | Jake Knapp | 2016 | requirements-engineering |
 | The Phoenix Project | Kim, Behr, Spafford | 2013 | retrospective |
@@ -47,9 +52,13 @@ Last updated: 2026-06-11
 | Competing Against Luck | Clayton Christensen | 2016 | requirements-engineering |
 | Clean Architecture | Robert C. Martin | 2017 | architecture-design |
 | Designing Data-Intensive Applications | Martin Kleppmann | 2017 | architecture-design |
-| High Growth Handbook | Elad Gil | 2018 | prd-to-production |
+| High Growth Handbook | Elad Gil | 2018 | prd-to-production, finance-ops |
 | Toyota Kata | Mike Rother | 2009 | retrospective |
-| The Lean Startup | Eric Ries | 2011 | prd-to-production |
+| The Lean Startup | Eric Ries | 2011 | prd-to-production, throwaway-projects |
+| Obviously Awesome | April Dunford | 2019 | gtm-strategy |
+| Venture Deals | Brad Feld, Jason Mendelson | 2019 | finance-ops |
+| Zero to One | Peter Thiel | 2014 | product-growth, gtm-strategy |
+| Crossing the Chasm | Geoffrey Moore | 2014 | gtm-strategy |
 
 ---
 
@@ -169,8 +178,8 @@ Last updated: 2026-06-11
 
 | Paper/Article | Author(s) | Year | Used In |
 |---------------|-----------|------|---------|
-| The SPACE of Developer Productivity | Forsgren, Storey, Maddila, et al. | 2021 | retrospective |
-| DevEx: What Actually Drives Productivity | Noda, Storey, Forsgren | 2023 | retrospective |
+| The SPACE of Developer Productivity | Forsgren, Storey, Maddila, et al. | 2021 | retrospective, platform-engineering |
+| DevEx: What Actually Drives Productivity | Noda, Storey, Forsgren | 2023 | retrospective, platform-engineering |
 | Cognitive Load in Software Engineering | Bett, Graziotin, et al. | 2023 | retrospective |
 | Hexagonal Architecture | Alistair Cockburn | 2005 | architecture-design |
 | Onion Architecture | Jeffrey Palermo | 2008 | architecture-design |
@@ -182,14 +191,148 @@ Last updated: 2026-06-11
 
 | Company | URL | Topics |
 |---------|-----|--------|
-| Netflix Tech Blog | https://netflixtechblog.com/ | Chaos engineering, testing culture |
+| Netflix Tech Blog | https://netflixtechblog.com/ | Chaos engineering, testing culture, microservices |
 | Google SRE | https://sre.google/ | SRE practices, error budgets |
-| Stripe Engineering | https://stripe.com/blog/engineering | API design, developer experience |
+| Stripe Engineering | https://stripe.com/blog/engineering | API design, developer experience, DLG |
 | Shopify Engineering | https://shopify.engineering/ | Modular monolith, Packwerk |
-| Spotify Engineering | https://engineering.atspotify.com/ | Backstage, testing culture |
+| Spotify Engineering | https://engineering.atspotify.com/ | Backstage, squad model, testing culture |
 | GitHub Engineering | https://github.blog/engineering/ | CI/CD, trunk-based dev |
 | Uber Engineering | https://www.uber.com/blog/engineering/ | Microservices, observability |
-| Airbnb Engineering | https://medium.com/airbnb-engineering | API design, microservices |
+| Airbnb Engineering | https://medium.com/airbnb-engineering | API design, microservices, design systems |
+| Figma Engineering | https://www.figma.com/blog/category/engineering/ | Real-time collab, WebAssembly |
+| Notion Engineering | https://www.notion.so/blog | Performance, offline-first |
+| Datadog Engineering | https://www.datadoghq.com/blog/engineering/ | Observability, distributed systems |
+| Vercel Engineering | https://vercel.com/blog | Next.js, edge computing |
+| MongoDB Engineering | https://www.mongodb.com/blog | Database, developer advocacy |
+
+---
+
+## Growth & Product-Led Growth
+
+| Source | URL | Used In |
+|--------|-----|---------|
+| Reforge | https://www.reforge.com/blog | product-growth |
+| Lenny Rachitsky Newsletter | https://www.lennysnewsletter.com/ | product-growth |
+| OpenView Partners PLG | https://openviewpartners.com/blog/ | product-growth |
+| a16z Growth | https://a16z.com/growth/ | product-growth |
+| Bessemer Cloud Atlas | https://www.bvp.com/atlas | product-growth, finance-ops |
+| Kyle Poyar, OpenView | https://openviewpartners.com/blog/ | product-growth |
+| Dave McClure Pirate Metrics | https://500.co/ | product-growth |
+| SaaStr | https://www.saastr.com/ | product-growth, finance-ops |
+| Tomasz Tunguz | https://tomtunguz.com/ | product-growth, finance-ops |
+| Christoph Janz SaaS Metrics | https://christophjanz.blogspot.com/ | product-growth, finance-ops |
+
+---
+
+## Developer Relations
+
+| Source | URL | Used In |
+|--------|-----|---------|
+| Developer Relations | https://developerrelations.com/ | developer-relations |
+| DevRel Collective | https://devrelcollective.fun/ | developer-relations |
+| DevRelCon | https://devrelcon.dev/ | developer-relations |
+| Stripe Developer Experience | https://stripe.com/blog/engineering | developer-relations |
+| Twilio Developer Marketing | https://www.twilio.com/en-us/blog | developer-relations |
+| MongoDB Community | https://www.mongodb.com/community | developer-relations |
+
+---
+
+## Platform Engineering
+
+| Source | URL | Used In |
+|--------|-----|---------|
+| Backstage (Spotify) | https://backstage.io/docs/ | platform-engineering |
+| Port.io State of IDP | https://www.port.io/state-of-internal-developer-portals | platform-engineering |
+| Humanitec Platform Orchestrator | https://humanitec.com/ | platform-engineering |
+| Gartner Platform Engineering | https://www.gartner.com/en/articles/what-is-platform-engineering | platform-engineering |
+| Team Topologies | https://teamtopologies.com/ | platform-engineering |
+
+---
+
+## Technical Writing
+
+| Source | URL | Used In |
+|--------|-----|---------|
+| Divio Documentation System | https://documentation.divio.com/ | technical-writing |
+| Google Developer Style Guide | https://developers.google.com/style | technical-writing |
+| Write the Docs | https://www.writethedocs.org/ | technical-writing |
+| MkDocs Material | https://squidfunk.github.io/mkdocs-material/ | technical-writing |
+| Docusaurus | https://docusaurus.io/ | technical-writing |
+| Vale (prose linter) | https://vale.sh/ | technical-writing |
+| Mermaid diagrams | https://mermaid.js.org/ | technical-writing |
+| Hugo | https://gohugo.io/ | technical-writing |
+| VitePress | https://vitepress.dev/ | technical-writing |
+| Starlight | https://starlight.astro.build/ | technical-writing |
+| GitBook | https://www.gitbook.com/ | technical-writing |
+| Mintlify | https://www.mintlify.com/ | technical-writing |
+
+---
+
+## Go-to-Market & Sales
+
+| Source | URL | Used In |
+|--------|-----|---------|
+| April Dunford, Obviously Awesome | https://www.aprildunford.com/ | gtm-strategy |
+| Winning by Design | https://winningbydesign.com/ | gtm-strategy |
+| Pavilion (revenue leaders) | https://joinpavilion.com/ | gtm-strategy |
+| First Round Review | https://review.firstround.com/ | gtm-strategy, hiring-talent |
+| Y Combinator Startup School | https://www.startupschool.org/ | gtm-strategy |
+| Product Hunt | https://www.producthunt.com/ | gtm-strategy |
+| AWS Marketplace | https://aws.amazon.com/marketplace/ | gtm-strategy |
+| GCP Marketplace | https://cloud.google.com/marketplace | gtm-strategy |
+| Azure Marketplace | https://azuremarketplace.microsoft.com/ | gtm-strategy |
+
+---
+
+## Hiring & Talent
+
+| Source | URL | Used In |
+|--------|-----|---------|
+| Will Larson, Staff Engineer | https://staffeng.com/ | hiring-talent |
+| Will Larson, Elegant Puzzle | https://lethain.com/elegant-puzzle/ | hiring-talent |
+| Camille Fournier, Manager's Path | https://www.themanagerspath.org/ | hiring-talent |
+| Levels.fyi | https://www.levels.fyi/ | hiring-talent |
+| Key Values | https://www.keyvalues.com/ | hiring-talent |
+| Holloway Equity Guide | https://www.holloway.com/g/equity-compensation | hiring-talent, finance-ops |
+| Pragmatic Engineer | https://blog.pragmaticengineer.com/ | hiring-talent |
+| Hacker News Who's Hiring | https://news.ycombinator.com/ | hiring-talent |
+
+---
+
+## Finance & Operations
+
+| Source | URL | Used In |
+|--------|-----|---------|
+| Bessemer Cloud Atlas | https://www.bvp.com/atlas | finance-ops |
+| OpenView SaaS Benchmarks | https://openviewpartners.com/blog/ | finance-ops |
+| a16z Startup School | https://a16z.com/startup-school/ | finance-ops |
+| Carta (cap table) | https://carta.com/ | finance-ops |
+| Holloway Equity Guide | https://www.holloway.com/g/equity-compensation | finance-ops |
+| SaaStr | https://www.saastr.com/ | finance-ops |
+| Tomasz Tunguz | https://tomtunguz.com/ | finance-ops |
+| YC Fundraising Guide | https://www.ycombinator.com/library | finance-ops |
+| Brad Feld, Venture Deals | https://www.feld.com/archives/2019/06/venture-deals-4th-edition.html | finance-ops |
+| Crunchbase | https://www.crunchbase.com/ | finance-ops |
+| PitchBook | https://pitchbook.com/ | finance-ops |
+
+---
+
+## Legal & Compliance
+
+| Source | URL | Used In |
+|--------|-----|---------|
+| GDPR Official Text | https://gdpr.eu/ | legal-compliance |
+| CCPA Official | https://oag.ca.gov/privacy/ccpa | legal-compliance |
+| SOC 2 (AICPA) | https://www.aicpa.org/interestareas/frc/assuranceadvisoryservices/trustservicescriteria | legal-compliance |
+| ISO 27001 | https://www.iso.org/isoiec-27001-information-security.html | legal-compliance |
+| Choose a License | https://choosealicense.com/ | legal-compliance |
+| TLDRLegal | https://tldrlegal.com/ | legal-compliance |
+| Vanta (SOC 2 automation) | https://www.vanta.com/ | legal-compliance |
+| Drata (compliance automation) | https://www.drata.com/ | legal-compliance |
+| Secureframe | https://secureframe.com/ | legal-compliance |
+| Cooley GO (startup legal) | https://www.cooleygo.com/ | legal-compliance |
+| Gunderson Dettmer | https://www.gunder.com/ | legal-compliance |
+| Wilson Sonsini | https://www.wsgr.com/ | legal-compliance |
 
 ---
 
@@ -207,15 +350,6 @@ Last updated: 2026-06-11
 | AWS CLI | https://docs.aws.amazon.com/cli/ | Cloud |
 | gcloud CLI | https://cloud.google.com/sdk/gcloud | Cloud |
 | Azure CLI | https://learn.microsoft.com/en-us/cli/azure/ | Cloud |
-
----
-
-## How to Use This File
-
-1. **Verifying claims**: When a skill states a fact, check the source here
-2. **Deep diving**: Use URLs to read original documentation
-3. **Updating skills**: When sources release new versions, update skills accordingly
-4. **Adding new sources**: Add to appropriate section when researching new topics
 
 ---
 
@@ -238,6 +372,8 @@ Last updated: 2026-06-11
 | Neo4j Docs | https://neo4j.com/docs/ | database-design |
 | TimescaleDB Docs | https://docs.timescale.com/ | database-design |
 | Microservices.io Data Patterns | https://microservices.io/patterns/data/ | database-design |
+
+---
 
 ## ML Engineering
 
@@ -271,6 +407,8 @@ Last updated: 2026-06-11
 | Prefect Docs | https://docs.prefect.io/ | ml-engineering |
 | Dagster Docs | https://docs.dagster.io/ | ml-engineering |
 
+---
+
 ## Incident Management
 
 | Source | URL | Used In |
@@ -291,8 +429,40 @@ Last updated: 2026-06-11
 
 ---
 
+## Unicorn Company Case Studies
+
+| Company | Key Pattern | URL | Used In |
+|---------|------------|-----|---------|
+| Stripe | Developer-led growth, API-first, 7 lines of code | https://stripe.com/blog/engineering | product-growth, developer-relations, prd-to-production |
+| Slack | Viral team adoption, freemium, integrations | https://slack.com/blog | product-growth, prd-to-production |
+| Notion | PLG, community templates, power-user advocacy | https://www.notion.so/blog | product-growth, prd-to-production |
+| Figma | Collaboration as growth, browser-based, sharing loops | https://www.figma.com/blog/ | product-growth, prd-to-production |
+| Zoom | Frictionless experience, one-click join | https://zoom.us/blog | product-growth |
+| Spotify | Squad model, Backstage, engineering culture | https://engineering.atspotify.com/ | platform-engineering, retrospective |
+| Netflix | Chaos engineering, microservices, culture deck | https://netflixtechblog.com/ | retrospective, testing-qa |
+| Airbnb | SOA migration, design systems | https://medium.com/airbnb-engineering | architecture-design |
+| Google | SRE, error budgets, two-pizza teams | https://sre.google/ | observability, retrospective |
+| Amazon | Two-pizza teams, leadership principles | https://www.amazon.jobs/ | retrospective |
+| Twilio | Developer-first marketing, TwilioQuest | https://www.twilio.com/en-us/blog | developer-relations |
+| MongoDB | Community-powered growth, university | https://www.mongodb.com/community | developer-relations |
+| Datadog | Hybrid PLG+SLG, multi-product | https://www.datadoghq.com/blog/ | gtm-strategy |
+
+---
+
+## gstack (Gary Tan / YC)
+
+| Source | URL | Used In |
+|--------|-----|---------|
+| gstack GitHub | https://github.com/garrytan/gstack | prd-to-production, retrospective |
+| gstack Hacker News | https://news.ycombinator.com/item?id=47418576 | prd-to-production |
+| Y Combinator Library | https://www.ycombinator.com/library | gtm-strategy, finance-ops |
+| YC Startup School | https://www.startupschool.org/ | gtm-strategy, throwaway-projects |
+
+---
+
 ## Maintenance Schedule
 
 - **Quarterly**: Check for major version updates to key sources
 - **On release**: Update when DORA, OWASP, or CNCF publish new reports
 - **On demand**: When user requests deep research on specific topic
+- **After unicorn case studies**: Update when major tech companies publish engineering blog posts

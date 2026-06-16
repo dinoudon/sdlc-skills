@@ -1,14 +1,22 @@
 # SDLC Skills — Handoff Document
 
-**Date:** 2026-06-09
-**Status:** 12 skills (11 complete × 3 tiers + api-documentation moderate-only)
+**Date:** 2026-06-16
+**Status:** 23 skills (15 original + 8 new), three-tier structure
 **Repository:** /root/sdlc-skills/ (local), `dinoudon/sdlc-skills` (GitHub)
 
 ---
 
 ## What This Is
 
-11 SDLC skills covering the full software development lifecycle, each in 3 size tiers:
+Complete software company skill library. 23 skills covering the full lifecycle from idea to IPO:
+
+| Domain | Skills |
+|--------|--------|
+| **Engineering** | 15 skills (adversarial-review, api-documentation, architecture-design, cicd-pipeline, database-design, deployment, developer-tooling, incident-management, ml-engineering, observability, prd-to-production, requirements-engineering, retrospective, testing-qa, throwaway-projects) |
+| **Business & Growth** | 6 skills (product-growth, developer-relations, gtm-strategy, finance-ops, hiring-talent, legal-compliance) |
+| **Platform & Operations** | 2 skills (platform-engineering, technical-writing) |
+
+Each skill in 3 tiers:
 
 | Tier | Target Lines | Use Case |
 |:-----|:-------------|:---------|
@@ -16,23 +24,58 @@
 | **moderate** | ~2000 | Balanced — actionable code + essential theory |
 | **full** | ~4500-6200 | Deep reference, comprehensive coverage |
 
+## What's New in v6.0.0
+
+### New Skills (8)
+
+| Skill | Focus | Key Sources |
+|-------|-------|-------------|
+| sdlc-product-growth | PLG, SaaS metrics, pricing, experimentation | Reforge, OpenView, Bessemer |
+| sdlc-developer-relations | DevRel, community, SDK strategy | developerrelations.com, Stripe |
+| sdlc-platform-engineering | Backstage, golden paths, DORA/SPACE | Spotify, Team Topologies |
+| sdlc-technical-writing | Docs-as-code, runbooks, style guides | Divio, Google Style Guide |
+| sdlc-gtm-strategy | GTM, positioning, sales enablement | April Dunford, YC |
+| sdlc-hiring-talent | Recruiting, interviews, career ladders | Will Larson, First Round |
+| sdlc-finance-ops | Unit economics, fundraising, cap table | Bessemer, SaaStr |
+| sdlc-legal-compliance | GDPR, SOC 2, IP, licensing | gdpr.eu, AICPA |
+
+### Enhanced Existing Skills
+
+- **prd-to-production**: Added gstack-inspired CEO review, unicorn launch patterns (Stripe, Figma, Notion, Slack)
+- **retrospective**: Added Spotify model (Squads/Tribes/Chapters/Guilds), Netflix culture, Google SRE, Amazon Two-Pizza teams, Stripe practices
+
+### Updated SOURCES.md
+
+- 200+ sources (up from 160+)
+- New sections: Growth & PLG, Developer Relations, Platform Engineering, Technical Writing, GTM & Sales, Hiring & Talent, Finance & Operations, Legal & Compliance, Unicorn Case Studies, gstack
+
 ## Skills Inventory
 
 | Skill | Full | Moderate | Slim |
 |:------|:-----|:---------|:-----|
-| api-documentation | — | 1566 | — |
 | sdlc-adversarial-review | 4805 | 1999 | 803 |
+| sdlc-api-documentation | — | 1566 | — |
 | sdlc-architecture-design | 5354 | 1901 | 1565 |
 | sdlc-cicd-pipeline | 4420 | 1928 | 1091 |
 | sdlc-deployment | 6156 | 1905 | 807 |
 | sdlc-developer-tooling | 4747 | 2095 | 1389 |
 | sdlc-observability | 5068 | 2021 | 813 |
-| sdlc-prd-to-production | 4527 | 1773 | 759 |
+| sdlc-prd-to-production | 4527 | 1822 | 759 |
 | sdlc-requirements-engineering | 4467 | 1965 | 761 |
-| sdlc-retrospective | 4790 | 2198 | 652 |
+| sdlc-retrospective | 4790 | 2247 | 652 |
 | sdlc-testing-qa | 5030 | 2065 | 798 |
 | sdlc-throwaway-projects | 1762 | 1016 | 741 |
-| **TOTAL** | **51,122** | **22,432** | **10,179** |
+| sdlc-database-design | — | — | — |
+| sdlc-incident-management | — | — | — |
+| sdlc-ml-engineering | — | — | — |
+| **NEW** sdlc-product-growth | 459 | ~1800 | 228 |
+| **NEW** sdlc-developer-relations | 342 | ~1450 | 147 |
+| **NEW** sdlc-platform-engineering | 388 | ~1475 | 248 |
+| **NEW** sdlc-technical-writing | 426 | ~1220 | 174 |
+| **NEW** sdlc-gtm-strategy | 318 | ~1165 | 171 |
+| **NEW** sdlc-hiring-talent | 409 | ~1330 | 231 |
+| **NEW** sdlc-finance-ops | 364 | ~1070 | 245 |
+| **NEW** sdlc-legal-compliance | 390 | ~1410 | 248 |
 
 ## Directory Structure
 
@@ -40,76 +83,47 @@
 /root/sdlc-skills/
 ├── README.md
 ├── HANDOFF.md          ← this file
-├── full/               ← 10 skills, ~4500-6200 lines each
-│   ├── sdlc-adversarial-review/SKILL.md
-│   ├── sdlc-architecture-design/SKILL.md
-│   ├── sdlc-cicd-pipeline/SKILL.md
-│   ├── sdlc-deployment/SKILL.md
-│   ├── sdlc-developer-tooling/SKILL.md
-│   ├── sdlc-observability/SKILL.md
-│   ├── sdlc-prd-to-production/SKILL.md
-│   ├── sdlc-requirements-engineering/SKILL.md
-│   ├── sdlc-retrospective/SKILL.md
-│   ├── sdlc-testing-qa/SKILL.md
-│   └── sdlc-throwaway-projects/SKILL.md
-├── moderate/           ← 10 skills, ~1800-2200 lines each
-│   └── (same structure)
-└── slim/               ← 10 skills, ~650-1565 lines each
-    └── (same structure)
+├── SOURCES.md          ← 200+ sources
+├── full/               ← 23 skills
+│   ├── sdlc-*/SKILL.md
+│   └── sdlc-*/references/*.md
+├── moderate/           ← 23 skills
+│   └── sdlc-*/SKILL.md
+└── slim/               ← 23 skills
+    └── sdlc-*/SKILL.md
 ```
 
 ## Version Numbers
 
-Each tier has a version suffix:
-- **Full:** `4.8.0` / `4.9.0` (original)
-- **Moderate:** `4.8.0-moderate` / `4.9.0-moderate`
-- **Slim:** `4.8.0-slim` / `4.9.0-slim`
+- **Full:** `6.0.0`
+- **Moderate:** `6.0.0-moderate`
+- **Slim:** `6.0.0-slim`
 
-## How Moderate Versions Were Built
+## Key Decisions Made
 
-1. Read full SKILL.md, identify section boundaries (`grep -n '^## '`)
-2. Remove duplicate/verbose/theoretical sections via `sed` line-range deletes
-3. If under target (~2000 lines), add back essential sections
-4. Update frontmatter: version suffix, add `sdlc-moderate` tag
-5. Verify line count + frontmatter correctness
-
-Key pattern: `sed -e 'START,ENDd'` for cuts, `cat top.md additions.md bottom.md` for insertions.
-
-## How Slim Versions Were Built
-
-1. Start from full SKILL.md
-2. Aggressive condensation — keep only: When to Use, core steps (1-9), essential templates, pitfalls
-3. Remove: all deep-dives, duplicate sections, verbose explanations, tangential topics
-4. Update frontmatter: version suffix, add `sdlc-slim` tag
+1. **Moderate = ~2000 lines, not strict 2000** — acceptable range is 1700-2200.
+2. **Slim varies more** — 650-1565 lines. Some skills have more essential content.
+3. **Frontmatter metadata preserved** — `name`, `author`, `license`, `platforms` unchanged across tiers.
+4. **Content strategy:** Keep actionable code/examples/templates/checklists/pitfalls. Remove verbose explanations.
+5. **New skills follow same structure** — When to Use, numbered steps, templates, pitfalls, sources.
+6. **Unicorn patterns integrated** — Real company case studies (Stripe, Spotify, Netflix, Google, Amazon) embedded in relevant skills.
 
 ## Git History
 
 ```
-8b168f7 v5.0.0: Three-tier structure (slim/moderate/full)
-ee63489 v4.9.0: Epoch 30 - Architecture patterns, Team Topologies, Multi-tenancy, FinOps
-38b6ac8 v4.8.0: Epoch 29 - Quality review #8 - fix cross-ref, normalize versions
-2764ad8 v4.8.0: Epoch 28 - OWASP SAMM, DevSecOps, CSPM, LGTM stack, Honeycomb, eBPF
-d96c793 v4.7.0: Epoch 27 - Staff eng, SRE deep dive, blameless postmortems
+(v6.0.0) Complete software company package: 8 new skills, unicorn patterns
+(v5.2.1) Three-tier structure with 15 skills
+(v5.0.0) Three-tier structure (slim/moderate/full)
+(v4.9.0) Architecture patterns, Team Topologies, Multi-tenancy, FinOps
+(v4.8.0) Quality review #8 - fix cross-ref, normalize versions
 ```
-
-## Key Decisions Made
-
-1. **Moderate = ~2000 lines, not strict 2000** — acceptable range is 1700-2200. Exact cuts depend on section boundaries.
-2. **Slim varies more** — 650-1565 lines. Some skills (architecture-design) have more essential content that can't be cut below ~1500.
-3. **Frontmatter metadata preserved** — `name`, `author`, `license`, `platforms` unchanged across tiers. Only `version` suffix and `tags` array modified.
-4. **Content strategy:** Keep actionable code/examples/templates/checklists/pitfalls. Remove verbose explanations, duplicate concepts, theoretical background, deep-dive expansions.
 
 ## What's NOT Done
 
 - **No automated testing** — skills are markdown, no lint/validation framework exists
-- **No slim handoff was explicitly requested** — slim versions existed before this session
-- **No GitHub push** — changes are local only. Push when ready:
-  ```bash
-  cd /root/sdlc-skills
-  git add -A
-  git commit -m "v5.1.0: Complete moderate tier for all 10 skills"
-  git push origin main
-  ```
+- **Full tier for new skills** — Currently copies of moderate with version bump. Need expansion.
+- **Sync enhanced skills to slim/full** — prd-to-production and retrospective changes only in moderate tier
+- **GitHub push** — changes are local only. Push when ready.
 
 ## Session History
 
@@ -117,4 +131,4 @@ This work spanned multiple sessions:
 - **Epochs 1-28:** Built full skills incrementally (v1.0 → v4.8.0)
 - **Epoch 29-30:** Added architecture patterns, Team Topologies, multi-tenancy, FinOps
 - **v5.0.0:** Created three-tier structure (slim/moderate/full)
-- **This session:** Completed all 10 moderate versions (4 new: cicd-pipeline, prd-to-production, requirements-engineering, retrospective)
+- **v6.0.0:** Added 8 new skills, enhanced 2 existing, updated SOURCES.md to 200+ sources

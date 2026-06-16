@@ -2196,3 +2196,51 @@ Track retro health metrics over time:
 | Psychological safety score | > 5.0 | Quarterly survey (Step 11) |
 | DORA metrics trend | Improving | Dashboard overlay |
 
+## Unicorn Engineering Culture Patterns
+
+### Spotify Model (Squads, Tribes, Chapters, Guilds)
+Source: https://engineering.atspotify.com/
+
+SQUAD (6-12 people): Autonomous, cross-functional team. Owns a feature area end-to-end. Has mission, long-term mission, and metrics. Like a mini-startup within the company.
+
+TRIBE (40-150 people): Collection of related squads. Squads in same product area. Tribe lead provides vision and alignment.
+
+CHAPTER (5-10 people): Same skill across squads. All backend engineers in a tribe. Chapter lead = line manager. Meets weekly to share practices.
+
+GUILD (company-wide): Community of interest. Anyone interested in a topic (e.g., testing, security). Cross-tribe knowledge sharing. Voluntary participation.
+
+### Netflix Culture Deck Principles
+Source: Reed Hastings, Netflix Culture
+
+1. **Freedom and Responsibility**: High alignment, high autonomy
+2. **Context, not Control**: Leaders set context, teams decide how
+3. **Highly Aligned, Loosely Coupled**: Strategy aligned, execution autonomous
+4. **Lead with Context**: Share business metrics, strategy, constraints openly
+5. **Blameless Postmortems**: Focus on systems, not individuals
+
+### Google Engineering Culture
+Source: Google SRE, Site Reliability Engineering
+
+1. **Error budgets**: 50% of engineering time on toil reduction
+2. **Blameless postmortems**: Focus on systemic improvements
+3. **Toil tracking**: Measure and reduce manual operational work
+4. **Production readiness review**: Before launch, not after incident
+
+### Amazon Two-Pizza Teams
+Source: Jeff Bezos
+
+- Teams small enough to be fed by two pizzas (6-10 people)
+- Each team owns a service/API end-to-end
+- Teams are autonomous: choose their own tools, processes
+- Communication via APIs, not meetings
+- Single-threaded leader: one person owns the team outcomes
+
+### Stripe Engineering Practices
+Source: https://stripe.com/blog/engineering
+
+1. **API versioning**: Never break backward compatibility
+2. **Developer experience**: Internal and external DX equally important
+3. **Incremental migration**: Strangler fig pattern for monolith to microservices
+4. **Code review culture**: Thorough reviews, fast turnaround
+5. **Operational excellence**: Runbooks, monitoring, on-call rotation
+

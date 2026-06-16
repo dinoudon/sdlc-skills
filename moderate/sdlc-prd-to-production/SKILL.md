@@ -1762,6 +1762,55 @@ INCIDENT RESPONSE CHECKLIST:
 
 ---
 
+## Gstack-Inspired CEO Review
+Source: Gary Tan / Y Combinator gstack framework
+
+Before shipping major features, conduct a CEO-level review covering:
+
+### Product Review
+1. **Problem-solution fit**: Does this solve a real problem? Evidence?
+2. **User impact**: Who benefits? How many? How much?
+3. **Strategic alignment**: Does this advance the company mission?
+4. **Competitive moat**: Does this create defensible advantage?
+
+### Technical Review
+1. **Architecture soundness**: Component boundaries clear? Tech debt manageable?
+2. **Scalability**: Will this handle 10x current load?
+3. **Security posture**: Threat model reviewed? OWASP checklist?
+4. **Operational readiness**: Monitoring, alerts, runbooks in place?
+
+### Business Review
+1. **Unit economics**: Does this improve LTV:CAC ratio?
+2. **Pricing impact**: Does this justify price increase or new tier?
+3. **Market timing**: Is this the right time for this feature?
+4. **Resource allocation**: Is this the best use of engineering time?
+
+## Unicorn Launch Patterns
+
+### Stripe: API-First Launch
+- Ship with 7 lines of code example
+- Interactive API explorer live on day one
+- SDKs in top 3 languages at launch
+- Sandbox environment available immediately
+- Transparent pricing published
+
+### Figma: Collaboration-First Launch
+- Browser-based (zero install)
+- Real-time collaboration demo
+- Share link = product demo
+- Community templates ready
+
+### Notion: Template-First Launch
+- 50+ community templates at launch
+- Power user content on YouTube/Twitter
+- Import from competitors (Evernote, Confluence)
+
+### Slack: Viral-First Launch
+- Free tier with generous limits
+- Integration ecosystem (100+ at launch)
+- Custom emoji and fun UX
+- Team invite flow as core loop
+
 ## Pitfalls
 
 1. **Don't skip PRD** — even one-pager prevents scope creep
