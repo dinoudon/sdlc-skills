@@ -2,7 +2,7 @@
 
 Single source of truth for all research sources used across SDLC skills.
 
-Last updated: 2026-06-16
+Last updated: 2026-06-16 (v6.2.0)
 
 ---
 
@@ -246,6 +246,27 @@ Last updated: 2026-06-16
 | Humanitec Platform Orchestrator | https://humanitec.com/ | platform-engineering |
 | Gartner Platform Engineering | https://www.gartner.com/en/articles/what-is-platform-engineering | platform-engineering |
 | Team Topologies | https://teamtopologies.com/ | platform-engineering |
+| Sleuth (DORA metrics) | https://www.sleuth.io/ | platform-engineering |
+| LinearB (engineering metrics) | https://linearb.io/ | platform-engineering |
+| Pluralsight Flow | https://www.pluralsight.com/product/flow | platform-engineering |
+| Jellyfish (eng management) | https://www.getjellyfish.com/ | platform-engineering |
+
+---
+
+## Prototyping & Validation Tools
+
+| Source | URL | Used In |
+|--------|-----|---------|
+| Carrd (landing pages) | https://carrd.co/ | throwaway-projects |
+| Webflow | https://webflow.com/ | throwaway-projects |
+| Framer | https://www.framer.com/ | throwaway-projects |
+| Supabase | https://supabase.com/ | throwaway-projects |
+| PlanetScale | https://planetscale.com/ | throwaway-projects |
+| Neon (serverless Postgres) | https://neon.tech/ | throwaway-projects |
+| Railway | https://railway.app/ | throwaway-projects |
+| Render | https://render.com/ | throwaway-projects |
+| Plausible Analytics | https://plausible.io/ | throwaway-projects |
+| PostHog | https://posthog.com/ | throwaway-projects |
 
 ---
 

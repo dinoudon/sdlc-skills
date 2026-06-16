@@ -643,3 +643,39 @@ Change failure rate:
   - [sdlc-developer-relations](sdlc-developer-relations): Developer Relations (DevRel) program design: advocacy, community, marketing, enablement. Developer e
   - [sdlc-observability](sdlc-observability): Observability: OpenTelemetry 2024, GenAI semantic conventions, eBPF (Cilium/Hubble/Tetragon), sideca
   - [sdlc-cicd-pipeline](sdlc-cicd-pipeline): CI/CD pipeline design with GitHub Actions and GitLab CI. Docker multi-stage builds, caching, matrix
+## Step 34: Platform Documentation Standards
+```
+Level 1: Quickstart
+  - Get started in 5 minutes
+  - Copy-paste commands
+  - Working example
+  - Link to deeper docs
+
+Level 2: How-to guides
+  - Task-oriented
+  - Step-by-step instructions
+  - Common use cases
+  - Troubleshooting tips
+
+Level 3: Reference
+  - API documentation
+  - Configuration options
+```
+## Step 35: Platform Community
+```
+Communication channels:
+  - Slack channel (#platform)
+  - Monthly newsletter
+  - Quarterly all-hands presentation
+  - Office hours (weekly)
+
+Feedback mechanisms:
+  - Feature request form
+  - Bug report template
+  - Satisfaction survey (quarterly)
+  - User interviews (monthly)
+
+Recognition:
+  - Platform champions program
+  - Contribution leaderboard
+```

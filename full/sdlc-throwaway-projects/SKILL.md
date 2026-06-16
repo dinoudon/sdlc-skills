@@ -1639,3 +1639,162 @@ Auth:
   - [sdlc-prd-to-production](sdlc-prd-to-production): End-to-end workflow: PRD → design doc → implementation → code review → testing → deployment → monito
   - [sdlc-product-growth](sdlc-product-growth): Product-led growth (PLG), developer-led growth, growth loops, activation funnels, A/B testing, SaaS 
   - [sdlc-architecture-design](sdlc-architecture-design): System design, C4 diagrams, API design, database schema, code architecture, ADRs, branching, depende
+
+
+## Step 26: Technical Debt from Throwaways
+
+### Managing Throwaway Code
+
+```
+When throwaway becomes production:
+  - Identify technical debt immediately
+  - Document shortcuts taken
+  - Prioritize refactoring items
+  - Set timeline for cleanup
+
+Technical debt categories:
+  Architecture debt:
+    - Monolithic structure (need decomposition)
+    - Tight coupling (need abstraction)
+    - Missing patterns (need proper design)
+  
+  Code debt:
+    - No tests (need test coverage)
+    - Copy-paste code (need DRY refactoring)
+    - Hardcoded values (need configuration)
+    - Poor error handling (need resilience)
+  
+  Infrastructure debt:
+    - Manual deployment (need CI/CD)
+    - No monitoring (need observability)
+    - No logging (need structured logging)
+    - Single point of failure (need redundancy)
+
+Debt tracking:
+  - Create tickets for each debt item
+  - Estimate effort (hours/days)
+  - Prioritize by risk and impact
+  - Schedule 20% of sprint capacity for debt
+```
+
+### Code Review for Throwaways
+
+```
+Review focus areas:
+  - Security basics (no hardcoded secrets, input validation)
+  - Data handling (proper encryption, access controls)
+  - Error handling (graceful failures, user-friendly messages)
+  - Performance (no obvious bottlenecks)
+  - Maintainability (clear structure, comments for complex logic)
+
+Review checklist:
+  □ No secrets in code
+  □ Input validation present
+  □ Error handling implemented
+  □ Database queries parameterized
+  □ Authentication required for sensitive endpoints
+  □ Rate limiting on public APIs
+  □ Logging for debugging
+  □ README with setup instructions
+```
+
+## Step 27: Throwaway Project Metrics
+
+### Success Metrics
+
+```
+Speed metrics:
+  - Time to first working prototype
+  - Time to user feedback
+  - Time to decision (go/no-go)
+  - Time to production (if graduating)
+
+Learning metrics:
+  - Hypotheses tested
+  - Assumptions validated/invalidated
+  - User interviews conducted
+  - Experiments run
+
+Quality metrics:
+  - User satisfaction (if tested with users)
+  - Technical feasibility confirmed
+  - Business viability assessed
+  - Risk reduction achieved
+
+Efficiency metrics:
+  - Cost per experiment
+  - Developer hours per hypothesis
+  - Iterations before decision
+  - Resources consumed vs budget
+```
+
+## Step 28: Throwaway Project Library
+
+### Reusable Components
+
+```
+Boilerplate templates:
+  - Next.js + Supabase (full-stack web)
+  - Express + PostgreSQL (API backend)
+  - FastAPI + SQLAlchemy (Python API)
+  - React Native + Expo (mobile)
+
+UI component libraries:
+  - shadcn/ui (copy-paste components)
+  - Tailwind UI (pre-built layouts)
+  - Radix UI (accessible primitives)
+  - Headless UI (unstyled components)
+
+Backend services:
+  - Supabase (auth, database, storage)
+  - PlanetScale (serverless MySQL)
+  - Upstash (serverless Redis)
+  - Resend (email API)
+
+Deployment templates:
+  - Vercel (frontend + serverless)
+  - Railway (full-stack)
+  - Fly.io (containers)
+  - Render (web services + databases)
+
+Analytics:
+  - PostHog (product analytics)
+  - Plausible (privacy-friendly web analytics)
+  - Mixpanel (event tracking)
+  - Amplitude (user analytics)
+```
+
+## Step 29: Throwaway vs Prototype vs MVP
+
+### Definitions
+
+```
+Throwaway:
+  - Purpose: Answer a specific question
+  - Duration: Hours to days
+  - Quality: Lowest (functional only)
+  - Audience: Internal team
+  - Outcome: Decision (yes/no/pivot)
+  - Example: "Can we process video in the browser?"
+
+Prototype:
+  - Purpose: Validate design or experience
+  - Duration: Days to weeks
+  - Quality: Medium (looks real, limited backend)
+  - Audience: Users (for testing)
+  - Outcome: User feedback
+  - Example: "Is this checkout flow intuitive?"
+
+MVP:
+  - Purpose: Validate product-market fit
+  - Duration: Weeks to months
+  - Quality: Production-ready (minimal features)
+  - Audience: Real users (paying customers)
+  - Outcome: Market validation
+  - Example: "Will people pay for this?"
+
+Decision framework:
+  - Unknown technology? → Throwaway (spike)
+  - Unknown UX? → Prototype
+  - Unknown demand? → MVP
+  - Unknown business model? → MVP with pricing test

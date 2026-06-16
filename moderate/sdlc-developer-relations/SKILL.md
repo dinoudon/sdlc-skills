@@ -1740,3 +1740,98 @@ Compensation:
   - [sdlc-product-growth](sdlc-product-growth): Product-led growth (PLG), developer-led growth, growth loops, activation funnels, A/B testing, SaaS 
   - [sdlc-technical-writing](sdlc-technical-writing): Technical writing for software companies: documentation strategy, docs-as-code, API docs, runbooks, 
   - [sdlc-platform-engineering](sdlc-platform-engineering): Platform engineering: internal developer portals (IDP), Backstage, golden paths, service catalog, se
+
+
+## Step 30: DevRel Budget Planning
+
+### Budget Categories
+
+```
+Personnel (60-70%):
+  - Salaries and benefits
+  - Contractors and freelancers
+  - Interns
+
+Travel (15-20%):
+  - Conferences (registration, flights, hotels)
+  - Meetups (local transportation)
+  - Team offsites
+
+Content (5-10%):
+  - Video production (equipment, editing)
+  - Design (graphics, thumbnails)
+  - Tools (CMS, analytics, hosting)
+
+Community (5-10%):
+  - Swag and merchandise
+  - Event hosting (food, venue)
+  - Community platform (Discord, Slack)
+
+Education (5%):
+  - Training and certifications
+  - Books and courses
+  - Conference attendance (learning)
+```
+
+## Step 31: DevRel Operations
+
+### Weekly Schedule Template
+
+```
+Monday:
+  - Content planning (review calendar)
+  - Community check (respond to questions)
+  - Team sync (weekly standup)
+
+Tuesday:
+  - Content creation (writing, recording)
+  - Code examples (build and test)
+  - Documentation review
+
+Wednesday:
+  - Community engagement (forums, Discord)
+  - Feedback collection (from community)
+  - Product team sync
+
+Thursday:
+  - Content creation (continued)
+  - Conference prep (if speaking)
+  - Analytics review
+
+Friday:
+  - Content publishing (blog, social)
+  - Weekly metrics report
+  - Planning for next week
+  - Community highlights
+```
+
+## Step 32: DevRel Content Calendar
+
+### Monthly Content Plan
+
+```
+Week 1: Technical tutorial
+  - Blog post (1500-2500 words)
+  - Code example (GitHub repo)
+  - Social promotion (Twitter, LinkedIn)
+
+Week 2: Community spotlight
+  - Customer story or case study
+  - Community member interview
+  - Social promotion
+
+Week 3: Product update
+  - New feature announcement
+  - Migration guide (if breaking change)
+  - Video walkthrough
+
+Week 4: Industry thought leadership
+  - Opinion piece or analysis
+  - Conference talk recap
+  - Newsletter issue
+
+Recurring:
+  - Weekly newsletter (every Friday)
+  - Daily social media (1-2 posts)
+  - Monthly webinar or office hours
+  - Quarterly community survey

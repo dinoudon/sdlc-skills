@@ -647,3 +647,75 @@ Database:
   - [sdlc-prd-to-production](sdlc-prd-to-production): End-to-end workflow: PRD → design doc → implementation → code review → testing → deployment → monito
   - [sdlc-product-growth](sdlc-product-growth): Product-led growth (PLG), developer-led growth, growth loops, activation funnels, A/B testing, SaaS 
   - [sdlc-architecture-design](sdlc-architecture-design): System design, C4 diagrams, API design, database schema, code architecture, ADRs, branching, depende
+## Step 26: Technical Debt from Throwaways
+```
+When throwaway becomes production:
+  - Identify technical debt immediately
+  - Document shortcuts taken
+  - Prioritize refactoring items
+  - Set timeline for cleanup
+
+Technical debt categories:
+  Architecture debt:
+    - Monolithic structure (need decomposition)
+    - Tight coupling (need abstraction)
+    - Missing patterns (need proper design)
+  
+  Code debt:
+    - No tests (need test coverage)
+    - Copy-paste code (need DRY refactoring)
+```
+## Step 27: Throwaway Project Metrics
+```
+Speed metrics:
+  - Time to first working prototype
+  - Time to user feedback
+  - Time to decision (go/no-go)
+  - Time to production (if graduating)
+
+Learning metrics:
+  - Hypotheses tested
+  - Assumptions validated/invalidated
+  - User interviews conducted
+  - Experiments run
+
+Quality metrics:
+  - User satisfaction (if tested with users)
+  - Technical feasibility confirmed
+```
+## Step 28: Throwaway Project Library
+```
+Boilerplate templates:
+  - Next.js + Supabase (full-stack web)
+  - Express + PostgreSQL (API backend)
+  - FastAPI + SQLAlchemy (Python API)
+  - React Native + Expo (mobile)
+
+UI component libraries:
+  - shadcn/ui (copy-paste components)
+  - Tailwind UI (pre-built layouts)
+  - Radix UI (accessible primitives)
+  - Headless UI (unstyled components)
+
+Backend services:
+  - Supabase (auth, database, storage)
+  - PlanetScale (serverless MySQL)
+```
+## Step 29: Throwaway vs Prototype vs MVP
+```
+Throwaway:
+  - Purpose: Answer a specific question
+  - Duration: Hours to days
+  - Quality: Lowest (functional only)
+  - Audience: Internal team
+  - Outcome: Decision (yes/no/pivot)
+  - Example: "Can we process video in the browser?"
+
+Prototype:
+  - Purpose: Validate design or experience
+  - Duration: Days to weeks
+  - Quality: Medium (looks real, limited backend)
+  - Audience: Users (for testing)
+  - Outcome: User feedback
+  - Example: "Is this checkout flow intuitive?"
+```
