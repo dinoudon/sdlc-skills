@@ -1162,3 +1162,193 @@ Satisfaction metrics:
   - Support ticket volume (should decrease)
   - Feature requests (what's missing)
   - Documentation satisfaction
+
+
+## Step 21: SRE Practices
+
+### SRE Principles
+
+```
+Service Level Objectives (SLOs):
+  - Define reliability targets per service
+  - Based on user expectations, not technical limits
+  - Examples:
+    - API: 99.9% availability, p99 latency <500ms
+    - Web: 99.5% availability, LCP <2.5s
+    - Background jobs: 99% success rate, <5 min processing
+
+Error budgets:
+  - Error budget = 1 - SLO
+  - Example: 99.9% SLO = 0.1% error budget per month
+  - Budget spent: Slow down feature releases, focus on reliability
+  - Budget remaining: Accelerate feature development
+
+Toil reduction:
+  - Definition: Manual, repetitive, automatable work
+  - Target: <50% of SRE time on toil
+  - Process:
+    1. Measure toil (time tracking)
+    2. Prioritize by impact
+    3. Automate highest-impact toil
+    4. Track reduction over time
+
+Incident management:
+  - Severity levels (P1-P4)
+  - On-call rotation (1 week, 2 people)
+  - Escalation policy (auto-escalate after 15 min)
+  - Post-mortem process (blameless, action items)
+  - Communication templates (status page, stakeholders)
+```
+
+### Capacity Planning
+
+```
+Capacity model:
+  Current capacity:
+    - CPU: 80% utilization at peak
+    - Memory: 70% utilization at peak
+    - Storage: 60% utilization
+    - Network: 40% utilization
+  
+  Growth rate:
+    - Traffic: 10% month-over-month
+    - Data: 20% month-over-month
+    - Users: 15% month-over-month
+  
+  Planning horizon:
+    - Short-term (1 month): Auto-scaling, spot instances
+    - Medium-term (3 months): Reserved instances, scaling events
+    - Long-term (12 months): Architecture review, major upgrades
+
+Capacity triggers:
+  - CPU > 70% sustained: Scale horizontally
+  - Memory > 80% sustained: Scale vertically
+  - Storage > 70%: Add storage, archive old data
+  - Network > 60%: CDN, optimize payloads
+```
+
+## Step 22: Kubernetes Operations
+
+### Kubernetes Best Practices
+
+```
+Resource management:
+  - Set requests and limits for all containers
+  - Use Vertical Pod Autoscaler (VPA) for right-sizing
+  - Use Horizontal Pod Autoscaler (HPA) for scaling
+  - Set Pod Disruption Budgets (PDB) for availability
+
+Security:
+  - Network policies (default deny)
+  - Pod security standards (restricted, baseline, privileged)
+  - RBAC (least privilege)
+  - Secret management (external secrets operator)
+  - Image scanning (Trivy, Grype)
+  - OPA/Gatekeeper policies
+
+Observability:
+  - Prometheus + Grafana for metrics
+  - Loki for logs
+  - Jaeger for traces
+  - Kubernetes events monitoring
+  - Node and pod health checks
+
+Operations:
+  - GitOps for deployments (ArgoCD, Flux)
+  - Canary deployments (Argo Rollouts, Flagger)
+  - Blue-green deployments
+  - Rolling updates with health checks
+  - Automated rollbacks
+```
+
+### Kubernetes Cost Optimization
+
+```
+Right-sizing:
+  - Use VPA recommendations
+  - Set appropriate resource requests
+  - Remove unused resources
+  - Consolidate small pods
+
+Spot/preemptible instances:
+  - Use for stateless workloads
+  - Implement graceful shutdown
+  - Diversify instance types
+  - Use spot termination handler
+
+Cluster autoscaling:
+  - Scale down during off-hours
+  - Use cluster autoscaler
+  - Set pod priority and preemption
+  - Implement node affinity for workload placement
+
+Tools:
+  - Kubecost: Kubernetes cost monitoring
+  - OpenCost: Open-source cost allocation
+  - Goldilocks: VPA recommendations
+  - kube-resource-report: Resource usage reports
+```
+
+## Step 23: CI/CD for Platform
+
+### Platform CI/CD Pipeline
+
+```
+Infrastructure pipeline:
+  1. Code change (Terraform, Helm chart)
+  2. Plan (terraform plan, helm template)
+  3. Validate (OPA policies, security scan)
+  4. Review (PR approval)
+  5. Apply (terraform apply, helm upgrade)
+  6. Verify (health checks, smoke tests)
+  7. Monitor (observability dashboards)
+
+Application pipeline:
+  1. Code commit
+  2. Build (Docker image)
+  3. Test (unit, integration, e2e)
+  4. Scan (SAST, dependency, container)
+  5. Push (container registry)
+  6. Deploy (staging → production)
+  7. Verify (health checks, canary analysis)
+  8. Promote (canary → full rollout)
+
+Tools:
+  - GitHub Actions: CI/CD
+  - ArgoCD: GitOps deployment
+  - Tekton: Kubernetes-native CI/CD
+  - Dagger: Programmable CI/CD
+  - Earthly: Containerized builds
+```
+
+## Step 24: Platform Security
+
+### Security Automation
+
+```
+Shift-left security:
+  - IDE plugins (SAST, dependency scanning)
+  - Pre-commit hooks (secrets detection)
+  - PR checks (security scanning)
+  - Automated remediation suggestions
+
+Pipeline security:
+  - SAST in CI (Semgrep, CodeQL)
+  - DAST for web apps (OWASP ZAP)
+  - Dependency scanning (Snyk, Dependabot)
+  - Container scanning (Trivy, Grype)
+  - Secret scanning (GitLeaks, TruffleHog)
+
+Runtime security:
+  - WAF (Web Application Firewall)
+  - RASP (Runtime Application Self-Protection)
+  - Container runtime security (Falco)
+  - Network monitoring (Cilium Hubble)
+  - Anomaly detection (ML-based)
+
+Compliance automation:
+  - Policy-as-code (OPA, Sentinel)
+  - Drift detection (continuous compliance)
+  - Audit logging (immutable logs)
+  - Evidence collection (automated)
+```

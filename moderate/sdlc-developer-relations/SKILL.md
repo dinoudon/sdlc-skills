@@ -1462,3 +1462,210 @@ Metrics:
   - Feature feedback quality
   - Conversion to GA adoption
   - Retention post-beta
+
+
+## Step 25: Developer Marketing
+
+### Developer-Focused Marketing
+
+```
+Content marketing:
+  - Technical blog posts (weekly)
+  - Tutorials and how-to guides
+  - Architecture deep dives
+  - Performance benchmarks
+  - Security best practices
+
+Community marketing:
+  - Open source contributions
+  - Developer meetups (host and sponsor)
+  - Hackathons (organize and participate)
+  - Conference speaking
+  - Podcast appearances
+
+Paid marketing:
+  - Developer-focused ad platforms (Dev.to, Hashnode)
+  - Technical content syndication
+  - Conference sponsorships
+  - Podcast sponsorships
+  - Developer newsletter sponsorships
+
+Measurement:
+  - Traffic to developer docs
+  - API key signups
+  - SDK downloads
+  - Community growth
+  - Developer NPS
+```
+
+### Developer Journey
+
+```
+Awareness:
+  - Blog posts, social media, conferences
+  - Developer discovers product
+  
+Interest:
+  - Docs site, GitHub repo, community
+  - Developer explores capabilities
+  
+Evaluation:
+  - Free tier, sandbox, playground
+  - Developer tests product
+  
+Adoption:
+  - API key, first integration
+  - Developer builds with product
+  
+Expansion:
+  - Paid plan, team adoption
+  - Developer scales usage
+  
+Advocacy:
+  - Community contributions, talks
+  - Developer promotes product
+
+Metrics per stage:
+  - Awareness: Traffic, impressions, mentions
+  - Interest: Docs views, GitHub stars, community joins
+  - Evaluation: Sandbox usage, API calls, time in playground
+  - Adoption: Active developers, integrations, production usage
+  - Expansion: Upgrades, team growth, feature adoption
+  - Advocacy: Contributions, referrals, content created
+```
+
+## Step 26: Developer Relations Metrics
+
+### DevRel Dashboard
+
+```
+Content metrics:
+  - Blog post views and engagement
+  - Video views and watch time
+  - Social media impressions and engagement
+  - Conference talk attendance
+  - Podcast downloads
+
+Community metrics:
+  - Community size (Discord, Slack, forum)
+  - Active members (daily, weekly)
+  - Questions answered (community vs support)
+  - Community NPS
+
+Influence metrics:
+  - Developer signups attributed to DevRel
+  - Trial-to-paid conversion (DevRel leads)
+  - Feature adoption (DevRel-promoted features)
+  - Partner referrals generated
+
+Personal metrics:
+  - Talks given
+  - Blog posts published
+  - Social media followers
+  - Community contributions
+  - Mentoring sessions
+
+ROI calculation:
+  Revenue influenced by DevRel / DevRel team cost
+  Good: 3-5x
+  Excellent: 10x+
+```
+
+## Step 27: Technical Evangelism
+
+### Evangelist Role
+
+```
+Responsibilities:
+  - Speak at conferences (10-20 per year)
+  - Write technical content (2-4 posts per month)
+  - Build community relationships
+  - Gather product feedback
+  - Represent company externally
+
+Skills:
+  - Deep technical expertise
+  - Strong communication (written and verbal)
+  - Community building
+  - Product empathy
+  - Industry knowledge
+
+Measurement:
+  - Speaking engagements
+  - Content produced and engagement
+  - Community growth
+  - Developer feedback quality
+  - Influence on product roadmap
+
+Career path:
+  - Developer Advocate → Senior → Staff → Principal
+  - DevRel Manager → Director → VP
+  - Transition to: Product, Engineering, Marketing
+```
+
+## Step 28: Developer Experience Design
+
+### DX Principles
+
+```
+Simplicity:
+  - Minimal configuration
+  - Sensible defaults
+  - Clear error messages
+  - Intuitive API design
+
+Consistency:
+  - Same patterns across products
+  - Consistent naming conventions
+  - Predictable behavior
+  - Follow platform conventions
+
+Reliability:
+  - Backward compatibility
+  - Clear deprecation process
+  - Comprehensive testing
+  - Performance optimization
+
+Documentation:
+  - Quickstart guides
+  - Comprehensive API reference
+  - Code examples in multiple languages
+  - Troubleshooting guides
+
+Support:
+  - Responsive community
+  - Clear escalation paths
+  - Proactive communication
+  - Feedback loops
+```
+
+### DX Audit Checklist
+
+```
+Onboarding:
+  □ Time to first API call <15 minutes
+  □ Quickstart guide covers core use case
+  □ Code examples work out of the box
+  □ Error messages are helpful
+  □ No unnecessary setup steps
+
+API design:
+  □ Consistent naming conventions
+  □ Clear parameter descriptions
+  □ Sensible defaults
+  □ Pagination support
+  □ Rate limiting communicated
+
+Documentation:
+  □ Search works well
+  □ Code examples tested
+  □ Version-specific information
+  □ Migration guides available
+  □ Troubleshooting comprehensive
+
+Support:
+  □ Response time <24 hours
+  □ Community is active
+  □ Escalation path clear
+  □ Feedback mechanism exists
+  □ Issues tracked publicly

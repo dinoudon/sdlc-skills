@@ -1388,3 +1388,199 @@ Legal considerations:
   - ADEA compliance (age 40+)
   - OWBPA compliance (group terminations)
   - State-specific requirements (WARN Act for 100+ employees)
+
+
+## Step 29: International Hiring
+
+### Global Employment Options
+
+```
+Option 1: Entity setup
+  - Establish legal entity in country
+  - Full control over employment
+  - High cost and complexity
+  - Timeline: 3-6 months
+  - Best for: Large teams (10+), long-term commitment
+
+Option 2: Employer of Record (EOR)
+  - Third party employs on your behalf
+  - Handles payroll, compliance, benefits
+  - Lower cost, faster setup
+  - Timeline: 1-2 weeks
+  - Best for: Small teams (1-5), testing market
+
+Option 3: Contractor
+  - Independent contractor agreement
+  - No employment obligations
+  - Risk of misclassification
+  - Timeline: Immediate
+  - Best for: Short-term, project-based
+
+Option 4: PEO (Professional Employer Organization)
+  - Co-employment arrangement
+  - Shared employer responsibilities
+  - Available in some countries (mainly US)
+  - Best for: SMBs wanting HR outsourcing
+
+EOR providers:
+  - Deel: Global payroll and compliance
+  - Remote: International employment
+  - Oyster: Global employment platform
+  - Papaya Global: Global payroll management
+  - Velocity Global: International expansion
+```
+
+### Global Compensation
+
+```
+Benchmarking:
+  - Use local salary surveys (Radford, Mercer)
+  - Adjust for cost of living
+  - Consider local market rates
+  - Factor in benefits expectations
+
+Components:
+  Base salary: Competitive locally
+  Equity: Stock options or RSUs (tax implications vary)
+  Benefits: Local requirements + enhancements
+  Bonus: Performance-based (10-20% target)
+
+Country-specific considerations:
+  - 13th month salary (Latin America, Asia)
+  - Mandatory bonuses (India, China)
+  - Provident fund (India, Singapore)
+  - Social security contributions (varies)
+  - Vacation minimums (EU: 20-30 days)
+  - Parental leave (varies significantly)
+
+Currency:
+  - Pay in local currency
+  - Budget in USD (FX risk management)
+  - Review rates quarterly
+  - Adjust for significant movements
+```
+
+## Step 30: Talent Analytics
+
+### HR Metrics Dashboard
+
+```
+Recruitment metrics:
+  - Time to fill: Days from requisition to offer acceptance
+  - Time to hire: Days from application to offer acceptance
+  - Cost per hire: Total recruiting cost / hires made
+  - Source of hire: Which channels produce best candidates
+  - Offer acceptance rate: Offers accepted / offers made
+  - Quality of hire: Performance rating of new hires
+
+Retention metrics:
+  - Turnover rate: Departures / average headcount
+  - Voluntary turnover: Resignations / average headcount
+  - Involuntary turnover: Terminations / average headcount
+  - Retention rate by cohort: 90-day, 1-year, 2-year
+  - Regrettable turnover: High performers who left
+
+Engagement metrics:
+  - Employee NPS: "Would you recommend as workplace?"
+  - Engagement score: Survey-based
+  - Participation rate: Survey completion %
+  - Absenteeism: Unplanned absences per employee
+
+Diversity metrics:
+  - Representation: % by gender, ethnicity, level
+  - Hiring diversity: % diverse candidates at each stage
+  - Promotion equity: Promotion rates by demographic
+  - Pay equity: Compensation ratios by demographic
+```
+
+### Predictive Analytics
+
+```
+Turnover prediction:
+  Features:
+    - Tenure
+    - Time since last promotion
+    - Salary vs market rate
+    - Manager rating
+    - Engagement score
+    - Commute time/remote status
+    - Team turnover rate
+  
+  Model: Logistic regression or random forest
+  Output: Probability of leaving in next 6 months
+  Action: Proactive retention for high-risk employees
+
+Hiring success prediction:
+  Features:
+    - Interview scores
+    - Assessment results
+    - Source of hire
+    - Years of experience
+    - Education
+    - Cultural fit score
+  
+  Model: Gradient boosting
+  Output: Probability of high performance
+  Action: Improve hiring decisions
+
+Tools:
+  - Visier: People analytics
+  - One Model: HR analytics platform
+  - ChartHop: People analytics
+  - Custom: Python/R for advanced modeling
+```
+
+## Step 31: Employer Branding
+
+### Careers Page Optimization
+
+```
+Above the fold:
+  - Hero video: Team culture montage (60-90s)
+  - Mission statement: 1-2 sentences
+  - Open positions CTA
+
+Content sections:
+  - Culture: Values, team photos, office/workspace
+  - Benefits: Comprehensive benefits overview
+  - Testimonials: Employee stories (video preferred)
+  - Engineering blog: Technical content
+  - Perks: Unique offerings (learning, wellness)
+
+Conversion optimization:
+  - Clear job search/filter
+  - Easy application process (<5 minutes)
+  - Mobile-responsive design
+  - Fast page load
+  - SEO-optimized job postings
+
+Analytics:
+  - Page views and time on page
+  - Application conversion rate
+  - Source attribution
+  - Bounce rate
+  - Mobile vs desktop
+```
+
+### Glassdoor Strategy
+
+```
+Profile optimization:
+  - Complete company profile
+  - Respond to reviews (positive and negative)
+  - Update photos and videos
+  - Highlight awards and recognition
+
+Review management:
+  - Monitor reviews weekly
+  - Respond to all reviews within 48 hours
+  - Thank positive reviewers
+  - Address negative feedback constructively
+  - Never argue or dismiss concerns
+
+Improvement process:
+  - Aggregate feedback themes
+  - Share with leadership
+  - Implement changes
+  - Update Glassdoor profile to reflect improvements
+  - Track rating trends over time

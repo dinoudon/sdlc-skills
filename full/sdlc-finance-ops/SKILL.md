@@ -1266,3 +1266,192 @@ Secondary sale:
   - Platforms: Forge, EquityZen, Nasdaq Private Market
   - Typically 20-40% discount to last round valuation
   - Requires company approval
+
+
+## Step 29: Financial Analysis
+
+### Profitability Analysis
+
+```
+Gross margin analysis:
+  Revenue: $10M
+  COGS: $2.5M
+  Gross profit: $7.5M
+  Gross margin: 75%
+
+  COGS breakdown:
+    Hosting: $1M (40%)
+    Payment processing: $500K (20%)
+    Customer support: $750K (30%)
+    Other: $250K (10%)
+
+Operating margin analysis:
+  Gross profit: $7.5M
+  R&D: $3M (30% of revenue)
+  S&M: $2.5M (25% of revenue)
+  G&A: $1M (10% of revenue)
+  Operating income: $1M
+  Operating margin: 10%
+
+Improvement levers:
+  - Reduce hosting costs (optimize infrastructure)
+  - Improve payment processing rates (negotiate)
+  - Automate support (reduce ticket volume)
+  - Increase revenue without proportional cost increase
+```
+
+### Cash Flow Analysis
+
+```
+Operating cash flow:
+  Net income: $1M
+  Add back: D&A: $200K
+  Add back: SBC: $500K
+  Working capital changes:
+    AR increase: -$300K
+    AP increase: $100K
+    Deferred revenue: $400K
+  Operating cash flow: $1.9M
+
+Free cash flow:
+  Operating cash flow: $1.9M
+  CapEx: -$500K
+  Free cash flow: $1.4M
+
+Cash flow metrics:
+  FCF margin: 14%
+  FCF conversion: 140% (of net income)
+  Cash burn rate: N/A (positive FCF)
+  Runway: Infinite (profitable)
+```
+
+## Step 30: Financial Reporting Automation
+
+### Reporting Stack
+
+```
+Data collection:
+  - Stripe: Revenue, subscriptions, churn
+  - QuickBooks/NetSuite: Accounting, GL
+  - Gusto/Rippling: Payroll, headcount
+  - Brex/Ramp: Expenses, corporate cards
+  - CRM (HubSpot/Salesforce): Pipeline, bookings
+
+Data transformation:
+  - dbt: SQL-based transformations
+  - Fivetran: Data connectors
+  - Airbyte: Open-source data integration
+  - Custom scripts: API integrations
+
+Reporting:
+  - Looker/Tableau: Dashboards
+  - Google Sheets: Quick analysis
+  - Mosaic/Jirav: FP&A platforms
+  - Notion/Airtable: Collaborative reporting
+
+Automation:
+  - Scheduled data pulls (daily)
+  - Automated report generation (weekly)
+  - Email distribution (monthly)
+  - Alert triggers (anomaly detection)
+```
+
+### Board Reporting Package
+
+```
+Monthly board update:
+  1. Executive summary (1 page)
+     - Key highlights and lowlights
+     - Cash position and runway
+     - Revenue vs plan
+  
+  2. Financial dashboard (1 page)
+     - ARR/MRR and growth
+     - Gross margin trend
+     - Burn rate and runway
+     - Headcount and cost per employee
+  
+  3. Business metrics (1 page)
+     - Customer acquisition
+     - Retention and churn
+     - NPS and satisfaction
+     - Product usage
+  
+  4. Key decisions needed (1 page)
+     - Strategic questions for board
+     - Resource allocation decisions
+     - Partnership/investment opportunities
+
+Quarterly board meeting:
+  - 15-20 slides
+  - Deep dive on strategy
+  - Financial model review
+  - Market and competitive analysis
+  - Team and culture update
+```
+
+## Step 31: Audit Preparation
+
+### Audit Readiness Checklist
+
+```
+Financial audit:
+  □ Clean books (no material misstatements)
+  □ Reconciliations complete (bank, AR, AP)
+  □ Supporting documentation for all transactions
+  □ Revenue recognition compliant (ASC 606)
+  □ Expense categorization consistent
+  □ Intercompany transactions documented
+  □ Related party transactions disclosed
+  □ Stock-based compensation calculated
+  □ Lease accounting compliant (ASC 842)
+  □ Tax provision calculated
+
+Operational audit:
+  □ Internal controls documented
+  □ Segregation of duties
+  □ Approval workflows in place
+  □ Access controls reviewed
+  □ Vendor contracts current
+  □ Insurance policies current
+  □ Compliance certifications valid
+
+Preparation timeline:
+  - 3 months before: Clean up books, reconciliations
+  - 2 months before: Prepare schedules, documentation
+  - 1 month before: Pre-audit meeting, scope agreement
+  - Audit period: Support auditor requests
+  - Post-audit: Address findings, implement recommendations
+```
+
+## Step 32: Financial Modeling Tools
+
+### Spreadsheet Best Practices
+
+```
+Model structure:
+  - Inputs tab (assumptions, drivers)
+  - Calculations tab (formulas, logic)
+  - Outputs tab (dashboards, charts)
+  - Documentation tab (methodology, sources)
+
+Formatting:
+  - Blue font for inputs
+  - Black font for calculations
+  - Green font for links to other sheets
+  - Consistent number formatting
+  - Named ranges for key assumptions
+
+Error prevention:
+  - Data validation (dropdowns, ranges)
+  - Conditional formatting (alerts)
+  - Error checks (IFERROR, ISERROR)
+  - Cross-footing (row and column totals match)
+  - Version control (save with dates)
+
+Tools:
+  - Excel/Google Sheets: Standard
+  - Causal: Collaborative financial modeling
+  - Mosaic: FP&A automation
+  - Jirav: Financial planning
+  - Datarails: Excel-based FP&A

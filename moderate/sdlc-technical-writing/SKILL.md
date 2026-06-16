@@ -1354,3 +1354,174 @@ Content gap analysis:
   - Support tickets for undocumented features → Document
   - Competitor content we lack → Create equivalent
   - User requests for specific topics → Prioritize
+
+
+## Step 25: Documentation for Open Source
+
+### Open Source Documentation Standards
+
+```
+README.md:
+  - Project name and description
+  - Badges (build status, coverage, version)
+  - Quick start (install, run, use)
+  - Features list
+  - Documentation links
+  - Contributing guidelines
+  - License
+
+CONTRIBUTING.md:
+  - How to contribute
+  - Code of conduct reference
+  - Development setup
+  - Pull request process
+  - Coding standards
+  - Testing requirements
+  - Documentation requirements
+
+CHANGELOG.md:
+  - Keep a Changelog format
+  - Semantic versioning
+  - Categories: Added, Changed, Deprecated, Removed, Fixed, Security
+  - Date format: YYYY-MM-DD
+
+LICENSE:
+  - Choose appropriate license (MIT, Apache 2.0, GPL)
+  - Include in every file header
+  - Clarify contribution licensing
+```
+
+### Community Documentation
+
+```
+Community guidelines:
+  - CODE_OF_CONDUCT.md (Contributor Covenant)
+  - SECURITY.md (vulnerability reporting)
+  - GOVERNANCE.md (project governance)
+  - SUPPORT.md (getting help)
+
+Documentation for contributors:
+  - Architecture overview
+  - Development setup guide
+  - Testing guide
+  - Release process
+  - Code review guidelines
+
+Documentation for users:
+  - Installation guide
+  - Configuration reference
+  - API reference
+  - Troubleshooting guide
+  - FAQ
+  - Migration guides (between versions)
+```
+
+## Step 26: Technical Documentation for APIs
+
+### API Reference Best Practices
+
+```
+Structure:
+  - Overview (authentication, rate limiting, errors)
+  - Endpoints (grouped by resource)
+  - Each endpoint:
+    - HTTP method and path
+    - Description
+    - Authentication requirements
+    - Request parameters (path, query, body)
+    - Request examples (curl, Python, JavaScript)
+    - Response format (JSON schema)
+    - Response examples (success, error)
+    - Error codes
+
+Tools:
+  - Swagger/OpenAPI: Specification and UI
+  - Redoc: Beautiful rendering
+  - Stoplight: Design and documentation
+  - Postman: Collection and documentation
+
+Automation:
+  - Generate from code annotations
+  - Auto-update on code changes
+  - Version management
+  - Testing integration
+```
+
+### SDK Documentation
+
+```
+SDK docs structure:
+  - Installation (per language)
+  - Quick start (minimal example)
+  - Configuration (options, environment variables)
+  - Authentication (API keys, OAuth)
+  - Core concepts (client, resources, pagination)
+  - Error handling (exceptions, retries)
+  - Advanced usage (custom HTTP client, logging)
+  - Examples (common use cases)
+  - API reference (auto-generated)
+
+Code examples:
+  - Working, tested code
+  - Copy-paste ready
+  - Multiple languages
+  - Common use cases
+  - Error handling included
+```
+
+## Step 27: Documentation for Compliance
+
+### Compliance Documentation
+
+```
+SOC 2 documentation:
+  - Security policies
+  - Access control procedures
+  - Incident response plan
+  - Change management process
+  - Vendor management policy
+  - Business continuity plan
+  - Risk assessment methodology
+
+GDPR documentation:
+  - Privacy policy
+  - Data processing agreements
+  - Data protection impact assessments
+  - Consent management procedures
+  - Data subject request procedures
+  - Data breach notification procedures
+  - Records of processing activities
+
+ISO 27001 documentation:
+  - Information security policy
+  - Risk assessment and treatment
+  - Statement of applicability
+  - Security objectives
+  - Competence and training records
+  - Internal audit records
+  - Management review records
+```
+
+### Audit Documentation
+
+```
+Evidence collection:
+  - Automated evidence gathering
+  - Continuous monitoring reports
+  - Access logs and audit trails
+  - Change management records
+  - Training completion records
+  - Incident response documentation
+
+Documentation standards:
+  - Version control
+  - Review and approval workflow
+  - Retention policies
+  - Access controls
+  - Audit trail
+
+Tools:
+  - Vanta: Automated compliance
+  - Drata: Continuous monitoring
+  - AuditBoard: Audit management
+  - Workiva: Reporting and compliance

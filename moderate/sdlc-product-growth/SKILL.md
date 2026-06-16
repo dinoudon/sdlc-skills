@@ -1726,3 +1726,152 @@ Cadence:
   - Monthly: Experiment planning
   - Quarterly: Growth strategy review
   - Annually: Growth OKR setting
+
+
+## Step 29: Product Analytics Tools
+
+### Analytics Stack
+
+```
+Data collection:
+  - Segment: Event routing (collect once, send everywhere)
+  - Rudderstack: Open-source alternative to Segment
+  - Snowplow: Event data pipeline
+  - Mixpanel SDK: Direct event tracking
+
+Analysis:
+  - Mixpanel: Event-based analytics, funnels, retention
+  - Amplitude: Product analytics, behavioral cohorts
+  - PostHog: Open-source, self-hostable
+  - Heap: Auto-capture analytics
+
+Visualization:
+  - Looker: Enterprise BI
+  - Tableau: Data visualization
+  - Metabase: Open-source BI
+  - Grafana: Time-series dashboards
+
+Data warehouse:
+  - Snowflake: Cloud data warehouse
+  - BigQuery: Google Cloud data warehouse
+  - Redshift: AWS data warehouse
+  - ClickHouse: Open-source OLAP
+```
+
+### Event Tracking Plan
+
+```
+Event naming convention:
+  [noun].[verb]
+  Examples:
+    user.signed_up
+    project.created
+    feature.used
+    billing.upgraded
+
+Event properties:
+  user.signed_up:
+    - signup_method: google | github | email
+    - referrer: direct | organic | referral | paid
+    - utm_source: twitter | google | newsletter
+    - company_size: 1-10 | 11-50 | 51-200 | 200+
+
+Implementation:
+  1. Define tracking plan (spreadsheet)
+  2. Review with product and engineering
+  3. Implement in code
+  4. QA in staging
+  5. Monitor for data quality
+  6. Update plan as product evolves
+
+Tools:
+  - Avo: Tracking plan management
+  - Iteratively: Data governance
+  - Schema validation in Segment/Rudderstack
+```
+
+## Step 30: Growth Experimentation
+
+### Experiment Framework
+
+```
+Hypothesis:
+  "If we [change], then [metric] will [direction] by [amount], 
+  because [reasoning]."
+
+ICE Score (1-10 each):
+  Impact: How much will this move the needle?
+  Confidence: How sure are we it will work?
+  Ease: How easy is it to implement?
+  
+  Score = (Impact + Confidence + Ease) / 3
+
+Experiment log:
+  | ID | Hypothesis | ICE | Status | Result | Learning |
+  |----|------------|-----|--------|--------|----------|
+  | EXP-001 | Social proof increases conversion | 8.0 | Complete | +12% | Works on pricing page |
+  | EXP-002 | Shorter form increases signups | 7.3 | Complete | -5% | Length less important |
+  | EXP-003 | Video improves activation | 8.7 | Running | TBD | |
+
+Cadence:
+  - Weekly: Experiment review
+  - Monthly: Experiment planning
+  - Quarterly: Growth strategy review
+```
+
+## Step 31: Product Metrics Hierarchy
+
+### Metrics Stack
+
+```
+North Star Metric:
+  - Single metric that best captures value delivered
+  - Examples:
+    - Slack: Weekly active teams sending 2000+ messages
+    - Airbnb: Nights booked
+    - Stripe: Weekly active merchants
+
+Input metrics (leading indicators):
+  - New users (acquisition)
+  - Activation rate (onboarding)
+  - Feature adoption (engagement)
+  - Retention rate (stickiness)
+  - Expansion revenue (monetization)
+
+Output metrics (lagging indicators):
+  - Revenue
+  - Profit
+  - Market share
+  - Customer satisfaction
+
+Metric hierarchy:
+  Company: North Star Metric
+  Department: Team-specific metrics
+  Individual: Personal KPIs
+```
+
+### Metrics Review Process
+
+```
+Daily:
+  - Key metrics dashboard (automated)
+  - Anomaly alerts
+  - Incident monitoring
+
+Weekly:
+  - Metrics review meeting (30 min)
+  - Top movers analysis
+  - Experiment results
+  - Action items
+
+Monthly:
+  - Deep dive on trends
+  - Cohort analysis
+  - Funnel optimization
+  - Strategy adjustments
+
+Quarterly:
+  - OKR review
+  - Strategic planning
+  - Resource allocation
+  - Roadmap updates

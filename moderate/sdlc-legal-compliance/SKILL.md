@@ -1293,3 +1293,271 @@ Legal research:
   - LexisNexis: Legal research
   - Casetext: AI legal research
   - Law Insider: Contract templates
+
+
+## Step 26: E-Commerce Legal
+
+### Terms of Service Template
+
+```
+Key sections:
+  1. Acceptance of terms
+     - By using service, user agrees to terms
+     - Clickwrap or browsewrap agreement
+     
+  2. Description of service
+     - What the service provides
+     - Service level commitments
+     - Modification rights
+     
+  3. User accounts
+     - Registration requirements
+     - Account security responsibilities
+     - Account termination
+     
+  4. Acceptable use
+     - Permitted uses
+     - Prohibited uses
+     - Content policies
+     - Enforcement
+     
+  5. Intellectual property
+     - Service IP ownership
+     - User content license
+     - DMCA process
+     
+  6. Payment terms
+     - Pricing and billing
+     - Refund policy
+     - Cancellation
+     
+  7. Limitation of liability
+     - Cap on damages
+     - Exclusion of consequential damages
+     - Disclaimer of warranties
+     
+  8. Dispute resolution
+     - Governing law
+     - Arbitration clause
+     - Class action waiver
+```
+
+### E-Commerce Compliance
+
+```
+Consumer protection:
+  - Clear pricing (no hidden fees)
+  - Return/refund policy (prominently displayed)
+  - Order confirmation (email within 24h)
+  - Shipping information (tracking, delivery estimates)
+  - Cancellation rights (cooling-off period)
+
+Payment compliance:
+  - PCI DSS (if handling cards)
+  - Strong Customer Authentication (SCA, EU)
+  - PSD2 compliance (EU payment services)
+  - Fraud prevention measures
+
+Tax compliance:
+  - Sales tax collection (by jurisdiction)
+  - VAT collection (EU, UK)
+  - GST collection (Australia, India)
+  - Tax exemption handling
+  - Tax reporting (1099-K, VAT returns)
+
+Tools:
+  - Stripe Tax: Automated tax calculation
+  - Avalara: Tax compliance
+  - TaxJar: Sales tax automation
+  - Vertex: Enterprise tax management
+```
+
+## Step 27: Content and Media Law
+
+### Copyright and Fair Use
+
+```
+Copyright basics:
+  - Automatic protection upon creation
+  - Duration: Life + 70 years (individuals)
+  - Registration: Optional but strengthens enforcement
+  - Fair use: Limited use for commentary, education, parody
+
+Fair use factors:
+  1. Purpose: Commercial vs educational
+  2. Nature: Creative vs factual
+  3. Amount: Substantial vs minimal
+  4. Effect: Market impact vs no impact
+
+DMCA safe harbor:
+  - Platform not liable for user content if:
+    - Designated agent registered
+    - Takedown process implemented
+    - No actual knowledge of infringement
+    - No financial benefit from infringement
+  - Counter-notice process for wrongful takedowns
+
+Content licensing:
+  - Creative Commons: Open licensing
+  - Royalty-free: One-time payment, unlimited use
+  - Rights-managed: Specific use, specific price
+  - Editorial vs commercial use
+```
+
+### Trademark Enforcement
+
+```
+Enforcement process:
+  1. Monitor for infringement
+     - Google Alerts (brand name)
+     - Trademark watching service
+     - Social media monitoring
+     - Marketplace monitoring (Amazon, eBay)
+  
+  2. Cease and desist letter
+     - Identify the infringement
+     - State your trademark rights
+     - Demand cessation
+     - Set deadline for response
+  
+  3. UDRP (domain disputes)
+     - File with WIPO or NAF
+     - Prove: confusing similarity, no legitimate interest, bad faith
+     - Cost: $1,500-$5,000
+     - Timeline: 60-90 days
+  
+  4. Litigation (last resort)
+     - Federal court ( Lanham Act)
+     - Injunctive relief
+     - Damages (actual or statutory)
+     - Attorney fees (in exceptional cases)
+```
+
+## Step 28: Data Privacy Operations
+
+### Data Subject Request Handling
+
+```
+DSR types:
+  - Access: Provide copy of personal data
+  - Deletion: Delete personal data
+  - Correction: Fix inaccurate data
+  - Portability: Export in machine-readable format
+  - Objection: Opt out of processing
+  - Restriction: Limit processing
+
+Process:
+  1. Receive request (email, form, in-app)
+  2. Verify identity (2-factor, knowledge-based)
+  3. Locate data (search all systems)
+  4. Process request (delete, export, correct)
+  5. Respond (within 30 days, GDPR)
+  6. Document (audit trail)
+
+SLA:
+  - GDPR: 30 days
+  - CCPA: 45 days
+  - Extension: Additional 60 days if complex
+
+Tools:
+  - OneTrust: DSR management
+  - TrustArc: Privacy operations
+  - BigID: Data discovery
+  - Securiti: Privacy automation
+```
+
+### Privacy Impact Assessment
+
+```
+When required:
+  - New data processing activity
+  - Change to existing processing
+  - New technology implementation
+  - New data sharing arrangement
+
+Assessment steps:
+  1. Describe processing (what, why, how)
+  2. Assess necessity and proportionality
+  3. Identify risks to individuals
+  4. Mitigate risks
+  5. Document decisions
+  6. Consult DPO (if required)
+
+Risk matrix:
+  | Risk | Likelihood | Impact | Mitigation |
+  |------|------------|--------|------------|
+  | Data breach | Medium | High | Encryption, access controls |
+  | Unauthorized access | Low | High | MFA, audit logging |
+  | Data loss | Low | Medium | Backups, redundancy |
+  | Re-identification | Low | High | Anonymization, pseudonymization |
+```
+
+## Step 29: Legal Operations
+
+### Legal Tech Stack
+
+```
+Contract management:
+  - Ironclad: CLM platform
+  - DocuSign CLM: Contract lifecycle
+  - Juro: Contract automation
+  - SpotDraft: Contract management
+
+Legal research:
+  - Westlaw: Legal research
+  - LexisNexis: Legal research
+  - Casetext: AI legal research
+  - Law Insider: Contract templates
+
+Entity management:
+  - Carta: Cap table and equity
+  - Clerky: Formation and compliance
+  - Stripe Atlas: Formation and banking
+
+Compliance:
+  - Vanta: SOC 2 automation
+  - Drata: Compliance monitoring
+  - OneTrust: Privacy management
+
+Billing:
+  - Clio: Legal billing
+  - TimeSolv: Time tracking
+  - Bill4Time: Legal billing
+```
+
+## Step 30: Crisis Management
+
+### Crisis Communication Plan
+
+```
+Crisis types:
+  - Data breach: Unauthorized access to personal data
+  - Service outage: Extended downtime affecting customers
+  - Legal action: Lawsuit, regulatory investigation
+  - PR crisis: Negative media coverage, social media backlash
+  - Executive departure: Key leader leaving unexpectedly
+
+Communication team:
+  - Spokesperson (CEO or designated)
+  - Legal counsel
+  - PR/Communications lead
+  - Customer support lead
+  - Engineering lead (for technical issues)
+
+Communication channels:
+  - Status page (service issues)
+  - Email (affected customers)
+  - Blog (public statements)
+  - Social media (real-time updates)
+  - Press (media inquiries)
+  - Direct outreach (key accounts)
+
+Templates:
+  Initial statement: "We are aware of [issue]. We are 
+  investigating and will provide updates every [X hours]."
+  
+  Update: "We have identified [cause]. We are implementing 
+  [fix]. Estimated resolution: [time]."
+  
+  Resolution: "The issue has been resolved. [Root cause]. 
+  [Preventive measures]. We apologize for the inconvenience."
