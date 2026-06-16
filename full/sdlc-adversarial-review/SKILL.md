@@ -1997,3 +1997,9 @@ aws ec2 describe-security-groups \
 - Diminishing returns after 200-400 LOC per review
 - Review rate >500 LOC/hour drops defect detection
 - Sweet spot: 60-90 min review sessions
+
+## Related Skills
+
+  - [sdlc-testing-qa](sdlc-testing-qa): Test pyramid (unit/integration/e2e), TDD/BDD, property-based testing, mutation testing, contract tes
+  - [sdlc-legal-compliance](sdlc-legal-compliance): Software company legal and compliance: GDPR, SOC 2, CCPA, privacy policy, terms of service, data pro
+  - [sdlc-deployment](sdlc-deployment): Deployment strategies: canary, blue-green, rolling, progressive delivery, feature flags, rollback, d

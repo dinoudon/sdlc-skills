@@ -680,3 +680,7 @@ Entity management:
   - Carta: Cap table and equity
   - Clerky: Formation and compliance
 ```
+## Related Skills
+  - [sdlc-finance-ops](sdlc-finance-ops): Software company finance and operations: unit economics, SaaS metrics, fundraising (seed to IPO), fi
+  - [sdlc-hiring-talent](sdlc-hiring-talent): Technical hiring and team building: recruiting, interview design, coding assessments, system design 
+  - [sdlc-adversarial-review](sdlc-adversarial-review): Multi-agent PR review: 3 specialized reviewers (architecture, security, quality) run in parallel, or

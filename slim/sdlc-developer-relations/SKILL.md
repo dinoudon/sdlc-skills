@@ -551,3 +551,25 @@ Reliability:
   - Backward compatibility
   - Clear deprecation process
 ```
+## Step 29: Developer Relations Career
+```
+Individual contributor track:
+  Developer Advocate I → II → Senior → Staff → Principal
+  
+  I: Content creation, community support, event attendance
+  II: Strategy, metrics, program ownership
+  Senior: Cross-functional influence, team mentoring
+  Staff: Industry thought leadership, org-wide impact
+  Principal: Industry direction, executive advising
+
+Management track:
+  DevRel Manager → Director → VP
+  
+  Manager: Team of 2-5 advocates, program management
+  Director: Multiple programs, budget ownership, strategy
+  VP: Org-wide DevRel strategy, executive team member
+```
+## Related Skills
+  - [sdlc-product-growth](sdlc-product-growth): Product-led growth (PLG), developer-led growth, growth loops, activation funnels, A/B testing, SaaS 
+  - [sdlc-technical-writing](sdlc-technical-writing): Technical writing for software companies: documentation strategy, docs-as-code, API docs, runbooks, 
+  - [sdlc-platform-engineering](sdlc-platform-engineering): Platform engineering: internal developer portals (IDP), Backstage, golden paths, service catalog, se

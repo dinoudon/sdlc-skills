@@ -1879,3 +1879,8 @@ Tools:
   - POEditor: Simple and affordable
   - Weglot: Website translation
 ```
+
+## Related Skills
+
+  - [sdlc-developer-relations](sdlc-developer-relations): Developer Relations (DevRel) program design: advocacy, community, marketing, enablement. Developer e
+  - [sdlc-prd-to-production](sdlc-prd-to-production): End-to-end workflow: PRD → design doc → implementation → code review → testing → deployment → monito

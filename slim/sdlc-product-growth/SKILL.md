@@ -580,3 +580,7 @@ Input metrics (leading indicators):
 
 Output metrics (lagging indicators):
 ```
+## Related Skills
+  - [sdlc-developer-relations](sdlc-developer-relations): Developer Relations (DevRel) program design: advocacy, community, marketing, enablement. Developer e
+  - [sdlc-gtm-strategy](sdlc-gtm-strategy): Go-to-market strategy: market positioning, pricing, packaging, sales enablement, competitive analysi
+  - [sdlc-finance-ops](sdlc-finance-ops): Software company finance and operations: unit economics, SaaS metrics, fundraising (seed to IPO), fi

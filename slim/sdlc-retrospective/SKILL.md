@@ -597,3 +597,6 @@ Source: Jeff Bezos
 - Each team owns a service/API end-to-end
 - Teams are autonomous: choose their own tools, processes
 - Communication via APIs, not meetings
+## Related Skills
+  - [sdlc-hiring-talent](sdlc-hiring-talent): Technical hiring and team building: recruiting, interview design, coding assessments, system design 
+  - [sdlc-prd-to-production](sdlc-prd-to-production): End-to-end workflow: PRD → design doc → implementation → code review → testing → deployment → monito

@@ -558,3 +558,92 @@ DEVELOPMENT:
 TESTING:
   - Manual testing for throwaways
 ```
+## Step 22: Validation Experiments
+```
+Goal: Validate demand before building product
+
+Setup:
+  - Create landing page (Carrd, Webflow, Framer)
+  - Value proposition (headline, subheadline, CTA)
+  - Email capture (signup form)
+  - Analytics (Plausible, PostHog)
+
+Traffic sources:
+  - Reddit (relevant subreddits)
+  - Hacker News (Show HN)
+  - Twitter/X (tech community)
+  - LinkedIn (target audience)
+  - Google Ads (search intent)
+
+```
+## Step 23: Throwaway Project Anti-Patterns
+```
+Premature optimization:
+  Problem: Building for scale before validating demand
+  Solution: Build for 10 users, not 10 million
+  
+  Signs:
+    - Choosing databases for performance
+    - Implementing caching before measuring
+    - Designing for multi-region before launch
+    - Building admin dashboards before users
+
+Gold plating:
+  Problem: Adding features beyond the core hypothesis
+  Solution: Ruthlessly cut scope
+  
+  Signs:
+```
+## Step 24: Throwaway Project Tools
+```
+Frontend prototyping:
+  Speed-first: HTML + Tailwind CDN + Alpine.js
+  React-first: Next.js + shadcn/ui + Tailwind
+  No-code: Framer, Webflow, Carrd
+  
+Backend prototyping:
+  Speed-first: Supabase (Auth + DB + API)
+  Node-first: Express + Prisma + PostgreSQL
+  Python-first: FastAPI + SQLAlchemy + PostgreSQL
+  Serverless: AWS Lambda + DynamoDB
+
+Database:
+  Speed-first: Supabase (PostgreSQL hosted)
+  Local-first: SQLite + Prisma
+  Production-ready: PlanetScale (MySQL) or Neon (PostgreSQL)
+```
+## Step 25: Post-Mortem Template
+```
+# Retrospective: [Project Name]
+## Hypothesis
+[What we were testing]
+## Timeline
+- Start: [Date]
+- End: [Date]
+- Duration: [X days/weeks]
+## Decision
+[GO / NO-GO / PIVOT]
+## What Worked
+- [Thing 1]
+- [Thing 2]
+## What Did Not Work
+- [Thing 1]
+- [Thing 2]
+## Key Learnings
+- [Learning 1]
+- [Learning 2]
+## Surprises
+- [Unexpected finding 1]
+- [Unexpected finding 2]
+## Next Steps
+- [If GO]: [What we will build]
+- [If NO-GO]: [What we will try instead]
+- [If PIVOT]: [What we will change]
+## Archive
+- Repo: [Link] (archived)
+- Demo: [Link] (if still running)
+- Artifacts: [Screenshots, videos, data]
+## Related Skills
+  - [sdlc-prd-to-production](sdlc-prd-to-production): End-to-end workflow: PRD → design doc → implementation → code review → testing → deployment → monito
+  - [sdlc-product-growth](sdlc-product-growth): Product-led growth (PLG), developer-led growth, growth loops, activation funnels, A/B testing, SaaS 
+  - [sdlc-architecture-design](sdlc-architecture-design): System design, C4 diagrams, API design, database schema, code architecture, ADRs, branching, depende

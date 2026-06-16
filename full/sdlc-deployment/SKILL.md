@@ -1903,3 +1903,9 @@ kubectl -n goldilocks port-forward svc/goldilocks-dashboard 8080:80
 13. **Don't mix X-Ray SDK and OTEL layer** — they conflict
 14. **Don't run Terratest against production** — use sandbox environments
 15. **Don't assume CF Workers KV is strongly consistent** — use Durable Objects for strong reads
+
+## Related Skills
+
+  - [sdlc-cicd-pipeline](sdlc-cicd-pipeline): CI/CD pipeline design with GitHub Actions and GitLab CI. Docker multi-stage builds, caching, matrix 
+  - [sdlc-observability](sdlc-observability): Observability: OpenTelemetry 2024, GenAI semantic conventions, eBPF (Cilium/Hubble/Tetragon), sideca
+  - [sdlc-platform-engineering](sdlc-platform-engineering): Platform engineering: internal developer portals (IDP), Backstage, golden paths, service catalog, se

@@ -621,3 +621,25 @@ Compliance:
   - Policy-as-code (OPA, Sentinel)
   - Automated compliance checks
 ```
+## Step 33: Platform Metrics
+```
+Deployment frequency:
+  - How often code is deployed to production
+  - Elite: Multiple times per day
+  - High: Once per day to once per week
+  - Medium: Once per week to once per month
+  - Low: Less than once per month
+
+Lead time for changes:
+  - Time from commit to production
+  - Elite: Less than 1 hour
+  - High: 1 day to 1 week
+  - Medium: 1 week to 1 month
+  - Low: More than 1 month
+
+Change failure rate:
+```
+## Related Skills
+  - [sdlc-developer-relations](sdlc-developer-relations): Developer Relations (DevRel) program design: advocacy, community, marketing, enablement. Developer e
+  - [sdlc-observability](sdlc-observability): Observability: OpenTelemetry 2024, GenAI semantic conventions, eBPF (Cilium/Hubble/Tetragon), sideca
+  - [sdlc-cicd-pipeline](sdlc-cicd-pipeline): CI/CD pipeline design with GitHub Actions and GitLab CI. Docker multi-stage builds, caching, matrix

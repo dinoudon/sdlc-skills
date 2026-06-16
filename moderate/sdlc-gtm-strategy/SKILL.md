@@ -2177,3 +2177,9 @@ Vertical playbook:
   6. Partner with industry players (consultants, associations)
   7. Win lighthouse customers (reference accounts)
   8. Scale (repeatable playbook)
+
+## Related Skills
+
+  - [sdlc-product-growth](sdlc-product-growth): Product-led growth (PLG), developer-led growth, growth loops, activation funnels, A/B testing, SaaS 
+  - [sdlc-hiring-talent](sdlc-hiring-talent): Technical hiring and team building: recruiting, interview design, coding assessments, system design 
+  - [sdlc-finance-ops](sdlc-finance-ops): Software company finance and operations: unit economics, SaaS metrics, fundraising (seed to IPO), fi

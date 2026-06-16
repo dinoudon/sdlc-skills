@@ -568,3 +568,6 @@ paths:
 | Developer onboarding | Dev Containers + justfile + Backstage catalog |
 | Green software | Kepler + Scaphandre + cloud carbon tools |
 | Build performance | Turborepo cache → Nx Cloud → Bazel (escalating complexity) |
+## Related Skills
+  - [sdlc-platform-engineering](sdlc-platform-engineering): Platform engineering: internal developer portals (IDP), Backstage, golden paths, service catalog, se
+  - [sdlc-cicd-pipeline](sdlc-cicd-pipeline): CI/CD pipeline design with GitHub Actions and GitLab CI. Docker multi-stage builds, caching, matrix

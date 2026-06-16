@@ -525,3 +525,7 @@ curl -G 'http://localhost:3100/loki/api/v1/query_range' \
 curl http://localhost:3200/api/traces/<traceID>
 
 ```
+## Related Skills
+  - [sdlc-platform-engineering](sdlc-platform-engineering): Platform engineering: internal developer portals (IDP), Backstage, golden paths, service catalog, se
+  - [sdlc-deployment](sdlc-deployment): Deployment strategies: canary, blue-green, rolling, progressive delivery, feature flags, rollback, d
+  - [sdlc-testing-qa](sdlc-testing-qa): Test pyramid (unit/integration/e2e), TDD/BDD, property-based testing, mutation testing, contract tes

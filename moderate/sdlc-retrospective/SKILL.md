@@ -2244,3 +2244,8 @@ Source: https://stripe.com/blog/engineering
 4. **Code review culture**: Thorough reviews, fast turnaround
 5. **Operational excellence**: Runbooks, monitoring, on-call rotation
 
+
+## Related Skills
+
+  - [sdlc-hiring-talent](sdlc-hiring-talent): Technical hiring and team building: recruiting, interview design, coding assessments, system design 
+  - [sdlc-prd-to-production](sdlc-prd-to-production): End-to-end workflow: PRD → design doc → implementation → code review → testing → deployment → monito

@@ -662,3 +662,7 @@ Communication:
   - Zoom for video meetings
   - Notion for documentation
 ```
+## Related Skills
+  - [sdlc-gtm-strategy](sdlc-gtm-strategy): Go-to-market strategy: market positioning, pricing, packaging, sales enablement, competitive analysi
+  - [sdlc-finance-ops](sdlc-finance-ops): Software company finance and operations: unit economics, SaaS metrics, fundraising (seed to IPO), fi
+  - [sdlc-legal-compliance](sdlc-legal-compliance): Software company legal and compliance: GDPR, SOC 2, CCPA, privacy policy, terms of service, data pro

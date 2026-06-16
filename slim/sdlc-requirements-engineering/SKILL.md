@@ -390,3 +390,6 @@ First Input Delay (FID) / Interaction to Next Paint (INP):
 19. **Don't test accessibility last** — WCAG 2.2 AA baked into acceptance criteria from story creation
 20. **Don't skip event storming for complex domains** — big picture on one wall prevents costly misunderstandings
 21. **Don't confuse domain storytelling with UML** — stories are told by experts, not drawn by architects
+## Related Skills
+  - [sdlc-prd-to-production](sdlc-prd-to-production): End-to-end workflow: PRD → design doc → implementation → code review → testing → deployment → monito
+  - [sdlc-architecture-design](sdlc-architecture-design): System design, C4 diagrams, API design, database schema, code architecture, ADRs, branching, depende

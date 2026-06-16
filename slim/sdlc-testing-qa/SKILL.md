@@ -534,3 +534,7 @@ grpcurl -plaintext \
   -d '{"name": "Alice"}' \
   localhost:50051 mypackage.UserService/CreateUser
 ```
+## Related Skills
+  - [sdlc-cicd-pipeline](sdlc-cicd-pipeline): CI/CD pipeline design with GitHub Actions and GitLab CI. Docker multi-stage builds, caching, matrix 
+  - [sdlc-observability](sdlc-observability): Observability: OpenTelemetry 2024, GenAI semantic conventions, eBPF (Cilium/Hubble/Tetragon), sideca
+  - [sdlc-adversarial-review](sdlc-adversarial-review): Multi-agent PR review: 3 specialized reviewers (architecture, security, quality) run in parallel, or

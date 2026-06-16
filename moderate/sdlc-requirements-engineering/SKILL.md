@@ -1963,3 +1963,8 @@ MAPPING TO REQUIREMENTS:
 43. **Don't reference aggregates by object** — always reference by ID across aggregate boundaries; object references leak transactional boundaries
 44. **Don't skip domain storytelling notation** — standard pictographic notation enables shared understanding; freeform diagrams cause confusion
 45. **Don't mix ubiquitous languages across BCs** — same word in different BCs should have different models; shared kernel is dangerous, use sparingly
+
+## Related Skills
+
+  - [sdlc-prd-to-production](sdlc-prd-to-production): End-to-end workflow: PRD → design doc → implementation → code review → testing → deployment → monito
+  - [sdlc-architecture-design](sdlc-architecture-design): System design, C4 diagrams, API design, database schema, code architecture, ADRs, branching, depende

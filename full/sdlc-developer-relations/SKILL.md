@@ -1669,3 +1669,74 @@ Support:
   □ Escalation path clear
   □ Feedback mechanism exists
   □ Issues tracked publicly
+
+
+## Step 29: Developer Relations Career
+
+### Career Progression
+
+```
+Individual contributor track:
+  Developer Advocate I → II → Senior → Staff → Principal
+  
+  I: Content creation, community support, event attendance
+  II: Strategy, metrics, program ownership
+  Senior: Cross-functional influence, team mentoring
+  Staff: Industry thought leadership, org-wide impact
+  Principal: Industry direction, executive advising
+
+Management track:
+  DevRel Manager → Director → VP
+  
+  Manager: Team of 2-5 advocates, program management
+  Director: Multiple programs, budget ownership, strategy
+  VP: Org-wide DevRel strategy, executive team member
+
+Skills progression:
+  Junior: Technical writing, presenting, community support
+  Mid: Strategy, metrics, program design, cross-functional work
+  Senior: Thought leadership, industry influence, mentoring
+  Executive: Business strategy, P&L ownership, board interaction
+```
+
+### DevRel Job Description Template
+
+```
+Title: Developer Advocate / Developer Relations Engineer
+
+About the role:
+  We are looking for a Developer Advocate to help developers 
+  succeed with [Product]. You will create content, build 
+  community, and represent developers internally.
+
+What you will do:
+  - Create technical content (blog posts, tutorials, videos)
+  - Speak at conferences and meetups
+  - Build and nurture developer community
+  - Gather developer feedback and share with product team
+  - Contribute to SDKs and developer tools
+
+What we are looking for:
+  - 3+ years software engineering experience
+  - Strong technical writing skills
+  - Experience presenting to technical audiences
+  - Passion for developer experience
+  - Active in developer communities
+
+Nice to have:
+  - Open source contributions
+  - Technical blog or YouTube channel
+  - Conference speaking experience
+  - Experience with [specific technology]
+
+Compensation:
+  - Base: $X-$Y
+  - Equity: X-Y%
+  - Benefits: [List]
+  - Travel budget: $X/year
+
+## Related Skills
+
+  - [sdlc-product-growth](sdlc-product-growth): Product-led growth (PLG), developer-led growth, growth loops, activation funnels, A/B testing, SaaS 
+  - [sdlc-technical-writing](sdlc-technical-writing): Technical writing for software companies: documentation strategy, docs-as-code, API docs, runbooks, 
+  - [sdlc-platform-engineering](sdlc-platform-engineering): Platform engineering: internal developer portals (IDP), Backstage, golden paths, service catalog, se

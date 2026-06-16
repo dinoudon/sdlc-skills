@@ -2019,3 +2019,9 @@ slo:
 | Medium (10-100 services) | 100K-1M | 10-100GB | 50-500GB | Mimir + Loki + Tempo (microservices) |
 | Large (100+ services) | 1M-10M | 100GB-1TB | 500GB-5TB | Mimir + Loki + Tempo (scaled) + Gateway Collector |
 | Very Large (1000+ services) | 10M+ | 1TB+ | 5TB+ | Multi-region Mimir/Loki/Tempo + dedicated teams |
+
+## Related Skills
+
+  - [sdlc-platform-engineering](sdlc-platform-engineering): Platform engineering: internal developer portals (IDP), Backstage, golden paths, service catalog, se
+  - [sdlc-deployment](sdlc-deployment): Deployment strategies: canary, blue-green, rolling, progressive delivery, feature flags, rollback, d
+  - [sdlc-testing-qa](sdlc-testing-qa): Test pyramid (unit/integration/e2e), TDD/BDD, property-based testing, mutation testing, contract tes

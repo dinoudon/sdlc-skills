@@ -1821,3 +1821,8 @@ Before shipping major features, conduct a CEO-level review covering:
 6. **Don't skip monitoring setup** — deploy without observability is blind
 7. **Don't skip rollback plan** — always have a way back
 8. **Don't skip stakeholder communication** — keep everyone informed
+## Related Skills
+
+  - [sdlc-architecture-design](sdlc-architecture-design): System design, C4 diagrams, API design, database schema, code architecture, ADRs, branching, depende
+  - [sdlc-requirements-engineering](sdlc-requirements-engineering): Requirements: user story mapping (Jeff Patton), BDD/Gherkin (Cucumber, pytest-bdd), acceptance crite
+  - [sdlc-product-growth](sdlc-product-growth): Product-led growth (PLG), developer-led growth, growth loops, activation funnels, A/B testing, SaaS 

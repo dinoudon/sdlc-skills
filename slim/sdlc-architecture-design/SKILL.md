@@ -629,3 +629,7 @@ func (r *MyReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Re
 | Latency-sensitive | Edge compute (Cloudflare Workers) |
 | Bursty workloads | Serverless (Lambda/Cloud Functions) |
 | Multi-cloud | Containers + PostgreSQL + S3-compatible + Terraform |
+## Related Skills
+  - [sdlc-prd-to-production](sdlc-prd-to-production): End-to-end workflow: PRD → design doc → implementation → code review → testing → deployment → monito
+  - [sdlc-deployment](sdlc-deployment): Deployment strategies: canary, blue-green, rolling, progressive delivery, feature flags, rollback, d
+  - [sdlc-platform-engineering](sdlc-platform-engineering): Platform engineering: internal developer portals (IDP), Backstage, golden paths, service catalog, se

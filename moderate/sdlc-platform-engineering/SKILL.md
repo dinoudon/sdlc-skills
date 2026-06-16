@@ -1707,3 +1707,76 @@ Communication:
   - Change management process
   - Stakeholder updates (monthly)
 ```
+
+
+## Step 33: Platform Metrics
+
+### DORA Metrics
+
+```
+Deployment frequency:
+  - How often code is deployed to production
+  - Elite: Multiple times per day
+  - High: Once per day to once per week
+  - Medium: Once per week to once per month
+  - Low: Less than once per month
+
+Lead time for changes:
+  - Time from commit to production
+  - Elite: Less than 1 hour
+  - High: 1 day to 1 week
+  - Medium: 1 week to 1 month
+  - Low: More than 1 month
+
+Change failure rate:
+  - % of deployments causing failures
+  - Elite: 0-15%
+  - High: 16-30%
+  - Medium: 31-45%
+  - Low: 46-60%
+
+Time to restore service:
+  - Time to recover from failures
+  - Elite: Less than 1 hour
+  - High: Less than 1 day
+  - Medium: 1 day to 1 week
+  - Low: More than 1 week
+
+Measurement tools:
+  - Sleuth: DORA metrics tracking
+  - LinearB: Engineering metrics
+  - Pluralsight Flow: Code analytics
+  - Jellyfish: Engineering management
+```
+
+### Platform ROI
+
+```
+Cost savings:
+  - Developer time saved: [Hours/week] x [Number of developers] x [Hourly rate]
+  - Incident reduction: [Fewer incidents] x [Cost per incident]
+  - Faster deployments: [Time saved] x [Developer cost]
+
+Revenue impact:
+  - Faster time to market: [Features shipped] x [Revenue per feature]
+  - Improved reliability: [Less downtime] x [Revenue per hour]
+  - Developer productivity: [More output] x [Value per output]
+
+Example calculation:
+  - 50 developers, 5 hours/week saved = 250 hours/week
+  - At $100/hour = $25,000/week = $1.3M/year
+  - Platform team cost: 5 engineers x $200K = $1M/year
+  - ROI: 30% return in year 1
+
+Intangible benefits:
+  - Developer satisfaction (retention)
+  - Faster innovation (experimentation)
+  - Reduced risk (compliance, security)
+  - Knowledge sharing (documentation)
+```
+
+## Related Skills
+
+  - [sdlc-developer-relations](sdlc-developer-relations): Developer Relations (DevRel) program design: advocacy, community, marketing, enablement. Developer e
+  - [sdlc-observability](sdlc-observability): Observability: OpenTelemetry 2024, GenAI semantic conventions, eBPF (Cilium/Hubble/Tetragon), sideca
+  - [sdlc-cicd-pipeline](sdlc-cicd-pipeline): CI/CD pipeline design with GitHub Actions and GitLab CI. Docker multi-stage builds, caching, matrix 
