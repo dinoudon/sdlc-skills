@@ -1455,3 +1455,193 @@ Tools:
   - Mosaic: FP&A automation
   - Jirav: Financial planning
   - Datarails: Excel-based FP&A
+
+
+## Step 33: Financial Operations Automation
+
+### Accounts Payable Automation
+
+```
+Invoice processing:
+  1. Receive invoice (email, portal, mail)
+  2. OCR extraction (amount, vendor, date, line items)
+  3. Match to PO (3-way match: PO, receipt, invoice)
+  4. Route for approval (based on amount, department)
+  5. Schedule payment (optimize for terms)
+  6. Record in GL (automatic posting)
+
+Tools:
+  - Bill.com: SMB AP automation
+  - Tipalti: Global payments
+  - AvidXchange: Mid-market AP
+  - Coupa: Enterprise procurement
+  - Stampli: AI-powered AP
+
+Benefits:
+  - 80% reduction in manual processing
+  - Early payment discounts captured
+  - Fraud detection (duplicate invoices)
+  - Audit trail (complete history)
+  - Cash flow visibility
+```
+
+### Accounts Receivable Automation
+
+```
+Invoice generation:
+  1. Usage data collected (API calls, storage, seats)
+  2. Billing rules applied (tiers, discounts, proration)
+  3. Invoice generated (PDF, email)
+  4. Payment processed (auto-charge, manual)
+  5. Reminders sent (overdue notices)
+  6. Collections escalated (if needed)
+
+Tools:
+  - Stripe Billing: Subscription and usage billing
+  - Chargebee: Subscription management
+  - Zuora: Enterprise billing
+  - Recurly: Subscription billing
+  - Maxio: SaaS billing
+
+Dunning strategy:
+  Day 1: Payment failed notification
+  Day 3: Retry payment + email
+  Day 7: Second retry + warning
+  Day 14: Account downgrade notice
+  Day 30: Account suspension notice
+  Day 60: Collections agency referral
+```
+
+## Step 34: Treasury Operations
+
+### Cash Management
+
+```
+Daily cash position:
+  - Opening balance (all accounts)
+  - Inflows (customer payments, investment income)
+  - Outflows (payroll, vendor payments, CapEx)
+  - Closing balance
+  - 7-day forecast
+
+Cash optimization:
+  - Zero-balance accounts (sweep excess to master)
+  - Notional pooling (offset balances across entities)
+  - Cash concentration (centralize for visibility)
+  - Investment of excess (money market, T-bills)
+
+Banking relationships:
+  - Primary bank: Operating accounts, credit facility
+  - Secondary bank: Backup, diversification
+  - International banks: Local currency accounts
+  - Review annually: Fees, service, relationship
+
+FX management:
+  - Natural hedging (match revenue and costs by currency)
+  - Forward contracts (lock in rates for known exposures)
+  - Options (protect against adverse moves)
+  - Netting (offset intercompany flows)
+```
+
+## Step 35: Investor Reporting
+
+### Monthly Investor Update
+
+```
+Format: 1-2 page email
+
+Sections:
+  1. Highlights (3-5 bullet points)
+     - Key wins, milestones, partnerships
+  
+  2. Lowlights (2-3 bullet points)
+     - Challenges, missed targets, risks
+  
+  3. Key metrics (table format)
+     - MRR/ARR and growth
+     - Customer count and churn
+     - Cash position and runway
+     - Headcount
+  
+  4. Asks (1-3 specific requests)
+     - Introductions, advice, hiring help
+  
+  5. Next month priorities (3-5 items)
+
+Frequency: Monthly (1st week of month)
+Length: 500-800 words
+Tone: Transparent, honest, concise
+```
+
+### Board Meeting Preparation
+
+```
+Pre-meeting (2 weeks before):
+  □ Schedule meeting and send calendar invite
+  □ Request agenda items from board members
+  □ Prepare financial package
+  □ Draft strategic discussion topics
+  □ Send materials 48-72 hours in advance
+
+Meeting structure (2-3 hours):
+  1. CEO update (15 min)
+  2. Financial review (30 min)
+  3. Product update (20 min)
+  4. GTM update (20 min)
+  5. People update (15 min)
+  6. Strategic discussion (30-45 min)
+  7. Executive session (15 min, board only)
+
+Post-meeting (1 week after):
+  □ Send meeting notes and action items
+  □ Track action item completion
+  □ Update board on progress (next monthly update)
+```
+
+## Step 36: Financial Compliance
+
+### SOX Compliance (if applicable)
+
+```
+Key controls:
+  - Revenue recognition (ASC 606)
+  - Expense authorization and approval
+  - Segregation of duties
+  - Access controls (financial systems)
+  - Change management (financial applications)
+  - Reconciliation (bank, AR, AP, GL)
+
+Documentation:
+  - Control descriptions
+  - Process narratives
+  - Risk-control matrices
+  - Testing evidence
+  - Remediation plans
+
+Timeline:
+  - Annual risk assessment
+  - Quarterly control testing
+  - Continuous monitoring
+  - External audit (annual)
+```
+
+### Tax Planning
+
+```
+R&D tax credit:
+  - Qualifying expenses: wages, supplies, contract research
+  - Credit: 6-8% of qualifying expenses
+  - Startup provision: Offset payroll tax (up to $500K)
+  - Documentation: Time tracking, project records
+
+Transfer pricing:
+  - Arm's length principle
+  - Documentation requirements
+  - Country-by-country reporting
+  - Advance pricing agreements
+
+Tax-efficient structure:
+  - IP holding company (Ireland, Singapore)
+  - Cost-sharing arrangements
+  - Stock-based compensation deductions
+  - Net operating loss utilization

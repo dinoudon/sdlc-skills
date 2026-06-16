@@ -1584,3 +1584,188 @@ Improvement process:
   - Implement changes
   - Update Glassdoor profile to reflect improvements
   - Track rating trends over time
+
+
+## Step 32: Employee Relations
+
+### Conflict Resolution
+
+```
+Types of workplace conflict:
+  - Interpersonal: Personality clashes, communication styles
+  - Task: Disagreements about work approach or priorities
+  - Process: Disputes about workflows or responsibilities
+  - Status: Power dynamics, recognition, advancement
+
+Resolution process:
+  1. Early intervention (address before escalation)
+  2. Private conversations (understand each perspective)
+  3. Mediation (neutral third party if needed)
+  4. Agreement (document resolution)
+  5. Follow-up (ensure resolution holds)
+
+Manager training:
+  - Active listening skills
+  - De-escalation techniques
+  - Bias awareness
+  - Documentation requirements
+  - When to involve HR
+
+Escalation path:
+  1. Direct conversation (employee to employee)
+  2. Manager involvement
+  3. HR mediation
+  4. Formal investigation
+  5. Executive decision
+```
+
+### Employee Complaints
+
+```
+Complaint channels:
+  - Direct manager (first option)
+  - HR representative
+  - Anonymous hotline
+  - Ethics email
+  - Skip-level manager
+
+Investigation process:
+  1. Receive complaint (document details)
+  2. Assess severity (immediate action needed?)
+  3. Investigate (interviews, evidence review)
+  4. Determine findings (facts, not opinions)
+  5. Take action (disciplinary, training, policy change)
+  6. Communicate outcome (to complainant, respondent)
+  7. Follow-up (ensure no retaliation)
+
+Documentation:
+  - Complaint details (who, what, when, where)
+  - Investigation steps taken
+  - Evidence collected
+  - Findings and conclusions
+  - Action taken
+  - Follow-up plan
+
+Legal considerations:
+  - Non-retaliation policy
+  - Confidentiality (as much as possible)
+  - Timely response (within 48 hours)
+  - Attorney involvement (if serious)
+```
+
+## Step 33: HR Technology
+
+### HR Tech Stack
+
+```
+Core HRIS:
+  - BambooHR: SMB HRIS
+  - Rippling: HR + IT + Finance
+  - Workday: Enterprise HCM
+  - ADP: Payroll + HR
+
+Recruiting:
+  - Greenhouse: ATS
+  - Lever: ATS + CRM
+  - Ashby: Modern ATS
+  - Gem: Recruiting CRM
+
+Performance:
+  - Lattice: Performance + engagement
+  - Culture Amp: Employee experience
+  - 15Five: Performance management
+  - Betterworks: OKR + performance
+
+Learning:
+  - LinkedIn Learning: Online courses
+  - Pluralsight: Tech skills
+  - Udemy Business: Diverse courses
+  - Lessonly: Team learning
+
+Benefits:
+  - Gusto: SMB benefits
+  - Zenefits: Benefits administration
+  - Benefitfocus: Enterprise benefits
+  - Alight: Benefits outsourcing
+
+Compensation:
+  - Payscale: Compensation data
+  - Carta: Equity management
+  - Comp Analytics: Comp planning
+  - Salary.com: Benchmarking
+```
+
+### HR Data and Analytics
+
+```
+Key HR metrics:
+  Headcount:
+    - Total employees
+    - By department, level, location
+    - New hires, terminations
+    - Open positions
+  
+  Retention:
+    - Turnover rate (voluntary, involuntary)
+    - Retention by cohort (90-day, 1-year, 2-year)
+    - Regrettable turnover rate
+    - Exit interview themes
+  
+  Engagement:
+    - Employee NPS
+    - Engagement survey scores
+    - Participation rates
+    - eNPS trends
+  
+  Compensation:
+    - Pay equity ratios
+    - Comp-ratio (actual vs market)
+    - Total cost of workforce
+    - Benefits utilization
+
+Analytics tools:
+  - Visier: People analytics
+  - One Model: HR data platform
+  - ChartHop: Org chart + analytics
+  - BambooHR reports: Basic analytics
+```
+
+## Step 34: Employee Wellness
+
+### Wellness Programs
+
+```
+Mental health:
+  - Employee Assistance Program (EAP)
+  - Therapy/counseling benefit ($1-5K/year)
+  - Mental health days (separate from PTO)
+  - Stress management workshops
+  - Mindfulness/meditation apps (Calm, Headspace)
+
+Physical health:
+  - Gym membership subsidy ($50-150/month)
+  - Ergonomic equipment (standing desk, chair)
+  - Health screenings (annual)
+  - Vaccination clinics (flu, COVID)
+  - Wellness challenges (steps, sleep)
+
+Financial wellness:
+  - Financial planning services
+  - Student loan repayment assistance
+  - 401k education
+  - Emergency savings programs
+  - Financial literacy workshops
+
+Social wellness:
+  - Team building activities
+  - Employee resource groups (ERGs)
+  - Volunteer days (1-2 per year)
+  - Social events (virtual and in-person)
+  - Community service opportunities
+
+Measurement:
+  - Program utilization rates
+  - Employee satisfaction surveys
+  - Health insurance claims trends
+  - Absenteeism rates
+  - Productivity metrics

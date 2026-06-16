@@ -11,12 +11,10 @@ metadata:
     related_skills: [sdlc-spike, sdlc-prd-to-production, sdlc-architecture-design, sdlc-testing-qa]
 ---
 
-# Throwaway Projects
-
-Planning throwaway/prototype projects: rapid prototyping, vibe coding, MVP planning, spike solutions, decision frameworks for keep vs discard.
-
+---
+name: sdlc-throwaway-projects
+description: "Planning throwaway/prototype projects: rapid prototyping, vibe coding workflows, MVP planning, spike solutions, PoC validation, hackathon prep, AI-assisted development, lean canvas, assumption mapping, time-boxing, graduation path (throwaway → production), decision frameworks for keep vs discard vs graduate, tech stack selection for speed, common pitfalls, and integration with 2026 AI coding tools (Cursor, Lovable, Bolt, Replit, v0, Claude Code, Ge
 ## When to Use
-
 Trigger when user:
 - Needs to validate an idea quickly
 - Mentions prototype, MVP, spike, PoC, demo, hackathon
@@ -25,11 +23,7 @@ Trigger when user:
 - Asks "should we build this?"
 - Wants to learn a technology by building something real
 - Preparing for hackathon or demo day
-
 ## Step 1: Throwaway Project Taxonomy
-
-### Types Compared
-
 | Type | Purpose | Lifespan | Fidelity | End State |
 |------|---------|----------|----------|-----------|
 | **Spike** | Answer technical question | Hours–days | Low | Knowledge, discard |
@@ -38,9 +32,6 @@ Trigger when user:
 | **MVP** | Test market demand | Weeks–months | High | Metrics, iterate or kill |
 | **Demo** | Show possibility | Hours–days | Surface-level | Impress, discard |
 | **Hackathon** | Build in time-box | 24–48h | Variable | Pitch, maybe continue |
-
-### When to Pick Which
-
 ```
 Need to answer "can we do X?" → Spike
 Need to answer "should we do X?" → Prototype
@@ -49,11 +40,7 @@ Need to test "will people pay for X?" → MVP
 Need to show "X is possible" → Demo
 Need to build "something in 48h" → Hackathon project
 ```
-
 ## Step 2: Planning Framework
-
-### Lean Canvas (1-page business model)
-
 ```
 +------------------+------------------+------------------+
 | PROBLEM          | SOLUTION         | UNIQUE VALUE      |
@@ -70,37 +57,23 @@ Need to build "something in 48h" → Hackathon project
 +------------------+------------------+
 | COST STRUCTURE                  | REVENUE STREAMS           |
 | Fixed + variable costs          | Revenue model             |
-+---------------------------------+---------------------------+
 ```
-
-### One-Pager Template
-
-```markdown
-# [Project Name]
-
 ## Hypothesis
 We believe [target users] have [problem] and will [desired action] if we build [solution].
-
 ## Validation Criteria
 - [Metric 1]: [target] — proves problem is real
 - [Metric 2]: [target] — proves solution works
 - [Metric 3]: [target] — proves willingness to pay/engage
-
 ## Scope
-### In Scope
 - [Feature 1]
 - [Feature 2]
 - [Feature 3]
-
-### Out of Scope
 - [Explicitly NOT building]
 - [Deferred to future]
-
 ## Timeline
 - Day 1-2: [Phase 1]
 - Day 3-4: [Phase 2]
 - Day 5: [Testing + decision]
-
 ## Exit Criteria
 - SUCCESS: [What success looks like]
 - PIVOT: [What pivot looks like]
@@ -112,39 +85,7 @@ We believe [target users] have [problem] and will [desired action] if we build [
 Map assumptions on two axes: **certainty** (how sure are we?) and **importance** (how critical?).
 
 ```
-HIGH IMPORTANCE
-     |
-     |  [Validate FIRST]    [Danger zone]
-     |  High importance,     High importance,
-     |  low certainty        high certainty
-     |                       (still monitor)
-     |
-     +----------------------------------------
-     |  [Ignore for now]    [Nice to have]
-     |  Low importance,     Low importance,
-     |  low certainty       high certainty
-     |
-LOW IMPORTANCE
-     
-     LOW CERTAINTY --------- HIGH CERTAINTY
-```
-
-**Rule:** Validate top-left quadrant first. Those assumptions can kill the project.
-
-### Risk-First Ordering
-
-```
-1. List all assumptions
-2. Rank by: Impact if wrong × Likelihood of being wrong
-3. Build spike/prototype to test #1 assumption FIRST
-4. If assumption fails → pivot or kill early
-5. If assumption holds → move to #2
-```
-
 ## Step 3: Speed-Optimized Workflow
-
-### Vibe Coding Principles
-
 ```
 1. Describe, don't code — natural language prompts
 2. Iterate fast — prompt → review → adjust → repeat
@@ -152,69 +93,7 @@ LOW IMPORTANCE
 4. Ship and test — get user feedback ASAP
 5. Save often — commit after every working change
 ```
-
-### AI-Assisted Prototype Workflow
-
-```
-Phase 1: PLAN (10% of time)
-├── Write one-pager
-├── Map assumptions
-├── Pick top 1-2 to validate
-└── Choose tech stack
-
-Phase 2: BUILD (60% of time)
-├── Prompt AI for scaffold
-├── Iterate on core feature ONLY
-├── Skip auth, error handling, edge cases
-├── Commit after each working feature
-└── Test manually as you go
-
-Phase 3: VALIDATE (20% of time)
-├── Show to 3-5 target users
-├── Collect structured feedback
-├── Measure against validation criteria
-└── Document findings
-
-Phase 4: DECIDE (10% of time)
-├── Score: kill / pivot / keep / graduate
-├── If keep: plan graduation path
-├── If kill: archive learnings
-└── Retrospective
-```
-
-### Prompt Patterns for Prototypes
-
-```
-Scaffold prompt:
-"Create a [type] app with [framework]. Include [feature 1], [feature 2]. 
-Skip auth, tests, and error handling. Use mock data."
-
-Iteration prompt:
-"The [component] should [change]. Keep everything else the same."
-
-Debug prompt:
-"It's broken: [error]. Fix just this issue, don't refactor."
-
-Feature prompt:
-"Add [feature] to the existing code. Minimal changes only."
-```
-
-### No-Setup Tools for Speed
-
-| Need | Tool | Setup Time |
-|------|------|------------|
-| Web app | Lovable / Bolt.new | 0 min |
-| UI components | v0 by Vercel | 0 min |
-| Backend API | Replit | 2 min |
-| Mobile app | Lovable + Capacitor | 5 min |
-| CLI tool | Claude Code | 0 min |
-| Data pipeline | Cursor + Python | 5 min |
-| Landing page | v0 / Bolt | 0 min |
-
 ## Step 4: Tech Stack Selection
-
-### Decision Criteria
-
 | Criterion | Weight | Questions |
 |-----------|--------|-----------|
 | Setup time | HIGH | How fast from zero to running? |
@@ -223,9 +102,6 @@ Feature prompt:
 | Deployment speed | MEDIUM | How fast to get it live? |
 | Cost | LOW-MED | Free tier available? |
 | Fidelity | LOW | Does it look "real enough"? |
-
-### Stack Recommendations
-
 ```
 Web App (non-coder):
   → Lovable or Bolt.new
@@ -242,32 +118,280 @@ Mobile App:
 
 API/Backend:
   → Replit (instant)
-  → Or Hono/Express + Cursor
+```
+## Step 5: Time-Boxing
+| Project Type | Max Duration | Extension Policy |
+|-------------|-------------|-----------------|
+| Spike | 2 days | None — answer or abandon |
+| Prototype | 1 week | +3 days with justification |
+| PoC | 2 weeks | +1 week with stakeholder OK |
+| MVP | 4 weeks | +2 weeks with metrics |
+| Demo | 2 days | None |
+| Hackathon | 48 hours | None |
+```
+Morning (5 min):
+1. What's the ONE thing that matters today?
+2. What's blocking it?
+3. Am I still on scope?
 
-CLI Tool:
-  → Claude Code / Gemini CLI
-  → Node.js or Python script
+Evening (5 min):
+1. Did I hit today's goal?
+2. What did I learn?
+3. Scope creep check: did I add anything not in plan?
+```
+## Day 1
+- [x] Set up project scaffold
+- [x] Core feature v1
+- [ ] Test with mock data
+- Notes: [learnings]
+## Day 2
+- [ ] Iterate based on testing
+- [ ] Add secondary feature
+- [ ] Show to first user
+```
+## Step 6: Quality Gates
+```
+For Spike:
+- Question answered definitively
+- Approach validated or invalidated
+- Decision documented
 
-Data/ML:
-  → Cursor + Python + Jupyter
-  → Google Colab for zero-setup
+For Prototype:
+- Core interaction works
+- User can complete primary task
+- Feedback collected from 3+ users
 
-Landing Page:
-  → v0 by Vercel (React/Tailwind)
-  → Or Bolt.new (full page)
+For PoC:
+- Technical feasibility proven
+- Performance acceptable for demo
+- Integration points identified
+
+```
+## Step 7: Decision Framework
+```
+After validation, score each dimension (1-5):
+
+IMPACT:      Did users care? (engagement, feedback)
+FEASIBILITY: Was it buildable? (technical challenges)
+STRATEGIC:   Does it fit our goals? (alignment)
+COST:        Can we maintain it? (ongoing effort)
+
+Score:
+- 16-20: GRADUATE → production path
+- 11-15: PIVOT   → adjust and re-test
+- 6-10:  KILL    → archive learnings
+- 4-5:   ABORT   → stop immediately
+```
+## Project Archive: [Name]
+[Brief description]
+- [Learning 1]
+- [Learning 2]
+[Reasons with data]
+- [Code snippet / pattern]
+- [User research]
+- [Design assets]
+```
+## Step 8: Common Pitfalls
+```
+Symptom: "While I'm at it, let me also add..."
+Fix: Stick to one-pager. New ideas go to "future ideas" list.
+```
+## Step 9: Templates
+```markdown
+## Spike: [Question]
+[Specific technical question to answer]
+[2 days max]
+1. [Step 1]
+2. [Step 2]
+- Clear yes/no answer
+- Approach documented
+- Risks identified
+[Fill after spike: answer, recommendation, open questions]
 ```
 
-### Anti-Patterns
+### Prototype Review
+
+```markdown
+## Prototype Review: [Name]
+| Theme | Frequency | Severity | Action |
+|-------|-----------|----------|--------|
+| [issue] | [how many] | [high/med/low] | [fix/pivot/ignore] |
+> "[user quote]"
+> "[user quote]"
+| Metric | Target | Actual | Pass? |
+|--------|--------|--------|-------|
+| [metric] | [target] | [actual] | ✓/✗ |
+□ Graduate  □ Pivot  □ Kill
+[action items]
+```
+
+### MVP Tracker
+
+```markdown
+## MVP: [Name]
+[What we believe]
+- [ ] Core feature live
+- [ ] 5 users recruited
+- [ ] Tracking setup
+- [ ] 10 users tried it
+- [ ] Feedback collected
+- [ ] Iterate on top issue
+- [ ] 20+ users
+- [ ] Core metric measured
+- [ ] Retention check
+- [ ] Decision: scale / pivot / kill
+- [ ] If scale: graduation plan
+- [ ] If kill: archive learnings
+```
+
+### Retrospective Template
+
+```markdown
+## Retrospective: [Project Name]
+- [positive 1]
+- [positive 2]
+- [improvement 1]
+- [improvement 2]
+- [learning 1]
+- [learning 2]
+- Estimated: [X days]
+- Actual: [Y days]
+- Variance: [+/- Z days]
+- Reason: [why]
+[Yes/No + why]
+- [pattern/template/tool]
+```
+## Integration with Vibe Coding
+```
+Best for NON-CODERS building prototypes:
+→ Lovable: visual editor, auth, full-stack
+→ Bolt.new: fast prototyping, generous free tier
+→ Replit: all-in-one, zero setup
+
+Best for DEVELOPERS building prototypes:
+→ Cursor: multi-file editing, model flexibility
+→ Claude Code: terminal agent, deep codebase context
+→ v0 by Vercel: UI components (React/Tailwind)
+
+Best for TEAMS:
+→ Windsurf: fixed price, strong agent mode
+→ GitHub Copilot: works in most IDEs
+```
+## Step 10: Validation Methods
+```
+RULES:
+1. Talk about THEIR life, not your idea
+   BAD:  "Would you use an AI meal planner?"
+   GOOD: "Tell me about how you plan meals currently."
+
+2. Ask about SPECIFIC past behavior
+   BAD:  "Would you pay for this?"
+   GOOD: "Have you ever paid for a meal planning service?"
+
+3. Ask about problems, not your solution
+   BAD:  "Wouldn't it be great if AI planned your meals?"
+   GOOD: "What's the hardest part about meal planning?"
+
+4. Get commitment, not compliments
+   BAD:  "That sounds cool!" (compliment)
+```
+## Step 11: Graduation Deep Dive
+```
+GRADUATION TRIGGERS (need 2+):
+  ✓ Users actively asking "when can I use this?"
+  ✓ At least 1 user willing to pay
+  ✓ Core metric shows traction
+  ✓ Stakeholders want to invest
+  ✓ Technical feasibility proven
+
+ANTI-TRIGGERS (none of these are valid reasons):
+  ✗ "We already built it" (sunk cost)
+  ✗ "It's almost done" (famous last words)
+  ✗ "Users said it was cool" (compliment ≠ commitment)
+  ✗ "I think it could work" (not validated)
+```
+## Phase 1: Foundation (Week 1-2)
+- [ ] Code review by another developer
+- [ ] Add proper error handling
+- [ ] Add input validation
+- [ ] Security review (OWASP basics)
+  - [ ] No secrets in code
+  - [ ] SQL injection prevention
+  - [ ] XSS prevention
+  - [ ] Proper auth
+- [ ] Set up proper database
+- [ ] Environment variables
+## Phase 2: Quality (Week 3-4)
+- [ ] Tests for core flows (unit + integration)
+- [ ] CI/CD pipeline (lint, test, deploy)
+- [ ] Documentation (README, API docs)
+- [ ] Code documentation
+## Phase 3: Operations (Week 5-6)
+- [ ] Logging and monitoring
+- [ ] Staging + production environments
+- [ ] Performance baseline
+- [ ] Rollback plan
+## Phase 4: Launch (Week 7-8)
+- [ ] User documentation
+- [ ] Onboarding flow
+- [ ] Support process
+- [ ] Analytics setup
+```
+
+### Refactoring Strategy
 
 ```
-DON'T:
-- Use unfamiliar frameworks "to learn" during a time-boxed prototype
-- Set up CI/CD for throwaway projects
-- Write comprehensive tests before validating the idea
-- Pick microservices architecture for a prototype
-- Optimize for scale before validating demand
-- Spend >20% of time on styling/polish
+## Step 12: Case Studies
+```
+CONTEXT: Solo developer, idea for task management app
+TIMELINE: 3 days
 
-DO:
-- Use what you know
-- Use w
+Day 1 (8h):
+- Used Lovable to scaffold app
+- Core feature: drag-and-drop task board
+- Prompt: "Create a Kanban board with 3 columns. 
+  Tasks can be dragged between columns. Use localStorage."
+- Result: Working prototype in 4 hours
+- Showed to 5 friends, collected feedback
+
+Day 2 (6h):
+- Iterated on feedback: added due dates, labels
+- Used Lovable prompts for each feature
+- Committed after each working feature
+```
+## Step 13: Metrics
+```
+SPIKE:
+- Question answered: yes/no
+- Time spent vs estimate
+- Recommendation clarity
+
+PROTOTYPE:
+- Task completion rate (% of users who complete primary task)
+- Time to complete (seconds)
+- Error rate (mistakes per session)
+- User satisfaction (1-5 scale)
+- Net Promoter Score (would you recommend?)
+
+MVP:
+- Activation rate (% who complete onboarding)
+- Retention (D1, D7, D30)
+```
+## Speed Hacks Cheat Sheet
+```
+1. AI for EVERYTHING
+   - Planning: "Help me write a one-pager for [idea]"
+   - Scaffolding: "Create a [type] app with [features]"
+   - Debugging: "Fix this error: [paste]"
+   - Iteration: "Change X to Y"
+
+2. Mock everything
+   - Hardcode data instead of APIs
+   - Use localStorage instead of databases
+   - Skip auth (or simple password)
+   - Use placeholder images
+
+3. Skip what doesn't matter
+   - No tests (for throwaway)
+   - No CI/CD
+```

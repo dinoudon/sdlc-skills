@@ -1352,3 +1352,211 @@ Compliance automation:
   - Audit logging (immutable logs)
   - Evidence collection (automated)
 ```
+
+
+## Step 25: Platform Team Operations
+
+### On-Call Rotation
+
+```
+Rotation structure:
+  - Primary: 1 engineer, 1-week rotation
+  - Secondary: 1 engineer, 1-week rotation
+  - Escalation: Team lead → Engineering manager → VP Eng
+
+On-call responsibilities:
+  - Respond to pages within 5 minutes
+  - Triage and mitigate incidents
+  - Escalate if unable to resolve
+  - Document incidents in post-mortem
+  - Hand off to next rotation
+
+Compensation:
+  - On-call stipend: $200-500/week
+  - Incident response: Hourly rate for active work
+  - Weekend/holiday: 2x multiplier
+  - Post-incident recovery time: Comp time
+
+Tools:
+  - PagerDuty: Alerting and escalation
+  - Opsgenie: On-call management
+  - VictorOps: Incident management
+  - Slack: War room communication
+  - Zoom: Incident bridge calls
+```
+
+### Incident Response Playbook
+
+```
+Detection:
+  - Automated alerts (monitoring systems)
+  - Customer reports (support tickets)
+  - Internal discovery (team member notices)
+
+Triage (5 minutes):
+  1. Assess severity (P1-P4)
+  2. Determine scope (which services, how many users)
+  3. Assign incident commander
+  4. Create incident channel (Slack)
+  5. Post initial status update
+
+Response:
+  1. Investigate (logs, metrics, traces)
+  2. Mitigate (rollback, scale, failover)
+  3. Communicate (status page, stakeholders)
+  4. Resolve (fix root cause or implement workaround)
+  5. Verify (confirm service restored)
+
+Post-incident:
+  1. Blameless post-mortem (within 48 hours)
+  2. Document root cause
+  3. Create action items (preventive measures)
+  4. Update runbooks
+  5. Share learnings (team, organization)
+
+Communication templates:
+  Initial: "We are aware of [issue] affecting [service]. 
+  Investigating. Updates every 30 minutes."
+  
+  Update: "Root cause identified: [cause]. Implementing fix. 
+  ETA: [time]."
+  
+  Resolved: "Issue resolved. [Service] fully operational. 
+  Post-mortem to follow."
+```
+
+## Step 26: Platform Documentation
+
+### Internal Documentation Standards
+
+```
+Runbooks:
+  - Purpose: Step-by-step operational procedures
+  - Audience: On-call engineers, SREs
+  - Format: Numbered steps, expected output, rollback
+  - Review: Quarterly, after every incident use
+
+Architecture docs:
+  - Purpose: System design and decisions
+  - Audience: All engineers
+  - Format: C4 diagrams, ADRs, decision records
+  - Review: On significant changes
+
+API docs:
+  - Purpose: Internal API contracts
+  - Audience: Service consumers
+  - Format: OpenAPI spec, code examples
+  - Review: On every API change
+
+Onboarding docs:
+  - Purpose: New team member ramp-up
+  - Audience: New hires
+  - Format: Checklist, progressive complexity
+  - Review: After every new hire (incorporate feedback)
+
+Knowledge base:
+  - Purpose: Tribal knowledge capture
+  - Audience: All team members
+  - Format: FAQ, troubleshooting, how-to
+  - Review: Monthly, archive stale content
+```
+
+### Documentation Tooling
+
+```
+Wiki/knowledge base:
+  - Confluence: Enterprise wiki
+  - Notion: Flexible documentation
+  - GitBook: Developer documentation
+  - Slite: Team knowledge base
+
+Diagramming:
+  - Mermaid: Code-based diagrams
+  - Excalidraw: Hand-drawn style
+  - draw.io: General purpose
+  - Lucidchart: Enterprise diagramming
+
+Architecture decision records:
+  - adr-tools: CLI for ADRs
+  - Log4brains: ADR management
+  - Custom: Markdown in repo
+
+Docs-as-code:
+  - Markdown in Git
+  - PR-based review
+  - Automated publishing
+  - Version control
+```
+
+## Step 27: Platform Budget Management
+
+### Budget Planning
+
+```
+Cost categories:
+  Infrastructure:
+    - Cloud compute (AWS, GCP, Azure): 40-50%
+    - Storage (block, object, database): 15-20%
+    - Networking (CDN, load balancers): 5-10%
+    - Third-party services (monitoring, security): 10-15%
+  
+  Tooling:
+    - CI/CD (GitHub Actions, CircleCI): 5-8%
+    - Developer tools (IDEs, licenses): 3-5%
+    - Collaboration (Slack, Zoom, Notion): 2-3%
+  
+  People:
+    - Platform team salaries: Separate budget
+    - Training and certifications: $2-5K/person
+    - Conference attendance: $3-5K/person
+
+Budget review:
+  - Monthly: Actual vs budget analysis
+  - Quarterly: Forecast update
+  - Annually: Budget planning for next year
+
+Cost optimization:
+  - Reserved instances (1-3 year commitment)
+  - Spot instances (batch workloads)
+  - Right-sizing (match capacity to demand)
+  - Auto-scaling (scale down during off-hours)
+  - Storage lifecycle (hot → warm → cold → archive)
+```
+
+## Step 28: Platform Vendor Management
+
+### Vendor Evaluation
+
+```
+Evaluation criteria:
+  Technical (40%):
+    - Feature completeness
+    - Performance and reliability
+    - Integration capabilities
+    - API quality and documentation
+  
+  Commercial (30%):
+    - Pricing model (usage, seat, flat)
+    - Contract flexibility
+    - Volume discounts
+    - Payment terms
+  
+  Security (20%):
+    - SOC 2 / ISO 27001
+    - Data residency options
+    - Encryption (at rest, in transit)
+    - Access controls
+  
+  Support (10%):
+    - Response time SLA
+    - Support channels
+    - Documentation quality
+    - Community size
+
+Vendor management:
+  - Annual review of all vendors
+  - Consolidation opportunities
+  - Contract renegotiation
+  - Performance monitoring
+  - Exit planning (data portability)
+```

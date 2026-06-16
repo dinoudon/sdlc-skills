@@ -1525,3 +1525,187 @@ Tools:
   - Drata: Continuous monitoring
   - AuditBoard: Audit management
   - Workiva: Reporting and compliance
+
+
+## Step 28: Documentation for AI/ML
+
+### ML Model Documentation
+
+```
+Model card template:
+  Model name: [Name]
+  Version: [X.Y.Z]
+  Date: [YYYY-MM-DD]
+  
+  Overview:
+    - Purpose: What the model does
+    - Architecture: Model type and structure
+    - Training data: Dataset description
+    - Performance: Key metrics
+  
+  Intended use:
+    - Primary use cases
+    - Out-of-scope uses
+    - Users (who should use this)
+  
+  Metrics:
+    - Accuracy: X%
+    - Precision: X%
+    - Recall: X%
+    - F1 score: X
+    - Latency: Xms p99
+  
+  Training data:
+    - Source: [Dataset name]
+    - Size: [N records]
+    - Preprocessing: [Steps taken]
+    - Bias considerations: [Known biases]
+  
+  Limitations:
+    - Known failure modes
+    - Edge cases
+    - Bias risks
+  
+  Ethical considerations:
+    - Fairness assessment
+    - Privacy implications
+    - Misuse potential
+```
+
+### AI Documentation Best Practices
+
+```
+API documentation:
+  - Input format (JSON schema)
+  - Output format (JSON schema)
+  - Error codes and messages
+  - Rate limits and quotas
+  - Pricing per call
+
+Usage guidelines:
+  - Best practices for prompts
+  - Common pitfalls
+  - Performance optimization
+  - Cost optimization
+  - Safety considerations
+
+Evaluation documentation:
+  - Benchmark results
+  - Comparison with alternatives
+  - Human evaluation results
+  - Known biases and limitations
+  - Update and versioning policy
+```
+
+## Step 29: Documentation for Data
+
+### Data Dictionary Template
+
+```
+Table: [table_name]
+Description: [What this table represents]
+Owner: [Team/person]
+Update frequency: [Daily, hourly, real-time]
+
+Columns:
+| Column | Type | Description | Nullable | Default | Example |
+|--------|------|-------------|----------|---------|---------|
+| id | UUID | Primary key | No | gen_random_uuid() | abc-123 |
+| user_id | UUID | Foreign key to users | No | - | def-456 |
+| event_name | VARCHAR | Event type | No | - | page_view |
+| properties | JSONB | Event properties | Yes | {} | {"page": "/home"} |
+| created_at | TIMESTAMP | Event timestamp | No | NOW() | 2024-01-01 |
+
+Indexes:
+  - idx_events_user_id (user_id)
+  - idx_events_created_at (created_at)
+  - idx_events_event_name (event_name)
+
+Data lineage:
+  Source: Application events → Kafka → Data warehouse
+  Transformations: Deduplication, enrichment, aggregation
+  Consumers: Analytics, ML, reporting
+```
+
+### Data Pipeline Documentation
+
+```
+Pipeline: [Name]
+Schedule: [Cron expression]
+Owner: [Team/person]
+SLA: [Expected completion time]
+
+Steps:
+  1. Extract: [Source] → [Destination]
+     - Query: [SQL or API call]
+     - Frequency: [Schedule]
+     - Volume: [Rows/day]
+  
+  2. Transform: [Logic description]
+     - Business rules applied
+     - Data quality checks
+     - Aggregation logic
+  
+  3. Load: [Target table]
+     - Load strategy: [Append, upsert, replace]
+     - Partitioning: [By date, by key]
+     - Retention: [How long data is kept]
+
+Monitoring:
+  - Success criteria: [What "healthy" looks like]
+  - Alert thresholds: [When to page]
+  - Recovery procedure: [How to fix failures]
+```
+
+## Step 30: Documentation Quality
+
+### Quality Metrics
+
+```
+Coverage:
+  - % of APIs with documentation
+  - % of features with guides
+  - % of error codes documented
+  - % of configuration options documented
+
+Freshness:
+  - % of docs updated in last 90 days
+  - Average age of documentation
+  - Stale content ratio (>180 days)
+
+Helpfulness:
+  - "Was this helpful?" positive ratio
+  - Support ticket deflection rate
+  - Documentation NPS
+  - Search success rate
+
+Accessibility:
+  - WCAG compliance level
+  - Screen reader compatibility
+  - Keyboard navigation
+  - Color contrast ratios
+```
+
+### Quality Improvement Process
+
+```
+Quarterly audit:
+  1. Review all documentation pages
+  2. Check for accuracy (test code examples)
+  3. Identify gaps (missing docs)
+  4. Update stale content
+  5. Improve based on feedback
+
+Continuous improvement:
+  - Monitor feedback widgets
+  - Track support tickets for doc gaps
+  - Review search queries (what are people looking for?)
+  - A/B test documentation layouts
+  - Collect qualitative feedback (user interviews)
+
+Automation:
+  - Link checking (weekly)
+  - Code example testing (on PR)
+  - Style guide enforcement (vale)
+  - Accessibility scanning (axe)
+  - Freshness monitoring (alert on >90 days)

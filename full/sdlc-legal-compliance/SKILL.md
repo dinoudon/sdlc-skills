@@ -1561,3 +1561,214 @@ Templates:
   
   Resolution: "The issue has been resolved. [Root cause]. 
   [Preventive measures]. We apologize for the inconvenience."
+
+
+## Step 31: SaaS Legal Framework
+
+### SaaS Agreement Key Terms
+
+```
+Service description:
+  - Features and functionality
+  - Service level agreement (SLA)
+  - Support terms and response times
+  - Maintenance windows
+
+Subscription terms:
+  - Term length (monthly, annual, multi-year)
+  - Auto-renewal provisions
+  - Price escalation clauses
+  - Usage limits and overages
+
+Data terms:
+  - Data ownership (customer owns their data)
+  - Data processing (DPA reference)
+  - Data portability (export on termination)
+  - Data retention (how long after termination)
+
+IP terms:
+  - License grant (to use the service)
+  - Feedback license (customer suggestions)
+  - Pre-existing IP (each party retains own)
+  - Work product (if professional services)
+
+Limitation of liability:
+  - Cap: Typically 12 months of fees
+  - Exclusions: Data breach, IP infringement, gross negligence
+  - Consequential damages: Typically excluded
+
+Termination:
+  - For convenience: 30-90 days notice
+  - For cause: Material breach + cure period
+  - Effect: Data return (30 days), data deletion (90 days)
+```
+
+### SLA Framework
+
+```
+Uptime SLA:
+  - Target: 99.9% (43.8 min/month downtime)
+  - Measurement: Monthly, excluding scheduled maintenance
+  - Credits: 5% per 0.1% below SLA (capped at 30%)
+  - Reporting: Monthly uptime report
+
+Response time SLA:
+  - P1 (Critical): 1 hour response, 4 hour resolution
+  - P2 (High): 4 hour response, 8 hour resolution
+  - P3 (Medium): 8 hour response, 24 hour resolution
+  - P4 (Low): 24 hour response, 72 hour resolution
+
+Support SLA:
+  - Channels: Email, chat, phone (based on tier)
+  - Hours: 24/7 for enterprise, business hours for standard
+  - Escalation: Defined escalation path
+  - Dedicated CSM: For enterprise accounts
+```
+
+## Step 32: Regulatory Compliance
+
+### Industry-Specific Compliance
+
+```
+Healthcare (HIPAA):
+  - Business associate agreement (BAA)
+  - PHI encryption requirements
+  - Access controls and audit logging
+  - Breach notification (60 days)
+  - Annual risk assessment
+
+Financial (SOC 1, PCI DSS):
+  - SOC 1: Controls over financial reporting
+  - PCI DSS: Cardholder data protection
+  - Annual audit
+  - Quarterly vulnerability scans
+  - Penetration testing (annual)
+
+Government (FedRAMP, ITAR):
+  - FedRAMP: Federal cloud security
+  - ITAR: Export control for defense
+  - Security assessment (3PAO)
+  - Continuous monitoring
+  - Annual authorization
+
+Education (FERPA):
+  - Student data protection
+  - Parent consent requirements
+  - Data sharing restrictions
+  - Directory information policies
+```
+
+### Compliance Monitoring
+
+```
+Continuous monitoring:
+  - Policy compliance checks (automated)
+  - Access review (quarterly)
+  - Vulnerability scanning (weekly)
+  - Penetration testing (annual)
+  - Audit log review (monthly)
+
+Reporting:
+  - Compliance dashboard (real-time)
+  - Risk register (quarterly update)
+  - Board report (annual)
+  - Regulatory filing (as required)
+
+Tools:
+  - Vanta: SOC 2, ISO 27001 automation
+  - Drata: Continuous compliance
+  - Lacework: Cloud security
+  - Prisma Cloud: Multi-cloud security
+  - Prowler: AWS security
+```
+
+## Step 33: Legal Risk Management
+
+### Risk Assessment Framework
+
+```
+Risk categories:
+  - Contractual: Breach, disputes, liability
+  - Regulatory: Non-compliance, fines, sanctions
+  - IP: Infringement, theft, disputes
+  - Employment: Discrimination, wrongful termination
+  - Data: Breach, privacy violations, misuse
+  - Litigation: Lawsuits, class actions
+
+Risk assessment process:
+  1. Identify risks (legal team, business stakeholders)
+  2. Assess likelihood and impact (1-5 scale)
+  3. Determine risk tolerance (accept, mitigate, transfer, avoid)
+  4. Implement controls
+  5. Monitor and review (quarterly)
+
+Risk matrix:
+  | Risk | Likelihood | Impact | Score | Mitigation |
+  |------|------------|--------|-------|------------|
+  | Data breach | 3 | 5 | 15 | Encryption, access controls, insurance |
+  | IP infringement | 2 | 4 | 8 | Patent search, legal review |
+  | Employment claim | 2 | 3 | 6 | Training, documentation, insurance |
+```
+
+## Step 34: Contract Lifecycle Management
+
+### CLM Process
+
+```
+Stage 1: Request
+  - Business submits contract request
+  - Legal triages (template vs custom)
+  - Assign to appropriate attorney
+
+Stage 2: Drafting
+  - Use approved templates
+  - Customize for specific deal
+  - Legal review of non-standard terms
+
+Stage 3: Negotiation
+  - Track all changes (redlines)
+  - Escalation path for business terms
+  - Legal approval for liability/indemnity
+
+Stage 4: Execution
+  - E-signature (DocuSign, HelloSign)
+  - Counter-execution tracking
+  - Filing in contract repository
+
+Stage 5: Management
+  - Obligation tracking
+  - Renewal management (90/60/30 day alerts)
+  - Performance monitoring
+  - Compliance verification
+
+Stage 6: Renewal/Termination
+  - Performance evaluation
+  - Renegotiation if needed
+  - Offboarding checklist
+```
+
+### Contract Repository
+
+```
+Organization:
+  - By type (customer, vendor, partner, employment)
+  - By status (active, expired, pending)
+  - By department (sales, procurement, HR)
+  - By risk level (high, medium, low)
+
+Metadata:
+  - Contract ID
+  - Parties
+  - Effective date
+  - Expiration date
+  - Auto-renewal terms
+  - Key terms (value, SLA, liability cap)
+  - Owner (internal)
+  - Status
+
+Tools:
+  - Ironclad: CLM platform
+  - DocuSign CLM: Contract management
+  - Juro: Contract automation
+  - ContractWorks: Contract repository
+  - Agiloft: Enterprise CLM

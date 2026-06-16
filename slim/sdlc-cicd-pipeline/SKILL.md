@@ -11,12 +11,16 @@ metadata:
     related_skills: [sdlc-architecture-design, sdlc-testing-qa, sdlc-deployment, github-pr-workflow]
 ---
 
-# CI/CD Pipeline Design
-
-Pipeline architecture, GitHub Actions, GitLab CI, Docker builds, caching, security scanning, GitOps, DORA metrics, trunk-based development, supply chain, progressive delivery.
-
+---
+name: sdlc-cicd-pipeline
+description: "CI/CD pipeline design with GitHub Actions and GitLab CI. Docker multi-stage builds, caching, matrix builds, test sharding, security scanning, GitOps, DORA metrics, trunk-based development, supply chain security (SLSA/Sigstore/SBOM), serverless CI/CD, preview environments, multi-platform builds, progressive delivery, database CI/CD, pipeline governance."
+version: 4.8.0-moderate
+author: Dinoudon
+license: MIT
+platforms: [linux, macos, windows]
+metadata:
+  
 ## When to Use
-
 Trigger when user:
 - Designs or debugs CI/CD pipelines
 - Sets up GitHub Actions or GitLab CI
@@ -24,25 +28,12 @@ Trigger when user:
 - Configures caching, matrix builds, test sharding
 - Implements GitOps (ArgoCD, Flux)
 - Measures DORA metrics
-
 ## Step 1: Pipeline Architecture
-
-### Standard Stages
 ```
 lint → build → unit-test → integration-test → security-scan →
 package → deploy-staging → e2e-test → deploy-production
 ```
-
-### Principles
-- **Cache aggressively** — actions/cache, Docker --mount=type=cache
-- **Parallelize** — matrix builds, test sharding
-- **Fast feedback** — lint first (< 30s), unit tests (< 2min)
-- **Ephemeral environments** — preview deploys per PR
-- **Artifact signing** — Sigstore/cosign for container images
-
 ## Step 2: GitHub Actions
-
-### Full Pipeline Template
 ```yaml
 name: CI/CD Pipeline
 on:
@@ -59,128 +50,12 @@ jobs:
   lint:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          cache: 'npm'
-      - run: npm ci
-      - run: npm run lint
-      - run: npm run typecheck
-
-  test:
-    needs: lint
-    strategy:
-      fail-fast: false
-      matrix:
-        shard: [1, 2, 3, 4]
-    services:
-      postgres:
-        image: postgres:16
-        env:
-          POSTGRES_PASSWORD: test
-        ports: ['5432:5432']
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          cache: 'npm'
-      - run: npm ci
-      - run: npm test -- --shard=${{ matrix.shard }}/4
-
-  build:
-    needs: test
-    steps:
-      - uses: actions/checkout@v4
-      - uses: docker/setup-buildx-action@v3
-      - uses: docker/build-push-action@v5
-        with:
-          push: false
-          tags: myapp:${{ github.sha }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-
-  deploy:
-    needs: build
-    if: github.ref == 'refs/heads/main'
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - run: ./deploy.sh
 ```
-
-### Caching Best Practices
-```yaml
-- uses: actions/cache@v4
-  with:
-    path: |
-      node_modules
-      ~/.npm
-    key: deps-${{ runner.os }}-${{ hashFiles('**/package-lock.json') }}
-    restore-keys: deps-${{ runner.os }}-
-```
-
-**What to cache:** node_modules/, pip cache, go mod cache, cargo registry
-**What NOT to cache:** build artifacts (use actions/upload-artifact)
-
-### Reusable Workflows
-```yaml
-# .github/workflows/reusable-deploy.yml
-name: Reusable Deploy
-on:
-  workflow_call:
-    inputs:
-      environment:
-        required: true
-        type: string
-    secrets:
-      DEPLOY_KEY:
-        required: true
-
-jobs:
-  deploy:
-    runs-on: ubuntu-latest
-    environment: ${{ inputs.environment }}
-    steps:
-      - uses: actions/checkout@v4
-      - run: ./deploy.sh
-        env:
-          DEPLOY_KEY: ${{ secrets.DEPLOY_KEY }}
-```
-
-### Matrix Builds
-```yaml
-strategy:
-  fail-fast: false
-  matrix:
-    os: [ubuntu-latest, macos-latest]
-    node: [18, 20, 22]
-    exclude:
-      - os: macos-latest
-        node: 18
-    include:
-      - os: ubuntu-latest
-        node: 22
-        experimental: true
-```
-
 ## Step 3: GitLab CI
-
-### Key Patterns
-
-### Pipeline Architectures
 - **Branch pipelines:** run on every push (default)
 - **Merge request pipelines:** run only on MRs
 - **Parent-child pipelines:** parent triggers child via `trigger:` keyword
 - **Multi-project pipelines:** cross-repo triggers
-
-### Key Patterns
 ```yaml
 .base_test:
   stage: test
@@ -197,44 +72,8 @@ integration_tests:
     - postgres:16
   script: [pytest tests/integration]
 
-test:
-  needs: [build]
-  script: [pytest]
-
-cache:
-  key: ${CI_COMMIT_REF_SLUG}
-  paths:
-    - node_modules/
-    - .npm/
-  policy: pull-push
-
-include:
-  - local: ci/build.yml
-  - template: Security/SAST.gitlab-ci.yml
-  - template: Security/Secret-Detection.gitlab-ci.yml
 ```
-
-### Rules (replaces only/except)
-```yaml
-# Parent-child pipeline
-generate-child:
-  stage: deploy
-  trigger:
-    include: child-pipeline.yml
-    strategy: depend  # Parent waits for child
-```
-
-```yaml
-deploy:
-  script: [./deploy.sh]
-  rules:
-    - if: $CI_COMMIT_BRANCH == "main"
-    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
-      when: never
-```
-
 ## Step 4: Docker Multi-Stage Builds
-
 ```dockerfile
 FROM node:20-slim AS builder
 WORKDIR /app
@@ -251,19 +90,8 @@ COPY --from=builder /app/node_modules ./node_modules
 COPY package*.json ./
 EXPOSE 3000
 USER node
-CMD ["node", "dist/server.js"]
 ```
-
-### Container Security Scanning
-```bash
-trivy image myapp:latest
-grype myapp:latest
-snyk container test myapp:latest
-```
-
 ## Step 5: GitOps
-
-### ArgoCD
 ```yaml
 apiVersion: argoproj.io/v1alpha1
 kind: Application
@@ -280,57 +108,357 @@ spec:
     namespace: production
   syncPolicy:
     automated:
-      prune: true
-      selfHeal: true
-    syncOptions:
-      - CreateNamespace=true
 ```
-
-### Flux
-```yaml
-apiVersion: source.toolkit.fluxcd.io/v1
-kind: GitRepository
-metadata:
-  name: myapp
-spec:
-  interval: 1m
-  url: https://github.com/org/k8s-manifests
-  ref:
-    branch: main
----
-apiVersion: kustomize.toolkit.fluxcd.io/v1
-kind: Kustomization
-metadata:
-  name: myapp
-spec:
-  interval: 5m
-  path: ./apps/myapp/overlays/production
-  prune: true
-  sourceRef:
-    kind: GitRepository
-    name: myapp
-```
-
 ## Step 6: Trunk-Based Development
-
 Source: https://trunkbaseddevelopment.com/
-
-### Core Principles
 - All developers commit to one branch (main/trunk)
 - Feature branches are SHORT: 1-2 days max, merged or deleted
 - Use feature flags for incomplete work behind the trunk
 - Release branches (if needed) are cut from trunk, never merge back
-
-### Key Rules
 - CI must pass on every commit to trunk. Broken trunk = top priority fix.
 - Short-lived branches: < 1 day ideally, < 2 days max.
 - No "code freeze" periods — trunk is always deployable.
 - Branch by abstraction (feature flags, interfaces) instead of branching.
-
 ## Step 7: CI/CD Anti-Patterns
-
 | Anti-Pattern | Why It's Bad | Fix |
 |--------------|-------------|-----|
 | Long-lived feature branches | Merge conflicts, stale code | Trunk-based + feature flags |
 | Broken CI ignored | Erodes trust | Branch protection: green before merge |
-| Manual approva
+| Manual approval gates everywhere | Humans become bottlenecks | Automated quality gates |
+| Flaky tests | Pass/fail randomly erodes trust | Quarantine and fix immediately |
+| No caching | Re-downloading deps every run | Cache with lockfile hash keys |
+| CI does everything in one job | Can't parallelize, slow feedback | Split into focused jobs |
+| Snowflake environments | Staging != production | IaC (Terraform/Pulumi) |
+| Manual deployment | Error-prone, slow | Fully automated deploy pipelines |
+| No rollback mechanism | Can't recover from bad deploy | Always have rollback plan |
+| Secret sprawl | Credentials in code/CI systems | Centralize (Vault, cloud secrets) |
+## Step 8: DORA Metrics
+Source: https://dora.dev/research/
+1. **Lead Time for Changes** — commit to production
+2. **Deployment Frequency** — how often code reaches production
+3. **Change Failure Rate** — % of deployments causing failures
+4. **Time to Restore Service** — recovery time from failures
+| Metric | Elite | High | Medium | Low |
+|--------|-------|------|--------|-----|
+| Lead Time | < 1 hour | 1 day-1 week | 1 week-1 month | > 6 months |
+| Deploy Frequency | On demand | Daily-weekly | Monthly | < 1/year |
+| Change Failure Rate | 0-15% | 16-30% | 16-30% | 16-30% |
+| Time to Restore | < 1 hour | < 1 day | < 1 week | > 6 months |
+## Step 9: Security Scanning in CI
+```yaml
+- run: semgrep --config=auto --severity=ERROR .
+- run: trivy fs --scanners vuln,secret,misconfig .
+- uses: github/codeql-action/analyze@v3
+- uses: actions/dependency-review-action@v4
+  with:
+    fail-on-severity: high
+```
+## Step 10: Supply Chain Security
+Keyless artifact signing. No long-lived keys.
+```yaml
+- uses: sigstore/cosign-installer@v3
+- run: cosign sign --yes ${{ env.REGISTRY }}/${{ env.IMAGE }}@${{ steps.build.outputs.digest }}
+  env:
+    COSIGN_EXPERIMENTAL: "1"
+```
+## Pitfalls
+1. **Don't run everything in one job** — split lint, test, build, deploy
+2. **Don't ignore flaky tests** — quarantine and fix immediately
+3. **Don't skip caching** — lockfile hash key for deterministic invalidation
+4. **Don't use long-lived branches** — trunk-based + feature flags
+5. **Don't skip branch protection** — require green CI before merge
+6. **Don't manually deploy** — automate fully
+7. **Don't skip security scanning** — SAST + SCA + secrets in every pipeline
+8. **Don't use `fail-fast: true`** — one failure shouldn't cancel other matrix legs
+9. **Don't forget concurrency groups** — cancel stale runs on same PR
+10. **Don't skip artifact signing** — Sigstore/cosign for container images
+## Step 11: DORA 2024 — AI in CI/CD
+Source: https://dora.dev/research/2024-dora-report/
+**Key finding:** AI that augments developers improves throughput. AI that replaces review gates without human oversight increases change failure rate.
+```yaml
+docs:
+  runs-on: ubuntu-latest
+  steps:
+    - uses: actions/checkout@v4
+    - run: pip install mkdocs-material
+    - run: mkdocs build --strict
+    - uses: actions/upload-pages-artifact@v3
+      with:
+        path: site/
+```
+## Step 12: Green CI/CD Patterns
+**Green CI checklist:**
+- [ ] Cancel stale workflow runs (concurrency groups)
+- [ ] Cache aggressively (deps, Docker layers, test fixtures)
+- [ ] Use `paths:` filters — skip CI for docs-only changes
+- [ ] Avoid macOS runners when Linux suffices (10x energy cost)
+- [ ] Schedule nightly heavy jobs during green grid windows
+## Step 13: Test Sharding
+```yaml
+test:
+  strategy:
+    matrix:
+      shard: [1/4, 2/4, 3/4, 4/4]
+  steps:
+    - run: npx playwright test --shard=${{ matrix.shard }}
+```
+## Step 14: GitHub Actions Security Hardening
+```yaml
+- uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11  # v4.1.1
+```
+## Step 15: Serverless CI/CD
+```yaml
+- uses: aws-actions/configure-aws-credentials@v4
+  with:
+    role-to-assume: arn:aws:iam::123456789012:role/GitHubActionsRole
+    aws-region: us-east-1
+- uses: aws-actions/setup-sam@v2
+- run: sam build --cached --parallel
+- run: sam deploy --stack-name myapp --resolve-s3 --capabilities CAPABILITY_IAM
+```
+## Step 16: Preview Environments
+```yaml
+name: Preview Environment
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+concurrency:
+  group: preview-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  deploy-preview:
+    runs-on: ubuntu-latest
+    environment:
+      name: pr-${{ github.event.pull_request.number }}
+      url: https://pr-${{ github.event.pull_request.number }}.preview.example.com
+```
+## Step 17: AI in CI/CD
+```yaml
+- uses: coderabbitai/ai-pr-reviewer@v1
+  with:
+    review-type: auto
+    path-instructions: |
+      src/api/**: Security and input validation focus
+      src/db/**: SQL injection and performance focus
+```
+## Step 18: Multi-Platform Builds
+```yaml
+- uses: docker/setup-qemu-action@v3
+  with:
+    platforms: linux/amd64,linux/arm64
+- uses: docker/setup-buildx-action@v3
+- uses: docker/build-push-action@v5
+  with:
+    push: true
+    platforms: linux/amd64,linux/arm64
+    tags: ghcr.io/org/myapp:latest
+    cache-from: type=gha
+    cache-to: type=gha,mode=max
+```
+## Step 19: Advanced Dependency Caching
+**Go:** `actions/setup-go@v5` with `cache: true`
+**Rust:** `Swatinem/rust-cache@v2`
+**Python:** `actions/setup-python@v5` with `cache: 'pip'` or uv cache
+**JVM:** `actions/setup-java@v4` with `cache: 'gradle'` or `'maven'`
+**Guidelines:**
+- Lockfile hash in key for deterministic invalidation
+- Always set `restore-keys` for partial cache hits
+- Don't cache `node_modules` in npm — use `~/.npm` + `npm ci`
+- Monitor cache size — GitHub limits 10GB per repo
+```yaml
+- uses: pnpm/action-setup@v4
+  with:
+    version: 9
+- uses: actions/setup-node@v4
+  with:
+    node-version: '20'
+    cache: 'pnpm'  # Auto-caches pnpm store
+```
+## Step 20: Pipeline Security Hardening
+```yaml
+# AWS
+- uses: aws-actions/configure-aws-credentials@v4
+  with:
+    role-to-assume: arn:aws:iam::123456789012:role/GitHubActionsRole
+    aws-region: us-east-1
+
+# GCP
+- uses: google-github-actions/auth@v2
+  with:
+    workload_identity_provider: projects/123/providers/github
+    service-account: deploy@project.iam.gserviceaccount.com
+
+# Azure
+- uses: azure/login@v2
+  with:
+```
+## Step 21: Build Reproducibility
+```dockerfile
+FROM node:20.11.0-slim@sha256:abc123... AS builder
+COPY package.json package-lock.json ./
+RUN npm ci --ignore-scripts
+ENV SOURCE_DATE_EPOCH=1
+RUN npm run build
+RUN find dist -exec touch -t 197001010000.00 {} +
+```
+## Step 23: Monorepo CI Patterns
+**Git-based affected detection (manual):**
+```yaml
+- name: Detect affected packages
+  id: affected
+  run: |
+    CHANGED=$(git diff --name-only origin/main...HEAD)
+    PACKAGES=$(echo "$CHANGED" | cut -d/ -f1-2 | sort -u)
+    echo "packages=$PACKAGES" >> $GITHUB_OUTPUT
+
+- name: Build affected only
+  run: |
+    for pkg in ${{ steps.affected.outputs.packages }}; do
+      if [ -f "$pkg/package.json" ]; then
+        cd "$pkg" && npm ci && npm run build && cd -
+      fi
+    done
+```
+## Step 24: Pipeline Cost Optimization
+```yaml
+# Save cache only on main (PRs restore only)
+- uses: actions/cache/save@v4
+  if: github.ref == 'refs/heads/main'
+  with:
+    path: node_modules
+    key: deps-${{ runner.os }}-${{ hashFiles('**/package-lock.json') }}
+
+- uses: actions/cache/restore@v4
+  with:
+    path: node_modules
+    key: deps-${{ runner.os }}-${{ hashFiles('**/package-lock.json') }}
+    restore-keys: deps-${{ runner.os }}-
+
+# Conditional cache restore (skip expensive step on hit)
+- id: cache
+```
+## Step 25: Pipeline Governance
+```yaml
+- run: conftest test --policy policies/ manifests/
+- run: kyverno apply policies/ --resource manifests/
+```
+## Step 26: Deployment at Scale
+| Feature | Spinnaker | Argo Rollouts | Flagger |
+|---------|-----------|---------------|---------|
+| Scope | Full CD platform | K8s-native controller | Progressive delivery |
+| Overhead | Heavy | Lightweight | Lightweight |
+| Best For | Large orgs, multi-cloud | ArgoCD teams | Metric-driven promotion |
+```yaml
+apiVersion: flagger.app/v1beta1
+kind: Canary
+metadata:
+  name: myapp
+spec:
+  targetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: myapp
+  progressDeadlineSeconds: 600
+  service:
+    port: 80
+    targetPort: 8080
+    gateways:
+      - public-gateway.istio-system.svc.cluster.local
+```
+## Step 27: Multi-Environment Management
+```yaml
+# base/kustomization.yaml
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - deployment.yaml
+  - service.yaml
+commonLabels:
+  app: myapp
+
+# overlays/dev/kustomization.yaml
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - ../../base
+namePrefix: dev-
+```
+## Step 28: Database CI/CD
+```yaml
+services:
+  postgres:
+    image: postgres:16
+    ports: ['5432:5432']
+    options: --health-cmd pg_isready
+steps:
+  - run: npx prisma migrate deploy
+  - run: npx prisma db seed
+  - run: npm test -- --testPathPattern=integration
+```
+## Step 29: Progressive Delivery
+```yaml
+apiVersion: argoproj.io/v1alpha1
+kind: AnalysisTemplate
+metadata:
+  name: success-rate
+spec:
+  metrics:
+    - name: success-rate
+      interval: 1m
+      count: 5
+      successCondition: result[0] >= 0.99
+      failureLimit: 2
+      provider:
+        prometheus:
+          address: http://prometheus.monitoring:9090
+          query: |
+```
+## Step 30: SLSA Detailed
+```yaml
+provenance:
+  needs: build
+  permissions:
+    actions: read
+    id-token: write
+    packages: write
+  uses: slsa-framework/slsa-github-generator/.github/workflows/generator_generic_slsa3.yml@v2.1.0
+  with:
+    base64-subjects: "${{ needs.build.outputs.hashes }}"
+    provenance-name: "myapp.intoto.jsonl"
+    upload-assets: true
+```
+## Step 31: Sigstore
+```
+OIDC Provider → Fulcio (CA) → Cosign (Sign) → Rekor (Transparency Log)
+```
+## Step 32: Dependency Security
+| Feature | Dependabot | Renovate | Socket.dev | Snyk |
+|---------|-----------|----------|------------|------|
+| Platforms | GitHub only | GitHub/GitLab/Bitbucket | GitHub App | Multi-platform |
+| Package managers | 15 | 80+ | npm/pip/Go/Maven | 10+ + containers |
+| Malicious detection | ❌ | ❌ | ✅ | Partial |
+| SAST | ❌ | ❌ | ❌ | ✅ |
+**Recommended:** Renovate (updates) + Socket.dev (malicious detection) + Snyk (SCA+SAST)
+```jsonc
+// renovate.json
+{
+  "extends": ["config:recommended", ":semanticCommits"],
+  "packageRules": [
+    {
+      "matchUpdateTypes": ["patch"],
+      "automerge": true,
+      "automergeType": "pr",
+      "automergeStrategy": "squash"
+    },
+    {
+      "matchDepTypes": ["devDependencies"],
+      "matchUpdateTypes": ["minor", "patch"],
+      "groupName": "dev dependencies (non-major)",
+      "automerge": true
+```
+## Step 33: GitHub Actions Hardening (Complete)
+```bash
+pinact run .github/workflows/*.yml
+```

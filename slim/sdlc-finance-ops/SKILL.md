@@ -11,12 +11,17 @@ metadata:
     related_skills: [sdlc-product-growth, sdlc-gtm-strategy, sdlc-hiring-talent, sdlc-legal-compliance]
 ---
 
-# Finance & Operations
-
-Unit economics, fundraising, financial planning, and operational infrastructure for software companies.
-
+---
+name: sdlc-finance-ops
+description: "Software company finance and operations: unit economics, SaaS metrics, fundraising (seed to IPO), financial planning, burn rate, runway, budgeting, cap table, equity, stock options, board management, vendor management, procurement, insurance."
+version: 6.0.0-moderate
+author: Dinoudon
+license: MIT
+platforms: [linux, macos, windows]
+metadata:
+  hermes:
+    tags: [sdlc, finance, operations, unit-economics, fundraising, saas-metrics, burn-rate, runway, cap-ta
 ## When to Use
-
 Trigger when user:
 - Calculates unit economics (LTV, CAC, payback period)
 - Plans fundraising (seed, Series A/B/C, IPO)
@@ -26,11 +31,7 @@ Trigger when user:
 - Prepares board meeting materials
 - Evaluates vendor contracts or procurement
 - Plans budget or headcount
-
 ## Step 1: SaaS Unit Economics
-
-### Core Metrics
-
 ```
 MRR (Monthly Recurring Revenue)
   = Σ (customers × monthly subscription)
@@ -47,64 +48,8 @@ LTV (Customer Lifetime Value)
 CAC (Customer Acquisition Cost)
   = Total sales & marketing spend / new customers acquired
 
-LTV:CAC Ratio
-  = LTV / CAC (target: >3:1)
-
-CAC Payback Period
-  = CAC / (ARPU × gross margin) (target: <18 months)
-
-NRR (Net Revenue Retention)
-  = (start MRR + expansion - contraction - churn) / start MRR × 100
-
-Gross Margin
-  = (Revenue - COGS) / Revenue (target: >70% for SaaS)
-
-Burn Multiple
-  = Net Burn / Net New ARR (target: <2x)
-
-Rule of 40
-  = Revenue growth rate (%) + profit margin (%) > 40%
 ```
-
-### Unit Economics Example
-
-```
-Scenario: B2B SaaS company
-
-ARPU: $500/month
-Gross margin: 80%
-Monthly churn: 3%
-LTV: $500 × 0.80 / 0.03 = $13,333
-
-CAC: $3,000
-LTV:CAC = $13,333 / $3,000 = 4.4:1 (healthy)
-
-CAC Payback = $3,000 / ($500 × 0.80) = 7.5 months (great)
-
-NRR: 115% (expansion outpaces churn)
-```
-
-### Cohort Analysis
-
-```
-Revenue cohorts show if unit economics improve over time:
-
-Cohort Q1 2025: 100 customers, $50K MRR
-  Q2 2025: $52K MRR (+4% expansion)
-  Q3 2025: $54K MRR (+8% from start)
-  Q4 2025: $56K MRR (+12% from start)
-  → Healthy expansion revenue
-
-Cohort Q1 2025: 100 customers, $50K MRR
-  Q2 2025: $45K MRR (-10% churn)
-  Q3 2025: $40K MRR (-20% from start)
-  → Churn problem, investigate onboarding
-```
-
 ## Step 2: Fundraising
-
-### Funding Stages
-
 | Stage | Amount | Traction | Valuation | Dilution |
 |-------|--------|----------|-----------|----------|
 | **Pre-seed** | $100K-$1M | Idea/prototype | $2-5M | 15-25% |
@@ -113,9 +58,6 @@ Cohort Q1 2025: 100 customers, $50K MRR
 | **Series B** | $20M-$50M | $5-20M ARR, scaling | $80-300M | 10-20% |
 | **Series C+** | $50M-$200M+ | $20M+ ARR, market leader | $300M+ | 10-15% |
 | **IPO** | Public offering | $100M+ ARR, profitable path | Market decides | Varies |
-
-### Fundraising Process
-
 ```
 1. Preparation (2-4 weeks)
    □ Update pitch deck (10-12 slides)
@@ -132,48 +74,8 @@ Cohort Q1 2025: 100 customers, $50K MRR
 3. First Meetings (2-3 weeks)
    □ 30-min pitch meeting
    □ Share deck + financial model
-   □ Get feedback and interest level
-
-4. Partner Meetings (1-2 weeks)
-   □ Present to full partnership
-   □ Deep dive on metrics, market, team
-
-5. Due Diligence (2-4 weeks)
-   □ Customer references
-   □ Technical diligence
-   □ Financial audit
-   □ Legal review
-
-6. Term Sheet (1 week)
-   □ Negotiate terms (valuation, board seats, liquidation prefs)
-   □ Sign term sheet
-   □ Exclusivity period (30-60 days)
-
-7. Close (4-8 weeks)
-   □ Legal documentation
-   □ Money wires
-   □ Announcement
 ```
-
-### Pitch Deck Structure
-
-```
-1. Title: Company name, one-line description, raise amount
-2. Problem: What's broken? Who feels the pain?
-3. Solution: How you fix it. Demo screenshot.
-4. Market: TAM/SAM/SOM with sources
-5. Business model: How you make money
-6. Traction: Revenue, growth, key metrics (chart)
-7. Competition: Positioning map (not feature matrix)
-8. Team: Founders + key hires, relevant experience
-9. Financials: Revenue projections, unit economics
-10. Ask: How much, what you'll do with it, milestones
-```
-
 ## Step 3: Financial Planning
-
-### Financial Model Components
-
 ```
 Revenue Model:
   - New customers/month (from sales pipeline)
@@ -190,47 +92,8 @@ Cost Model:
 Key Outputs:
   - Monthly burn rate
   - Runway (months of cash remaining)
-  - Break-even date
-  - Revenue at break-even
 ```
-
-### Runway Calculation
-
-```
-Runway = Cash in bank / Monthly net burn
-
-Example:
-Cash: $5M
-Monthly revenue: $200K
-Monthly expenses: $400K
-Net burn: $200K/month
-Runway: $5M / $200K = 25 months
-
-Target: Always have 18-24 months of runway
-Raise when: 9-12 months remaining (to allow 3-6 months for fundraising)
-```
-
-### Headcount Planning
-
-```
-Engineering team:
-  Engineers: 60% of headcount
-  Managers: 10% of headcount
-  Product/Design: 15% of headcount
-  QA/SDET: 10% of headcount
-  DevOps/SRE: 5% of headcount
-
-Revenue per employee target:
-  Seed: $100K-$200K per employee
-  Series A: $200K-$300K per employee
-  Series B+: $300K-$500K per employee
-  Public: $500K+ per employee
-```
-
 ## Step 4: Cap Table & Equity
-
-### Cap Table Example
-
 ```
 Founder A: 40% (4,000,000 shares)
 Founder B: 30% (3,000,000 shares)
@@ -248,27 +111,7 @@ Angel investors: 4%
 Series A investors: 20%
 Total: 100%
 ```
-
-### Equity Best Practices
-
-```
-Employee equity grants:
-  Junior IC: 0.01-0.05%
-  Senior IC: 0.05-0.25%
-  Staff IC: 0.1-0.5%
-  VP/Director: 0.5-1.5%
-  C-level: 1-5%
-
-Vesting: 4 years, 1-year cliff (standard)
-Cliff: No equity until 1 year, then 25% vests
-Monthly: Remaining 75% vests monthly over 3 years
-Acceleration: Single trigger (acquisition) or double trigger (acquisition + termination)
-```
-
 ## Step 5: Board Management
-
-### Board Meeting Structure
-
 ```
 Quarterly board meeting (2-3 hours):
 
@@ -285,28 +128,455 @@ Quarterly board meeting (2-3 hours):
    - Sales pipeline, marketing, customer success
    
 5. People Update (15 min)
-   - Headcount, hiring, culture, key departures
-   
-6. Key Decisions (30 min)
-   - Strategic decisions requiring board input
-   
-7. Executive Session (15 min)
-   - Board meets without management
 ```
+## Step 6: Vendor & Operations
+```
+Criteria for SaaS vendor selection:
+1. Security: SOC 2, GDPR compliance, data residency
+2. Reliability: SLA, uptime history, incident response
+3. Cost: Per-user vs flat rate, annual vs monthly, volume discounts
+4. Integration: API quality, SSO, SAML, SCIM
+5. Lock-in: Data export, migration support, contract terms
+6. Support: Response time, dedicated CSM, escalation path
+```
+## Step 7: Financial Modeling
+```
+Revenue Model (Monthly):
+┌─────────────────────────────────────────────────────┐
+│ Month        │ M1    │ M2    │ M3    │ ... │ M12   │
+├──────────────┼───────┼───────┼───────┼─────┼───────┤
+│ New customers│ 20    │ 25    │ 30    │ ... │ 50    │
+│ Churned      │ -2    │ -3    │ -3    │ ... │ -5    │
+│ Net new      │ 18    │ 22    │ 27    │ ... │ 45    │
+│ Total cust.  │ 118   │ 140   │ 167   │ ... │ 450   │
+│ ARPU         │ $500  │ $500  │ $500  │ ... │ $520  │
+│ MRR          │ $59K  │ $70K  │ $84K  │ ... │ $234K │
+│ ARR (MRR×12) │ $708K │ $840K │ $1M   │ ... │ $2.8M │
+└──────────────┴───────┴───────┴───────┴─────┴───────┘
 
-### Board Reporting Template
+Cost Model (Monthly):
+┌─────────────────────────────────────────────────────┐
+```
+## Step 8: Accounting & Tax Basics
+```
+ASC 606 (Revenue Recognition):
+
+Recognized when:
+1. Contract identified
+2. Performance obligations identified
+3. Transaction price determined
+4. Price allocated to obligations
+5. Revenue recognized when obligation satisfied
+
+Example:
+Annual contract: $12,000/year
+Monthly recognition: $1,000/month
+Not $12,000 upfront (even if paid in advance)
+
+Deferred revenue: Cash received but not yet recognized
+```
+## Pitfalls
+1. **Vanity metrics** — "10,000 signups" means nothing without activation and retention data.
+2. **Raising too much** — More money = more dilution + pressure to grow faster than healthy.
+3. **Raising too little** — Running out of money mid-raise is a death sentence. Raise 18-24 months.
+4. **No financial model** — Investors expect a bottoms-up model, not a hockey stick in a slide deck.
+5. **Ignoring unit economics** — Growing revenue while losing money on every customer is a Ponzi scheme.
+6. **Premature scaling** — Hiring 50 engineers before PMF burns cash without returns.
+7. **Cap table mess** — Clean up cap table before raising. Investors will find every issue.
+8. **No board prep** — Board meetings are high-leverage. Prepare materials 1 week in advance.
+9. **Equity over-promising** — Running out of option pool before Series B creates hiring problems.
+10. **Cash flow blindness** — Profitable on paper but no cash in bank = bankruptcy. Track cash weekly.
+## Step 12: Board Management
+```
+Board Meeting — [Company Name]
+[Date] | [Duration: 2-3 hours]
+
+1. CEO Update (15 min)
+   - Key wins since last meeting
+   - Challenges and how we're addressing
+   - Strategic priorities for next quarter
+
+2. Financial Review (30 min)
+   - Revenue vs plan (trailing 3 months)
+   - Cash position and runway
+   - Key metrics dashboard
+   - Forecast update
+
+3. Product Update (20 min)
+```
+## Step 13: Fundraising Process
+```
+Folder structure:
+  /data-room
+    /01-company
+      - Pitch deck
+      - Executive summary
+      - Cap table
+      - Certificate of incorporation
+      - Board minutes
+      
+    /02-financials
+      - Historical P&L (3 years)
+      - Monthly P&L (trailing 12 months)
+      - Cash flow statement
+      - Balance sheet
+      - Financial model (3-5 year forecast)
+```
+## Step 17: Revenue Operations (RevOps)
+```
+Alignment:
+  Marketing → Sales → Customer Success
+  Shared metrics, shared data, shared process
+
+Data unification:
+  - Single CRM (Salesforce, HubSpot)
+  - Marketing automation (Marketo, Pardot)
+  - Customer success platform (Gainsight, ChurnZero)
+  - Data warehouse (Snowflake, BigQuery)
+
+Process standardization:
+  - Lead scoring model (shared marketing + sales)
+  - Opportunity stages (defined exit criteria)
+  - Handoff process (marketing → sales → CS)
+  - Renewal process (CS → sales for expansion)
+```
+## Step 18: Financial Reporting
+```
+Contents:
+  1. Executive summary (1 page)
+     - Key highlights and lowlights
+     - Cash position
+     - Runway
+     - Revenue vs plan
+     
+  2. P&L statement (actual vs budget vs prior year)
+     - Revenue by product/segment
+     - COGS breakdown
+     - OpEx by department
+     - EBITDA and margins
+     
+  3. Balance sheet
+     - Assets (current and non-current)
+```
+## Step 19: Treasury Management
+```
+Cash flow forecasting:
+  - 13-week rolling forecast (weekly granularity)
+  - Monthly forecast (12-month horizon)
+  - Annual budget (3-5 year horizon)
+
+Cash optimization:
+  - Accelerate collections (net 30 to net 15)
+  - Extend payables (negotiate net 60)
+  - Inventory optimization (JIT)
+  - Capital expenditure timing
+
+Banking relationships:
+  - Primary operating account (major bank)
+  - Secondary account (backup)
+  - Foreign currency accounts (if international)
+```
+## Step 20: Financial Systems
+```
+Core systems:
+  - ERP: NetSuite, Sage Intacct, QuickBooks
+  - Billing: Stripe, Chargebee, Zuora
+  - Payroll: Gusto, Rippling, ADP
+  - Expense management: Brex, Ramp, Expensify
+  - AP automation: Bill.com, Tipalti, AvidXchange
+
+Reporting:
+  - FP&A: Mosaic, Jirav, Datarails
+  - BI: Looker, Tableau, Power BI
+  - Data warehouse: Snowflake, BigQuery
+
+Compliance:
+  - Audit: Workiva, AuditBoard
+  - Tax: Avalara, Vertex
+```
+## Step 21: Fundraising Operations
+```
+Data room organization:
+  /01-corporate: Cert of incorporation, bylaws, board minutes, cap table
+  /02-financial: Historical financials, monthly P&L, financial model
+  /03-product: Product roadmap, technical architecture, security certs
+  /04-market: TAM/SAM/SOM, competitive landscape, case studies
+  /05-team: Org chart, key bios, hiring plan, employee handbook
+
+Timeline:
+  - Pre-fundraise: 2-4 weeks to prepare
+  - Active fundraise: 6-12 weeks
+  - Due diligence: 2-4 weeks
+  - Closing: 2-4 weeks
+  - Total: 3-6 months
+```
+## Step 22: SaaS Metrics Deep Dive
+```
+Revenue metrics:
+  ARR (Annual Recurring Revenue):
+    = MRR x 12
+    Growth: YoY and QoQ
+    
+  MRR (Monthly Recurring Revenue):
+    = Sum of all monthly subscription revenue
+    Components: New + Expansion + Churn + Contraction
+    
+  Net New ARR:
+    = New ARR + Expansion ARR - Churned ARR - Contraction ARR
+    
+  ARPU (Average Revenue Per User):
+    = MRR / Total paying customers
+    
+```
+## Step 23: Fundraising Strategy
+```
+Pre-seed:
+  Amount: $100K-$500K
+  Stage: Idea/prototype
+  Investors: Angels, accelerators (YC, Techstars)
+  Terms: SAFE or convertible note
+  Dilution: 5-10%
+
+Seed:
+  Amount: $500K-$3M
+  Stage: MVP, early traction
+  Investors: Seed funds, angels
+  Terms: Priced round (SAFE less common at higher amounts)
+  Dilution: 10-20%
+
+Series A:
+```
+## Step 24: Cap Table Management
+```
+Pre-funding:
+  | Shareholder | Shares | % |
+  |-------------|--------|---|
+  | Founder A   | 4,000,000 | 50% |
+  | Founder B   | 3,200,000 | 40% |
+  | Employee pool| 800,000 | 10% |
+  | Total       | 8,000,000 | 100% |
+
+Post seed round ($2M at $8M pre):
+  | Shareholder | Shares | % |
+  |-------------|--------|---|
+  | Founder A   | 4,000,000 | 40% |
+  | Founder B   | 3,200,000 | 32% |
+  | Seed investors| 2,000,000 | 20% |
+  | Employee pool| 800,000 | 8% |
+```
+## Step 25: Financial Modeling
+```
+Income Statement:
+  Revenue
+    - New business revenue
+    - Expansion revenue
+    - Churned revenue (negative)
+  = Net Revenue
+  
+  Cost of Revenue
+    - Hosting/infrastructure
+    - Payment processing
+    - Customer support
+    - Professional services
+  = Gross Profit
+  
+  Operating Expenses
+```
+## Step 26: Cost Accounting
+```
+Product A (Starter plan):
+  ARPU: $49/month
+  COGS: $12/month (hosting: $5, support: $4, payment: $3)
+  Gross margin: 75.5%
+  CAC: $150
+  CLV: $49 x 0.755 x (1/0.03) = $1,233
+  CLV:CAC: 8.2:1
+  Payback: $150 / ($49 x 0.755) = 4.1 months
+
+Product B (Pro plan):
+  ARPU: $199/month
+  COGS: $35/month (hosting: $15, support: $12, payment: $8)
+  Gross margin: 82.4%
+  CAC: $500
+  CLV: $199 x 0.824 x (1/0.02) = $8,199
+```
+## Step 27: Investor Relations
+```
+Subject: [Company] Monthly Update — [Month Year]
+
+Highlights:
+  - [Big win 1]
+  - [Big win 2]
+  - [Big win 3]
+
+Metrics:
+  | Metric | This Month | Last Month | MoM Change |
+  |--------|------------|------------|------------|
+  | MRR | $X | $Y | +Z% |
+  | Customers | X | Y | +Z |
+  | Churn | X% | Y% | -Z% |
+  | NPS | X | Y | +Z |
+  | Cash | $X | $Y | -$Z |
+```
+## Step 28: Exit Planning
+```
+IPO:
+  Requirements:
+    - $100M+ ARR (typical threshold)
+    - 3+ years of financials
+    - Profitable or clear path to profitability
+    - Strong governance (independent board)
+  
+  Process:
+    1. Select underwriters (Goldman, Morgan Stanley, etc.)
+    2. S-1 filing (confidential or public)
+    3. SEC review and comments
+    4. Roadshow (2-3 weeks)
+    5. Pricing and allocation
+    6. Trading begins
+  
+```
+## Step 29: Financial Analysis
+```
+Gross margin analysis:
+  Revenue: $10M
+  COGS: $2.5M
+  Gross profit: $7.5M
+  Gross margin: 75%
+
+  COGS breakdown:
+    Hosting: $1M (40%)
+    Payment processing: $500K (20%)
+    Customer support: $750K (30%)
+    Other: $250K (10%)
+
+Operating margin analysis:
+  Gross profit: $7.5M
+  R&D: $3M (30% of revenue)
+```
+## Step 30: Financial Reporting Automation
+```
+Data collection:
+  - Stripe: Revenue, subscriptions, churn
+  - QuickBooks/NetSuite: Accounting, GL
+  - Gusto/Rippling: Payroll, headcount
+  - Brex/Ramp: Expenses, corporate cards
+  - CRM (HubSpot/Salesforce): Pipeline, bookings
+
+Data transformation:
+  - dbt: SQL-based transformations
+  - Fivetran: Data connectors
+  - Airbyte: Open-source data integration
+  - Custom scripts: API integrations
+
+Reporting:
+  - Looker/Tableau: Dashboards
+```
+## Step 31: Audit Preparation
+```
+Financial audit:
+  □ Clean books (no material misstatements)
+  □ Reconciliations complete (bank, AR, AP)
+  □ Supporting documentation for all transactions
+  □ Revenue recognition compliant (ASC 606)
+  □ Expense categorization consistent
+  □ Intercompany transactions documented
+  □ Related party transactions disclosed
+  □ Stock-based compensation calculated
+  □ Lease accounting compliant (ASC 842)
+  □ Tax provision calculated
+
+Operational audit:
+  □ Internal controls documented
+  □ Segregation of duties
+```
+## Step 32: Financial Modeling Tools
+```
+Model structure:
+  - Inputs tab (assumptions, drivers)
+  - Calculations tab (formulas, logic)
+  - Outputs tab (dashboards, charts)
+  - Documentation tab (methodology, sources)
+
+Formatting:
+  - Blue font for inputs
+  - Black font for calculations
+  - Green font for links to other sheets
+  - Consistent number formatting
+  - Named ranges for key assumptions
+
+Error prevention:
+  - Data validation (dropdowns, ranges)
+```
+## Step 33: Financial Operations Automation
+```
+Invoice processing:
+  1. Receive invoice (email, portal, mail)
+  2. OCR extraction (amount, vendor, date, line items)
+  3. Match to PO (3-way match: PO, receipt, invoice)
+  4. Route for approval (based on amount, department)
+  5. Schedule payment (optimize for terms)
+  6. Record in GL (automatic posting)
+
+Tools:
+  - Bill.com: SMB AP automation
+  - Tipalti: Global payments
+  - AvidXchange: Mid-market AP
+  - Coupa: Enterprise procurement
+  - Stampli: AI-powered AP
 
 ```
-Key Metrics Dashboard:
-┌───────────────────────────────────────────┐
-│  ARR: $2.4M  ↑32% QoQ                    │
-│  MRR: $200K  ↑$15K from last month        │
-│  Customers: 450  ↑45 net new               │
-│  NRR: 112%                                │
-│  Burn: $180K/mo  Runway: 22 months        │
-│  Headcount: 18  ↑3 this quarter           │
-│  NPS: 62                                  │
-└───────────────────────────────────────────┘
+## Step 34: Treasury Operations
 ```
+Daily cash position:
+  - Opening balance (all accounts)
+  - Inflows (customer payments, investment income)
+  - Outflows (payroll, vendor payments, CapEx)
+  - Closing balance
+  - 7-day forecast
 
-## St
+Cash optimization:
+  - Zero-balance accounts (sweep excess to master)
+  - Notional pooling (offset balances across entities)
+  - Cash concentration (centralize for visibility)
+  - Investment of excess (money market, T-bills)
+
+Banking relationships:
+  - Primary bank: Operating accounts, credit facility
+```
+## Step 35: Investor Reporting
+```
+Format: 1-2 page email
+
+Sections:
+  1. Highlights (3-5 bullet points)
+     - Key wins, milestones, partnerships
+  
+  2. Lowlights (2-3 bullet points)
+     - Challenges, missed targets, risks
+  
+  3. Key metrics (table format)
+     - MRR/ARR and growth
+     - Customer count and churn
+     - Cash position and runway
+     - Headcount
+  
+```
+## Step 36: Financial Compliance
+```
+Key controls:
+  - Revenue recognition (ASC 606)
+  - Expense authorization and approval
+  - Segregation of duties
+  - Access controls (financial systems)
+  - Change management (financial applications)
+  - Reconciliation (bank, AR, AP, GL)
+
+Documentation:
+  - Control descriptions
+  - Process narratives
+  - Risk-control matrices
+  - Testing evidence
+  - Remediation plans
+
+```
