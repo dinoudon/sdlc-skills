@@ -629,3 +629,57 @@ Helpfulness:
   - Support ticket deflection rate
   - Documentation NPS
 ```
+## Step 31: Documentation for Security
+```
+Security policy:
+  - Information security policy
+  - Acceptable use policy
+  - Access control policy
+  - Data classification policy
+  - Incident response policy
+
+Security procedures:
+  - Vulnerability management
+  - Patch management
+  - Access provisioning/deprovisioning
+  - Security monitoring
+  - Incident response
+
+Security guides:
+```
+## Step 32: Documentation Automation
+```
+Code documentation:
+  - TypeDoc (TypeScript)
+  - JSDoc (JavaScript)
+  - Sphinx (Python)
+  - GoDoc (Go)
+  - Rustdoc (Rust)
+
+API documentation:
+  - OpenAPI/Swagger (REST)
+  - GraphQL Playground (GraphQL)
+  - gRPC reflection (gRPC)
+
+Infrastructure documentation:
+  - Terraform docs (terraform-docs)
+  - Kubernetes docs (helm-docs)
+```
+## Step 33: Documentation Localization
+```
+Content preparation:
+  - Externalize strings from code
+  - Use i18n framework (react-intl, vue-i18n)
+  - Create translation keys
+  - Document context for translators
+
+Translation process:
+  - Extract translatable content
+  - Send to translation service
+  - Review translations
+  - Import translated content
+  - Build and deploy
+
+Quality assurance:
+  - Native speaker review
+```

@@ -1709,3 +1709,173 @@ Automation:
   - Style guide enforcement (vale)
   - Accessibility scanning (axe)
   - Freshness monitoring (alert on >90 days)
+
+
+## Step 31: Documentation for Security
+
+### Security Documentation Standards
+
+```
+Security policy:
+  - Information security policy
+  - Acceptable use policy
+  - Access control policy
+  - Data classification policy
+  - Incident response policy
+
+Security procedures:
+  - Vulnerability management
+  - Patch management
+  - Access provisioning/deprovisioning
+  - Security monitoring
+  - Incident response
+
+Security guides:
+  - Secure coding guidelines
+  - Authentication implementation
+  - Encryption implementation
+  - API security
+  - Cloud security
+
+Security reports:
+  - Vulnerability assessment reports
+  - Penetration test reports
+  - Audit reports
+  - Compliance reports
+  - Risk assessment reports
+```
+
+### Incident Documentation
+
+```
+Incident report template:
+  # Incident Report: [Title]
+  
+  ## Summary
+  - Date: [YYYY-MM-DD]
+  - Duration: [X hours]
+  - Severity: [P1/P2/P3/P4]
+  - Impact: [What was affected]
+  
+  ## Timeline
+  - [HH:MM] Incident detected
+  - [HH:MM] Investigation started
+  - [HH:MM] Root cause identified
+  - [HH:MM] Mitigation implemented
+  - [HH:MM] Service restored
+  
+  ## Root Cause
+  [What caused the incident]
+  
+  ## Impact
+  - Users affected: [Number]
+  - Revenue impact: [$Amount]
+  - Data impact: [What data was affected]
+  
+  ## Remediation
+  - Immediate: [What was done to fix]
+  - Long-term: [What will prevent recurrence]
+  
+  ## Lessons Learned
+  - [Lesson 1]
+  - [Lesson 2]
+```
+
+## Step 32: Documentation Automation
+
+### Automated Documentation Generation
+
+```
+Code documentation:
+  - TypeDoc (TypeScript)
+  - JSDoc (JavaScript)
+  - Sphinx (Python)
+  - GoDoc (Go)
+  - Rustdoc (Rust)
+
+API documentation:
+  - OpenAPI/Swagger (REST)
+  - GraphQL Playground (GraphQL)
+  - gRPC reflection (gRPC)
+
+Infrastructure documentation:
+  - Terraform docs (terraform-docs)
+  - Kubernetes docs (helm-docs)
+  - Docker docs (docker-compose config)
+
+Architecture documentation:
+  - Mermaid (diagrams as code)
+  - PlantUML (UML diagrams)
+  - Structurizr (C4 diagrams)
+
+CI/CD integration:
+  - Generate on build
+  - Publish on merge
+  - Version with releases
+  - Validate in PR
+```
+
+### Documentation Testing
+
+```
+Link checking:
+  - Automated link validation
+  - Internal and external links
+  - Scheduled checks (weekly)
+  - PR checks (on change)
+
+Code example testing:
+  - Extract code blocks
+  - Run in CI environment
+  - Verify output matches
+  - Fail build if broken
+
+Style checking:
+  - vale: Prose linting
+  - markdownlint: Markdown formatting
+  - Custom rules: Company-specific
+
+Accessibility testing:
+  - axe-core: WCAG compliance
+  - Lighthouse: Performance and accessibility
+  - Manual testing: Screen readers
+
+Freshness monitoring:
+  - Track last modified date
+  - Alert on stale content (>90 days)
+  - Review queue for old pages
+  - Archive outdated content
+```
+
+## Step 33: Documentation Localization
+
+### Localization Workflow
+
+```
+Content preparation:
+  - Externalize strings from code
+  - Use i18n framework (react-intl, vue-i18n)
+  - Create translation keys
+  - Document context for translators
+
+Translation process:
+  - Extract translatable content
+  - Send to translation service
+  - Review translations
+  - Import translated content
+  - Build and deploy
+
+Quality assurance:
+  - Native speaker review
+  - Context screenshots
+  - Terminology glossary
+  - Consistency checking
+  - User testing in target language
+
+Tools:
+  - Crowdin: Cloud-based translation
+  - Lokalise: Mobile and web
+  - Transifex: Enterprise translation
+  - POEditor: Simple and affordable
+  - Weglot: Website translation
+```

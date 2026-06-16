@@ -626,3 +626,57 @@ Stage 3: Negotiation
   - Legal approval for liability/indemnity
 
 ```
+## Step 35: Employment Law Compliance
+```
+Pre-employment:
+  - Job descriptions (accurate, non-discriminatory)
+  - Application forms (no prohibited questions)
+  - Background checks (FCRA compliance)
+  - Drug testing (state-specific requirements)
+  - Reference checks (with consent)
+
+Interview compliance:
+  - Prohibited questions:
+    - Age, race, religion, national origin
+    - marital status, family plans
+    - Disability, medical conditions
+    - Sexual orientation, gender identity
+  - Allowed questions:
+    - Ability to perform job functions
+```
+## Step 36: Data Breach Response
+```
+Phase 1: Detection and Containment (0-24 hours)
+  □ Identify scope of breach
+  □ Contain the breach (isolate systems, revoke access)
+  □ Preserve evidence (logs, forensic images)
+  □ Activate incident response team
+  □ Engage legal counsel
+
+Phase 2: Assessment (24-48 hours)
+  □ Determine what data was affected
+  □ Identify affected individuals
+  □ Assess risk of harm
+  □ Determine notification obligations
+  □ Document findings
+
+Phase 3: Notification (48-72 hours)
+```
+## Step 37: Legal Technology
+```
+Contract management:
+  - Ironclad: CLM platform
+  - DocuSign CLM: Contract lifecycle
+  - Juro: Contract automation
+  - SpotDraft: Contract management
+
+Legal research:
+  - Westlaw: Legal research
+  - LexisNexis: Legal research
+  - Casetext: AI legal research
+  - Law Insider: Contract templates
+
+Entity management:
+  - Carta: Cap table and equity
+  - Clerky: Formation and compliance
+```

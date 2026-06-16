@@ -590,3 +590,75 @@ Physical health:
 
 Financial wellness:
 ```
+## Step 35: Employee Development
+```
+Career tracks:
+  Individual Contributor (IC):
+    Junior → Mid → Senior → Staff → Principal → Distinguished
+  
+  Management:
+    Team Lead → Engineering Manager → Director → VP → CTO
+  
+  Specialist:
+    Domain expert, deep technical expertise
+    Senior → Staff → Principal → Fellow
+
+Level definitions:
+  Junior (L1-L2):
+    - Completes well-defined tasks
+    - Requires guidance and mentorship
+```
+## Step 36: Succession Planning
+```
+Critical roles:
+  - C-suite executives
+  - VP-level leaders
+  - Key technical experts
+  - Customer-facing roles
+
+Succession identification:
+  - High-potential employees
+  - Performance ratings (consistent top performer)
+  - Readiness assessment (ready now, 1-2 years, 3+ years)
+  - Development needs (skills gaps)
+
+Development plans:
+  - Stretch assignments
+  - Cross-functional exposure
+```
+## Step 37: Employee Engagement
+```
+Survey structure:
+  - Frequency: Quarterly (pulse) + Annual (comprehensive)
+  - Length: 10-15 questions (pulse), 50-75 questions (annual)
+  - Anonymity: Guaranteed (minimum 5 responses per group)
+  - Action: Commit to acting on results
+
+Key dimensions:
+  - Satisfaction: Overall job satisfaction
+  - Engagement: Motivation and commitment
+  - Growth: Learning and development opportunities
+  - Recognition: Feeling valued and appreciated
+  - Communication: Information flow and transparency
+  - Leadership: Confidence in leadership
+  - Collaboration: Teamwork and cooperation
+  - Well-being: Work-life balance and stress
+```
+## Step 38: Remote Work Management
+```
+Eligibility:
+  - All full-time employees
+  - Contractors on 6+ month engagements
+  - Manager approval required
+
+Work hours:
+  - Core hours: 10am-3pm local time
+  - Flexible outside core hours
+  - Meeting-free Tuesdays and Thursdays
+  - Timezone alignment: Within 3 hours of team
+
+Communication:
+  - Slack for async communication
+  - Zoom for video meetings
+  - Notion for documentation
+```

@@ -549,3 +549,75 @@ Evaluation criteria:
   Security (20%):
     - SOC 2 / ISO 27001
 ```
+## Step 29: Platform API Design
+```
+REST conventions:
+  - Use nouns for resources (/users, /projects)
+  - Use HTTP methods (GET, POST, PUT, DELETE)
+  - Use plural nouns (/users not /user)
+  - Use kebab-case for URLs (/user-profiles)
+  - Use camelCase for JSON fields
+
+Versioning:
+  - URL versioning: /v1/users
+  - Header versioning: Accept: application/vnd.company.v2+json
+  - Recommendation: URL versioning for public APIs
+
+Pagination:
+  - Cursor-based (preferred for large datasets)
+  - Offset-based (simpler, but less efficient)
+```
+## Step 30: Platform Testing Strategy
+```
+                    E2E tests (few)
+                   /              \
+              Integration tests (some)
+             /                      \
+        Unit tests (many)
+
+Unit tests:
+  - Test individual functions/classes
+  - Mock external dependencies
+  - Fast execution (<1ms per test)
+  - Coverage target: 80%+
+
+Integration tests:
+  - Test service interactions
+  - Use real dependencies (databases, APIs)
+```
+## Step 31: Platform Migration Strategies
+```
+Assessment:
+  - Current state documentation
+  - Target state definition
+  - Gap analysis
+  - Risk assessment
+  - Timeline estimation
+
+Planning:
+  - Migration phases (incremental)
+  - Rollback strategy
+  - Communication plan
+  - Training requirements
+  - Success criteria
+
+Execution:
+```
+## Step 32: Platform Governance
+```
+Decision rights:
+  - Who can approve infrastructure changes?
+  - Who can deploy to production?
+  - Who can modify security policies?
+  - Who can approve vendor selections?
+
+Standards:
+  - Coding standards (language, style)
+  - Architecture standards (patterns, technologies)
+  - Security standards (encryption, access)
+  - Operational standards (monitoring, alerting)
+
+Compliance:
+  - Policy-as-code (OPA, Sentinel)
+  - Automated compliance checks
+```

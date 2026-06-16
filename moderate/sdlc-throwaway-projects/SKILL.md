@@ -1014,3 +1014,435 @@ METRICS THRESHOLDS (rough guide):
    - Day 2: show prototype
    - Day 3: show working feature
 ```
+
+## Step 14: Spike Methodology
+
+### Spike Types
+
+```
+Technical spike:
+  Question: "Can we use [technology] for [purpose]?"
+  Duration: 1-3 days
+  Output: Technical feasibility report
+  Example: "Can we use WebAssembly for real-time video processing?"
+
+Research spike:
+  Question: "What is the best approach for [problem]?"
+  Duration: 2-5 days
+  Output: Comparison matrix with recommendation
+  Example: "What is the best auth provider for our use case?"
+
+Integration spike:
+  Question: "How does [system A] connect to [system B]?"
+  Duration: 1-2 days
+  Output: Working integration prototype + gotchas doc
+  Example: "How does Stripe Connect handle marketplace payments?"
+
+Performance spike:
+  Question: "Can we meet [performance requirement]?"
+  Duration: 2-3 days
+  Output: Benchmarks + bottlenecks + optimization path
+  Example: "Can we process 10K events/second with this architecture?"
+```
+
+### Spike Report Template
+
+```
+# Spike: [Question]
+
+## Context
+- Why are we investigating this?
+- What decision depends on this?
+
+## Approach
+- What did we try?
+- What tools/libraries did we evaluate?
+
+## Findings
+- [Finding 1 with evidence]
+- [Finding 2 with evidence]
+- [Finding 3 with evidence]
+
+## Recommendation
+- [Clear recommendation with reasoning]
+- [Trade-offs acknowledged]
+
+## Proof
+- [Link to code/repo]
+- [Screenshots/benchmarks]
+- [Working demo if applicable]
+
+## Follow-up
+- [ ] [Next step 1]
+- [ ] [Next step 2]
+```
+
+## Step 15: Prototype Patterns
+
+### UI Prototype
+
+```
+Goal: Validate user experience before building backend
+
+Tools:
+  - Figma: High-fidelity mockups
+  - Framer: Interactive prototypes
+  - HTML/CSS: Clickable prototype
+  - React + static data: Functional prototype
+
+Approach:
+  1. Sketch key screens (paper or digital)
+  2. Build clickable flow (3-5 screens)
+  3. Add realistic data (not lorem ipsum)
+  4. Test with 3-5 users
+  5. Iterate based on feedback
+
+Time: 1-3 days
+Output: Clickable prototype + user feedback
+```
+
+### Data Prototype
+
+```
+Goal: Validate data model and queries before building app
+
+Tools:
+  - Jupyter notebook: Data exploration
+  - SQL: Schema design and query testing
+  - Python + pandas: Data transformation
+  - Sample dataset: Realistic test data
+
+Approach:
+  1. Define key entities and relationships
+  2. Create sample dataset (100-1000 records)
+  3. Write key queries (top 5 use cases)
+  4. Test performance (indexes, joins)
+  5. Validate data model supports requirements
+
+Time: 1-2 days
+Output: Schema + sample queries + performance notes
+```
+
+### API Prototype
+
+```
+Goal: Validate API design before implementation
+
+Tools:
+  - OpenAPI spec: API contract
+  - Mock server: Auto-generated from spec
+  - Postman: API testing
+  - Swagger UI: Interactive documentation
+
+Approach:
+  1. Define API contract (OpenAPI/Swagger)
+  2. Generate mock server
+  3. Build client against mock
+  4. Test with frontend team
+  5. Iterate on contract
+
+Time: 1-2 days
+Output: API spec + mock server + client feedback
+```
+
+## Step 16: MVP Frameworks
+
+### Concierge MVP
+
+```
+Definition: Deliver value manually before building automation
+
+Example: 
+  - Instead of building recommendation engine, manually curate
+  - Instead of building chatbot, have humans respond
+  - Instead of building matching algorithm, match manually
+
+Benefits:
+  - Validate demand without engineering
+  - Learn user preferences firsthand
+  - Iterate faster (change manual process)
+  - Build empathy for the problem
+
+Time: 1-2 weeks
+Cost: Human time only
+Output: Validated demand + user insights
+```
+
+### Wizard of Oz MVP
+
+```
+Definition: Appear automated to user, but operate manually behind scenes
+
+Example:
+  - User sees AI-powered analysis, human actually does it
+  - User sees automated matching, human actually matches
+  - User sees real-time processing, batch processing behind scenes
+
+Benefits:
+  - Test user experience without building backend
+  - Validate willingness to pay
+  - Learn edge cases before automating
+
+Time: 2-4 weeks
+Cost: Human time + minimal frontend
+Output: Validated UX + willingness to pay
+```
+
+### Single-Feature MVP
+
+```
+Definition: Build ONE feature exceptionally well
+
+Example:
+  - Dropbox: File sync (nothing else)
+  - Instagram: Photo filter + share (nothing else)
+  - Twitter: 140-character posts (nothing else)
+
+Benefits:
+  - Faster to market
+  - Clear value proposition
+  - Easier to iterate
+  - Lower maintenance burden
+
+Time: 2-4 weeks
+Cost: Minimal engineering
+Output: Working feature + user feedback
+```
+
+## Step 17: Throwaway-to-Production Pipeline
+
+### Graduation Criteria
+
+```
+Technical criteria:
+  - Core functionality works end-to-end
+  - Performance meets requirements (response time, throughput)
+  - Security basics implemented (auth, input validation)
+  - Error handling covers known failure modes
+  - Data persistence is reliable
+  - API contract is stable
+
+Business criteria:
+  - User feedback is positive (>80% satisfaction)
+  - Key metrics show promise (engagement, retention)
+  - Willingness to pay validated (if applicable)
+  - Competitive advantage identified
+  - Scale requirements understood
+  - Go/no-go decision documented
+
+Process criteria:
+  - Code reviewed by at least one engineer
+  - Test coverage for critical paths (>60%)
+  - Documentation exists (README, API docs)
+  - Deployment process documented
+  - Monitoring and alerting basic setup
+  - Rollback plan exists
+```
+
+### Refactoring Playbook
+
+```
+Phase 1: Assessment (1-2 days)
+  - Code review (identify technical debt)
+  - Architecture review (identify structural issues)
+  - Test coverage analysis
+  - Performance profiling
+  - Security audit
+
+Phase 2: Foundation (1-2 weeks)
+  - Set up proper project structure
+  - Add comprehensive tests
+  - Implement CI/CD pipeline
+  - Set up monitoring and logging
+  - Document architecture decisions
+
+Phase 3: Refactoring (2-4 weeks)
+  - Extract reusable components
+  - Implement proper error handling
+  - Add input validation and sanitization
+  - Optimize database queries
+  - Implement caching strategy
+
+Phase 4: Hardening (1-2 weeks)
+  - Security penetration testing
+  - Load testing
+  - Chaos engineering (failure injection)
+  - Documentation completion
+  - Runbook creation
+
+Phase 5: Launch (1 week)
+  - Staged rollout (1% then 10% then 100%)
+  - Monitoring dashboards
+  - Alert configuration
+  - On-call rotation setup
+  - Post-launch review
+```
+
+## Step 18: Experimentation Culture
+
+### Experiment Design
+
+```
+Hypothesis format:
+  "If we [change], then [metric] will [direction] by [amount], 
+  because [reasoning]."
+
+Example:
+  "If we add a free tier, then signups will increase by 50%, 
+  because developers can try before committing budget."
+
+Variables:
+  Independent: What we change (free tier)
+  Dependent: What we measure (signups)
+  Controlled: What stays the same (product, marketing)
+
+Sample size:
+  Baseline: Current signups/month
+  MDE: Minimum detectable effect (50% increase)
+  Significance: 95% confidence
+  Power: 80%
+  
+  Use calculator: Evan Miller A/B test calculator
+
+Duration:
+  Minimum: 2 full business cycles (2 weeks)
+  Maximum: 6 weeks (diminishing returns)
+  Consider: Seasonality, day-of-week effects
+```
+
+### Experiment Tracking
+
+```
+Experiment log:
+  | ID | Hypothesis | Start | End | Result | Learning |
+  |----|------------|-------|-----|--------|----------|
+  | EXP-001 | Free tier increases signups | Jan 1 | Jan 15 | +62% | Strong signal |
+  | EXP-002 | Shorter onboarding improves activation | Jan 15 | Jan 29 | +18% | Moderate signal |
+  | EXP-003 | Social proof increases conversion | Feb 1 | Feb 14 | -3% | No effect |
+
+Review cadence:
+  - Daily: Monitor for anomalies
+  - Weekly: Review running experiments
+  - Bi-weekly: Plan next experiments
+  - Monthly: Retrospective on experiment velocity
+```
+
+## Step 19: Risk Management
+
+### Risk Register
+
+```
+| Risk | Probability | Impact | Mitigation | Owner |
+|------|-------------|--------|------------|-------|
+| Tech does not work | Medium | High | Spike first, validate early | Tech lead |
+| No user demand | Medium | High | User interviews, concierge MVP | Product |
+| Scope creep | High | Medium | Strict timeboxing, daily standups | PM |
+| Key person leaves | Low | High | Document decisions, pair programming | Team |
+| Integration fails | Medium | Medium | Spike integrations, have fallbacks | Tech lead |
+
+Risk review:
+  - Daily: Check risk indicators
+  - Weekly: Review risk register
+  - At milestones: Reassess all risks
+  - At completion: Final risk assessment
+```
+
+## Step 20: Communication Templates
+
+### Project Kickoff Email
+
+```
+Subject: [Project Name] Kickoff
+
+Team,
+
+We are starting a throwaway project to validate [hypothesis].
+
+Goal: [One sentence goal]
+Timeline: [X days/weeks]
+Decision: [What we will decide at the end]
+
+Team:
+  - [Name]: Role
+  - [Name]: Role
+
+Key dates:
+  - Kickoff: [Date]
+  - Daily standup: [Time] (15 min)
+  - Demo: [Date]
+  - Decision: [Date]
+
+Repo: [Link]
+Docs: [Link]
+Slack: [Channel]
+
+Let us move fast and learn.
+```
+
+### Decision Email
+
+```
+Subject: [Project Name] Decision
+
+Team,
+
+Based on our throwaway project, here is the decision:
+
+Decision: [GO / NO-GO / PIVOT]
+
+Evidence:
+  - [Key finding 1]
+  - [Key finding 2]
+  - [Key finding 3]
+
+Metrics:
+  - [Metric 1]: [Result]
+  - [Metric 2]: [Result]
+
+Next steps:
+  - [If GO]: [What happens next]
+  - [If NO-GO]: [What we learned, what we will try instead]
+  - [If PIVOT]: [What we are changing and why]
+
+Lessons learned:
+  - [Lesson 1]
+  - [Lesson 2]
+
+Repo: [Link] (archived)
+Report: [Link]
+```
+
+## Step 21: Speed Hacks Cheat Sheet
+
+```
+SETUP:
+  - Use templates (create-next-app, create-react-app)
+  - Use managed services (Supabase, PlanetScale, Vercel)
+  - Use component libraries (shadcn/ui, Tailwind UI)
+  - Copy-paste from previous projects
+
+DEVELOPMENT:
+  - Build vertical slice first (one feature end-to-end)
+  - Use hardcoded data before database
+  - Use console.log before proper logging
+  - Skip authentication initially (add later)
+  - Use placeholder UI (canned responses)
+
+TESTING:
+  - Manual testing for throwaways
+  - Automated tests only for critical paths
+  - Smoke tests for deployment
+  - User testing over unit testing
+
+DEPLOYMENT:
+  - One-click deploy (Vercel, Railway, Render)
+  - Managed database (Supabase, PlanetScale)
+  - Environment variables in platform
+  - No custom CI/CD initially
+
+DOCUMENTATION:
+  - README with setup instructions
+  - Decision log (why, not what)
+  - Screenshot/video of working demo
+  - Lessons learned document
+```

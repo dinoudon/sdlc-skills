@@ -1560,3 +1560,150 @@ Vendor management:
   - Performance monitoring
   - Exit planning (data portability)
 ```
+
+
+## Step 29: Platform API Design
+
+### Internal API Standards
+
+```
+REST conventions:
+  - Use nouns for resources (/users, /projects)
+  - Use HTTP methods (GET, POST, PUT, DELETE)
+  - Use plural nouns (/users not /user)
+  - Use kebab-case for URLs (/user-profiles)
+  - Use camelCase for JSON fields
+
+Versioning:
+  - URL versioning: /v1/users
+  - Header versioning: Accept: application/vnd.company.v2+json
+  - Recommendation: URL versioning for public APIs
+
+Pagination:
+  - Cursor-based (preferred for large datasets)
+  - Offset-based (simpler, but less efficient)
+  - Page size: 20-100 items (configurable)
+  - Include: total count, has_more, next_cursor
+
+Error format:
+  ```json
+  {
+    "error": {
+      "code": "invalid_request",
+      "message": "The 'email' field is required",
+      "param": "email",
+      "doc_url": "https://docs.internal/errors#invalid_request"
+    }
+  }
+  ```
+
+Rate limiting:
+  - Internal: 1000 requests/minute per service
+  - External: 100 requests/minute per API key
+  - Headers: X-RateLimit-Limit, X-RateLimit-Remaining
+```
+
+## Step 30: Platform Testing Strategy
+
+### Testing Pyramid for Platform
+
+```
+                    E2E tests (few)
+                   /              \
+              Integration tests (some)
+             /                      \
+        Unit tests (many)
+
+Unit tests:
+  - Test individual functions/classes
+  - Mock external dependencies
+  - Fast execution (<1ms per test)
+  - Coverage target: 80%+
+
+Integration tests:
+  - Test service interactions
+  - Use real dependencies (databases, APIs)
+  - Moderate speed (100ms-1s per test)
+  - Coverage: Critical paths
+
+E2E tests:
+  - Test full user workflows
+  - Use real environment
+  - Slow execution (1-10s per test)
+  - Coverage: Key user journeys
+
+Platform-specific tests:
+  - Infrastructure tests (Terraform plan)
+  - Configuration tests (OPA policies)
+  - Security tests (SAST, dependency scanning)
+  - Performance tests (load, stress)
+```
+
+## Step 31: Platform Migration Strategies
+
+### Migration Playbook
+
+```
+Assessment:
+  - Current state documentation
+  - Target state definition
+  - Gap analysis
+  - Risk assessment
+  - Timeline estimation
+
+Planning:
+  - Migration phases (incremental)
+  - Rollback strategy
+  - Communication plan
+  - Training requirements
+  - Success criteria
+
+Execution:
+  - Pilot migration (1-2 services)
+  - Validate (functionality, performance)
+  - Iterate (fix issues found)
+  - Scale (migrate remaining services)
+  - Decommission (old system)
+
+Validation:
+  - Functional testing (feature parity)
+  - Performance testing (latency, throughput)
+  - Security testing (vulnerabilities)
+  - User acceptance testing (stakeholder sign-off)
+
+Common migration patterns:
+  - Strangler fig: Gradually replace components
+  - Big bang: Complete cutover (risky)
+  - Parallel run: Both systems running simultaneously
+  - Canary: Route small traffic to new system
+```
+
+## Step 32: Platform Governance
+
+### Governance Framework
+
+```
+Decision rights:
+  - Who can approve infrastructure changes?
+  - Who can deploy to production?
+  - Who can modify security policies?
+  - Who can approve vendor selections?
+
+Standards:
+  - Coding standards (language, style)
+  - Architecture standards (patterns, technologies)
+  - Security standards (encryption, access)
+  - Operational standards (monitoring, alerting)
+
+Compliance:
+  - Policy-as-code (OPA, Sentinel)
+  - Automated compliance checks
+  - Regular audits (quarterly)
+  - Exception handling process
+
+Communication:
+  - Architecture decision records (ADRs)
+  - Technical design documents
+  - Change management process
+  - Stakeholder updates (monthly)
+```

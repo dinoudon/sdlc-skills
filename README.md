@@ -6,11 +6,11 @@ Comprehensive skill library for building software companies. From idea to IPO. W
 
 | Tier | Lines | Tokens | Use Case |
 |------|-------|--------|----------|
-| **slim/** | ~11K total (~730/skill) | ~7-10K/skill | Quick reference, daily use |
-| **moderate/** | ~25K total (~1.7K/skill) | ~17-25K/skill | Planning, deep dives |
-| **full/** | ~55K total (~3.7K/skill) | ~37-55K/skill | Complete reference |
+| **slim/** | ~12K total (~650/skill) | ~6-8K/skill | Quick reference, daily use |
+| **moderate/** | ~39K total (~2K/skill) | ~20K/skill | Planning, deep dives |
+| **full/** | ~39K total (~2K/skill) | ~20K/skill | Complete reference (same as moderate) |
 
-## Skills (23)
+## Skills (19)
 
 ### Engineering SDLC
 
@@ -241,4 +241,4 @@ Dinoudon
 
 ## Version
 
-v6.0.0 — 23 skills, three-tier structure (slim/moderate/full), unicorn company patterns, complete software company package
+v6.1.0 — 19 skills, three-tier structure (slim/moderate/full), 90K+ total lines, unicorn company patterns

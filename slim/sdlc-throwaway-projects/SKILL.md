@@ -395,3 +395,166 @@ MVP:
    - No tests (for throwaway)
    - No CI/CD
 ```
+## Step 14: Spike Methodology
+```
+Technical spike:
+  Question: "Can we use [technology] for [purpose]?"
+  Duration: 1-3 days
+  Output: Technical feasibility report
+  Example: "Can we use WebAssembly for real-time video processing?"
+
+Research spike:
+  Question: "What is the best approach for [problem]?"
+  Duration: 2-5 days
+  Output: Comparison matrix with recommendation
+  Example: "What is the best auth provider for our use case?"
+
+Integration spike:
+  Question: "How does [system A] connect to [system B]?"
+  Duration: 1-2 days
+```
+## Context
+- Why are we investigating this?
+- What decision depends on this?
+## Approach
+- What did we try?
+- What tools/libraries did we evaluate?
+## Findings
+- [Finding 1 with evidence]
+- [Finding 2 with evidence]
+- [Finding 3 with evidence]
+## Recommendation
+- [Clear recommendation with reasoning]
+- [Trade-offs acknowledged]
+## Proof
+- [Link to code/repo]
+- [Screenshots/benchmarks]
+- [Working demo if applicable]
+## Follow-up
+- [ ] [Next step 1]
+- [ ] [Next step 2]
+```
+## Step 15: Prototype Patterns
+```
+Goal: Validate user experience before building backend
+
+Tools:
+  - Figma: High-fidelity mockups
+  - Framer: Interactive prototypes
+  - HTML/CSS: Clickable prototype
+  - React + static data: Functional prototype
+
+Approach:
+  1. Sketch key screens (paper or digital)
+  2. Build clickable flow (3-5 screens)
+  3. Add realistic data (not lorem ipsum)
+  4. Test with 3-5 users
+  5. Iterate based on feedback
+
+```
+## Step 16: MVP Frameworks
+```
+Definition: Deliver value manually before building automation
+
+Example: 
+  - Instead of building recommendation engine, manually curate
+  - Instead of building chatbot, have humans respond
+  - Instead of building matching algorithm, match manually
+
+Benefits:
+  - Validate demand without engineering
+  - Learn user preferences firsthand
+  - Iterate faster (change manual process)
+  - Build empathy for the problem
+
+Time: 1-2 weeks
+Cost: Human time only
+```
+## Step 17: Throwaway-to-Production Pipeline
+```
+Technical criteria:
+  - Core functionality works end-to-end
+  - Performance meets requirements (response time, throughput)
+  - Security basics implemented (auth, input validation)
+  - Error handling covers known failure modes
+  - Data persistence is reliable
+  - API contract is stable
+
+Business criteria:
+  - User feedback is positive (>80% satisfaction)
+  - Key metrics show promise (engagement, retention)
+  - Willingness to pay validated (if applicable)
+  - Competitive advantage identified
+  - Scale requirements understood
+  - Go/no-go decision documented
+```
+## Step 18: Experimentation Culture
+```
+Hypothesis format:
+  "If we [change], then [metric] will [direction] by [amount], 
+  because [reasoning]."
+
+Example:
+  "If we add a free tier, then signups will increase by 50%, 
+  because developers can try before committing budget."
+
+Variables:
+  Independent: What we change (free tier)
+  Dependent: What we measure (signups)
+  Controlled: What stays the same (product, marketing)
+
+Sample size:
+  Baseline: Current signups/month
+```
+## Step 19: Risk Management
+```
+| Risk | Probability | Impact | Mitigation | Owner |
+|------|-------------|--------|------------|-------|
+| Tech does not work | Medium | High | Spike first, validate early | Tech lead |
+| No user demand | Medium | High | User interviews, concierge MVP | Product |
+| Scope creep | High | Medium | Strict timeboxing, daily standups | PM |
+| Key person leaves | Low | High | Document decisions, pair programming | Team |
+| Integration fails | Medium | Medium | Spike integrations, have fallbacks | Tech lead |
+
+Risk review:
+  - Daily: Check risk indicators
+  - Weekly: Review risk register
+  - At milestones: Reassess all risks
+  - At completion: Final risk assessment
+```
+## Step 20: Communication Templates
+```
+Subject: [Project Name] Kickoff
+
+Team,
+
+We are starting a throwaway project to validate [hypothesis].
+
+Goal: [One sentence goal]
+Timeline: [X days/weeks]
+Decision: [What we will decide at the end]
+
+Team:
+  - [Name]: Role
+  - [Name]: Role
+
+Key dates:
+```
+## Step 21: Speed Hacks Cheat Sheet
+```
+SETUP:
+  - Use templates (create-next-app, create-react-app)
+  - Use managed services (Supabase, PlanetScale, Vercel)
+  - Use component libraries (shadcn/ui, Tailwind UI)
+  - Copy-paste from previous projects
+
+DEVELOPMENT:
+  - Build vertical slice first (one feature end-to-end)
+  - Use hardcoded data before database
+  - Use console.log before proper logging
+  - Skip authentication initially (add later)
+  - Use placeholder UI (canned responses)
+
+TESTING:
+  - Manual testing for throwaways
+```

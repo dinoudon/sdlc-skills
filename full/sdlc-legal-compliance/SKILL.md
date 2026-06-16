@@ -1772,3 +1772,177 @@ Tools:
   - Juro: Contract automation
   - ContractWorks: Contract repository
   - Agiloft: Enterprise CLM
+
+
+## Step 35: Employment Law Compliance
+
+### Hiring Compliance
+
+```
+Pre-employment:
+  - Job descriptions (accurate, non-discriminatory)
+  - Application forms (no prohibited questions)
+  - Background checks (FCRA compliance)
+  - Drug testing (state-specific requirements)
+  - Reference checks (with consent)
+
+Interview compliance:
+  - Prohibited questions:
+    - Age, race, religion, national origin
+    - marital status, family plans
+    - Disability, medical conditions
+    - Sexual orientation, gender identity
+  - Allowed questions:
+    - Ability to perform job functions
+    - Work authorization
+    - Relevant experience and skills
+
+Offer compliance:
+  - At-will employment (clear statement)
+  - Compensation (minimum wage, overtime)
+  - Benefits (required and offered)
+  - Start date and conditions
+  - Contingencies (background check, drug test)
+
+Onboarding compliance:
+  - I-9 verification (within 3 days)
+  - Tax forms (W-4, state withholding)
+  - Emergency contact information
+  - Policy acknowledgment
+  - Benefits enrollment
+```
+
+### Workplace Compliance
+
+```
+Wage and hour:
+  - Minimum wage (federal, state, local)
+  - Overtime (FLSA: 1.5x after 40 hours)
+  - Meal and rest breaks (state-specific)
+  - Pay frequency (state requirements)
+  - Pay stubs (required information)
+
+Anti-discrimination:
+  - Title VII (race, color, religion, sex, national origin)
+  - ADA (disability)
+  - ADEA (age)
+  - Equal Pay Act (gender pay equity)
+  - State and local protections
+
+Safety:
+  - OSHA compliance
+  - Hazard communication
+  - Emergency action plans
+  - Recordkeeping (injury logs)
+  - Training requirements
+
+Leave:
+  - FMLA (12 weeks, eligible employers)
+  - State family leave (varies)
+  - Paid sick leave (state/local)
+  - Military leave (USERRA)
+  - Jury duty leave
+  - Voting leave (state-specific)
+```
+
+## Step 36: Data Breach Response
+
+### Breach Response Plan
+
+```
+Phase 1: Detection and Containment (0-24 hours)
+  □ Identify scope of breach
+  □ Contain the breach (isolate systems, revoke access)
+  □ Preserve evidence (logs, forensic images)
+  □ Activate incident response team
+  □ Engage legal counsel
+
+Phase 2: Assessment (24-48 hours)
+  □ Determine what data was affected
+  □ Identify affected individuals
+  □ Assess risk of harm
+  □ Determine notification obligations
+  □ Document findings
+
+Phase 3: Notification (48-72 hours)
+  □ Notify affected individuals (if required)
+  □ Notify regulators (GDPR: 72 hours)
+  □ Notify law enforcement (if criminal)
+  □ Prepare public statement (if needed)
+  □ Set up call center/hotline
+
+Phase 4: Remediation (1-4 weeks)
+  □ Implement security improvements
+  □ Offer credit monitoring (if PII exposed)
+  □ Update policies and procedures
+  □ Train employees on lessons learned
+  □ Document response and outcomes
+
+Phase 5: Post-Incident (1-3 months)
+  □ Root cause analysis
+  □ Security audit
+  □ Policy updates
+  □ Training updates
+  □ Regulatory follow-up
+```
+
+### Notification Requirements
+
+```
+GDPR (EU):
+  - Timeline: 72 hours to supervisory authority
+  - Content: Nature of breach, data categories, consequences
+  - Individual notification: If high risk to rights and freedoms
+  - Documentation: Maintain record of all breaches
+
+CCPA (California):
+  - Timeline: "Expeditious" (interpreted as 30-60 days)
+  - Content: Type of information, what happened, steps taken
+  - Individual notification: If unencrypted PII exposed
+  - AG notification: If >500 California residents affected
+
+HIPAA (Healthcare):
+  - Timeline: 60 days to HHS, individual notification
+  - Content: Description, types of info, steps taken
+  - Media notification: If >500 individuals in a state
+  - Documentation: Maintain for 6 years
+
+State laws:
+  - All 50 states have breach notification laws
+  - Timeline varies (30-90 days)
+  - Content varies by state
+  - AG notification required in many states
+```
+
+## Step 37: Legal Technology
+
+### Legal Operations Tools
+
+```
+Contract management:
+  - Ironclad: CLM platform
+  - DocuSign CLM: Contract lifecycle
+  - Juro: Contract automation
+  - SpotDraft: Contract management
+
+Legal research:
+  - Westlaw: Legal research
+  - LexisNexis: Legal research
+  - Casetext: AI legal research
+  - Law Insider: Contract templates
+
+Entity management:
+  - Carta: Cap table and equity
+  - Clerky: Formation and compliance
+  - Stripe Atlas: Formation and banking
+
+Compliance:
+  - Vanta: SOC 2 automation
+  - Drata: Compliance monitoring
+  - OneTrust: Privacy management
+
+Billing:
+  - Clio: Legal billing
+  - TimeSolv: Time tracking
+  - Bill4Time: Legal billing
+```

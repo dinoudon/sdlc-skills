@@ -1769,3 +1769,207 @@ Measurement:
   - Health insurance claims trends
   - Absenteeism rates
   - Productivity metrics
+
+
+## Step 35: Employee Development
+
+### Career Development Framework
+
+```
+Career tracks:
+  Individual Contributor (IC):
+    Junior → Mid → Senior → Staff → Principal → Distinguished
+  
+  Management:
+    Team Lead → Engineering Manager → Director → VP → CTO
+  
+  Specialist:
+    Domain expert, deep technical expertise
+    Senior → Staff → Principal → Fellow
+
+Level definitions:
+  Junior (L1-L2):
+    - Completes well-defined tasks
+    - Requires guidance and mentorship
+    - Learning fundamentals
+  
+  Mid (L3-L4):
+    - Independently completes features
+    - Contributes to design decisions
+    - Mentors juniors
+  
+  Senior (L5-L6):
+    - Leads projects end-to-end
+    - Makes architecture decisions
+    - Influences team direction
+  
+  Staff+ (L7+):
+    - Sets technical direction
+    - Influences organization
+    - Solves ambiguous problems
+
+Promotion criteria:
+  - Consistent performance at next level (6+ months)
+  - Evidence from projects, peer feedback, metrics
+  - Manager nomination + skip-level approval
+  - Calibration with peer managers
+```
+
+### Mentoring Programs
+
+```
+Formal mentoring:
+  - Duration: 6-12 months
+  - Frequency: Bi-weekly 1:1s
+  - Structure: Goals, milestones, feedback
+  - Matching: By interest, career goals, expertise
+
+Informal mentoring:
+  - Ad hoc conversations
+  - Code reviews with feedback
+  - Pair programming sessions
+  - Lunch and learns
+
+Mentoring training:
+  - Active listening skills
+  - Giving constructive feedback
+  - Setting expectations
+  - Career coaching techniques
+
+Measurement:
+  - Mentee satisfaction survey
+  - Promotion rates for mentees
+  - Retention rates for mentees
+  - Mentor feedback on experience
+```
+
+## Step 36: Succession Planning
+
+### Succession Framework
+
+```
+Critical roles:
+  - C-suite executives
+  - VP-level leaders
+  - Key technical experts
+  - Customer-facing roles
+
+Succession identification:
+  - High-potential employees
+  - Performance ratings (consistent top performer)
+  - Readiness assessment (ready now, 1-2 years, 3+ years)
+  - Development needs (skills gaps)
+
+Development plans:
+  - Stretch assignments
+  - Cross-functional exposure
+  - Executive coaching
+  - External education (MBA, executive programs)
+  - Board/committee participation
+
+Review process:
+  - Annual talent review (9-box grid)
+  - Succession plan update
+  - Development plan progress
+  - Emergency succession (unexpected departure)
+```
+
+## Step 37: Employee Engagement
+
+### Engagement Survey Design
+
+```
+Survey structure:
+  - Frequency: Quarterly (pulse) + Annual (comprehensive)
+  - Length: 10-15 questions (pulse), 50-75 questions (annual)
+  - Anonymity: Guaranteed (minimum 5 responses per group)
+  - Action: Commit to acting on results
+
+Key dimensions:
+  - Satisfaction: Overall job satisfaction
+  - Engagement: Motivation and commitment
+  - Growth: Learning and development opportunities
+  - Recognition: Feeling valued and appreciated
+  - Communication: Information flow and transparency
+  - Leadership: Confidence in leadership
+  - Collaboration: Teamwork and cooperation
+  - Well-being: Work-life balance and stress
+
+Sample questions:
+  - "I would recommend this company as a great place to work" (eNPS)
+  - "I have the resources I need to do my job effectively"
+  - "My manager cares about my development"
+  - "I see myself here in 2 years"
+  - "I feel recognized for my contributions"
+
+Action planning:
+  - Share results transparently
+  - Identify top 3 improvement areas
+  - Create action plans with owners
+  - Track progress quarterly
+  - Communicate actions taken
+```
+
+## Step 38: Remote Work Management
+
+### Remote Work Policy
+
+```
+Eligibility:
+  - All full-time employees
+  - Contractors on 6+ month engagements
+  - Manager approval required
+
+Work hours:
+  - Core hours: 10am-3pm local time
+  - Flexible outside core hours
+  - Meeting-free Tuesdays and Thursdays
+  - Timezone alignment: Within 3 hours of team
+
+Communication:
+  - Slack for async communication
+  - Zoom for video meetings
+  - Notion for documentation
+  - Email for external communication
+
+Equipment:
+  - Company laptop
+  - $2,500 home office stipend
+  - $100/month internet/phone reimbursement
+  - Monitors and peripherals provided
+
+Performance:
+  - Output-based evaluation (not hours)
+  - Weekly 1:1 with manager
+  - Quarterly OKR reviews
+  - Annual performance review
+```
+
+### Remote Culture Building
+
+```
+Connection rituals:
+  - Daily standup (async or sync)
+  - Weekly all-hands (recorded)
+  - Monthly virtual social events
+  - Quarterly in-person offsites
+  - Annual company retreat
+
+Communication norms:
+  - Async-first (documentation over meetings)
+  - Default to public (Slack channels, Notion)
+  - Written decisions (decision logs, RFCs)
+  - Meeting-free time (blocks for deep work)
+
+Tools:
+  - Donut: Random coffee pairing
+  - Gather.town: Virtual office
+  - Loom: Async video messages
+  - Miro: Virtual whiteboarding
+
+Anti-patterns:
+  - Always-on culture (no boundaries)
+  - Meeting overload (no deep work time)
+  - Proximity bias (favoring in-office)
+  - Isolation (no social connection)
+  - Timezone insensitivity
