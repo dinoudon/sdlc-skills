@@ -1,7 +1,7 @@
 ---
 name: sdlc-platform-engineering
 description: "Platform engineering: internal developer portals (IDP), Backstage, golden paths, service catalog, self-service infrastructure, platform-as-a-product, developer productivity metrics (SPACE, DORA), platform team structure, paved roads, template repos, feature flags, secrets management, environment management."
-version: 6.0.0-slim
+version: 6.0.0-moderate
 author: Dinoudon
 license: MIT
 platforms: [linux, macos, windows]
@@ -9,7 +9,13 @@ metadata:
   hermes:
     tags: [sdlc, platform-engineering, idp, backstage, golden-paths, service-catalog, self-service, developer-productivity, paved-roads, dora, space-framework]
     related_skills: [sdlc-developer-tooling, sdlc-deployment, sdlc-observability, sdlc-cicd-pipeline, sdlc-architecture-design]
----## When to Use
+---
+
+# Platform Engineering
+
+Internal developer platforms, golden paths, service catalogs, and platform-as-a-product thinking. How Netflix, Spotify, and Google build platforms.
+
+## When to Use
 
 Trigger when user:
 - Builds internal developer portal (IDP)
@@ -224,24 +230,32 @@ spec:
         catalogInfoPath: /catalog-info.yaml
 ```
 
+## Step 4: Self-Service Infrastructure
 
-## Pitfalls
+### Self-Service Patterns
 
-1. **Platform without users** — Build what developers need, not what you think they need. Survey first.
-2. **Golden cage, not golden path** — If the platform is too rigid, developers can't do their jobs. Allow escape hatches.
-3. **Premature abstraction** — Don't build abstractions until you have 3+ concrete use cases.
-4. **No feedback loop** — Platform teams must sit with developer teams regularly.
-5. **Measuring activity not impact** — "We deployed 50 features" ≠ "Developers are more productive."
+```
+Pattern 1: CLI Tool
+$ platform create service --name payment-api --lang go --db postgres
+$ platform deploy --env staging
+$ platform logs --follow
 
-## Sources
+Pattern 2: Web Portal (IDP)
+Click "Create Service" → Fill form → Service created
 
-- Backstage (Spotify): https://backstage.io/docs/
-- Team Topologies: https://teamtopologies.com/
-- DORA / State of DevOps: https://dora.dev
-- SPACE Framework: https://queue.acm.org/detail.cfm?id=3454121
-- CNCF Platform White Paper: https://tag-app-delivery.cncf.io/
-- Port.io State of IDP: https://www.port.io/state-of-internal-developer-portals
-- Humanitec Platform Orchestrator: https://humanitec.com/
-- Gartner Platform Engineering: https://www.gartner.com/en/articles/what-is-platform-engineering
-- Spotify Engineering: https://engineering.atspotify.com/
-- Netflix Platform: https://netflixtechblog.com/
+Pattern 3: API
+POST /api/v1/services
+{ "name": "payment-api", "language": "go", "database": "postgres" }
+
+Pattern 4: GitOps
+Push catalog-info.yaml → Platform reconciles → Resources created
+```
+
+### Self-Service Infrastructure Stack
+
+```
+Layer 1: Compute
+  └─ K8s namespaces, node pools, resource quotas
+
+Layer 2: Data
+  └─ Managed databases, caches, q

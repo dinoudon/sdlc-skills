@@ -1,7 +1,7 @@
 ---
 name: sdlc-developer-relations
 description: "Developer Relations (DevRel) program design: advocacy, community, marketing, enablement. Developer experience (DX), developer journey mapping, technical content strategy, community building, SDK strategy, developer onboarding, API playground, developer feedback loops, developer marketing, developer funnel, measuring DevRel."
-version: 6.0.0-slim
+version: 6.0.0-moderate
 author: Dinoudon
 license: MIT
 platforms: [linux, macos, windows]
@@ -9,7 +9,13 @@ metadata:
   hermes:
     tags: [sdlc, developer-relations, devrel, developer-experience, dx, community, advocacy, sdk, developer-marketing, technical-content]
     related_skills: [sdlc-product-growth, sdlc-api-documentation, sdlc-prd-to-production, sdlc-developer-tooling, sdlc-gtm-strategy]
----## When to Use
+---
+
+# Developer Relations (DevRel)
+
+Building and nurturing developer communities. The bridge between product and developers.
+
+## When to Use
 
 Trigger when user:
 - Plans a DevRel program or developer advocacy team
@@ -123,24 +129,80 @@ Structure for tutorials:
 6. Next steps (what to learn after)
 ```
 
+## Step 4: SDK & Client Library Strategy
 
-## Pitfalls
+### SDK Design Principles
+Source: Stripe, Twilio, AWS SDK
 
-1. **DevRel as marketing only** — If DevRel only does content and events, product feedback loop breaks. Must be bidirectional.
-2. **Measuring activity not impact** — "Published 50 blog posts" means nothing if no one reads them. Track engagement and conversion.
-3. **Ignoring community health** — Toxic communities drive developers away. Moderate actively, set clear codes of conduct.
-4. **SDK rot** — SDKs that aren't maintained become liabilities. Either maintain or don't ship.
-5. **Docs are never done** — Documentation needs continuous updates with every release. Assign owners.
+```
+1. Idiomatic: Follow language conventions (Pythonic, Go-idiomatic)
+2. Typed: Type hints, generics where supported
+3. Consistent: Same patterns across languages
+4. Minimal: Few dependencies, small footprint
+5. Documented: Inline docs, generated reference
+6. Tested: 90%+ coverage, integration tests
+7. Versioned: Semantic versioning, deprecation warnings
+8. Auto-generated: OpenAPI → SDK via openapi-generator or Fern
+```
 
-## Sources
+### SDK Matrix Template
 
-- Developer Relations: https://developerrelations.com/
-- DevRel Collective: https://devrelcollective.fun/
-- Stripe Developer Experience: https://stripe.com/blog/engineering
-- Twilio Developer Marketing: https://www.twilio.com/en-us/blog
-- MongoDB Community: https://www.mongodb.com/community
-- ReadMe (API docs): https://readme.com/
-- Mintlify (docs platform): https://www.mintlify.com/
-- Fern (SDK generation): https://buildwithfern.com/
-- DevRelCon: https://devrelcon.dev/
-- Developer Experience paper: https://queue.acm.org/detail.cfm?id=3595878
+```
+Language  | SDK       | Status    | Coverage | Maintainer
+----------|-----------|-----------|----------|------------
+Python    | pip pkg   | Stable    | 100%     | @team
+Node.js   | npm pkg   | Stable    | 100%     | @team
+Go        | module    | Stable    | 95%      | @community
+Java      | Maven     | Beta      | 90%      | @team
+Ruby      | gem       | Beta      | 85%      | @community
+PHP       | Composer  | Alpha     | 70%      | @community
+Rust      | crate     | Community | 60%      | @external
+Swift     | SPM       | Planned   | 0%       | —
+```
+
+### SDK Generation Tools
+
+| Tool | Approach | Best For |
+|------|----------|----------|
+| **openapi-generator** | OpenAPI → multi-language | Broad coverage |
+| **Fern** | OpenAPI → polished SDKs | Quality SDKs |
+| **Kiota** | OpenAPI → typed clients | Microsoft ecosystem |
+| **Stainless** | OpenAPI → SDKs (Stripe-backed) | API companies |
+| **Progenitor** | OpenAPI → Rust clients | Rust SDKs |
+
+## Step 5: Community Building
+
+### Community Platforms
+
+| Platform | Best For | Pros | Cons |
+|----------|----------|------|------|
+| **Discord** | Real-time chat, gaming/dev | Rich features, bots | Can get noisy |
+| **Slack** | Professional communities | Familiar UI | Free tier limits |
+| **GitHub Discussions** | Open source projects | Near code, searchable | Limited formatting |
+| **Stack Overflow** | Q&A, SEO | High authority | No community feel |
+| **Reddit** | Broad communities | Large audience | Less control |
+| **Forum** (Discourse) | Long-form, searchable | Full control, SEO | Higher barrier |
+
+### Community Health Metrics
+
+```
+1. Active members (monthly active posters)
+2. Response time (median time to first reply)
+3. Resolution rate (% questions answered)
+4. Sentiment (positive/neutral/negative ratio)
+5. Champion count (most active helpers)
+6. Community NPS (would you recommend?)
+7. Content creation (user-generated posts/month)
+8. Event attendance (meetup/webinar participants)
+```
+
+### Champion/Ambassador Program
+
+```
+Levels:
+1. Contributor: Occasional PRs, answers questions
+2. Champion: Regular contributor, writes content, helps others
+3. Ambassador: Represents community at events, mentors others
+
+Benefits by level:
+Contributor: S

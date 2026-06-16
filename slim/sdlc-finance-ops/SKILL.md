@@ -1,7 +1,7 @@
 ---
 name: sdlc-finance-ops
 description: "Software company finance and operations: unit economics, SaaS metrics, fundraising (seed to IPO), financial planning, burn rate, runway, budgeting, cap table, equity, stock options, board management, vendor management, procurement, insurance."
-version: 6.0.0-slim
+version: 6.0.0-moderate
 author: Dinoudon
 license: MIT
 platforms: [linux, macos, windows]
@@ -9,7 +9,13 @@ metadata:
   hermes:
     tags: [sdlc, finance, operations, unit-economics, fundraising, saas-metrics, burn-rate, runway, cap-table, equity, board-management]
     related_skills: [sdlc-product-growth, sdlc-gtm-strategy, sdlc-hiring-talent, sdlc-legal-compliance]
----## When to Use
+---
+
+# Finance & Operations
+
+Unit economics, fundraising, financial planning, and operational infrastructure for software companies.
+
+## When to Use
 
 Trigger when user:
 - Calculates unit economics (LTV, CAC, payback period)
@@ -221,24 +227,86 @@ Revenue per employee target:
   Public: $500K+ per employee
 ```
 
+## Step 4: Cap Table & Equity
 
-## Pitfalls
+### Cap Table Example
 
-1. **Vanity metrics** — "10,000 signups" means nothing without activation and retention data.
-2. **Raising too much** — More money = more dilution + pressure to grow faster than healthy.
-3. **Raising too little** — Running out of money mid-raise is a death sentence. Raise 18-24 months.
-4. **No financial model** — Investors expect a bottoms-up model, not a hockey stick in a slide deck.
-5. **Ignoring unit economics** — Growing revenue while losing money on every customer is a Ponzi scheme.
+```
+Founder A: 40% (4,000,000 shares)
+Founder B: 30% (3,000,000 shares)
+Employee option pool: 15% (1,500,000 shares)
+Seed investors: 10% (1,000,000 shares)
+Angel investors: 5% (500,000 shares)
+Total: 10,000,000 shares
 
-## Sources
+After Series A (20% dilution):
+Founder A: 32% (diluted from 40%)
+Founder B: 24% (diluted from 30%)
+Employee pool: 12% (refreshed to 15%)
+Seed investors: 8%
+Angel investors: 4%
+Series A investors: 20%
+Total: 100%
+```
 
-- Bessemer Cloud Atlas: https://www.bvp.com/atlas
-- OpenView SaaS Benchmarks: https://openviewpartners.com/blog/
-- a16z Startup School: https://a16z.com/startup-school/
-- Carta (cap table): https://carta.com/
-- Holloway Equity Guide: https://www.holloway.com/g/equity-compensation
-- SaaStr (SaaS metrics): https://www.saastr.com/
-- Christoph Janz (SaaS metrics): https://christophjanz.blogspot.com/
-- Tomasz Tunguz (SaaS): https://tomtunguz.com/
-- YC Fundraising Guide: https://www.ycombinator.com/library
-- Brad Feld, Venture Deals: https://www.feld.com/archives/2019/06/venture-deals-4th-edition.html
+### Equity Best Practices
+
+```
+Employee equity grants:
+  Junior IC: 0.01-0.05%
+  Senior IC: 0.05-0.25%
+  Staff IC: 0.1-0.5%
+  VP/Director: 0.5-1.5%
+  C-level: 1-5%
+
+Vesting: 4 years, 1-year cliff (standard)
+Cliff: No equity until 1 year, then 25% vests
+Monthly: Remaining 75% vests monthly over 3 years
+Acceleration: Single trigger (acquisition) or double trigger (acquisition + termination)
+```
+
+## Step 5: Board Management
+
+### Board Meeting Structure
+
+```
+Quarterly board meeting (2-3 hours):
+
+1. CEO Update (15 min)
+   - Key wins, challenges, strategic decisions
+   
+2. Financial Review (30 min)
+   - Revenue, burn, runway, metrics dashboard
+   
+3. Product Update (20 min)
+   - Roadmap progress, key launches, customer feedback
+   
+4. GTM Update (20 min)
+   - Sales pipeline, marketing, customer success
+   
+5. People Update (15 min)
+   - Headcount, hiring, culture, key departures
+   
+6. Key Decisions (30 min)
+   - Strategic decisions requiring board input
+   
+7. Executive Session (15 min)
+   - Board meets without management
+```
+
+### Board Reporting Template
+
+```
+Key Metrics Dashboard:
+┌───────────────────────────────────────────┐
+│  ARR: $2.4M  ↑32% QoQ                    │
+│  MRR: $200K  ↑$15K from last month        │
+│  Customers: 450  ↑45 net new               │
+│  NRR: 112%                                │
+│  Burn: $180K/mo  Runway: 22 months        │
+│  Headcount: 18  ↑3 this quarter           │
+│  NPS: 62                                  │
+└───────────────────────────────────────────┘
+```
+
+## St

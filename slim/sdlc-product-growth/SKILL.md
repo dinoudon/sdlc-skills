@@ -1,7 +1,7 @@
 ---
 name: sdlc-product-growth
 description: "Product-led growth (PLG), developer-led growth, growth loops, activation funnels, A/B testing, SaaS metrics (MRR/ARR/LTV/CAC/NRR), unit economics, pricing strategy, monetization, onboarding optimization, feature gating, competitive analysis, growth hacking, referral programs, paywall design."
-version: 6.0.0-slim
+version: 6.0.0-moderate
 author: Dinoudon
 license: MIT
 platforms: [linux, macos, windows]
@@ -9,7 +9,13 @@ metadata:
   hermes:
     tags: [sdlc, product-growth, plg, growth-engineering, saas-metrics, pricing, monetization, experimentation, ab-testing, funnels, activation, retention, unit-economics, developer-led-growth]
     related_skills: [sdlc-prd-to-production, sdlc-requirements-engineering, sdlc-testing-qa, sdlc-developer-relations, sdlc-gtm-strategy, sdlc-finance-ops]
----## When to Use
+---
+
+# Product Growth Engineering
+
+Product-led growth, growth loops, experimentation, SaaS metrics, pricing strategy, and monetization. How unicorn companies drive revenue from product.
+
+## When to Use
 
 Trigger when user:
 - Designs pricing, plans tiers, or evaluates monetization models
@@ -199,29 +205,4 @@ Tier 4 (Enterprise): Custom, SLA, dedicated infra, white-glove
 Gating rules:
 - NEVER gate core value prop (that's the hook)
 - Gate collaboration (teams need to pay)
-- Gate compliance (enterprises expect to pay)
-- Gate scale (volume needs to pay)
-- Gate support (premium support = premium price)
-```
-
-
-## Pitfalls
-
-1. **Optimizing for vanity metrics** — Page views and signups don't equal revenue. Track activation and retention.
-2. **Pricing too low** — Underpricing signals low value. Raise prices until you get pushback.
-3. **Premature scaling** — Don't invest in growth before product-market fit. PMF signal: organic retention > 40%.
-4. **Ignoring churn** — Acquiring 100 users/month while losing 80 is a leaky bucket. Fix retention first.
-5. **A/B testing without traffic** — Need ~10K visitors/week per variant for statistical significance.
-
-## Sources
-
-- Reforge: https://www.reforge.com/blog
-- Teresa Torres, Continuous Discovery Habits: https://www.producttalk.org/
-- Lenny Rachitsky Newsletter: https://www.lennysnewsletter.com/
-- OpenView Partners PLG: https://openviewpartners.com/blog/
-- Bessemer Cloud Index: https://www.bvp.com/atlas
-- a16z Growth: https://a16z.com/growth/
-- Dave McClure Pirate Metrics: https://500.co/
-- Stripe engineering: https://stripe.com/blog/engineering
-- Slack growth story: https://slack.com/blog
-- Notion growth: https://www.notion.so/blog
+- Gate c

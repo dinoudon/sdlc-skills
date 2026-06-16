@@ -1,7 +1,7 @@
 ---
 name: sdlc-legal-compliance
 description: "Software company legal and compliance: GDPR, SOC 2, CCPA, privacy policy, terms of service, data processing agreements, IP protection, open source licensing, regulatory compliance, security certifications, data residency, incident response legal, employment law."
-version: 6.0.0
+version: 6.0.0-moderate
 author: Dinoudon
 license: MIT
 platforms: [linux, macos, windows]
@@ -534,7 +534,137 @@ Annually:
 9. **Ignoring data residency** — Some customers (government, healthcare, finance) require data in specific regions. Plan for it.
 10. **No legal counsel** — Use a startup-friendly law firm (Cooley, Wilson Sonsini, Gunderson). Pro bono legal clinics exist for early-stage.
 
-## Sources
+## Step 8: International Data Transfers
+
+### Transfer Mechanisms
+
+```
+GDPR Chapter V requires lawful transfer mechanism:
+
+1. Adequacy Decision:
+   Countries with adequate protection:
+   - EU/EEA member states
+   - UK, Switzerland, Japan, South Korea, Canada (commercial)
+   - Israel, New Zealand, Uruguay, Argentina
+   
+2. Standard Contractual Clauses (SCCs):
+   - EU Commission approved templates
+   - Must complete Annex I (parties, transfer details)
+   - Must complete Annex II (technical/organizational measures)
+   - Transfer Impact Assessment (TIA) required
+   
+3. Binding Corporate Rules (BCRs):
+   - For multinational groups
+   - Requires DPA approval
+   - Takes 12-18 months to obtain
+   
+4. Derogations (limited):
+   - Explicit consent (with caveats)
+   - Contract performance
+   - Legal claims
+   - Important public interest
+
+Practical steps:
+  1. Map all data flows (processor, sub-processor)
+  2. Identify transfer mechanism for each flow
+  3. Execute SCCs with all processors
+  4. Complete TIAs for high-risk transfers
+  5. Implement supplementary measures (encryption, pseudonymization)
+```
+
+### Data Localization Requirements
+
+```
+Country-specific requirements:
+
+Russia (Federal Law 242-FZ):
+  - Personal data of Russian citizens must be stored in Russia
+  - Processing can happen abroad, but storage must be local
+  - Fines: Up to 18M RUB (~$200K) per violation
+
+China (PIPL):
+  - Critical data must stay in China
+  - Cross-border transfers require security assessment
+  - Data localization for CIIOs (Critical Information Infrastructure Operators)
+
+Brazil (LGPD):
+  - No strict localization requirement
+  - But international transfers need adequacy or consent
+  
+India (DPDP Act):
+  - Government can notify categories that must stay in India
+  - Cross-border transfers allowed to approved countries
+
+Practical approach:
+  - Use regional data centers (AWS, GCP, Azure)
+  - Implement data residency controls in application
+  - Provide data export for users in regulated regions
+```
+
+## Step 9: Contract Management
+
+### Contract Lifecycle
+
+```
+Stage 1: Template Selection
+  - NDA (mutual or one-way)
+  - MSA (Master Service Agreement)
+  - SOW (Statement of Work)
+  - DPA (Data Processing Agreement)
+  - Order Form (commercial terms)
+  
+Stage 2: Drafting
+  - Use approved templates
+  - Legal review for non-standard terms
+  - Redline tracking (version control)
+  
+Stage 3: Negotiation
+  - Track all changes
+  - Escalation path for business terms
+  - Legal approval for liability/indemnity changes
+  
+Stage 4: Execution
+  - DocuSign / HelloSign for e-signatures
+  - Counter-execution tracking
+  - Filing in contract management system
+  
+Stage 5: Obligation Management
+  - SLA monitoring
+  - Renewal tracking (90/60/30 day alerts)
+  - Compliance verification
+  - Audit rights exercise
+  
+Stage 6: Renewal/Termination
+  - Auto-renewal notification (30 days)
+  - Price escalation review
+  - Performance evaluation
+  - Offboarding checklist
+```
+
+### Key Contract Clauses
+
+```
+Limitation of Liability:
+  - Cap: Typically 12 months of fees paid
+  - Exclusions: Data breach, IP infringement, gross negligence
+  - Carve-outs: Confidentiality, indemnification
+
+Indemnification:
+  - Provider indemnifies: IP infringement, data breach
+  - Customer indemnifies: Content, misuse, compliance
+  - Process: Prompt notice, sole control of defense, cooperation
+
+Service Level Agreement:
+  - Uptime: 99.9% (43.8 min/month downtime)
+  - Measurement: Monthly, excluding scheduled maintenance
+  - Credits: 5% per 0.1% below SLA (capped at 30%)
+  - Response times: P1 (1h), P2 (4h), P3 (8h), P4 (24h)
+
+Termination:
+  - For convenience: 30-90 days notice
+  - For cause: Material breach + 30-day cure period
+  - Effect: Data return (30 days), data deletion (90 days)
+
 
 - GDPR Official Text: https://gdpr.eu/
 - CCPA Official: https://oag.ca.gov/privacy/ccpa
@@ -547,3 +677,619 @@ Annually:
 - Drata (compliance automation): https://www.drata.com/
 - Cooley GO (startup legal): https://www.cooleygo.com/
 - Gunderson Dettmer (startup law): https://www.gunder.com/
+
+
+## Step 13: Employment Law
+
+### Employment Agreement Key Terms
+
+```
+At-will employment:
+  - Either party can terminate at any time
+  - No guaranteed employment duration
+  - Exceptions: Implied contract, public policy, good faith
+
+Non-compete:
+  - Enforceability varies by state
+  - California: Generally unenforceable
+  - Other states: Must be reasonable in scope, geography, time
+  - FTC proposed ban (pending as of 2024)
+  - Alternative: Non-solicit (more enforceable)
+
+Non-solicitation:
+  - Cannot solicit company's customers or employees
+  - Typically 12-24 months
+  - More enforceable than non-competes
+
+IP assignment:
+  - Work-for-hire: Company owns all work product
+  - Prior inventions: Excluded from assignment
+  - Side projects: May or may not be covered
+  - State laws vary (CA Labor Code §2870)
+
+Confidentiality:
+  - Survives termination
+  - No time limit (trade secrets)
+  - Exceptions: Public knowledge, independent development
+```
+
+### Multi-State Employment
+
+```
+Compliance considerations:
+  - State-specific wage and hour laws
+  - Paid sick leave requirements
+  - Pay transparency laws
+  - Background check restrictions
+  - Non-compete enforceability
+  - Tax withholding and unemployment insurance
+
+Payroll:
+  - Register in each state where employees reside
+  - Withhold state income tax (varies by state)
+  - Unemployment insurance (SUI) registration
+  - Workers' compensation coverage
+  - State-specific payroll tax filings
+
+Tools:
+  - Gusto: SMB payroll and HR
+  - Rippling: HR, IT, finance platform
+  - Deel: Global payroll and compliance
+  - Remote: International employment
+  - Papaya Global: Global payroll management
+```
+
+## Step 14: IP Portfolio Management
+
+### Patent Strategy
+
+```
+What to patent:
+  - Novel technical solutions
+  - Unique algorithms or processes
+  - Hardware innovations
+  - Business methods (limited patentability)
+
+What NOT to patent:
+  - Trade secrets (better kept secret)
+  - Software alone (Alice Corp v. CLS Bank)
+  - Obvious improvements
+  - Fast-moving technology (patent takes 2-3 years)
+
+Process:
+  1. Invention disclosure (engineer submits idea)
+  2. Prior art search (patent attorney)
+  3. Patentability assessment
+  4. Provisional application ($1,500-3,000)
+  5. Non-provisional application ($10,000-15,000)
+  6. Prosecution (2-3 years)
+  7. Issuance ($1,000-3,000 issue fee)
+  8. Maintenance fees (3.5, 7.5, 11.5 years)
+
+Portfolio management:
+  - Annual patent audit
+  - Prune low-value patents
+  - Monitor competitor filings
+  - Consider defensive publications
+  - Evaluate licensing opportunities
+```
+
+### Trademark Registration
+
+```
+Process:
+  1. Trademark search (TESS database)
+  2. Application filing ($250-350 per class)
+  3. Examination (3-4 months)
+  4. Publication for opposition (30 days)
+  5. Registration (if no opposition)
+  6. Maintenance (Section 8 & 15 filings)
+
+Classes for tech companies:
+  - Class 9: Software, apps, downloadable content
+  - Class 35: Business services, SaaS
+  - Class 38: Telecommunications
+  - Class 41: Education, training
+  - Class 42: Software development, hosting
+
+International:
+  - Madrid Protocol: Single application for 120+ countries
+  - National filings: For countries not in Madrid
+  - Budget: $5,000-20,000 for key markets
+
+
+## Step 15: Commercial Agreements
+
+### SaaS Agreement Key Sections
+
+```
+1. Service description: Features, functionality, SLA, support terms
+2. Subscription terms: Term length, pricing, payment, usage limits
+3. Data processing: DPA reference, data ownership, security measures
+4. Intellectual property: IP ownership, license terms, feedback
+5. Limitation of liability: Cap, exclusions, carve-outs
+6. Termination: For convenience, for cause, data return/deletion
+7. Warranties: Service as described, compliance, no known infringement
+8. Indemnification: Provider (IP, data breach), Customer (content, misuse)
+```
+
+### Contract Negotiation Playbook
+
+```
+Common negotiation points:
+
+Liability cap:
+  Customer request: Uncapped or 3-5x annual fees
+  Our position: 12 months of fees
+  Compromise: 2x annual fees for data breach, 1x for all else
+
+Indemnification scope:
+  Customer request: Broad indemnification
+  Our position: Specific to IP infringement and data breach
+  Compromise: Add gross negligence and willful misconduct
+
+Data portability:
+  Customer request: Real-time export, all formats
+  Our position: Standard export on termination
+  Compromise: Monthly export capability + termination export
+
+SLA credits:
+  Customer request: Service credits for any downtime
+  Our position: Credits for downtime exceeding SLA
+  Compromise: Credits at 5% per 0.1% below SLA (cap 30%)
+
+Audit rights:
+  Customer request: Annual audit rights
+  Our position: SOC 2 report sufficient
+  Compromise: SOC 2 + right to audit on material breach
+```
+
+## Step 16: Privacy Engineering
+
+### Privacy by Design
+
+```
+Principles:
+  1. Proactive, not reactive
+  2. Privacy as default setting
+  3. Privacy embedded into design
+  4. Full functionality (positive-sum)
+  5. End-to-end security
+  6. Visibility and transparency
+  7. User-centric
+
+Implementation:
+  Data minimization:
+    - Collect only what is necessary
+    - Delete when no longer needed
+    - Anonymize/pseudonymize where possible
+  
+  Purpose limitation:
+    - Document purpose for each data element
+    - Enforce purpose in code
+    - Re-consent for new purposes
+  
+  Consent management:
+    - Granular consent options
+    - Easy withdrawal
+    - Consent records maintained
+    - Cookie consent management
+
+Tools:
+  - OneTrust: Privacy management
+  - TrustArc: Privacy compliance
+  - Cookiebot: Cookie consent
+  - BigID: Data discovery and classification
+```
+
+## Step 17: Regulatory Monitoring
+
+### Compliance Calendar
+
+```
+Monthly:
+  - Review new regulations and guidance
+  - Update compliance documentation
+  - Employee training completion check
+  - Incident review and reporting
+
+Quarterly:
+  - Risk assessment update
+  - Policy review and updates
+  - Vendor compliance review
+  - Board compliance report
+
+Annually:
+  - SOC 2 audit
+  - ISO 27001 surveillance audit
+  - GDPR compliance review
+  - Employee training refresh
+  - Business continuity plan test
+  - Insurance policy review
+
+Regulatory sources:
+  - FTC.gov (US privacy enforcement)
+  - ICO.org.uk (UK GDPR)
+  - CNIL.fr (French GDPR)
+  - EDPB.europa.eu (EU guidance)
+  - NIST.gov (cybersecurity frameworks)
+  - IAPP.org (privacy professional resources)
+```
+
+
+## Step 18: Employment Law
+
+### Employment Agreement Key Terms
+
+```
+At-will employment:
+  - Either party can terminate at any time
+  - No guaranteed employment duration
+  - Exceptions: Implied contract, public policy, good faith
+
+Non-compete:
+  - Enforceability varies by state
+  - California: Generally unenforceable
+  - Other states: Must be reasonable in scope, geography, time
+  - FTC proposed ban (pending as of 2024)
+  - Alternative: Non-solicit (more enforceable)
+
+Non-solicitation:
+  - Cannot solicit company's customers or employees
+  - Typically 12-24 months
+  - More enforceable than non-competes
+
+IP assignment:
+  - Work-for-hire: Company owns all work product
+  - Prior inventions: Excluded from assignment
+  - Side projects: May or may not be covered
+  - State laws vary (CA Labor Code 2870)
+
+Confidentiality:
+  - Survives termination
+  - No time limit (trade secrets)
+  - Exceptions: Public knowledge, independent development
+```
+
+### Multi-State Employment
+
+```
+Compliance considerations:
+  - State-specific wage and hour laws
+  - Paid sick leave requirements
+  - Pay transparency laws
+  - Background check restrictions
+  - Non-compete enforceability
+  - Tax withholding and unemployment insurance
+
+Payroll:
+  - Register in each state where employees reside
+  - Withhold state income tax (varies by state)
+  - Unemployment insurance (SUI) registration
+  - Workers compensation coverage
+  - State-specific payroll tax filings
+
+Tools:
+  - Gusto: SMB payroll and HR
+  - Rippling: HR, IT, finance platform
+  - Deel: Global payroll and compliance
+  - Remote: International employment
+  - Papaya Global: Global payroll management
+```
+
+## Step 19: IP Portfolio Management
+
+### Patent Strategy
+
+```
+What to patent:
+  - Novel technical solutions
+  - Unique algorithms or processes
+  - Hardware innovations
+  - Business methods (limited patentability)
+
+What NOT to patent:
+  - Trade secrets (better kept secret)
+  - Software alone (Alice Corp v. CLS Bank)
+  - Obvious improvements
+  - Fast-moving technology (patent takes 2-3 years)
+
+Process:
+  1. Invention disclosure (engineer submits idea)
+  2. Prior art search (patent attorney)
+  3. Patentability assessment
+  4. Provisional application ($1,500-3,000)
+  5. Non-provisional application ($10,000-15,000)
+  6. Prosecution (2-3 years)
+  7. Issuance ($1,000-3,000 issue fee)
+  8. Maintenance fees (3.5, 7.5, 11.5 years)
+
+Portfolio management:
+  - Annual patent audit
+  - Prune low-value patents
+  - Monitor competitor filings
+  - Consider defensive publications
+  - Evaluate licensing opportunities
+```
+
+### Trademark Registration
+
+```
+Process:
+  1. Trademark search (TESS database)
+  2. Application filing ($250-350 per class)
+  3. Examination (3-4 months)
+  4. Publication for opposition (30 days)
+  5. Registration (if no opposition)
+  6. Maintenance (Section 8 and 15 filings)
+
+Classes for tech companies:
+  - Class 9: Software, apps, downloadable content
+  - Class 35: Business services, SaaS
+  - Class 38: Telecommunications
+  - Class 41: Education, training
+  - Class 42: Software development, hosting
+
+International:
+  - Madrid Protocol: Single application for 120+ countries
+  - National filings: For countries not in Madrid
+  - Budget: $5,000-20,000 for key markets
+```
+
+## Step 20: Security Compliance
+
+### SOC 2 Type II Controls
+
+```
+Trust Service Criteria:
+
+1. Security (Common Criteria)
+   - CC1: Control environment
+   - CC2: Communication and information
+   - CC3: Risk assessment
+   - CC4: Monitoring activities
+   - CC5: Control activities
+   - CC6: Logical and physical access
+   - CC7: System operations
+   - CC8: Change management
+   - CC9: Risk mitigation
+
+2. Availability
+   - A1.1: Capacity management
+   - A1.2: Environmental protections
+   - A1.3: Recovery procedures
+
+3. Processing Integrity
+   - PI1.1: Data processing objectives
+
+4. Confidentiality
+   - C1.1: Confidential information identification
+
+5. Privacy
+   - P1-P8: Privacy principles (aligned with GDPR)
+
+Audit timeline:
+  - Type I: 3-6 months (design of controls)
+  - Type II: 6-12 months (operating effectiveness)
+  - Annual renewal required
+  - Auditor: Big 4 or specialized firms (A-LIGN, Coalfire)
+```
+
+## Step 21: AI/ML Compliance
+
+### AI Governance Framework
+
+```
+Principles:
+  1. Fairness: No discrimination by protected characteristics
+  2. Transparency: Explain how AI decisions are made
+  3. Accountability: Clear ownership of AI outcomes
+  4. Privacy: Data used for training must be lawful
+  5. Safety: AI must not cause harm
+
+Risk assessment:
+  Low risk: Spam filter, recommendation engine
+  Medium risk: Credit scoring, hiring screening
+  High risk: Medical diagnosis, autonomous vehicles
+  
+EU AI Act requirements:
+  - High-risk AI: Conformity assessment, CE marking
+  - Limited risk: Transparency obligations
+  - Minimal risk: No specific requirements
+
+Practical steps:
+  1. Inventory all AI/ML models in production
+  2. Classify risk level per model
+  3. Implement monitoring for bias/drift
+  4. Document training data provenance
+  5. Establish human oversight for high-risk decisions
+  6. Regular bias audits
+  7. Incident response plan for AI failures
+```
+
+
+## Step 22: International Expansion Legal
+
+### Entity Structure
+
+```
+US company expanding internationally:
+
+Option 1: Branch office
+  - Simple setup
+  - No separate legal entity
+  - Parent company liable for all obligations
+  - Tax: Income taxed in both countries (with treaty relief)
+
+Option 2: Subsidiary (most common)
+  - Separate legal entity in foreign country
+  - Limited liability (parent protected)
+  - Tax: Local taxation, dividends to parent
+  - Transfer pricing requirements
+
+Option 3: Partnership/JV
+  - Local partner provides market access
+  - Shared control and profits
+  - Complex governance
+  - Used for highly regulated markets
+
+Recommended structure:
+  US parent (C-Corp)
+    -> Ireland holding company (IP, tax optimization)
+      -> UK subsidiary (European operations)
+      -> Singapore subsidiary (APAC operations)
+      -> Brazil subsidiary (LATAM operations)
+```
+
+### Transfer Pricing
+
+```
+Arm's length principle:
+  Related-party transactions must be priced as if between 
+  independent parties in comparable circumstances
+
+Common intercompany transactions:
+  - IP license fees (parent to subsidiary)
+  - Management fees (shared services)
+  - Goods sold (manufacturing to distribution)
+  - Loans (intercompany financing)
+
+Documentation requirements:
+  - Master file (group overview)
+  - Local file (country-specific transactions)
+  - Country-by-country report (revenue, tax, employees)
+
+Penalties:
+  - US: 20-40% penalty on underpayment
+  - EU: Varies by country, can be significant
+  - APAC: Increasing enforcement
+
+Tools:
+  - Thomson Reuters ONESOURCE
+  - KPMG Transfer Pricing Solutions
+  - EY Transfer Pricing Navigator
+```
+
+## Step 23: Insurance
+
+### Startup Insurance Package
+
+```
+Required:
+  General liability:
+    - Covers bodily injury, property damage
+    - $1-2M per occurrence
+    - $2-4M aggregate
+    - Cost: $500-2,000/year
+    
+  Workers compensation:
+    - Required in most states
+    - Covers work-related injuries
+    - Cost: Varies by state and payroll
+    
+  Directors and officers (D&O):
+    - Protects board and executives
+    - Covers lawsuits, regulatory actions
+    - $2-5M coverage
+    - Cost: $5,000-20,000/year
+
+Recommended:
+  Cyber liability:
+    - Covers data breaches, ransomware
+    - $1-5M coverage
+    - Includes forensics, notification, legal
+    - Cost: $5,000-25,000/year
+    
+  Errors and omissions (E&O):
+    - Covers professional service failures
+    - $1-5M coverage
+    - Important for SaaS, consulting
+    - Cost: $3,000-15,000/year
+    
+  Employment practices liability (EPLI):
+    - Covers wrongful termination, discrimination
+    - $1-5M coverage
+    - Cost: $3,000-10,000/year
+
+Optional:
+  Key person insurance:
+    - Covers loss of key executive
+    - Company is beneficiary
+    - Amount: 5-10x executive salary
+    
+  Business interruption:
+    - Covers lost revenue during disruption
+    - Tied to property insurance
+    - Cost: Varies by revenue and risk
+```
+
+## Step 24: Regulatory Filings
+
+### Annual Compliance Calendar
+
+```
+Federal:
+  - Annual tax return (C-Corp: Form 1120, due April 15)
+  - Quarterly estimated taxes (Form 941)
+  - Annual information returns (1099s, W-2s)
+  - Form D (SEC, if fundraising)
+
+State:
+  - Annual report (varies by state)
+  - Franchise tax (Delaware: March 1)
+  - State income tax (varies)
+  - Sales tax filings (monthly/quarterly)
+  - Registered agent renewal
+
+Local:
+  - Business license renewal
+  - City/county tax filings
+  - Zoning compliance (if office)
+
+International:
+  - VAT returns (monthly/quarterly, EU)
+  - Annual accounts (UK, EU)
+  - Transfer pricing documentation
+  - Country-by-country reporting (if >750M EUR revenue)
+
+Tools:
+  - Clerky: Formation and compliance
+  - Stripe Atlas: Formation and banking
+  - Capbase: Cap table and compliance
+  - ZenBusiness: Registered agent and compliance
+```
+
+## Step 25: Legal Tech Stack
+
+### Legal Operations Tools
+
+```
+Contract management:
+  - Ironclad: Contract lifecycle management
+  - DocuSign CLM: Contract management
+  - Juro: Contract automation
+  - SpotDraft: Contract management for startups
+
+Entity management:
+  - Carta: Cap table and equity
+  - Pulley: Cap table management
+  - Clerky: Formation and compliance
+  - Stripe Atlas: Formation and banking
+
+IP management:
+  - Anaqua: IP portfolio management
+  - PatSnap: Patent analytics
+  - TrademarkNow: Trademark search
+  - IP.com: Prior art search
+
+Compliance:
+  - Vanta: SOC 2 automation
+  - Drata: Compliance monitoring
+  - OneTrust: Privacy management
+  - TrustArc: Privacy compliance
+
+Legal research:
+  - Westlaw: Legal research
+  - LexisNexis: Legal research
+  - Casetext: AI legal research
+  - Law Insider: Contract templates

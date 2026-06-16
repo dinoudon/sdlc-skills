@@ -1,15 +1,21 @@
 ---
 name: sdlc-retrospective
 description: "Retrospective formats: Start/Stop/Continue, 4Ls, Mad/Sad/Glad, Sailboat, Kaizen PDCA cycle, Toyota Kata (Mike Rother), blameless postmortems, incident deep-dive (Swiss cheese model), continuous improvement patterns. DORA metrics integration, DORA capability assessment, SPACE framework productivity metrics, Team Topologies awareness, team cognitive load measurement, Value Stream Mapping, flow metrics (lead time, cycle time, flow efficiency, WIP limits), anti-patterns, remote retro patterns, psychological safety measurement, action item tracking, green software retrospective, FinOps retrospective, platform engineering retrospective, Toyota Kata practice, Lean Software Development (7 wastes), Theory of Constraints (5 focusing steps, thinking processes), DORA transformation patterns (24 capabilities, 4 tiers), Platform Engineering Maturity (CNCF maturity model, Gartner predictions), Developer Productivity Research (SPACE applied, Microsoft studies, DORA culture findings), Technical Debt Management (Fowler's quadrant, Strangler Fig, quantification), Inner Source Patterns (InnerSource Commons, trusted committer, 30-day warranty), Staff Engineer Role (Larson's 4 archetypes), Engineering Ladder Design (dual-track IC/management), 1:1 Meeting Patterns (Lara Hogan, SBI, Radical Candor), Technical Decision Making (ADR, RFC, consensus models), Team Topologies (4 team types, 3 interaction modes, cognitive load theory), Inverse Conway Maneuver (org-to-architecture alignment), Value Stream Mapping (flow efficiency, bottleneck elimination), Team API (code API, communication API, work-with-us API)."
-version: 4.9.0-slim
+version: 4.9.0-moderate
 author: Dinoudon
 license: MIT
 platforms: [linux, macos, windows]
 metadata:
   hermes:
-    tags: [sdlc-slim, sdlc, retrospective, kaizen, continuous-improvement, postmortem, agile, dora-metrics, team-topologies, value-stream-mapping, psychological-safety, space-framework, toyota-kata, flow-metrics, cognitive-load, incident-deepdive, dora-capabilities, green-software, finops, platform-engineering, sustainable-engineering, cloud-cost-optimization, developer-experience, lean-software-development, theory-of-constraints, dora-transformation, seven-wastes, throughput-accounting, platform-maturity, developer-productivity, technical-debt, inner-source, staff-engineer, engineering-ladder, one-on-ones, adr, rfc, technical-decisions, inverse-conway, team-api, stream-aligned, enabling-team]
+    tags: [sdlc-moderate, sdlc, retrospective, kaizen, continuous-improvement, postmortem, agile, dora-metrics, team-topologies, value-stream-mapping, psychological-safety, space-framework, toyota-kata, flow-metrics, cognitive-load, incident-deepdive, dora-capabilities, green-software, finops, platform-engineering, sustainable-engineering, cloud-cost-optimization, developer-experience, lean-software-development, theory-of-constraints, dora-transformation, seven-wastes, throughput-accounting, platform-maturity, developer-productivity, technical-debt, inner-source, staff-engineer, engineering-ladder, one-on-ones, adr, rfc, technical-decisions, inverse-conway, team-api, stream-aligned, enabling-team]
     related_skills: [sdlc-prd-to-production, sdlc-requirements-engineering]
----## When to Use
+---
+
+# Retrospectives & Continuous Improvement
+
+Retrospective formats, Kaizen PDCA cycle, blameless postmortems, continuous improvement patterns.
+
+## When to Use
 
 Trigger when user:
 - Runs sprint retrospective
@@ -178,101 +184,4 @@ Toyota Kata = structured scientific-thinking routines that make continuous impro
 │     Specific, measurable, just beyond current ability      │
 │     "Where do we want to be next?"                         │
 │                          │                                  │
-│                          ▼                                  │
-│  4. EXPERIMENT TOWARD TARGET (PDCA)                        │
-│     Run rapid experiments, encounter obstacles             │
-│     "What obstacles are in the way? What did we learn?"    │
-│     → Loop back to Step 3 with new knowledge               │
-└─────────────────────────────────────────────────────────────┘
-```
-
-**Coaching Kata** — five questions leaders ask daily to develop scientific thinking in others.
-
-#### The Five Coaching Questions
-
-```
-1. What is the target condition?
-   (Specific, measurable next step)
-
-2. What is the actual condition now?
-   (Facts, data, observation — not opinion)
-
-3. What obstacles are preventing you from reaching the target?
-   (List them, prioritize, pick one to address)
-
-4. What is your next step? (next experiment / PDCA cycle)
-   (Concrete action, expected outcome, prediction)
-
-5. When can we see what we've learned from taking that step?
-   (Timebox: hours, days — not weeks)
-```
-
-#### Applying Kata to Software Retrospectives
-
-| Kata Step | Retrospective Application |
-|-----------|--------------------------|
-| Understand direction | OKRs, team mission, DORA elite targets |
-| Grasp current condition | Current DORA metrics, flow metrics, incident data, team health scores |
-| Next target condition | One specific metric improvement: "Lead time from 5 days to 3 days" |
-| Experiment toward target | Sprint-level experiments: "Add automated staging deploy" |
-| Coaching questions | Manager asks 5 questions in 1-on-1s, not just in retro |
-
-#### Kata vs. Standard Retro
-
-| Aspect | Standard Retro | Kata-Infused Retro |
-|--------|---------------|-------------------|
-| Frequency | End of sprint | Daily coaching + sprint retro |
-| Focus | What happened | What did we learn from experiments |
-| Data | Sprint-level | Daily observable conditions |
-| Improvement | Ad-hoc actions | Systematic target conditions |
-| Coaching | Facilitator-driven | Leader-led with 5 questions |
-| Outcome | Action items | Scientific thinking habit |
-
-#### Kata Board (Visual Management)
-
-```
-┌────────────────────┬────────────────────┬────────────────────┐
-│   TARGET CONDITION │    CURRENT STATE   │    OBSTACLES       │
-│                    │                    │                    │
-│ Lead time < 3 days│ Lead time = 5 days │ Slow env provision │
-│                    │                    │ Manual QA gates    │
-│                    │                    │ Long PR reviews    │
-├────────────────────┴────────────────────┴────────────────────┤
-│ EXPERIMENT LOG                                               │
-│ ┌──────────────┬──────────────┬────────────┬───────────────┐ │
-│ │  Experiment   │  Prediction  │  Result    │  What Learned │ │
-│ ├──────────────┼──────────────┼────────────┼───────────────┤ │
-│ │ Auto staging │ Lead time -1d│ Lead time  │ Env issue     │ │
-│ │ deploy       │              │ -0.5d only │ = bottleneck  │ │
-│ │              │              │            │               │ │
-│ │ PR review    │ Lead time -1d│ [pending]  │ [pending]     │ │
-│ │ pair syst.   │              │            │               │ │
-│ └──────────────┴──────────────┴────────────┴───────────────┘ │
-└──────────────────────────────────────────────────────────────┘
-```
-
-#### Integrating Kata into Sprint Rhythm
-
-| When | Activity | Duration |
-|------|----------|----------|
-| Daily standup | Coaching question #2-3 (current condition, obstacles) | 2 min/person |
-| Mid-sprint | Check experiment results, adjust | 15 min |
-| Sprint retro | Review target condition progress, update obstacle list, plan next experiments | 30 min |
-| Quarterly | Review direction (challenge), set new target conditions | 1-2 hours |
-
-Source: https://www-personal.umich.edu/~mrother/Kata_Explained.html
-
-### In Software Context
-- Sprint retros = kaizen events
-- Blameless postmortems after incidents
-- DORA metrics as improvement indicators
-- Value stream mapping for flow optimization
-
-
-## Pitfalls
-
-1. **Don't skip the Prime Directive** — sets blameless tone
-2. **Don't allow more than 3 action items** — focus beats breadth
-3. **Don't assign actions to "the team"** — assign to named person
-4. **Don't skip following up previous actions** — accountability matters
-5. **Don't use same format every time** — rotate formats to stay fresh
+│          

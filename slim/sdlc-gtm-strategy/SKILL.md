@@ -1,7 +1,7 @@
 ---
 name: sdlc-gtm-strategy
 description: "Go-to-market strategy: market positioning, pricing, packaging, sales enablement, competitive analysis, launch planning, distribution channels, PLG vs SLG, developer marketing, enterprise sales, partnership strategy, category creation."
-version: 6.0.0-slim
+version: 6.0.0-moderate
 author: Dinoudon
 license: MIT
 platforms: [linux, macos, windows]
@@ -9,7 +9,13 @@ metadata:
   hermes:
     tags: [sdlc, gtm, go-to-market, pricing, sales, marketing, launch, distribution, enterprise-sales, partnerships]
     related_skills: [sdlc-product-growth, sdlc-developer-relations, sdlc-prd-to-production, sdlc-finance-ops]
----## When to Use
+---
+
+# Go-to-Market Strategy
+
+How software companies bring products to market. From launch to scale.
+
+## When to Use
 
 Trigger when user:
 - Plans product launch or market entry
@@ -147,24 +153,102 @@ Level 4: Feature details (what you built)
   "Real-time reporting dashboard"
 ```
 
+## Step 4: Enterprise Sales Playbook
 
-## Pitfalls
+### Enterprise Sales Stages
 
-1. **Launching without positioning** — If you can't explain what you do in one sentence, you're not ready to launch.
-2. **PLG without product-market fit** — PLG amplifies a good product. It can't save a bad one.
-3. **Enterprise sales too early** — Enterprise deals take 6+ months. Don't go enterprise before you have $1M ARR from self-serve.
-4. **Pricing by gut feel** — Use Van Westendorp, Gabor-Granger, or A/B testing. Don't guess.
-5. **Ignoring competitors** — "We have no competitors" means you haven't looked hard enough or you're in a dead market.
+```
+1. Prospecting: Identify target accounts (ICP matching)
+2. Outreach: Cold email, LinkedIn, events, referrals
+3. Discovery: Understand pain, budget, timeline, decision-makers
+4. Demo: Tailored demo showing solution to their specific pain
+5. Technical evaluation: POC, security review, architecture review
+6. Business case: ROI analysis, cost comparison
+7. Negotiation: Pricing, terms, SLA, contract
+8. Close: Legal review, procurement, signature
+9. Onboarding: Implementation, training, go-live
+10. Expansion: Upsell, cross-sell, renewal
+```
 
-## Sources
+### Enterprise Sales Metrics
 
-- April Dunford, Obviously Awesome: https://www.aprildunford.com/
-- Winning by Design (sales): https://winningbydesign.com/
-- Pavilion (revenue leaders): https://joinpavilion.com/
-- Cloud marketplaces: https://aws.amazon.com/marketplace/
-- Product Hunt launch guide: https://www.producthunt.com/
-- Kyle Poyar, OpenView: https://openviewpartners.com/blog/
-- a16z go-to-market: https://a16z.com/
-- First Round Review: https://review.firstround.com/
-- Y Combinator Startup School: https://www.startupschool.org/
-- Bessemer Venture Partners: https://www.bvp.com/atlas
+| Metric | Target | World-Class |
+|--------|--------|-------------|
+| Win rate | 20-25% | 30%+ |
+| Sales cycle | 90-180 days | <90 days |
+| ACV | $50K-500K | $1M+ |
+| Net retention | 110% | 130%+ |
+| CAC payback | 18 months | <12 months |
+| Quota attainment | 60-70% | 80%+ |
+
+### Sales Enablement Materials
+
+```
+1. Sales deck (10-15 slides)
+2. Product demo script
+3. Competitive battlecard (per competitor)
+4. ROI calculator
+5. Case studies (3-5 per vertical)
+6. Security questionnaire (pre-filled)
+7. Technical architecture overview
+8. Pricing calculator
+9. Contract templates (MSA, DPA, SLA)
+10. Objection handling guide
+```
+
+## Step 5: Distribution Channels
+
+### Channel Strategy
+
+| Channel | Type | Best For | Examples |
+|---------|------|----------|----------|
+| **Direct sales** | Owned | Enterprise, high ACV | Salesforce, Workday |
+| **Self-serve** | Owned | PLG, developer tools | Stripe, Notion |
+| **Marketplace** | Partner | Cloud apps | AWS, GCP, Azure Marketplace |
+| **Reseller** | Partner | Regional reach | VARs, SIs, consultancies |
+| **Affiliate** | Partner | Content-driven | Review sites, comparison blogs |
+| **OEM/embedded** | Partner | White-label | SDK embedded in other products |
+| **Open source** | Community | Developer tools | MongoDB, Elastic, GitLab |
+
+### Marketplace Strategy (AWS/GCP/Azure)
+
+```
+Benefits:
+- Reach: Millions of cloud customers
+- Billing: Consolidated through existing cloud bill
+- Trust: Cloud provider endorsement
+- Co-sell: Joint sales with cloud reps
+
+Requirements:
+- Technical integration (listing, metering)
+- Security review (AWS Foundational Technical Review)
+- Pricing alignment (typically 15-20% marketplace fee)
+- Support SLA alignment
+```
+
+## Step 6: Competitive Intelligence
+
+### Competitive Battlecard Template
+
+```
+┌─────────────────────────────────────────┐
+│     BATTLECARD: Us vs [Competitor]       │
+├─────────────────────────────────────────┤
+│ When They Win:                           │
+│ • [Specific scenario]                    │
+│ • [Specific scenario]                    │
+│                                          │
+│ When We Win:                             │
+│ • [Specific scenario]                    │
+│ • [Specific scenario]                    │
+│                                          │
+│ Their Pitch:                             │
+│ • "[Their main value prop]"              │
+│                                          │
+│ Our Counter:                             │
+│ • "[How we respond]"                     │
+│                                          │
+│ Trap-Setting Questions:                  │
+│ • "Have you considered [our strength]?"  │
+│ • "What happens when [their weakness]?"  │
+│                      

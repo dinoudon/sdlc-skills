@@ -1,7 +1,7 @@
 ---
 name: sdlc-hiring-talent
 description: "Technical hiring and team building: recruiting, interview design, coding assessments, system design interviews, culture fit, engineering levels, onboarding, retention, compensation, remote teams, diversity, employer branding, hiring pipeline optimization."
-version: 6.0.0
+version: 6.0.0-moderate
 author: Dinoudon
 license: MIT
 platforms: [linux, macos, windows]
@@ -516,7 +516,126 @@ Use:
 9. **No growth path** — Engineers without promotion paths leave. Have clear, achievable criteria.
 10. **Hiring above your bar** — Desperation hires create more work. Better to leave a role open than hire wrong.
 
-## Sources
+## Step 12: Employer Branding
+
+### Careers Page Anatomy
+
+```
+Above the fold:
+  - Hero video: Team culture montage (60-90s)
+  - Mission statement: 1-2 sentences
+  - Open positions CTA
+  
+Culture section:
+  - Values (3-5 core values with examples)
+  - Benefits summary (health, equity, flexibility)
+  - Team photos (authentic, not stock)
+  - Employee testimonials (video preferred)
+  
+Engineering blog:
+  - Technical challenges
+  - Architecture decisions
+  - Open source contributions
+  - Conference talks
+
+Office/Remote section:
+  - Workspace photos
+  - Remote work policy
+  - Office locations
+  - Co-working stipend info
+```
+
+### Glassdoor/LinkedIn Reputation Management
+
+```
+Monitoring:
+  - Weekly check for new reviews
+  - Track rating trends over time
+  - Compare against competitors
+
+Response strategy:
+  Positive reviews:
+    - Thank the reviewer
+    - Mention specific things they praised
+    - Invite them to refer friends
+    
+  Negative reviews:
+    - Acknowledge the feedback
+    - Explain what you're doing to improve
+    - Offer to discuss offline
+    - Never argue or dismiss
+    
+Improvement loop:
+  - Aggregate feedback themes quarterly
+  - Share with leadership
+  - Implement changes
+  - Update Glassdoor response to reflect changes
+```
+
+## Step 13: Remote Team Management
+
+### Remote Work Policy Template
+
+```
+1. Eligibility
+   - All full-time employees
+   - Contractors on 6+ month engagements
+   
+2. Work hours
+   - Core hours: 10am-3pm local time
+   - Flexible outside core hours
+   - Meeting-free Tuesdays and Thursdays
+   
+3. Communication
+   - Slack for async communication
+   - Zoom for video meetings
+   - Notion for documentation
+   - Email for external communication only
+   
+4. Equipment
+   - $2,500 stipend for home office setup
+   - Company laptop + monitors
+   - $100/month internet/phone reimbursement
+   
+5. Expenses
+   - Co-working space: up to $500/month
+   - Coffee shop meals: up to $20/day
+   - Travel to HQ: 2x per year (company-paid)
+   
+6. Performance
+   - Output-based evaluation (not hours)
+   - Weekly 1:1 with manager
+   - Quarterly OKR reviews
+   - Annual performance review
+```
+
+### Remote Meeting Best Practices
+
+```
+Before the meeting:
+  - Agenda shared 24h in advance
+  - Pre-read materials attached
+  - Clear objective stated
+  - Required vs optional attendees identified
+
+During the meeting:
+  - Start on time, end 5 min early
+  - Camera on (builds trust)
+  - Designated note-taker
+  - Use "round robin" for input
+  - Park off-topic items in "parking lot"
+
+After the meeting:
+  - Notes shared within 1 hour
+  - Action items with owners + deadlines
+  - Recording (if applicable)
+  - Follow-up async if needed
+
+Meeting-free zones:
+  - Tuesdays: Deep work day
+  - Thursdays: Deep work day
+  - Fridays: No meetings after 2pm
+
 
 - Will Larson, Staff Engineer: https://staffeng.com/
 - Will Larson, An Elegant Puzzle: https://lethain.com/elegant-puzzle/
@@ -528,3 +647,744 @@ Use:
 - Holloway Guide to Equity: https://www.holloway.com/g/equity-compensation
 - Pragmatic Engineer (hiring): https://blog.pragmaticengineer.com/
 - Structuring Teams (Team Topologies): https://teamtopologies.com/
+
+
+## Step 16: Diversity & Inclusion
+
+### D&I Metrics
+
+```
+Representation:
+  - Gender ratio (overall, engineering, leadership)
+  - Ethnicity ratio (overall, engineering, leadership)
+  - Age distribution
+  - Disability disclosure rate
+  - Veteran status
+
+Pipeline:
+  - Diverse candidate % at each stage
+  - Pass-through rates by demographic
+  - Offer acceptance rates by demographic
+  - Source diversity (job boards, referrals, agencies)
+
+Retention:
+  - Turnover by demographic
+  - Promotion rates by demographic
+  - Engagement scores by demographic
+  - Pay equity ratios
+
+Accountability:
+  - D&I goals in leadership OKRs
+  - Regular D&I reporting to board
+  - ERG (Employee Resource Group) participation
+  - D&I training completion rates
+```
+
+### Bias Reduction Strategies
+
+```
+Job descriptions:
+  - Use gender-neutral language (Textio, Gender Decoder)
+  - Remove unnecessary requirements (research shows women apply 
+    only when meeting 100% of requirements, men at 60%)
+  - Highlight inclusive benefits (parental leave, flexibility)
+  - Avoid jargon and insider language
+
+Resume screening:
+  - Blind resume review (remove names, photos, schools)
+  - Structured scoring rubric
+  - Diverse review panels
+  - Calibration sessions
+
+Interviews:
+  - Standardized questions per role
+  - Scorecards with defined criteria
+  - Diverse interview panels
+  - Separate "culture fit" from "culture add"
+  - Take-home assignments over whiteboard coding
+
+Compensation:
+  - Transparent salary bands
+  - Annual pay equity audits
+  - No salary history questions
+  - Standardized offer process
+```
+
+## Step 17: Contractor & Vendor Management
+
+### Contractor Onboarding
+
+```
+Pre-engagement:
+  □ MSA and SOW executed
+  □ Background check completed
+  □ NDA signed
+  □ Equipment/access requirements defined
+  □ Manager and team introductions
+
+Day 1:
+  □ System access provisioned (email, Slack, tools)
+  □ Security training completed
+  □ Project briefing with manager
+  □ Documentation access granted
+  □ Communication norms established
+
+Ongoing:
+  □ Weekly check-ins with manager
+  □ Access reviews (quarterly)
+  □ Performance feedback (monthly)
+  □ Contract renewal/termination planning
+
+Offboarding:
+  □ Access revoked immediately
+  □ Equipment returned
+  □ Knowledge transfer completed
+  □ Exit interview (optional)
+  □ IP assignment confirmed
+```
+
+### Vendor Evaluation Matrix
+
+```
+Criteria (weighted):
+  - Technical capability (30%)
+  - Cost (25%)
+  - Security/compliance (20%)
+  - References/reputation (15%)
+  - Support/responsiveness (10%)
+
+Scoring:
+  1 = Does not meet requirements
+  2 = Partially meets requirements
+  3 = Meets requirements
+  4 = Exceeds requirements
+  5 = Significantly exceeds requirements
+
+Vendor scorecard template:
+  | Criteria | Weight | Vendor A | Vendor B | Vendor C |
+  |----------|--------|----------|----------|----------|
+  | Technical| 30%    | 4 (1.2) | 3 (0.9) | 5 (1.5) |
+  | Cost     | 25%    | 3 (0.75)| 5 (1.25)| 2 (0.5) |
+  | Security | 20%    | 4 (0.8) | 4 (0.8) | 4 (0.8) |
+  | Refs     | 15%    | 4 (0.6) | 3 (0.45)| 4 (0.6) |
+  | Support  | 10%    | 3 (0.3) | 4 (0.4) | 3 (0.3) |
+  | TOTAL    | 100%   | 3.65    | 3.80    | 3.70     |
+
+
+## Step 18: Employer Value Proposition
+
+### EVP Framework
+
+```
+Components:
+  1. Compensation: Competitive pay, equity, bonuses
+  2. Benefits: Health, retirement, perks
+  3. Career: Growth, learning, promotion paths
+  4. Culture: Values, team, work environment
+  5. Work: Impact, autonomy, meaningful projects
+
+EVP statement template:
+  "At [Company], you will [unique opportunity] while [key benefit]. 
+  We [culture differentiator] and [career differentiator]."
+
+Examples:
+  Stripe: "Move money globally, build infrastructure at scale, 
+  work with the smartest people in fintech."
+  
+  Notion: "Shape how teams collaborate, work on tools you would use 
+  every day, in a thoughtful, design-driven culture."
+  
+  Vercel: "Build the future of web development, ship features 
+  used by millions, in a remote-first, developer-obsessed team."
+
+EVP communication:
+  - Careers page (primary)
+  - Job descriptions (every posting)
+  - Social media (employee stories)
+  - Interview process (reinforce throughout)
+  - Onboarding (deliver on promises)
+```
+
+### Candidate Experience
+
+```
+Application process:
+  - Simple application form (<5 minutes)
+  - Mobile-friendly
+  - Auto-acknowledgment (within 1 hour)
+  - Status updates (weekly minimum)
+
+Interview process:
+  - Clear timeline communicated upfront
+  - Respectful scheduling (minimal rounds)
+  - Interviewer preparation (review resume)
+  - Candidate prep materials provided
+  - Decision within 1 week of final interview
+
+Communication:
+  - Rejection: Personalized, constructive feedback
+  - Offer: Enthusiastic, clear terms, time to decide
+  - Pre-boarding: Welcome package, team intros
+  - Post-rejection: Talent pool for future roles
+
+Metrics:
+  - Application completion rate
+  - Time to fill
+  - Candidate NPS (survey after process)
+  - Offer acceptance rate
+  - Glassdoor interview experience rating
+```
+
+## Step 19: Learning and Development
+
+### L&D Framework
+
+```
+Learning modalities:
+  1. Formal training: Courses, certifications, conferences
+  2. Social learning: Mentoring, peer learning, communities
+  3. Experiential: Stretch assignments, job rotations, projects
+  4. Self-directed: Books, podcasts, online courses
+
+Budget allocation:
+  - Engineering: $3,000-5,000/person/year
+  - Product: $2,000-3,000/person/year
+  - Sales: $2,000-4,000/person/year
+  - Leadership: $5,000-10,000/person/year
+
+Popular programs:
+  - Engineering: AWS/GCP certs, conferences, Pluralsight
+  - Product: Reforge, Product School, Mind the Product
+  - Sales: MEDDIC, Sandler, Command of the Message
+  - Leadership: Executive coaching, MBA sponsorship
+  - All: LinkedIn Learning, Coursera, internal workshops
+
+Measurement:
+  - Course completion rates
+  - Skill assessments (before/after)
+  - Promotion rates for L&D participants
+  - Manager feedback on skill development
+  - Employee satisfaction with growth opportunities
+```
+
+## Step 20: Workforce Planning
+
+### Headcount Planning
+
+```
+Inputs:
+  - Revenue targets then Sales headcount
+  - Product roadmap then Engineering headcount
+  - Customer growth then Support/CS headcount
+  - Strategic initiatives then Specialized roles
+
+Planning model:
+  Revenue per employee target: $200K-$400K (SaaS)
+  Engineering % of total: 40-60%
+  Sales % of total: 15-25%
+  G&A % of total: 10-15%
+  Marketing % of total: 5-10%
+  Support % of total: 5-10%
+
+Timeline:
+  - Q4: Annual headcount plan
+  - Q1-Q4: Quarterly hiring sprints
+  - Monthly: Pipeline review and adjustments
+  - Weekly: Offer approvals and start dates
+
+Ramp assumptions:
+  - Engineering: 3 months to full productivity
+  - Sales: 4-6 months to quota
+  - Customer Success: 2-3 months
+  - Marketing: 2-3 months
+```
+
+## Step 21: Remote Culture
+
+### Remote Culture Playbook
+
+```
+Communication norms:
+  - Async-first: Documentation over meetings
+  - Default to public: Slack channels, Notion pages
+  - Written decisions: Decision logs, RFCs
+  - Meeting-free time: Blocks for deep work
+
+Connection rituals:
+  - Daily standup (async or sync)
+  - Weekly all-hands (recorded for time zones)
+  - Monthly virtual social events
+  - Quarterly in-person offsites
+  - Annual company retreat
+
+Tools:
+  - Communication: Slack, Zoom, Loom
+  - Documentation: Notion, Confluence
+  - Collaboration: Figma, Miro, Google Workspace
+  - Social: Donut (random coffee), Gather.town
+
+Anti-patterns:
+  - Always-on culture (no boundaries)
+  - Meeting overload (no deep work time)
+  - Proximity bias (favoring in-office)
+  - Isolation (no social connection)
+  - Timezone insensitivity
+```
+
+
+## Step 22: Technical Hiring
+
+### Engineering Interview Process
+
+```
+Stage 1: Resume screen (15 min)
+  - Relevant experience (3+ years for mid-level)
+  - Technology stack match
+  - Company/role progression
+  - Open source / side projects (bonus)
+
+Stage 2: Recruiter screen (30 min)
+  - Motivation and career goals
+  - Salary expectations
+  - Logistics (location, visa, start date)
+  - Culture fit (quick assessment)
+
+Stage 3: Technical phone screen (60 min)
+  - Coding problem (medium difficulty)
+  - Language/framework proficiency
+  - Problem-solving approach
+  - Communication clarity
+
+Stage 4: On-site / Virtual loop (4-6 hours)
+  - Coding interview (2x 60 min): Algorithms, data structures
+  - System design (60 min): Architecture, scalability
+  - Behavioral (60 min): STAR format, culture fit
+  - Hiring manager (30 min): Role fit, team dynamics
+
+Stage 5: Debrief (30-60 min)
+  - Each interviewer presents assessment
+  - Discuss disagreements
+  - Vote: Strong hire / Hire / No hire / Strong no hire
+  - Hiring manager makes final decision
+```
+
+### System Design Interview Rubric
+
+```
+Evaluation criteria (1-4 scale):
+
+Problem understanding:
+  1: Jumps to solution without clarifying requirements
+  2: Asks some clarifying questions
+  3: Thoroughly understands requirements and constraints
+  4: Identifies edge cases and non-functional requirements
+
+High-level design:
+  1: No clear architecture
+  2: Basic architecture, missing key components
+  3: Complete architecture with appropriate components
+  4: Elegant design with clear trade-off analysis
+
+Deep dive:
+  1: Cannot explain component details
+  2: Surface-level understanding
+  3: Detailed understanding of key components
+  4: Expert-level knowledge with optimization strategies
+
+Trade-offs:
+  1: No awareness of trade-offs
+  2: Mentions trade-offs but cannot analyze
+  3: Clear analysis of trade-offs with justification
+  4: Nuanced analysis with real-world examples
+
+Scoring:
+  4: Exceptional (clear hire signal)
+  3: Meets bar (positive signal)
+  2: Below bar (negative signal)
+  1: Significant concerns (strong no hire)
+  
+  Hire if: Majority of criteria score 3+
+  Strong hire if: Multiple criteria score 4
+```
+
+## Step 23: Sourcing Strategies
+
+### Active Sourcing Playbook
+
+```
+Channels:
+  LinkedIn Recruiter:
+    - Boolean search: "software engineer" AND "React" AND "Series B"
+    - InMail: Personalized, short, specific
+    - Response rate: 15-25% with good messaging
+  
+  GitHub:
+    - Search by language, location, contribution activity
+    - Open source contributors = demonstrated skill
+    - Look for README quality, project complexity
+  
+  Technical communities:
+    - Stack Overflow (high reputation = strong engineer)
+    - Hacker News (technical discussions)
+    - Dev.to, Hashnode (technical writing)
+    - Discord/Slack communities (by technology)
+  
+  Referrals:
+    - Employee referral program ($2K-$10K bonus)
+    - Referral rate target: 30-40% of hires
+    - Referred candidates: 2x retention rate
+  
+  Events:
+    - Tech meetups (local communities)
+    - Conferences (sourcing at booths)
+    - Hackathons (observe skills in action)
+    - University recruiting (intern pipeline)
+
+Outreach templates:
+  Cold outreach (LinkedIn):
+    "Hi [Name], I saw your work on [specific project]. 
+    We're building [compelling problem] at [Company] and 
+    looking for [role]. Would you be open to a quick chat?"
+  
+  Follow-up (3 days later):
+    "Hi [Name], just bumping this up. We're working on 
+    [specific technical challenge] and your background in 
+    [their expertise] would be perfect. 15 min this week?"
+```
+
+### Employer Branding Content
+
+```
+Engineering blog topics:
+  - Technical architecture decisions (why we chose X over Y)
+  - Scaling stories (how we handled 10x growth)
+  - Open source contributions (what we built and why)
+  - Engineering culture (how we work, values, rituals)
+  - Day-in-the-life profiles (meet the team)
+  - Conference talks (share knowledge)
+  - Post-mortems (learn from failures, transparently)
+
+Content calendar:
+  - 2 blog posts per month
+  - 1 video per month (team or technical)
+  - 1 conference talk per quarter
+  - 1 meetup hosting per quarter
+  - Daily social media (team wins, culture)
+
+Measurement:
+  - Blog traffic and engagement
+  - Social media followers and engagement
+  - Inbound applications (from content)
+  - Source attribution (blog → application)
+  - Quality of inbound candidates
+```
+
+## Step 24: Onboarding Programs
+
+### 30-60-90 Day Plan
+
+```
+Day 1-30 (Learn):
+  Week 1:
+    - Company orientation (mission, values, org chart)
+    - Team introductions (1:1s with each team member)
+    - Tool setup (laptop, accounts, access)
+    - First task: Fix a small bug or docs typo
+  
+  Week 2-3:
+    - Product deep dive (use the product as a customer)
+    - Architecture overview (system design walkthrough)
+    - Codebase tour (key repos, patterns, conventions)
+    - First PR review (learn code review culture)
+  
+  Week 4:
+    - First feature task (small, well-scoped)
+    - 1:1 with manager (feedback, adjust plan)
+    - Onboarding survey (feedback on experience)
+    - Milestone: First PR merged
+
+Day 31-60 (Contribute):
+  - Own and deliver a medium-sized feature
+  - Participate in on-call rotation (shadowing)
+  - Lead a technical discussion or design review
+  - Contribute to sprint planning
+  - Build relationships cross-functionally
+
+Day 61-90 (Lead):
+  - Own a significant project or initiative
+  - Mentor newer team members
+  - Propose process improvements
+  - Present at team meeting or all-hands
+  - 90-day performance review with manager
+```
+
+### Buddy System
+
+```
+Buddy assignment:
+  - Same team, similar level
+  - Not the direct manager
+  - Willing volunteer (not forced)
+  - 3-month commitment
+
+Buddy responsibilities:
+  Week 1: Daily check-ins (15 min)
+  - Answer questions about tools, processes, culture
+  - Introduce to key people
+  - Help with logistics (badge, parking, lunch)
+  
+  Week 2-4: 2x per week check-ins
+  - Code review guidance
+  - Process questions
+  - Social integration (lunch, coffee)
+  
+  Month 2-3: Weekly check-ins
+  - Career advice
+  - Team dynamics
+  - Feedback channel
+
+Buddy training:
+  - 1-hour orientation on buddy role
+  - Conversation guide (what to cover each week)
+  - Escalation path (if onboarding issues arise)
+  - Recognition (buddy program in performance review)
+
+
+## Step 25: Diversity Hiring
+
+### Inclusive Job Descriptions
+
+```
+Language audit:
+  - Remove gendered language (use Textio, Gender Decoder)
+  - Avoid jargon and insider terms
+  - Keep requirements to must-haves (research shows women 
+    apply only when meeting 100% of requirements)
+  - Highlight inclusive benefits (parental leave, flexibility)
+
+Template:
+  About [Company]:
+  We are [mission statement]. Our team of [X] people is 
+  building [what] for [who]. We value [2-3 core values].
+
+  About the role:
+  As a [Title], you will [key responsibility]. You will work 
+  with [team] to [outcome].
+
+  What you will do:
+  - [Responsibility 1]
+  - [Responsibility 2]
+  - [Responsibility 3]
+
+  What we are looking for:
+  - [Must-have skill 1]
+  - [Must-have skill 2]
+  - [Must-have skill 3]
+
+  Nice to have:
+  - [Bonus skill 1]
+  - [Bonus skill 2]
+
+  What we offer:
+  - Competitive salary ($X-$Y, based on experience)
+  - Equity (0.X-0.Y%)
+  - Health, dental, vision insurance
+  - $X learning budget
+  - Flexible PTO
+  - Remote-friendly
+
+  We encourage applications from candidates of all 
+  backgrounds. If you do not meet every requirement but 
+  are excited about this role, we want to hear from you.
+```
+
+### Diverse Sourcing Channels
+
+```
+Job boards:
+  - Jopwell: Black, Latinx, Native American professionals
+  - PowerToFly: Women in tech
+  - Diversify Tech: Underrepresented groups
+  - Out in Tech: LGBTQ+ tech professionals
+  - AbilityJobs: People with disabilities
+  - Hire Heroes USA: Veterans
+
+Communities:
+  - /dev/color: Black software engineers
+  - Lesbians Who Tech: LGBTQ+ women in tech
+  - Tech Ladies: Women in tech
+  - Code2040: Black and Latinx technologists
+  - /include: Diversity and inclusion
+
+University partnerships:
+  - HBCUs (Historically Black Colleges and Universities)
+  - HSIs (Hispanic-Serving Institutions)
+  - Women in CS programs
+  - Disability inclusion programs
+
+Events:
+  - Grace Hopper Celebration (women in computing)
+  - AfroTech (Black tech professionals)
+  - Lesbians Who Tech Summit
+  - Tech Inclusion Conference
+```
+
+## Step 26: Interview Bias Reduction
+
+### Structured Interview Design
+
+```
+Standardized questions:
+  - Same questions for all candidates (same role)
+  - Questions tied to job requirements
+  - Behavioral questions (STAR format)
+  - Technical questions (role-specific)
+
+Scorecard:
+  | Criterion | 1 (Poor) | 2 (Fair) | 3 (Good) | 4 (Excellent) |
+  |-----------|----------|----------|----------|---------------|
+  | Technical skill | Cannot solve | Partial solution | Correct solution | Optimal solution |
+  | Communication | Unclear, disorganized | Somewhat clear | Clear, structured | Exceptional clarity |
+  | Problem-solving | Gives up quickly | Needs hints | Independent | Creative approaches |
+  | Collaboration | Poor listener | Adequate | Good team player | Elevates team |
+
+Calibration:
+  - Interviewers discuss before interview
+  - Align on what "good" looks like
+  - Practice scoring with sample answers
+  - Regular calibration sessions (monthly)
+
+Debiasing techniques:
+  - Blind resume review (remove names, schools)
+  - Diverse interview panels (gender, ethnicity, role)
+  - Separate "culture fit" from "culture add"
+  - Document decision rationale
+  - Review decisions for patterns (demographic bias)
+```
+
+### Interview Training Program
+
+```
+Module 1: Legal compliance (30 min)
+  - What you can and cannot ask
+  - Protected characteristics
+  - Reasonable accommodations
+
+Module 2: Bias awareness (60 min)
+  - Common biases (affinity, halo, confirmation)
+  - Impact on hiring decisions
+  - Mitigation strategies
+
+Module 3: Structured interviewing (60 min)
+  - Question design
+  - Scorecard usage
+  - STAR format for behavioral questions
+
+Module 4: Technical interviewing (60 min)
+  - Problem design (relevant, fair, calibrated)
+  - Evaluation criteria
+  - Providing good candidate experience
+
+Module 5: Practical exercise (60 min)
+  - Mock interview with feedback
+  - Score calibration exercise
+  - Debrief practice
+
+Certification:
+  - Complete all modules
+  - Shadow 2 interviews
+  - Conduct 2 interviews with observer
+  - Pass calibration test
+  - Renewed annually
+```
+
+## Step 27: Compensation Benchmarking
+
+### Benchmarking Process
+
+```
+Data sources:
+  - Levels.fyi: Crowdsourced compensation data
+  - Glassdoor: Employee-reported salaries
+  - Payscale: Compensation data and analytics
+  - Radford: Enterprise compensation surveys
+  - Comptryx: Tech compensation benchmarks
+  - Carta: Startup equity benchmarks
+
+Benchmarking methodology:
+  1. Define job families (Engineering, Product, Sales, etc.)
+  2. Map internal levels to market levels
+  3. Collect data from 3+ sources
+  4. Calculate percentile (25th, 50th, 75th)
+  5. Adjust for geography (cost of labor)
+  6. Set target percentile per level
+
+Target percentiles:
+  - Junior (L1-L2): 50th percentile (competitive for talent)
+  - Mid (L3-L4): 60th percentile (retain top performers)
+  - Senior (L5-L6): 70th percentile (scarce talent)
+  - Staff+ (L7+): 75th percentile (exceptional talent)
+  - Executive: 75th-90th percentile (retention critical)
+
+Adjustment factors:
+  - Geography: SF=100%, NYC=95%, Austin=85%, Remote=90%
+  - Industry: FinTech=110%, Enterprise=105%, Consumer=95%
+  - Stage: Startup=90% base + equity, Growth=100%, Public=105%
+```
+
+## Step 28: Termination Best Practices
+
+### Termination Checklist
+
+```
+Pre-termination:
+  □ Document performance issues (PIP, written warnings)
+  □ HR review of legal risks
+  □ Manager training on termination conversation
+  □ Prepare separation agreement
+  □ Calculate final pay (salary, PTO, bonus)
+  □ Plan for benefits continuation (COBRA)
+  □ Arrange equipment return
+  □ Plan access revocation timing
+
+Day of termination:
+  □ Private meeting room (in-person) or video call
+  □ Manager + HR present
+  □ Brief, respectful conversation (15-20 min)
+  □ Provide written separation agreement
+  □ Explain benefits and final pay
+  □ Collect equipment (or arrange return)
+  □ Escort from building (if in-person)
+
+Post-termination:
+  □ Revoke all system access (same day)
+  □ Update org chart and team communications
+  □ Redirect email and work to team
+  □ Announce to team (brief, respectful)
+  □ Process COBRA election notice (within 14 days)
+  □ Final paycheck (timing varies by state)
+  □ File unemployment (if applicable)
+```
+
+### Severance Policy
+
+```
+Standard severance:
+  - Non-executive: 2-4 weeks per year of service
+  - Executive: 6-12 months
+  - Minimum: 2 weeks (goodwill)
+
+Severance agreement includes:
+  - Release of claims (standard)
+  - Non-disparagement (mutual)
+  - Confidentiality (surviving)
+  - Non-compete (if applicable, varies by state)
+  - Reference agreement (what will be said)
+  - Outplacement services (optional)
+
+Legal considerations:
+  - 21-day review period (45 days if group termination)
+  - 7-day revocation period (after signing)
+  - ADEA compliance (age 40+)
+  - OWBPA compliance (group terminations)
+  - State-specific requirements (WARN Act for 100+ employees)

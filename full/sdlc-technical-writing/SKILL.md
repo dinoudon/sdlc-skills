@@ -1,7 +1,7 @@
 ---
 name: sdlc-technical-writing
 description: "Technical writing for software companies: documentation strategy, docs-as-code, API docs, runbooks, knowledge base, changelog, README best practices, style guides, information architecture, technical editing, video documentation, diagramming, accessibility in docs."
-version: 6.0.0
+version: 6.0.0-moderate
 author: Dinoudon
 license: MIT
 platforms: [linux, macos, windows]
@@ -585,7 +585,99 @@ docs/
 9. **Translation too early** — Don't translate docs until the source is stable and well-maintained.
 10. **Perfectionism** — Published docs that are 80% good > perfect docs that are never published.
 
-## Sources
+## Step 9: Documentation Localization
+
+### Localization Workflow
+
+```
+1. Extract translatable content
+   - Separate content from code (i18n files)
+   - Use .po/.pot files (gettext) or JSON/YAML
+   - Mark non-translatable strings (variables, code)
+   
+2. Translation
+   - Professional translators (preferred)
+   - Machine translation + human review
+   - Community translation (open source)
+   
+3. Tools
+   - Crowdin: Cloud-based, GitHub integration
+   - Lokalise: Mobile + web, API-first
+   - Transifex: Enterprise, community features
+   - POEditor: Simple, affordable
+   
+4. Quality assurance
+   - Native speaker review
+   - Context screenshots for translators
+   - Terminology glossary
+   - Consistency checking
+   
+5. Deployment
+   - Language switcher in UI
+   - URL structure: /en/docs, /ja/docs
+   - hreflang tags for SEO
+   - Fallback language (English)
+```
+
+### Documentation Style Guide
+
+```
+Voice and tone:
+  - Professional but approachable
+  - Active voice preferred
+  - Second person ("you") for instructions
+  - Present tense for descriptions
+  
+Formatting:
+  - Sentence case for headings
+  - Oxford comma usage
+  - Serial comma in lists
+  - One space after periods
+  
+Technical writing rules:
+  - Acronyms: Define on first use
+  - Numbers: Spell out 1-9, use digits for 10+
+  - Code: Use inline code for commands, variables
+  - Links: Descriptive text, not "click here"
+  
+Accessibility:
+  - Alt text for all images
+  - Descriptive link text
+  - Proper heading hierarchy (H1 → H2 → H3)
+  - Color not sole indicator
+  - Screen reader testing
+```
+
+## Step 10: Documentation Maintenance
+
+### Docs-as-Code Pipeline
+
+```
+Version control:
+  - Docs in same repo as code
+  - Branch strategy: docs/feature-name
+  - PR review required for docs changes
+  - Automated checks in CI
+
+CI/CD for docs:
+  - Lint: markdownlint, vale (prose linting)
+  - Build: Static site generator (Docusaurus, MkDocs)
+  - Test: Link checker, screenshot comparison
+  - Deploy: Preview on PR, production on merge
+
+Tools:
+  - Markdown: MDX (React components in docs)
+  - Static site: Docusaurus, MkDocs, VitePress, Astro
+  - API docs: Swagger/OpenAPI, Redoc, Stoplight
+  - Search: Algolia DocSearch, MeiliSearch
+  - Analytics: Plausible, PostHog
+
+Maintenance schedule:
+  - Weekly: Review incoming issues/PRs
+  - Monthly: Audit broken links, outdated screenshots
+  - Quarterly: Review all docs for accuracy
+  - Annually: Full documentation audit
+
 
 - Divio Documentation System: https://documentation.divio.com/
 - Google Developer Style Guide: https://developers.google.com/style
@@ -597,3 +689,668 @@ docs/
 - Vale (prose linter): https://vale.sh/
 - Mermaid diagrams: https://mermaid.js.org/
 - Stripe Docs (example): https://docs.stripe.com/
+
+
+## Step 14: Documentation Architecture
+
+### Information Architecture
+
+```
+Diataxis framework (4 quadrants):
+
+                    | Learning          | Working
+  ──────────────────┼───────────────────┼───────────────────
+  Orientation       | Tutorials         | How-to guides
+  (study)           | (hands-on lessons)| (goal-oriented)
+  ──────────────────┼───────────────────┼───────────────────
+  Reference         | Explanation       | Reference docs
+  (work)            | (understanding)   | (information)
+  
+Tutorial:
+  - Learning-oriented
+  - Beginner-friendly
+  - Step-by-step with expected outcomes
+  - Example: "Build your first API"
+
+How-to guide:
+  - Task-oriented
+  - Assumes knowledge
+  - Practical steps
+  - Example: "Deploy to production"
+
+Reference:
+  - Information-oriented
+  - Comprehensive, accurate
+  - API docs, config options
+  - Example: "REST API reference"
+
+Explanation:
+  - Understanding-oriented
+  - Context and background
+  - Design decisions, architecture
+  - Example: "Why we chose GraphQL"
+```
+
+### Documentation Site Structure
+
+```
+/docs
+  /tutorials          # Getting started, quickstarts
+    /getting-started
+    /quickstart
+    /your-first-app
+  /how-to             # Task-based guides
+    /deployment
+    /authentication
+    /data-migration
+  /reference           # Technical reference
+    /api
+    /cli
+    /config
+    /sdk
+  /explanation         # Concepts and architecture
+    /architecture
+    /security
+    /performance
+  /changelog           # Version history
+  /community           # Contributing, support
+  /search              # Site search
+```
+
+## Step 15: Technical Review Process
+
+### Documentation Review Checklist
+
+```
+Technical accuracy:
+  □ Code examples tested and working
+  □ API endpoints verified
+  □ Configuration options correct
+  □ Version-specific information accurate
+  □ Dependencies and prerequisites listed
+
+Clarity:
+  □ Target audience defined
+  □ Prerequisites stated
+  □ Steps numbered and sequential
+  □ Expected outcomes specified
+  □ Error messages and troubleshooting included
+
+Style:
+  □ Follows style guide
+  □ Consistent terminology
+  □ Proper heading hierarchy
+  □ Code blocks properly formatted
+  □ Links working
+
+Completeness:
+  □ All features documented
+  □ Edge cases covered
+  □ Migration guides for breaking changes
+  □ Examples cover common use cases
+  □ FAQ addresses known issues
+
+
+## Step 16: Content Strategy
+
+### Content Calendar
+
+```
+Planning:
+  - Monthly content planning session
+  - Align with product roadmap
+  - SEO keyword research
+  - Audience persona mapping
+
+Content types:
+  - Blog posts (weekly)
+  - Tutorials (bi-weekly)
+  - Case studies (monthly)
+  - Whitepapers (quarterly)
+  - Videos (monthly)
+  - Webinars (monthly)
+  - Newsletter (weekly)
+
+Production workflow:
+  1. Ideation (keyword research, customer questions)
+  2. Outline (review with stakeholders)
+  3. Draft (writer)
+  4. Technical review (subject matter expert)
+  5. Editorial review (style, grammar)
+  6. Approval (content lead)
+  7. Publish (CMS)
+  8. Promote (social, email, communities)
+
+Tools:
+  - Content calendar: Notion, Airtable, CoSchedule
+  - SEO: Ahrefs, SEMrush, Clearscope
+  - Writing: Grammarly, Hemingway, ProWritingAid
+  - CMS: WordPress, Ghost, Contentful
+  - Analytics: Google Analytics, Plausible
+```
+
+### SEO Content Playbook
+
+```
+Keyword research:
+  1. Seed keywords from product features
+  2. Competitor keyword analysis
+  3. Customer question mining (support tickets, forums)
+  4. Long-tail keyword identification
+  5. Search intent mapping (informational, navigational, transactional)
+
+Content optimization:
+  - Title: Primary keyword, <60 characters
+  - Meta description: Compelling, <160 characters
+  - H1: One per page, includes keyword
+  - H2/H3: Supporting keywords, logical hierarchy
+  - Body: Natural keyword density (1-2%)
+  - Internal links: 3-5 per post
+  - External links: 2-3 authoritative sources
+  - Images: Alt text, compressed, descriptive filenames
+  - URL: Short, keyword-rich, hyphen-separated
+
+Content clusters:
+  Pillar page: Comprehensive guide on main topic
+  Cluster pages: Supporting articles on subtopics
+  Internal linking: Cluster to Pillar (and vice versa)
+  Example: "CI/CD Guide" (pillar) then "GitHub Actions", "Jenkins", "GitLab CI" (clusters)
+```
+
+## Step 17: Documentation Metrics
+
+### Content Performance Dashboard
+
+```
+Engagement metrics:
+  - Page views (total, unique)
+  - Average time on page
+  - Scroll depth (%)
+  - Bounce rate (%)
+  - Pages per session
+
+Search metrics:
+  - Organic traffic (% of total)
+  - Keyword rankings
+  - Click-through rate (CTR)
+  - Featured snippet wins
+
+Conversion metrics:
+  - Documentation to Signup conversion
+  - Tutorial to Activation rate
+  - API docs to Developer engagement
+  - Support ticket deflection rate
+
+Quality metrics:
+  - "Was this helpful?" score
+  - Feedback comments
+  - Broken links count
+  - Outdated content (>90 days)
+
+Reporting:
+  - Weekly: Top pages, search queries, feedback
+  - Monthly: Content performance, SEO trends
+  - Quarterly: ROI analysis, content audit
+  - Annually: Strategy review, planning
+```
+
+
+## Step 18: Runbook Authoring
+
+### Runbook Template
+
+```
+# Runbook: [Procedure Name]
+
+## Overview
+- Purpose: What this runbook accomplishes
+- When to use: Trigger conditions
+- Time estimate: How long it takes
+- Prerequisites: Access, tools, permissions needed
+
+## Pre-conditions
+- [ ] Access to [system] confirmed
+- [ ] Backup completed
+- [ ] Stakeholders notified
+- [ ] Maintenance window scheduled
+
+## Procedure
+
+### Step 1: [Action]
+```bash
+# Command or action
+command --flag argument
+```
+Expected output: [What you should see]
+If error: [What to do]
+
+### Step 2: [Action]
+```bash
+# Command or action
+command --flag argument
+```
+Expected output: [What you should see]
+If error: [What to do]
+
+## Rollback
+If something goes wrong:
+1. [Rollback step 1]
+2. [Rollback step 2]
+3. [Verification]
+
+## Verification
+- [ ] [Check 1]
+- [ ] [Check 2]
+- [ ] [Check 3]
+
+## Troubleshooting
+
+### Problem: [Common issue]
+Cause: [Why it happens]
+Solution: [How to fix]
+
+### Problem: [Another issue]
+Cause: [Why it happens]
+Solution: [How to fix]
+
+## Escalation
+If unable to resolve:
+- Primary: [Name/Team] via [Channel]
+- Secondary: [Name/Team] via [Channel]
+- Emergency: [PagerDuty/Opsgenie escalation]
+
+## References
+- [Link to related docs]
+- [Link to architecture diagram]
+- [Link to monitoring dashboard]
+```
+
+### Runbook Best Practices
+
+```
+Writing:
+  - Assume reader has no context
+  - Use imperative mood ("Run this command")
+  - Include expected output for each step
+  - Document failure modes and recovery
+  - Keep commands copy-pasteable
+
+Maintenance:
+  - Review quarterly
+  - Update after every incident use
+  - Track runbook usage (which ones are used most)
+  - Retire unused runbooks
+  - Version control all runbooks
+
+Testing:
+  - Dry-run in staging first
+  - Have someone unfamiliar follow the runbook
+  - Time the execution
+  - Document gaps found during testing
+  - Update based on test feedback
+```
+
+## Step 19: Documentation Tooling
+
+### Static Site Generators
+
+```
+Docusaurus (React-based):
+  - Best for: Large documentation sites
+  - Features: Versioning, i18n, search, MDX
+  - Used by: React, Jest, Supabase
+  - Deploy: Vercel, Netlify, GitHub Pages
+
+MkDocs (Python-based):
+  - Best for: Technical documentation
+  - Features: Material theme, search, tags
+  - Used by: FastAPI, Pydantic, Kubernetes
+  - Deploy: GitHub Pages, Read the Docs
+
+VitePress (Vue-based):
+  - Best for: Fast, lightweight docs
+  - Features: Vue components, search, sidebar
+  - Used by: Vue, Vite, Rollup
+  - Deploy: Vercel, Netlify, GitHub Pages
+
+Astro (Framework-agnostic):
+  - Best for: Content-heavy sites
+  - Features: Island architecture, MDX, collections
+  - Used by: Google, Microsoft, NASA
+  - Deploy: Any static host
+
+Selection criteria:
+  - Framework alignment (React team = Docusaurus)
+  - Scale (thousands of pages = Docusaurus)
+  - Speed (fast builds = VitePress)
+  - Flexibility (custom components = Astro)
+```
+
+### API Documentation Tools
+
+```
+Swagger/OpenAPI:
+  - Auto-generate from code annotations
+  - Interactive "Try it" explorer
+  - Client SDK generation
+  - Used by: Most REST APIs
+
+Redoc:
+  - Beautiful OpenAPI rendering
+  - Three-panel layout
+  - Search and navigation
+  - Used by: Stripe, GitHub
+
+Stoplight:
+  - Visual API design
+  - Mock servers
+  - Testing and monitoring
+  - Used by: enterprises
+
+GraphQL:
+  - GraphQL Playground (interactive)
+  - GraphQL Voyager (visual schema)
+  - Apollo Studio (management)
+  - Used by: GitHub, Shopify, Airbnb
+
+Tools for generating docs:
+  - TypeDoc (TypeScript)
+  - JSDoc (JavaScript)
+  - Sphinx (Python)
+  - GoDoc (Go)
+  - Rustdoc (Rust)
+```
+
+## Step 20: Accessibility in Documentation
+
+### WCAG Compliance for Docs
+
+```
+Level A (minimum):
+  - All images have alt text
+  - Videos have captions
+  - Color is not sole indicator
+  - Keyboard navigation works
+  - Focus indicators visible
+
+Level AA (target):
+  - Contrast ratio 4.5:1 (text), 3:1 (large text)
+  - Text resizable to 200%
+  - Multiple ways to find content
+  - Consistent navigation
+  - Error identification and suggestions
+
+Level AAA (ideal):
+  - Contrast ratio 7:1
+  - Sign language for videos
+  - Reading level appropriate
+  - Pronunciation guides for jargon
+
+Implementation:
+  - Use semantic HTML (headings, lists, tables)
+  - Add ARIA labels where needed
+  - Test with screen readers (VoiceOver, NVDA)
+  - Automated testing (axe, Lighthouse)
+  - Manual testing with keyboard only
+```
+
+### Inclusive Language Guide
+
+```
+Do use:
+  - "Allowlist" instead of "whitelist"
+  - "Blocklist" instead of "blacklist"
+  - "Primary/secondary" instead of "master/slave"
+  - "They" as singular pronoun
+  - "Users" or "people" instead of "guys"
+
+Avoid:
+  - Ableist language ("crazy", "insane", "lame")
+  - Gendered language ("he/she", "guys", "manpower")
+  - Racial/ethnic references in examples
+  - Cultural assumptions (holidays, names)
+
+Code examples:
+  - Use diverse names in examples
+  - Use universal date formats (ISO 8601)
+  - Use 24-hour time or specify AM/PM
+  - Use metric and imperial (or specify which)
+```
+
+## Step 21: Documentation CI/CD
+
+### Docs Pipeline
+
+```
+Trigger: Push to main or PR merge
+
+Stage 1: Lint
+  - markdownlint (formatting rules)
+  - vale (prose linting, style guide)
+  - link checker (broken links)
+  - spell checker (custom dictionary)
+
+Stage 2: Build
+  - Static site generator (Docusaurus, MkDocs)
+  - API docs generation (Swagger, TypeDoc)
+  - Search index (Algolia, MeiliSearch)
+
+Stage 3: Test
+  - Link validation (all internal links work)
+  - Screenshot comparison (visual regression)
+  - Accessibility scan (axe-core)
+  - Performance check (Lighthouse)
+
+Stage 4: Deploy
+  - Preview (PR gets preview URL)
+  - Production (merge to main deploys)
+  - CDN invalidation (clear cache)
+  - Monitoring (uptime, error tracking)
+
+Tools:
+  - GitHub Actions / GitLab CI
+  - Netlify / Vercel (preview deploys)
+  - Algolia DocSearch (search)
+  - Sentry (error tracking)
+```
+
+### Versioned Documentation
+
+```
+Versioning strategy:
+  - /docs/latest/ (current release)
+  - /docs/v2.0/ (previous major)
+  - /docs/v1.0/ (legacy)
+  - /docs/canary/ (unreleased features)
+
+Implementation:
+  - Branch per version (main = latest, v2.0 branch)
+  - Version selector dropdown
+  - "You are viewing docs for vX.Y" banner
+  - Link to latest from older versions
+  - Redirect old URLs to archived versions
+
+Maintenance:
+  - Keep 2-3 major versions
+  - Archive versions older than 2 years
+  - Update security docs for all supported versions
+  - Deprecation notices on old versions
+
+
+## Step 22: Documentation Governance
+
+### Documentation Standards
+
+```
+Ownership model:
+  - Product teams own their feature docs
+  - Docs team owns style guide and tooling
+  - Engineering owns API and architecture docs
+  - Support owns troubleshooting and FAQ
+
+Review process:
+  - All docs changes go through PR review
+  - Technical accuracy: SME approval required
+  - Style compliance: Docs team approval required
+  - Code examples: Must be tested in CI
+
+Quality gates:
+  - No broken links (automated check)
+  - All code examples pass tests
+  - Style guide compliance (vale linting)
+  - Accessibility check (automated)
+  - SEO check (meta tags, structure)
+
+Metrics:
+  - Documentation coverage (% of features documented)
+  - Documentation freshness (% updated in last 90 days)
+  - Documentation quality (feedback scores)
+  - Documentation usage (page views, search queries)
+```
+
+### Documentation Audits
+
+```
+Quarterly audit checklist:
+  □ Review all pages for accuracy
+  □ Check all links (internal and external)
+  □ Verify code examples still work
+  □ Update screenshots if UI changed
+  □ Review feedback and address issues
+  □ Archive outdated content
+  □ Update changelog
+  □ Review SEO performance
+  □ Check accessibility compliance
+  □ Update style guide if needed
+
+Annual audit:
+  □ Full content inventory
+  □ Gap analysis (what is missing)
+  □ User journey mapping
+  □ Information architecture review
+  □ Competitive analysis
+  □ Technology stack evaluation
+  □ Resource planning
+```
+
+## Step 23: Internationalization for Docs
+
+### i18n Documentation Workflow
+
+```
+Content extraction:
+  - Separate translatable content from code
+  - Use .po/.pot files (gettext) or JSON/YAML
+  - Mark non-translatable strings (variables, code)
+  - Create glossary of technical terms
+
+Translation process:
+  1. Extract new/changed content
+  2. Send to translation team/service
+  3. Review translations for accuracy
+  4. Import translated content
+  5. Build and deploy localized docs
+
+Tools:
+  - Crowdin: Cloud-based, GitHub integration
+  - Lokalise: Mobile + web, API-first
+  - Transifex: Enterprise, community features
+  - POEditor: Simple, affordable
+  - Weglot: Website translation
+
+Quality assurance:
+  - Native speaker review
+  - Context screenshots for translators
+  - Terminology glossary
+  - Consistency checking
+  - User testing in target language
+```
+
+### Localized Documentation Structure
+
+```
+URL structure:
+  /docs/en/ (English - default)
+  /docs/ja/ (Japanese)
+  /docs/de/ (German)
+  /docs/pt-br/ (Brazilian Portuguese)
+
+Implementation:
+  - Subdirectories per language
+  - hreflang tags for SEO
+  - Language switcher in UI
+  - Fallback to English for missing translations
+  - Separate sitemap per language
+
+Content strategy:
+  - English first (always)
+  - Priority languages based on user base
+  - Community translations for less common languages
+  - Machine translation + human review for speed
+  - Professional translation for critical content
+```
+
+## Step 24: Documentation Analytics
+
+### Metrics Dashboard
+
+```
+Engagement metrics:
+  - Page views (total, unique)
+  - Average time on page
+  - Scroll depth (%)
+  - Bounce rate (%)
+  - Pages per session
+
+Search metrics:
+  - Top search queries
+  - Searches with no results
+  - Search-to-click ratio
+  - Search refinement rate
+
+Helpfulness metrics:
+  - "Was this helpful?" vote ratio
+  - Feedback comments
+  - Support ticket deflection rate
+  - Documentation NPS
+
+Quality metrics:
+  - Broken links count
+  - Outdated pages (>90 days since update)
+  - Missing pages (404s)
+  - Accessibility issues
+
+Conversion metrics:
+  - Docs to signup conversion
+  - Docs to trial conversion
+  - Docs to paid conversion
+  - API key generation from docs
+
+Tools:
+  - Google Analytics 4 (page views, engagement)
+  - Algolia Analytics (search metrics)
+  - Hotjar (heatmaps, session recordings)
+  - Custom feedback widgets
+  - Sentry (error tracking)
+```
+
+### Content Performance Analysis
+
+```
+Top performing content:
+  - Identify pages with highest traffic
+  - Analyze what makes them successful
+  - Replicate patterns in other content
+  - Update and improve top pages regularly
+
+Underperforming content:
+  - High bounce rate: Improve intro, add TOC
+  - Low time on page: Add more depth, examples
+  - No search traffic: Improve SEO, add keywords
+  - Negative feedback: Address specific issues
+
+Content gap analysis:
+  - Search queries with no results → Write new content
+  - Support tickets for undocumented features → Document
+  - Competitor content we lack → Create equivalent
+  - User requests for specific topics → Prioritize

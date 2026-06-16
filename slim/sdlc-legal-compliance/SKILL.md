@@ -1,7 +1,7 @@
 ---
 name: sdlc-legal-compliance
 description: "Software company legal and compliance: GDPR, SOC 2, CCPA, privacy policy, terms of service, data processing agreements, IP protection, open source licensing, regulatory compliance, security certifications, data residency, incident response legal, employment law."
-version: 6.0.0-slim
+version: 6.0.0-moderate
 author: Dinoudon
 license: MIT
 platforms: [linux, macos, windows]
@@ -9,7 +9,13 @@ metadata:
   hermes:
     tags: [sdlc, legal, compliance, gdpr, soc2, ccpa, privacy, ip, licensing, security-certifications, data-residency, employment-law]
     related_skills: [sdlc-adversarial-review, sdlc-finance-ops, sdlc-gtm-strategy]
----## When to Use
+---
+
+# Legal & Compliance
+
+Privacy regulations, security certifications, IP protection, and legal foundations for software companies.
+
+## When to Use
 
 Trigger when user:
 - Creates privacy policy, terms of service, or DPA
@@ -223,25 +229,9 @@ Key rule: When in doubt, don't mix GPL with permissive licenses.
 □ Have legal review any AGPL/SSPL/BSL dependencies
 ```
 
+## Step 4: Terms of Service & Legal Documents
 
-## Pitfalls
+### Terms of Service Structure
 
-1. **Ignoring GDPR until fined** — GDPR fines are real (Meta: €1.2B, Amazon: €746M). Compliance is cheaper than fines.
-2. **Copy-paste legal docs** — Template terms of service may not cover your specific business model. Get legal review.
-3. **No DPA for B2B** — Enterprise customers WILL ask for a DPA. Have one ready.
-4. **Open source license ignorance** — Using GPL code in proprietary SaaS can force you to open-source everything. Audit dependencies.
-5. **Missing IP assignment** — Contractors without IP assignment clauses own their code. Fix before it's a problem.
-
-## Sources
-
-- GDPR Official Text: https://gdpr.eu/
-- CCPA Official: https://oag.ca.gov/privacy/ccpa
-- SOC 2 (AICPA): https://www.aicpa.org/interestareas/frc/assuranceadvisoryservices/trustservicescriteria
-- ISO 27001: https://www.iso.org/isoiec-27001-information-security.html
-- OWASP Legal: https://owasp.org/
-- Choose a License: https://choosealicense.com/
-- TLDRLegal: https://tldrlegal.com/
-- Vanta (SOC 2 automation): https://www.vanta.com/
-- Drata (compliance automation): https://www.drata.com/
-- Cooley GO (startup legal): https://www.cooleygo.com/
-- Gunderson Dettmer (startup law): https://www.gunder.com/
+```
+1. A

@@ -1,7 +1,7 @@
 ---
 name: sdlc-prd-to-production
 description: "End-to-end workflow: PRD → design doc → implementation → code review → testing → deployment → monitoring → retrospective. Ship/Show/Ask, design docs, PRD patterns, ephemeral environments, DORA 2024, technical specs, GitOps, metrics-driven development, production readiness, launch strategies, incident management, blameless postmortems."
-version: 4.8.0
+version: 4.8.0-moderate
 author: Dinoudon
 license: MIT
 platforms: [linux, macos, windows]

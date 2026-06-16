@@ -1,7 +1,7 @@
 ---
 name: sdlc-hiring-talent
 description: "Technical hiring and team building: recruiting, interview design, coding assessments, system design interviews, culture fit, engineering levels, onboarding, retention, compensation, remote teams, diversity, employer branding, hiring pipeline optimization."
-version: 6.0.0-slim
+version: 6.0.0-moderate
 author: Dinoudon
 license: MIT
 platforms: [linux, macos, windows]
@@ -9,7 +9,13 @@ metadata:
   hermes:
     tags: [sdlc, hiring, recruiting, interviews, team-building, engineering-levels, onboarding, retention, compensation, employer-branding]
     related_skills: [sdlc-retrospective, sdlc-prd-to-production, sdlc-finance-ops]
----## When to Use
+---
+
+# Hiring & Talent
+
+Building engineering teams. Recruiting, interviewing, onboarding, and retaining top talent.
+
+## When to Use
 
 Trigger when user:
 - Designs interview process or coding assessments
@@ -207,24 +213,46 @@ To promote IC2 → IC3 (Senior):
 □ Demonstrates technical judgment (trade-off decisions)
 ```
 
+## Step 4: Onboarding
 
-## Pitfalls
+### 30-60-90 Day Plan
 
-1. **Hiring for pedigree** — "Must have FAANG experience" excludes great talent. Hire for skills, not logos.
-2. **LeetCode grind culture** — Memorizing 500 problems doesn't predict job performance. Use practical assessments.
-3. **No structured interview** — Unstructured interviews are 2x more biased. Use scorecards and consistent rubrics.
-4. **Slow hiring process** — Top candidates have offers in 2 weeks. Move fast or lose them.
-5. **Ghosting candidates** — Always send rejection emails. Reputation matters.
+```
+Day 1-7: Setup
+  □ Laptop + tools configured
+  □ Access to repos, CI, dashboards
+  □ Meet the team (1:1 with each member)
+  □ Read team docs, architecture diagrams
+  □ First PR merged (typo fix, small bug)
 
-## Sources
+Day 8-30: Contribute
+  □ Complete 2-3 small features/bug fixes
+  □ Attend all team ceremonies
+  □ Understand on-call rotation
+  □ Shadow a senior engineer's project
+  □ 30-day check-in with manager
 
-- Will Larson, Staff Engineer: https://staffeng.com/
-- Will Larson, An Elegant Puzzle: https://lethain.com/elegant-puzzle/
-- Camille Fournier, Manager's Path: https://www.themanagerspath.org/
-- First Round Review (hiring): https://review.firstround.com/
-- Levels.fyi (compensation): https://www.levels.fyi/
-- Hacker News Who's Hiring: https://news.ycombinator.com/item?id=35930664
-- Key Values (culture fit): https://www.keyvalues.com/
-- Holloway Guide to Equity: https://www.holloway.com/g/equity-compensation
-- Pragmatic Engineer (hiring): https://blog.pragmaticengineer.com/
-- Structuring Teams (Team Topologies): https://teamtopologies.com/
+Day 31-60: Own
+  □ Lead a medium-sized feature
+  □ Write design doc for a project
+  □ Participate in code reviews
+  □ Identify and fix a process gap
+  □ 60-day check-in with manager
+
+Day 61-90: Scale
+  □ Own a project end-to-end
+  □ Mentor a newer hire
+  □ Propose an improvement to team processes
+  □ 90-day review with manager
+  □ Onboard into on-call rotation
+```
+
+### Onboarding Buddy System
+
+```
+Each new hire gets an onboarding buddy (peer, not manager):
+• Same team, different project
+• Available for quick questions (Slack, in-person)
+• Meets 2x/week for first month
+• Answers "how do we actually do X?" questions
+• Introduces to people outside the team
