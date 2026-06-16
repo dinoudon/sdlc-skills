@@ -1798,3 +1798,121 @@ Decision framework:
   - Unknown UX? → Prototype
   - Unknown demand? → MVP
   - Unknown business model? → MVP with pricing test
+
+
+## Step 30: Throwaway Project Checklist
+
+### Pre-Project Checklist
+
+```
+□ Hypothesis clearly defined
+□ Success criteria established
+□ Time limit set (hours/days)
+□ Scope limited to core question
+□ Exit criteria defined
+□ Team aligned on approach
+□ Tools selected (fastest path)
+□ Repository created
+□ README with hypothesis
+```
+
+### During Project Checklist
+
+```
+□ Working on core hypothesis only
+□ No feature creep
+□ Time tracking active
+□ Daily standup (if multi-day)
+□ Documenting learnings
+□ Testing with real data/users
+□ Not optimizing prematurely
+□ Staying within time limit
+```
+
+### Post-Project Checklist
+
+```
+□ Decision made (go/no-go/pivot)
+□ Learnings documented
+□ Code archived (if keeping)
+□ Team retrospective done
+□ Next steps defined
+□ Stakeholders informed
+□ Metrics recorded
+□ Artifacts saved (screenshots, data)
+```
+
+## Step 31: Throwaway Project Communication
+
+### Stakeholder Updates
+
+```
+Daily update template:
+  Today: [What we did]
+  Learnings: [What we discovered]
+  Blockers: [What is blocking us]
+  Tomorrow: [What we will do next]
+
+Decision update template:
+  Hypothesis: [What we tested]
+  Result: [What we found]
+  Evidence: [Data, feedback, metrics]
+  Decision: [Go/No-go/Pivot]
+  Next steps: [What happens now]
+```
+
+### Documentation Template
+
+```
+# Throwaway: [Project Name]
+
+## Hypothesis
+[What we are testing]
+
+## Approach
+[How we are testing it]
+
+## Timeline
+- Start: [Date]
+- End: [Date]
+- Duration: [X days]
+
+## Results
+[What we found]
+
+## Decision
+[Go / No-go / Pivot]
+
+## Learnings
+- [Learning 1]
+- [Learning 2]
+
+## Next Steps
+[What happens next]
+
+## Artifacts
+- [Screenshots, videos, data]
+- [Link to archived code]
+
+
+## Step 32: Throwaway Project Resources
+
+### Learning Resources
+
+```
+Books:
+  - The Lean Startup (Eric Ries)
+  - Sprint (Jake Knapp)
+  - Inspired (Marty Cagan)
+  - Continuous Discovery Habits (Teresa Torres)
+
+Courses:
+  - Y Combinator Startup School (free)
+  -IDEO Design Thinking (online)
+  - Google Design Sprint (online)
+
+Tools:
+  - Miro (collaboration)
+  - Figma (design)
+  - Notion (documentation)
+  - Loom (video updates)

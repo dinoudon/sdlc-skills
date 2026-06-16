@@ -656,3 +656,39 @@ Level 3: Managed
   - [sdlc-gtm-strategy](sdlc-gtm-strategy): Go-to-market strategy: market positioning, pricing, packaging, sales enablement, competitive analysi
   - [sdlc-legal-compliance](sdlc-legal-compliance): Software company legal and compliance: GDPR, SOC 2, CCPA, privacy policy, terms of service, data pro
   - [sdlc-hiring-talent](sdlc-hiring-talent): Technical hiring and team building: recruiting, interview design, coding assessments, system design
+## Step 34: Financial Planning & Analysis
+```
+Responsibilities:
+  - Budget planning and tracking
+  - Forecasting (revenue, expenses, headcount)
+  - Variance analysis (actual vs budget)
+  - Scenario planning (best/base/worst case)
+  - Board reporting and investor updates
+
+Key deliverables:
+  - Annual operating plan (AOP)
+  - Quarterly forecasts
+  - Monthly variance reports
+  - Board deck financials
+  - Investor update metrics
+
+Tools:
+```
+## Step 35: Finance Operations Tools
+```
+Accounting:
+  - QuickBooks (small business)
+  - Xero (cloud accounting)
+  - NetSuite (mid-market)
+  - Sage (enterprise)
+
+Billing:
+  - Stripe (payments)
+  - Chargebee (subscription billing)
+  - Recurly (subscription management)
+  - Zuora (enterprise billing)
+
+FP&A:
+  - Anaplan (enterprise planning)
+  - Adaptive Insights (mid-market)
+```

@@ -584,3 +584,21 @@ Output metrics (lagging indicators):
   - [sdlc-developer-relations](sdlc-developer-relations): Developer Relations (DevRel) program design: advocacy, community, marketing, enablement. Developer e
   - [sdlc-gtm-strategy](sdlc-gtm-strategy): Go-to-market strategy: market positioning, pricing, packaging, sales enablement, competitive analysi
   - [sdlc-finance-ops](sdlc-finance-ops): Software company finance and operations: unit economics, SaaS metrics, fundraising (seed to IPO), fi
+## Step 34: Growth Metrics Glossary
+```
+Acquisition:
+  - Visitor: Anonymous user visiting your site
+  - Lead: User who provided contact info
+  - Signup: User who created account
+  - Activation: User who completed key action
+
+Revenue:
+  - MRR: Monthly Recurring Revenue
+  - ARR: Annual Recurring Revenue
+  - ARPU: Average Revenue Per User
+  - LTV: Lifetime Value (ARPU / churn rate)
+
+Retention:
+  - Churn: % of customers lost per period
+  - Retention: % of customers kept per period
+```

@@ -627,3 +627,59 @@ Week 3: Product update
   - Video walkthrough
 
 ```
+## Step 33: DevRel Metrics Dashboard
+```
+Reach metrics:
+  - Content views (blog, video, docs)
+  - Social media impressions
+  - Conference attendees reached
+  - Community members
+
+Engagement metrics:
+  - Content engagement (likes, comments, shares)
+  - Community activity (posts, replies)
+  - Event participation (questions, feedback)
+  - SDK/API usage
+
+Conversion metrics:
+  - Signups from DevRel content
+  - Activations from tutorials
+```
+## Content
+- Blog posts published: [N]
+- Videos published: [N]
+- Tutorials created: [N]
+- Total views: [N]
+## Community
+- New members: [N]
+- Active members: [N]
+- Questions answered: [N]
+- NPS score: [N]
+## Events
+- Conferences attended: [N]
+- Talks given: [N]
+- Workshops conducted: [N]
+- Attendees reached: [N]
+## Impact
+- Signups influenced: [N]
+- Activations influenced: [N]
+- Revenue influenced: $[N]
+- Partnerships initiated: [N]
+## Step 34: DevRel Tools
+```
+Content creation:
+  - Ghost (blogging)
+  - Notion (documentation)
+  - Loom (video tutorials)
+  - OBS Studio (screen recording)
+
+Community:
+  - Discord (community platform)
+  - Discourse (forums)
+  - Orbit (community analytics)
+  - Common Room (community intelligence)
+
+Events:
+  - Bevy (event management)
+  - Hopin (virtual events)
+```

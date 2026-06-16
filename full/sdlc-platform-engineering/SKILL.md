@@ -1847,3 +1847,61 @@ Metrics:
   - Bugs reported
   - Survey response rate
   - NPS score
+
+
+## Step 36: Platform Team Structure
+
+### Team Roles
+
+```
+Platform Engineer:
+  - Builds and maintains platform services
+  - Creates golden paths and templates
+  - Implements self-service capabilities
+  - Automates infrastructure provisioning
+
+Platform Product Manager:
+  - Defines platform roadmap
+  - Prioritizes features based on developer needs
+  - Manages stakeholder relationships
+  - Tracks platform adoption and satisfaction
+
+Platform Advocate:
+  - Creates documentation and tutorials
+  - Conducts training sessions
+  - Gathers developer feedback
+  - Champions platform adoption
+
+SRE/Platform Reliability:
+  - Ensures platform uptime and reliability
+  - Implements monitoring and alerting
+  - Manages incident response
+  - Optimizes platform performance
+```
+
+### Team Topology
+
+```
+Stream-aligned team:
+  - Owns specific business domain
+  - Uses platform services
+  - Provides feedback to platform team
+  - Consumes golden paths
+
+Platform team:
+  - Provides self-service capabilities
+  - Creates golden paths
+  - Manages shared infrastructure
+  - Enables stream-aligned teams
+
+Enabling team:
+  - Helps stream-aligned teams adopt platform
+  - Provides training and support
+  - Bridges knowledge gaps
+  - Facilitates best practice adoption
+
+Complicated-subsystem team:
+  - Owns complex platform components
+  - Database, ML, security subsystems
+  - Deep expertise required
+  - Consumed by platform team

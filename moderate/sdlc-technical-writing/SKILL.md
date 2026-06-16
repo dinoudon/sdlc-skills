@@ -1884,3 +1884,33 @@ Tools:
 
   - [sdlc-developer-relations](sdlc-developer-relations): Developer Relations (DevRel) program design: advocacy, community, marketing, enablement. Developer e
   - [sdlc-prd-to-production](sdlc-prd-to-production): End-to-end workflow: PRD → design doc → implementation → code review → testing → deployment → monito
+
+
+## Step 33: Documentation Metrics
+
+### Key Metrics
+
+```
+Quality metrics:
+  - Documentation coverage (% of features documented)
+  - Accuracy rate (% of docs that are current)
+  - Readability score (Flesch-Kincaid)
+  - Error rate (% of docs with errors)
+
+Usage metrics:
+  - Page views per document
+  - Search queries (what users look for)
+  - Bounce rate (% who leave quickly)
+  - Time on page (engagement)
+
+Feedback metrics:
+  - Helpfulness rating (thumbs up/down)
+  - Comments and suggestions
+  - Support tickets deflected
+  - NPS for documentation
+
+Efficiency metrics:
+  - Time to publish (draft to live)
+  - Update frequency (how often docs change)
+  - Contributor count (who writes docs)
+  - Review cycle time (draft to approved)

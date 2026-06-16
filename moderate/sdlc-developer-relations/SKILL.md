@@ -1835,3 +1835,93 @@ Recurring:
   - Daily social media (1-2 posts)
   - Monthly webinar or office hours
   - Quarterly community survey
+
+
+## Step 33: DevRel Metrics Dashboard
+
+### Key Metrics
+
+```
+Reach metrics:
+  - Content views (blog, video, docs)
+  - Social media impressions
+  - Conference attendees reached
+  - Community members
+
+Engagement metrics:
+  - Content engagement (likes, comments, shares)
+  - Community activity (posts, replies)
+  - Event participation (questions, feedback)
+  - SDK/API usage
+
+Conversion metrics:
+  - Signups from DevRel content
+  - Activations from tutorials
+  - Revenue influenced by DevRel
+  - Partner integrations from advocacy
+
+Efficiency metrics:
+  - Content production rate
+  - Time to publish
+  - Cost per piece of content
+  - ROI (revenue influenced / DevRel cost)
+```
+
+### Reporting Template
+
+```
+# DevRel Monthly Report
+
+## Content
+- Blog posts published: [N]
+- Videos published: [N]
+- Tutorials created: [N]
+- Total views: [N]
+
+## Community
+- New members: [N]
+- Active members: [N]
+- Questions answered: [N]
+- NPS score: [N]
+
+## Events
+- Conferences attended: [N]
+- Talks given: [N]
+- Workshops conducted: [N]
+- Attendees reached: [N]
+
+## Impact
+- Signups influenced: [N]
+- Activations influenced: [N]
+- Revenue influenced: $[N]
+- Partnerships initiated: [N]
+
+
+## Step 34: DevRel Tools
+
+### Tool Stack
+
+```
+Content creation:
+  - Ghost (blogging)
+  - Notion (documentation)
+  - Loom (video tutorials)
+  - OBS Studio (screen recording)
+
+Community:
+  - Discord (community platform)
+  - Discourse (forums)
+  - Orbit (community analytics)
+  - Common Room (community intelligence)
+
+Events:
+  - Bevy (event management)
+  - Hopin (virtual events)
+  - Eventbrite (ticketing)
+  - StreamYard (live streaming)
+
+Analytics:
+  - Pendo (product analytics)
+  - Mixpanel (event tracking)
+  - Google Analytics (web analytics)
+  - Plausible (privacy-friendly analytics)

@@ -719,3 +719,68 @@ Prototype:
   - Outcome: User feedback
   - Example: "Is this checkout flow intuitive?"
 ```
+## Step 30: Throwaway Project Checklist
+```
+□ Hypothesis clearly defined
+□ Success criteria established
+□ Time limit set (hours/days)
+□ Scope limited to core question
+□ Exit criteria defined
+□ Team aligned on approach
+□ Tools selected (fastest path)
+□ Repository created
+□ README with hypothesis
+```
+## Step 31: Throwaway Project Communication
+```
+Daily update template:
+  Today: [What we did]
+  Learnings: [What we discovered]
+  Blockers: [What is blocking us]
+  Tomorrow: [What we will do next]
+
+Decision update template:
+  Hypothesis: [What we tested]
+  Result: [What we found]
+  Evidence: [Data, feedback, metrics]
+  Decision: [Go/No-go/Pivot]
+  Next steps: [What happens now]
+```
+## Hypothesis
+[What we are testing]
+## Approach
+[How we are testing it]
+## Timeline
+- Start: [Date]
+- End: [Date]
+- Duration: [X days]
+## Results
+[What we found]
+## Decision
+[Go / No-go / Pivot]
+## Learnings
+- [Learning 1]
+- [Learning 2]
+## Next Steps
+[What happens next]
+## Artifacts
+- [Screenshots, videos, data]
+- [Link to archived code]
+## Step 32: Throwaway Project Resources
+```
+Books:
+  - The Lean Startup (Eric Ries)
+  - Sprint (Jake Knapp)
+  - Inspired (Marty Cagan)
+  - Continuous Discovery Habits (Teresa Torres)
+
+Courses:
+  - Y Combinator Startup School (free)
+  -IDEO Design Thinking (online)
+  - Google Design Sprint (online)
+
+Tools:
+  - Miro (collaboration)
+  - Figma (design)
+  - Notion (documentation)
+```

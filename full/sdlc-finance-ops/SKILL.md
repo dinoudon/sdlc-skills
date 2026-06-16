@@ -1827,3 +1827,85 @@ Assessment:
   - [sdlc-gtm-strategy](sdlc-gtm-strategy): Go-to-market strategy: market positioning, pricing, packaging, sales enablement, competitive analysi
   - [sdlc-legal-compliance](sdlc-legal-compliance): Software company legal and compliance: GDPR, SOC 2, CCPA, privacy policy, terms of service, data pro
   - [sdlc-hiring-talent](sdlc-hiring-talent): Technical hiring and team building: recruiting, interview design, coding assessments, system design 
+
+
+## Step 34: Financial Planning & Analysis
+
+### FP&A Function
+
+```
+Responsibilities:
+  - Budget planning and tracking
+  - Forecasting (revenue, expenses, headcount)
+  - Variance analysis (actual vs budget)
+  - Scenario planning (best/base/worst case)
+  - Board reporting and investor updates
+
+Key deliverables:
+  - Annual operating plan (AOP)
+  - Quarterly forecasts
+  - Monthly variance reports
+  - Board deck financials
+  - Investor update metrics
+
+Tools:
+  - Excel/Google Sheets (modeling)
+  - Anaplan/Adaptive (enterprise planning)
+  - Mosaic/Runway (startup FP&A)
+  - QuickBooks/Xero (accounting)
+  - Stripe/Chargebee (billing)
+```
+
+### Financial Reporting Package
+
+```
+Monthly close package:
+  - Income statement (actual vs budget)
+  - Balance sheet
+  - Cash flow statement
+  - Key metrics dashboard
+  - Variance analysis commentary
+
+Quarterly board package:
+  - Financial summary (YTD + forecast)
+  - Key metrics trends
+  - Cash runway analysis
+  - Scenario analysis
+  - Capital allocation update
+
+Annual planning package:
+  - Revenue model (bottom-up)
+  - Expense budget (by department)
+  - Headcount plan
+  - Capital expenditure plan
+  - Funding requirements
+
+
+## Step 35: Finance Operations Tools
+
+### Tool Stack
+
+```
+Accounting:
+  - QuickBooks (small business)
+  - Xero (cloud accounting)
+  - NetSuite (mid-market)
+  - Sage (enterprise)
+
+Billing:
+  - Stripe (payments)
+  - Chargebee (subscription billing)
+  - Recurly (subscription management)
+  - Zuora (enterprise billing)
+
+FP&A:
+  - Anaplan (enterprise planning)
+  - Adaptive Insights (mid-market)
+  - Mosaic (startup FP&A)
+  - Runway (startup planning)
+
+Expense management:
+  - Brex (corporate card + expenses)
+  - Ramp (expense management)
+  - Expensify (expense reporting)
+  - Divvy (budget management)

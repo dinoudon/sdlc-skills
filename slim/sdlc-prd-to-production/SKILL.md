@@ -628,3 +628,39 @@ Before shipping major features, conduct a CEO-level review covering:
   - [sdlc-architecture-design](sdlc-architecture-design): System design, C4 diagrams, API design, database schema, code architecture, ADRs, branching, depende
   - [sdlc-requirements-engineering](sdlc-requirements-engineering): Requirements: user story mapping (Jeff Patton), BDD/Gherkin (Cucumber, pytest-bdd), acceptance crite
   - [sdlc-product-growth](sdlc-product-growth): Product-led growth (PLG), developer-led growth, growth loops, activation funnels, A/B testing, SaaS
+## Step 33: Product Operations
+```
+Responsibilities:
+  - Tool administration (Jira, Productboard, analytics)
+  - Process standardization (templates, workflows)
+  - Data management (metrics, dashboards)
+  - Cross-team coordination (dependencies, timelines)
+  - Customer feedback aggregation (support, sales, success)
+
+Value proposition:
+  - Frees PMs for strategic work
+  - Ensures consistent processes
+  - Improves data quality
+  - Reduces coordination overhead
+  - Enables scalable product org
+
+When to hire:
+```
+## Step 34: Product Operations Tools
+```
+Product management:
+  - Productboard (feedback, roadmap)
+  - Aha! (roadmapping, strategy)
+  - Jira (backlog, sprints)
+  - Linear (issue tracking)
+
+Analytics:
+  - Mixpanel (product analytics)
+  - Amplitude (user analytics)
+  - PostHog (open-source analytics)
+  - Heap (auto-capture)
+
+Research:
+  - UserTesting (user research)
+  - Maze (usability testing)
+```

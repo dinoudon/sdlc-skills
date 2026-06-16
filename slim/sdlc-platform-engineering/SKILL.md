@@ -679,3 +679,21 @@ Recognition:
   - Platform champions program
   - Contribution leaderboard
 ```
+## Step 36: Platform Team Structure
+```
+Platform Engineer:
+  - Builds and maintains platform services
+  - Creates golden paths and templates
+  - Implements self-service capabilities
+  - Automates infrastructure provisioning
+
+Platform Product Manager:
+  - Defines platform roadmap
+  - Prioritizes features based on developer needs
+  - Manages stakeholder relationships
+  - Tracks platform adoption and satisfaction
+
+Platform Advocate:
+  - Creates documentation and tutorials
+  - Conducts training sessions
+```
