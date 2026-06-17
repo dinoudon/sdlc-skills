@@ -2,14 +2,14 @@
 
 ## Current State
 
-**Version:** v6.2.0
+**Version:** v7.0.0
 **Last Updated:** 2026-06-16
-**Total Skills:** 19
+**Total Skills:** 23
 **Total Lines:** ~39K (moderate) + ~13K (slim) + ~40K (full)
 
 ## Skills Inventory
 
-All skills have 3 tiers: slim (~600 lines), moderate (~1950 lines), full (same as moderate).
+All skills have 3 tiers: slim (~600 lines), moderate (~1900 lines), full (same as moderate).
 
 ### Engineering SDLC (11 skills)
 | Skill | Lines | Description |
@@ -20,27 +20,35 @@ All skills have 3 tiers: slim (~600 lines), moderate (~1950 lines), full (same a
 | sdlc-deployment | 1911 | Deployment strategies, infrastructure, multi-tenancy |
 | sdlc-developer-tooling | 2100 | Dev environments, monorepo, DX, tooling |
 | sdlc-observability | 2027 | Monitoring, tracing, SRE, SLOs, LGTM stack |
-| sdlc-prd-to-production | 1828 | Product lifecycle, stakeholder mgmt, launch |
+| sdlc-prd-to-production | 1907 | Product lifecycle, stakeholder mgmt, launch |
 | sdlc-requirements-engineering | 1970 | Requirements, DDD, BDD, user research |
 | sdlc-retrospective | 2251 | Retrospectives, team health, Spotify model, culture |
 | sdlc-testing-qa | 2071 | Testing strategies, automation, quality, contract testing |
-| sdlc-throwaway-projects | 1800 | Prototypes, MVPs, spikes, validation |
+| sdlc-throwaway-projects | 1918 | Prototypes, MVPs, spikes, validation |
 
 ### Business & Growth (6 skills)
 | Skill | Lines | Description |
 |-------|-------|-------------|
-| sdlc-developer-relations | 1837 | DevRel, community, SDK strategy, DX |
-| sdlc-finance-ops | 1829 | Unit economics, fundraising, cap table, SaaS metrics |
+| sdlc-developer-relations | 1927 | DevRel, community, SDK strategy, DX |
+| sdlc-finance-ops | 1911 | Unit economics, fundraising, cap table, SaaS metrics |
 | sdlc-gtm-strategy | 2185 | Go-to-market, positioning, sales, partnerships |
 | sdlc-hiring-talent | 1981 | Recruiting, interviews, onboarding, retention |
 | sdlc-legal-compliance | 1954 | GDPR, SOC 2, IP, privacy, employment law |
-| sdlc-product-growth | 1883 | PLG, SaaS metrics, pricing, experimentation |
+| sdlc-product-growth | 1913 | PLG, SaaS metrics, pricing, experimentation |
 
 ### Platform & Operations (2 skills)
 | Skill | Lines | Description |
 |-------|-------|-------------|
-| sdlc-platform-engineering | 1849 | Backstage, golden paths, DORA, DORA metrics |
-| sdlc-technical-writing | 1886 | Docs-as-code, runbooks, style guides, API docs |
+| sdlc-platform-engineering | 1907 | Backstage, golden paths, DORA, DORA metrics |
+| sdlc-technical-writing | 1916 | Docs-as-code, runbooks, style guides, API docs |
+
+### Emerging Domains (4 skills)
+| Skill | Lines | Description |
+|-------|-------|-------------|
+| sdlc-ai-engineering | 879 | LLMOps, prompt engineering, model integration, AI safety |
+| sdlc-data-engineering | 893 | Data pipelines, data quality, data mesh, data lakehouse |
+| sdlc-devsecops | 955 | Supply chain security, SBOMs, policy-as-code, zero-trust |
+| sdlc-green-software | 873 | Sustainability, carbon-aware computing, energy efficiency |
 
 ## Features
 

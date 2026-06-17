@@ -450,6 +450,78 @@ Last updated: 2026-06-16 (v6.2.0)
 
 ---
 
+## AI / LLM Engineering
+
+| Source | URL | Used In |
+|--------|-----|---------|
+| LangChain | https://docs.langchain.com/ | ai-engineering |
+| LlamaIndex | https://docs.llamaindex.ai/ | ai-engineering |
+| OpenAI API | https://platform.openai.com/docs/ | ai-engineering |
+| Anthropic API | https://docs.anthropic.com/ | ai-engineering |
+| vLLM | https://docs.vllm.ai/ | ai-engineering |
+| LiteLLM | https://docs.litellm.ai/ | ai-engineering |
+| LangSmith | https://docs.smith.langchain.com/ | ai-engineering |
+| Weights & Biases | https://docs.wandb.ai/ | ai-engineering |
+| DSPy | https://dspy-docs.vercel.app/ | ai-engineering |
+| Ollama | https://ollama.ai/ | ai-engineering |
+
+---
+
+## Data Engineering
+
+| Source | URL | Used In |
+|--------|-----|---------|
+| Apache Airflow | https://airflow.apache.org/docs/ | data-engineering |
+| dbt | https://docs.getdbt.com/ | data-engineering |
+| Apache Spark | https://spark.apache.org/docs/ | data-engineering |
+| Apache Kafka | https://kafka.apache.org/documentation/ | data-engineering |
+| Delta Lake | https://docs.delta.io/ | data-engineering |
+| Apache Iceberg | https://iceberg.apache.org/docs/ | data-engineering |
+| Great Expectations | https://docs.greatexpectations.io/ | data-engineering |
+| Dagster | https://docs.dagster.io/ | data-engineering |
+| Prefect | https://docs.prefect.io/ | data-engineering |
+| dbt | https://docs.getdbt.com/ | data-engineering |
+| Snowflake | https://docs.snowflake.com/ | data-engineering |
+| BigQuery | https://cloud.google.com/bigquery/docs | data-engineering |
+| Databricks | https://docs.databricks.com/ | data-engineering |
+
+---
+
+## DevSecOps
+
+| Source | URL | Used In |
+|--------|-----|---------|
+| OPA (Open Policy Agent) | https://www.openpolicyagent.org/docs/ | devsecops |
+| Kyverno | https://kyverno.io/docs/ | devsecops |
+| Sigstore | https://sigstore.dev/ | devsecops |
+| SLSA | https://slsa.dev/ | devsecops |
+| Trivy | https://aquasecurity.github.io/trivy/ | devsecops |
+| Syft | https://github.com/anchore/syft | devsecops |
+| Grype | https://github.com/anchore/grype | devsecops |
+| OWASP ZAP | https://www.zaproxy.org/docs/ | devsecops |
+| Snyk | https://docs.snyk.io/ | devsecops |
+| Dependabot | https://docs.github.com/en/code-security/dependabot | devsecops |
+| HashiCorp Vault | https://developer.hashicorp.com/vault/docs | devsecops |
+| Falco | https://falco.org/docs/ | devsecops |
+
+---
+
+## Green Software
+
+| Source | URL | Used In |
+|--------|-----|---------|
+| Green Software Foundation | https://greensoftware.foundation/ | green-software |
+| SCI Specification | https://sci-guide.greensoftware.foundation/ | green-software |
+| Watttime | https://www.watttime.org/ | green-software |
+| ElectricityMaps | https://electricitymaps.com/ | green-software |
+| Carbon Aware SDK | https://github.com/Green-Software-Foundation/carbon-aware-sdk | green-software |
+| Green Metrics Tool | https://green-coding.io/ | green-software |
+| Scaphandre | https://hubblo-org.github.io/scaphandre/ | green-software |
+| Kepler | https://sustainable-computing.io/ | green-software |
+| Cloud Carbon Footprint | https://www.cloudcarbonfootprint.org/ | green-software |
+
+---
+
 ## Unicorn Company Case Studies
 
 | Company | Key Pattern | URL | Used In |
